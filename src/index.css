@@ -1,0 +1,58 @@
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: 'Outfit', 'DM Sans', system-ui, -apple-system, sans-serif;
+  background: #0a0a1a;
+  color: #ffffff;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+::selection {
+  background: rgba(124, 58, 237, 0.3);
+  color: #fff;
+}
+
+input, select, textarea, button {
+  font-family: inherit;
+}
+
+input::placeholder {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+select option {
+  background: #1a1a2e;
+  color: #fff;
+}
+
+input:-webkit-autofill {
+  -webkit-text-fill-color: #fff;
+  -webkit-box-shadow: 0 0 0 1000px rgba(255,255,255,0.04) inset;
+}
