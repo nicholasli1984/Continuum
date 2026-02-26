@@ -10,8 +10,8 @@ html {
 }
 
 body {
-  font-family: 'Outfit', 'DM Sans', system-ui, -apple-system, sans-serif;
-  background: #040b18;
+  font-family: 'Plus Jakarta Sans', 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  background: #0F0F0F;
   color: #ffffff;
   overflow-x: hidden;
   min-height: 100vh;
@@ -30,12 +30,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(103, 232, 249, 0.15);
+  background: rgba(247, 168, 106, 0.15);
   border-radius: 3px;
 }
 
 ::selection {
-  background: rgba(8, 145, 178, 0.3);
+  background: rgba(242, 107, 58, 0.3);
   color: #fff;
 }
 
