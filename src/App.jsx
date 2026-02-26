@@ -963,7 +963,6 @@ export default function EliteStatusTracker() {
                         <img src={exp.receiptImage.data} alt="Receipt" style={{ width: 32, height: 32, objectFit: "cover", borderRadius: 4, marginTop: 4, border: "1px solid rgba(255,255,255,0.1)", cursor: "pointer" }}
                           onClick={(e) => { e.stopPropagation(); window.open(exp.receiptImage.data, "_blank"); }} title="Click to view full receipt" />
                       )}
-                      </div>
                     </div>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
