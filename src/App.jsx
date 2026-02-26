@@ -1412,7 +1412,7 @@ export default function EliteStatusTracker() {
       </aside>
 
       {/* Main Content */}
-      <main style={{ flex: 1, padding: "28px 32px", maxWidth: 1000, overflowY: "auto" }}>
+      <main style={{ flex: 1, padding: "28px 40px", overflowY: "auto", minWidth: 0 }}>
         {/* Top Bar */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28 }}>
           <div>
