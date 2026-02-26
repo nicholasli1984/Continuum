@@ -11,7 +11,7 @@ html {
 
 body {
   font-family: 'Outfit', 'DM Sans', system-ui, -apple-system, sans-serif;
-  background: #0a0a1a;
+  background: #050510;
   color: #ffffff;
   overflow-x: hidden;
   min-height: 100vh;
@@ -35,7 +35,7 @@ body {
 }
 
 ::selection {
-  background: rgba(124, 58, 237, 0.3);
+  background: rgba(8, 145, 178, 0.3);
   color: #fff;
 }
 
