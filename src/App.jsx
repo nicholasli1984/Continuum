@@ -40,153 +40,232 @@ const LogoMark = ({ size = 40 }) => (
 // ============================================================
 // DATA & CONSTANTS
 // ============================================================
-const LOYALTY_PROGRAMS = {
+
+// Comprehensive program directory with login/status URLs
+const PROGRAM_DIRECTORY = {
   airlines: [
-    {
-      id: "aa",
-      name: "American Airlines AAdvantage",
-      logo: "✈️",
-      color: "#0078D2",
-      accent: "#C8102E",
-      tiers: [
-        { name: "Gold", threshold: 30000, perks: "Priority boarding, free checked bag, 40% bonus miles" },
-        { name: "Platinum", threshold: 60000, perks: "Upgrades, 60% bonus, Admiral's Club day passes" },
-        { name: "Platinum Pro", threshold: 90000, perks: "Premium upgrades, 80% bonus, complimentary MCE" },
-        { name: "Executive Platinum", threshold: 120000, perks: "Systemwide upgrades, 120% bonus, ConciergeKey eligible" },
-      ],
-      unit: "Loyalty Points",
-      earnRate: { domestic: 5, international: 10, premium: 20 },
-    },
-    {
-      id: "dl",
-      name: "Delta SkyMiles",
-      logo: "🔺",
-      color: "#003366",
-      accent: "#C8102E",
-      tiers: [
-        { name: "Silver Medallion", threshold: 25000, perks: "Unlimited upgrades, 40% bonus miles" },
-        { name: "Gold Medallion", threshold: 50000, perks: "SkyTeam Elite Plus, 60% bonus, Sky Priority" },
-        { name: "Platinum Medallion", threshold: 75000, perks: "Choice Benefits, 80% bonus, waived fees" },
-        { name: "Diamond Medallion", threshold: 125000, perks: "Global upgrades, 120% bonus, Delta ONE access" },
-      ],
-      unit: "MQMs",
-      earnRate: { domestic: 5, international: 10, premium: 18 },
-    },
-    {
-      id: "ua",
-      name: "United MileagePlus",
-      logo: "🌐",
-      color: "#002244",
-      accent: "#0066CC",
-      tiers: [
-        { name: "Silver", threshold: 12, perks: "Economy Plus, priority boarding, 1 bag free", isSegments: true },
-        { name: "Gold", threshold: 24, perks: "Star Alliance Gold, United Club passes", isSegments: true },
-        { name: "Platinum", threshold: 36, perks: "Regional upgrades, 2 GPUs", isSegments: true },
-        { name: "1K", threshold: 54, perks: "Global upgrades, PlusPoints, Premier Access", isSegments: true },
-      ],
-      unit: "PQPs",
-      earnRate: { domestic: 5, international: 11, premium: 22 },
-    },
+    { id: "aa", name: "American Airlines AAdvantage", logo: "✈️", color: "#0078D2", accent: "#C8102E", unit: "Loyalty Points", loginUrl: "https://www.aa.com/loyalty/login", tiers: [
+      { name: "Gold", threshold: 30000, perks: "Priority boarding, free checked bag, 40% bonus miles" },
+      { name: "Platinum", threshold: 60000, perks: "Upgrades, 60% bonus, Admiral's Club day passes" },
+      { name: "Platinum Pro", threshold: 90000, perks: "Premium upgrades, 80% bonus, complimentary MCE" },
+      { name: "Executive Platinum", threshold: 120000, perks: "Systemwide upgrades, 120% bonus, ConciergeKey eligible" },
+    ], earnRate: { domestic: 5, international: 10, premium: 20 } },
+    { id: "dl", name: "Delta SkyMiles", logo: "🔺", color: "#003366", accent: "#C8102E", unit: "MQMs", loginUrl: "https://www.delta.com/myprofile/personal-details", tiers: [
+      { name: "Silver Medallion", threshold: 25000, perks: "Unlimited upgrades, 40% bonus miles" },
+      { name: "Gold Medallion", threshold: 50000, perks: "SkyTeam Elite Plus, 60% bonus, Sky Priority" },
+      { name: "Platinum Medallion", threshold: 75000, perks: "Choice Benefits, 80% bonus, waived fees" },
+      { name: "Diamond Medallion", threshold: 125000, perks: "Global upgrades, 120% bonus, Delta ONE access" },
+    ], earnRate: { domestic: 5, international: 10, premium: 18 } },
+    { id: "ua", name: "United MileagePlus", logo: "🌐", color: "#002244", accent: "#0066CC", unit: "PQPs", loginUrl: "https://www.united.com/en/us/mileageplus", tiers: [
+      { name: "Silver", threshold: 12, perks: "Economy Plus, priority boarding, 1 bag free", isSegments: true },
+      { name: "Gold", threshold: 24, perks: "Star Alliance Gold, United Club passes", isSegments: true },
+      { name: "Platinum", threshold: 36, perks: "Regional upgrades, 2 GPUs", isSegments: true },
+      { name: "1K", threshold: 54, perks: "Global upgrades, PlusPoints, Premier Access", isSegments: true },
+    ], earnRate: { domestic: 5, international: 11, premium: 22 } },
+    { id: "sw", name: "Southwest Rapid Rewards", logo: "❤️", color: "#304CB2", accent: "#FFBF27", unit: "Points", loginUrl: "https://www.southwest.com/rapid-rewards/myaccount", tiers: [
+      { name: "A-List", threshold: 35000, perks: "Priority boarding, same-day standby, 25% bonus" },
+      { name: "A-List Preferred", threshold: 70000, perks: "Free WiFi, 100% bonus points, all A-List perks" },
+      { name: "Companion Pass", threshold: 135000, perks: "Designated companion flies free on every flight" },
+    ], earnRate: { domestic: 6, international: 6, premium: 12 } },
+    { id: "b6", name: "JetBlue TrueBlue", logo: "💙", color: "#003876", accent: "#0033A0", unit: "Points", loginUrl: "https://trueblue.jetblue.com/", tiers: [
+      { name: "Mosaic 1", threshold: 15000, perks: "Free checked bags, Even More Space, early boarding" },
+      { name: "Mosaic 2", threshold: 30000, perks: "All Mosaic 1 + free same-day changes, Mint upgrades" },
+      { name: "Mosaic 3", threshold: 50000, perks: "Guaranteed Even More Space, complimentary Mint upgrades" },
+      { name: "Mosaic 4", threshold: 75000, perks: "Highest upgrade priority, 4 guest passes per year" },
+    ], earnRate: { domestic: 5, international: 6, premium: 10 } },
+    { id: "atmos", name: "Atmos Rewards (Alaska/Hawaiian)", logo: "🏔️", color: "#01426A", accent: "#64CCC9", unit: "Points", loginUrl: "https://www.alaskaair.com/account/overview", tiers: [
+      { name: "Atmos Silver", threshold: 20000, perks: "Free checked bag, preferred boarding, 50% bonus" },
+      { name: "Atmos Gold", threshold: 40000, perks: "Upgrades, lounge passes, 100% bonus" },
+      { name: "Atmos 75K", threshold: 75000, perks: "4 complimentary upgrades, Gold guest, 125% bonus" },
+      { name: "Atmos 100K", threshold: 100000, perks: "Intl biz upgrades, lounge membership, 150% bonus" },
+    ], earnRate: { domestic: 5, international: 10, premium: 20 } },
+    { id: "frontier", name: "Frontier Miles", logo: "🦅", color: "#006845", accent: "#FFD700", unit: "Miles", loginUrl: "https://www.flyfrontier.com/myfrontier/my-account/", tiers: [
+      { name: "Elite 20K", threshold: 20000, perks: "Free carry-on, seat selection, shortcut boarding" },
+      { name: "Elite 50K", threshold: 50000, perks: "Free checked bag, priority boarding, buddy pass" },
+      { name: "Elite 100K", threshold: 100000, perks: "Unlimited buddy passes, fee waivers, all perks" },
+    ], earnRate: { domestic: 5, international: 5, premium: 10 } },
+    { id: "spirit", name: "Free Spirit", logo: "💛", color: "#FFD700", accent: "#000000", unit: "Points", loginUrl: "https://www.spirit.com/account", tiers: [
+      { name: "Silver", threshold: 2000, perks: "Shortcut boarding, free seat selection" },
+      { name: "Gold", threshold: 5000, perks: "Free checked bag, zone 2 boarding" },
+    ], earnRate: { domestic: 4, international: 4, premium: 8 } },
+    { id: "flying_blue", name: "Air France/KLM Flying Blue", logo: "🔵", color: "#002157", accent: "#00A1E0", unit: "XP", loginUrl: "https://www.flyingblue.com/en/account/login", tiers: [
+      { name: "Silver", threshold: 100, perks: "SkyTeam Elite, priority boarding, extra baggage" },
+      { name: "Gold", threshold: 180, perks: "SkyTeam Elite Plus, lounge access, priority everything" },
+      { name: "Platinum", threshold: 300, perks: "Guaranteed seats, companion lounge, 100% bonus" },
+      { name: "Ultimate", threshold: 450, perks: "La Première access, dedicated hotline, all Platinum perks" },
+    ], earnRate: { domestic: 4, international: 8, premium: 16 } },
+    { id: "ba_avios", name: "British Airways Executive Club", logo: "🇬🇧", color: "#075AAA", accent: "#EB2226", unit: "Tier Points", loginUrl: "https://www.britishairways.com/travel/loginr/public/en_us", tiers: [
+      { name: "Bronze", threshold: 300, perks: "Priority standby, bonus Avios" },
+      { name: "Silver", threshold: 600, perks: "Lounge access, extra baggage, priority boarding" },
+      { name: "Gold", threshold: 1500, perks: "First class lounge, guaranteed seat, concierge" },
+    ], earnRate: { domestic: 5, international: 10, premium: 20 } },
+    { id: "aeroplan", name: "Air Canada Aeroplan", logo: "🍁", color: "#F01428", accent: "#000000", unit: "SQM", loginUrl: "https://www.aircanada.com/aeroplan/member/profile", tiers: [
+      { name: "25K", threshold: 25000, perks: "Priority check-in, eUpgrades, Star Alliance Silver" },
+      { name: "35K", threshold: 35000, perks: "Maple Leaf Lounge, priority everything" },
+      { name: "50K", threshold: 50000, perks: "Star Alliance Gold, intl lounges, priority rebooking" },
+      { name: "75K", threshold: 75000, perks: "Super eUpgrades, preferred seats, concierge" },
+      { name: "100K", threshold: 100000, perks: "Priority rewards, global lounge, all benefits" },
+    ], earnRate: { domestic: 5, international: 10, premium: 20 } },
+    { id: "emirates_skywards", name: "Emirates Skywards", logo: "🕌", color: "#D71A21", accent: "#9B8860", unit: "Tier Miles", loginUrl: "https://www.emirates.com/account/english/login/", tiers: [
+      { name: "Silver", threshold: 25000, perks: "Priority check-in, extra baggage, bonus miles" },
+      { name: "Gold", threshold: 50000, perks: "Lounge access, guaranteed seats, upgrades" },
+      { name: "Platinum", threshold: 150000, perks: "First class lounge, chauffeur, companion tickets" },
+    ], earnRate: { domestic: 5, international: 10, premium: 20 } },
+    { id: "turkish_miles", name: "Turkish Airlines Miles&Smiles", logo: "🌙", color: "#C8102E", accent: "#003876", unit: "Miles", loginUrl: "https://www.turkishairlines.com/en-us/miles-and-smiles/account/", tiers: [
+      { name: "Classic Plus", threshold: 25000, perks: "Priority check-in, extra baggage" },
+      { name: "Elite", threshold: 40000, perks: "Star Alliance Gold, lounge, upgrades" },
+      { name: "Elite Plus", threshold: 80000, perks: "Priority everything, guaranteed economy, CIP lounge" },
+    ], earnRate: { domestic: 5, international: 10, premium: 15 } },
+    { id: "qantas_ff", name: "Qantas Frequent Flyer", logo: "🦘", color: "#E0001B", accent: "#1A1F36", unit: "Status Credits", loginUrl: "https://www.qantas.com/fflyer/do/login/myaccount", tiers: [
+      { name: "Silver", threshold: 300, perks: "Priority boarding, bonus points, oneworld Ruby" },
+      { name: "Gold", threshold: 700, perks: "Qantas Club, upgrades, oneworld Sapphire" },
+      { name: "Platinum", threshold: 1400, perks: "First lounges, complimentary upgrades, oneworld Emerald" },
+    ], earnRate: { domestic: 5, international: 10, premium: 20 } },
+    { id: "singapore_kf", name: "Singapore KrisFlyer", logo: "🦁", color: "#FDB813", accent: "#003876", unit: "Elite Miles", loginUrl: "https://www.singaporeair.com/en_UK/ppsclub-krisflyer/my-profile/", tiers: [
+      { name: "Elite Silver", threshold: 25000, perks: "Priority check-in, Star Alliance Silver" },
+      { name: "Elite Gold", threshold: 50000, perks: "Lounge access, Star Alliance Gold, upgrades" },
+    ], earnRate: { domestic: 5, international: 10, premium: 20 } },
+    { id: "etihad_guest", name: "Etihad Guest", logo: "🏛️", color: "#BD8B13", accent: "#1A1F36", unit: "Tier Miles", loginUrl: "https://www.etihadguest.com/en/login.html", tiers: [
+      { name: "Silver", threshold: 25000, perks: "Priority check-in, bonus miles" },
+      { name: "Gold", threshold: 50000, perks: "Lounge access, upgrades, extra baggage" },
+      { name: "Platinum", threshold: 125000, perks: "First class lounges, companion ticket, chauffeur" },
+    ], earnRate: { domestic: 5, international: 10, premium: 20 } },
+    { id: "virgin_fc", name: "Virgin Atlantic Flying Club", logo: "❤️‍🔥", color: "#E50000", accent: "#660000", unit: "Tier Points", loginUrl: "https://www.virginatlantic.com/mytrips/en/gb/login", tiers: [
+      { name: "Silver", threshold: 400, perks: "Priority boarding, extra bag, seat selection" },
+      { name: "Gold", threshold: 800, perks: "Clubhouse access, premium check-in, upgrades" },
+    ], earnRate: { domestic: 5, international: 10, premium: 20 } },
+    { id: "cathay_mp", name: "Cathay Pacific Asia Miles", logo: "🌏", color: "#006564", accent: "#A6815B", unit: "Status Points", loginUrl: "https://www.cathaypacific.com/cx/en_US/sign-in.html", tiers: [
+      { name: "Silver", threshold: 300, perks: "Priority check-in, lounge access, extra baggage" },
+      { name: "Gold", threshold: 600, perks: "First lounges, upgrades, oneworld Sapphire" },
+      { name: "Diamond", threshold: 1200, perks: "Premium lounges, highest priority, oneworld Emerald" },
+    ], earnRate: { domestic: 5, international: 10, premium: 20 } },
   ],
   hotels: [
-    {
-      id: "marriott",
-      name: "Marriott Bonvoy",
-      logo: "🏨",
-      color: "#7C2529",
-      accent: "#B5985A",
-      tiers: [
-        { name: "Silver Elite", threshold: 10, perks: "10% bonus points, priority late checkout" },
-        { name: "Gold Elite", threshold: 25, perks: "25% bonus, room upgrade, 2pm checkout" },
-        { name: "Platinum Elite", threshold: 50, perks: "50% bonus, suite upgrade, lounge access" },
-        { name: "Titanium Elite", threshold: 75, perks: "75% bonus, United Silver, 48hr guarantee" },
-        { name: "Ambassador Elite", threshold: 100, perks: "Your24, ambassador service, all Titanium perks" },
-      ],
-      unit: "Nights",
-      earnRate: { standard: 10, premium: 15, luxury: 25 },
-    },
-    {
-      id: "hilton",
-      name: "Hilton Honors",
-      logo: "🌟",
-      color: "#003B5C",
-      accent: "#0099CC",
-      tiers: [
-        { name: "Silver", threshold: 10, perks: "20% bonus, 5th night free on rewards" },
-        { name: "Gold", threshold: 40, perks: "80% bonus, room upgrade, free breakfast" },
-        { name: "Diamond", threshold: 60, perks: "100% bonus, space-available upgrade, exec lounge" },
-      ],
-      unit: "Nights",
-      earnRate: { standard: 10, premium: 15, luxury: 20 },
-    },
-    {
-      id: "ihg",
-      name: "IHG One Rewards",
-      logo: "🔑",
-      color: "#2E1A47",
-      accent: "#6B3FA0",
-      tiers: [
-        { name: "Silver Elite", threshold: 10, perks: "20% bonus, late checkout" },
-        { name: "Gold Elite", threshold: 20, perks: "40% bonus, room upgrade" },
-        { name: "Platinum Elite", threshold: 40, perks: "60% bonus, guaranteed availability" },
-        { name: "Diamond Elite", threshold: 70, perks: "100% bonus, suite upgrade, amenity" },
-      ],
-      unit: "Nights",
-      earnRate: { standard: 10, premium: 15, luxury: 20 },
-    },
+    { id: "marriott", name: "Marriott Bonvoy", logo: "🏨", color: "#7C2529", accent: "#B5985A", unit: "Nights", loginUrl: "https://www.marriott.com/loyalty/myAccount/default.mi", tiers: [
+      { name: "Silver Elite", threshold: 10, perks: "10% bonus points, priority late checkout" },
+      { name: "Gold Elite", threshold: 25, perks: "25% bonus, room upgrade, 2pm checkout" },
+      { name: "Platinum Elite", threshold: 50, perks: "50% bonus, suite upgrade, lounge access" },
+      { name: "Titanium Elite", threshold: 75, perks: "75% bonus, United Silver, 48hr guarantee" },
+      { name: "Ambassador Elite", threshold: 100, perks: "Your24, ambassador service, all Titanium perks" },
+    ], earnRate: { standard: 10, premium: 15, luxury: 25 } },
+    { id: "hilton", name: "Hilton Honors", logo: "🌟", color: "#003B5C", accent: "#0099CC", unit: "Nights", loginUrl: "https://www.hilton.com/en/hilton-honors/guest/my-account/", tiers: [
+      { name: "Silver", threshold: 10, perks: "20% bonus, 5th night free on rewards" },
+      { name: "Gold", threshold: 40, perks: "80% bonus, room upgrade, free breakfast" },
+      { name: "Diamond", threshold: 60, perks: "100% bonus, space-available upgrade, exec lounge" },
+      { name: "Diamond Reserve", threshold: 80, perks: "All Diamond perks + enhanced suite upgrades, premium WiFi" },
+    ], earnRate: { standard: 10, premium: 15, luxury: 20 } },
+    { id: "ihg", name: "IHG One Rewards", logo: "🔑", color: "#2E1A47", accent: "#6B3FA0", unit: "Nights", loginUrl: "https://www.ihg.com/rewardsclub/us/en/account/home", tiers: [
+      { name: "Silver Elite", threshold: 10, perks: "20% bonus, late checkout" },
+      { name: "Gold Elite", threshold: 20, perks: "40% bonus, room upgrade" },
+      { name: "Platinum Elite", threshold: 40, perks: "60% bonus, guaranteed availability" },
+      { name: "Diamond Elite", threshold: 70, perks: "100% bonus, suite upgrade, amenity" },
+    ], earnRate: { standard: 10, premium: 15, luxury: 20 } },
+    { id: "hyatt", name: "World of Hyatt", logo: "🏛️", color: "#1C4B82", accent: "#D4A553", unit: "Nights", loginUrl: "https://www.hyatt.com/en-US/member/overview", tiers: [
+      { name: "Discoverist", threshold: 10, perks: "Bottled water, priority late checkout" },
+      { name: "Explorist", threshold: 30, perks: "Room upgrade, 2pm checkout, club lounge" },
+      { name: "Globalist", threshold: 60, perks: "Suite upgrades, free breakfast, parking, waived resort fees" },
+    ], earnRate: { standard: 5, premium: 10, luxury: 15 } },
+    { id: "choice", name: "Choice Privileges", logo: "🏠", color: "#003F87", accent: "#FFB81C", unit: "Nights", loginUrl: "https://www.choicehotels.com/choice-privileges/account", tiers: [
+      { name: "Gold", threshold: 10, perks: "Room upgrade, early check-in, late checkout" },
+      { name: "Platinum", threshold: 20, perks: "Best room guarantee, bonus points" },
+      { name: "Diamond", threshold: 40, perks: "Suite upgrade, guaranteed availability, amenity" },
+    ], earnRate: { standard: 10, premium: 12, luxury: 15 } },
+    { id: "wyndham", name: "Wyndham Rewards", logo: "🌀", color: "#0066B3", accent: "#FF6600", unit: "Nights", loginUrl: "https://www.wyndhamhotels.com/wyndham-rewards/member/dashboard", tiers: [
+      { name: "Blue", threshold: 0, perks: "Member rates, free WiFi" },
+      { name: "Gold", threshold: 11, perks: "1,000 bonus points per stay, late checkout" },
+      { name: "Platinum", threshold: 22, perks: "Best room guarantee, welcome amenity" },
+      { name: "Diamond", threshold: 37, perks: "Suite upgrade, early check-in/late checkout, bonus" },
+    ], earnRate: { standard: 10, premium: 12, luxury: 15 } },
+    { id: "accor", name: "ALL – Accor Live Limitless", logo: "🇫🇷", color: "#1B3160", accent: "#C4A769", unit: "Nights", loginUrl: "https://all.accor.com/loyalty-program/index.en.shtml", tiers: [
+      { name: "Silver", threshold: 10, perks: "Late checkout, welcome drink" },
+      { name: "Gold", threshold: 30, perks: "Room upgrade, early check-in, late checkout" },
+      { name: "Platinum", threshold: 60, perks: "Suite upgrade, breakfast, lounge access" },
+      { name: "Diamond", threshold: 100, perks: "Guaranteed room, premium suite, all perks" },
+    ], earnRate: { standard: 10, premium: 15, luxury: 25 } },
+    { id: "bestwestern", name: "Best Western Rewards", logo: "👑", color: "#003876", accent: "#FFD700", unit: "Nights", loginUrl: "https://www.bestwestern.com/en_US/rewards/member-profile.html", tiers: [
+      { name: "Blue", threshold: 0, perks: "Member rates, points never expire" },
+      { name: "Gold", threshold: 10, perks: "10% bonus, late checkout" },
+      { name: "Platinum", threshold: 15, perks: "15% bonus, room upgrade" },
+      { name: "Diamond", threshold: 30, perks: "30% bonus, suite when available, amenity" },
+      { name: "Diamond Select", threshold: 50, perks: "50% bonus, best room guarantee" },
+    ], earnRate: { standard: 10, premium: 12, luxury: 15 } },
+    { id: "radisson", name: "Radisson Rewards", logo: "🔶", color: "#0C2340", accent: "#D4A553", unit: "Nights", loginUrl: "https://www.radissonhotels.com/en-us/rewards/my-account", tiers: [
+      { name: "Club", threshold: 0, perks: "Member rates, free WiFi" },
+      { name: "Premium", threshold: 9, perks: "Priority check-in, room upgrade" },
+      { name: "VIP", threshold: 30, perks: "Suite upgrade, welcome amenity, guaranteed room" },
+    ], earnRate: { standard: 10, premium: 12, luxury: 15 } },
+    { id: "sonesta", name: "Sonesta Travel Pass", logo: "🌅", color: "#A3238E", accent: "#F7B538", unit: "Nights", loginUrl: "https://www.sonesta.com/sonesta-travel-pass/dashboard", tiers: [
+      { name: "Adventurer", threshold: 0, perks: "Member rates, bonus points" },
+      { name: "Explorer", threshold: 10, perks: "Room upgrade, late checkout, welcome amenity" },
+      { name: "Trailblazer", threshold: 20, perks: "Suite upgrade, free breakfast, priority" },
+    ], earnRate: { standard: 10, premium: 12, luxury: 15 } },
+    { id: "omni", name: "Omni Select Guest", logo: "🎩", color: "#1A1F36", accent: "#C4A769", unit: "Nights", loginUrl: "https://www.omnihotels.com/loyalty", tiers: [
+      { name: "Select Guest", threshold: 0, perks: "Complimentary WiFi, welcome amenity" },
+      { name: "Platinum", threshold: 15, perks: "Room upgrade, late checkout, bonus points" },
+      { name: "Black", threshold: 40, perks: "Suite upgrade, guaranteed room, premium amenity" },
+    ], earnRate: { standard: 10, premium: 12, luxury: 15 } },
   ],
   rentals: [
-    {
-      id: "hertz",
-      name: "Hertz Gold Plus Rewards",
-      logo: "🚗",
-      color: "#FFD700",
-      accent: "#000000",
-      tiers: [
-        { name: "Gold", threshold: 0, perks: "Skip the counter, choose your car" },
-        { name: "Five Star", threshold: 10, perks: "Guaranteed upgrades, priority service" },
-        { name: "President's Circle", threshold: 20, perks: "Premium vehicles, dedicated line" },
-      ],
-      unit: "Rentals",
-      earnRate: { standard: 1, premium: 1.5 },
-    },
-    {
-      id: "national",
-      name: "National Emerald Club",
-      logo: "🟢",
-      color: "#006845",
-      accent: "#2ECC71",
-      tiers: [
-        { name: "Emerald Club", threshold: 0, perks: "Choose any midsize+, bypass counter" },
-        { name: "Emerald Club Executive", threshold: 12, perks: "Free upgrades, guaranteed one-class" },
-        { name: "Emerald Club Executive Elite", threshold: 25, perks: "Premium aisle access, priority" },
-      ],
-      unit: "Rentals",
-      earnRate: { standard: 1, premium: 1.5 },
-    },
+    { id: "hertz", name: "Hertz Gold Plus Rewards", logo: "🚗", color: "#FFD700", accent: "#000000", unit: "Rentals", loginUrl: "https://www.hertz.com/rentacar/member/enrollment", tiers: [
+      { name: "Gold", threshold: 0, perks: "Skip the counter, choose your car" },
+      { name: "Five Star", threshold: 10, perks: "Guaranteed upgrades, priority service" },
+      { name: "President's Circle", threshold: 20, perks: "Premium vehicles, dedicated line" },
+    ], earnRate: { standard: 1, premium: 1.5 } },
+    { id: "national", name: "National Emerald Club", logo: "🟢", color: "#006845", accent: "#2ECC71", unit: "Rentals", loginUrl: "https://www.nationalcar.com/en/loyalty.html", tiers: [
+      { name: "Emerald Club", threshold: 0, perks: "Choose any midsize+, bypass counter" },
+      { name: "Emerald Club Executive", threshold: 12, perks: "Free upgrades, guaranteed one-class" },
+      { name: "Emerald Club Executive Elite", threshold: 25, perks: "Premium aisle access, priority" },
+    ], earnRate: { standard: 1, premium: 1.5 } },
+    { id: "avis", name: "Avis Preferred", logo: "🅰️", color: "#D0021B", accent: "#1A1F36", unit: "Rentals", loginUrl: "https://www.avis.com/en/loyalty-profile", tiers: [
+      { name: "Preferred", threshold: 0, perks: "Skip the counter, choose your car" },
+      { name: "Preferred Plus", threshold: 12, perks: "Free upgrade, priority service" },
+      { name: "Chairman's Club", threshold: 25, perks: "Premium vehicles, dedicated line, best rates" },
+    ], earnRate: { standard: 1, premium: 1.5 } },
+    { id: "enterprise", name: "Enterprise Plus", logo: "🚙", color: "#006845", accent: "#FFD700", unit: "Rentals", loginUrl: "https://www.enterprise.com/en/enterprise-plus.html", tiers: [
+      { name: "Plus", threshold: 0, perks: "Earn points on rentals, free days" },
+      { name: "Silver", threshold: 12, perks: "Free upgrade, priority service" },
+      { name: "Gold", threshold: 25, perks: "Free class upgrade, premium service" },
+    ], earnRate: { standard: 1, premium: 1.5 } },
+    { id: "budget", name: "Budget Fastbreak", logo: "🅱️", color: "#F57C21", accent: "#1A1F36", unit: "Rentals", loginUrl: "https://www.budget.com/en/fast-break", tiers: [
+      { name: "Fastbreak", threshold: 0, perks: "Skip the counter, faster pickup" },
+    ], earnRate: { standard: 1, premium: 1 } },
+    { id: "sixt", name: "Sixt Loyalty", logo: "🔶", color: "#FF6600", accent: "#000000", unit: "Status Points", loginUrl: "https://www.sixt.com/mysixt/", tiers: [
+      { name: "Gold", threshold: 500, perks: "Free upgrade, priority pick-up" },
+      { name: "Platinum", threshold: 2000, perks: "Guaranteed upgrade, VIP service" },
+      { name: "Diamond", threshold: 7000, perks: "Premium fleet, personal manager" },
+    ], earnRate: { standard: 1, premium: 2 } },
   ],
   creditCards: [
-    {
-      id: "amex_plat",
-      name: "Amex Platinum",
-      logo: "💳",
-      color: "#B4B4B4",
-      accent: "#006FCF",
-      perks: "5x flights, Marriott/Hilton Gold, Centurion Lounge, $200 airline credit",
-      annualFee: 695,
-      bonusCategories: { flights: 5, hotels: 5, dining: 1, other: 1 },
-    },
-    {
-      id: "chase_sapphire",
-      name: "Chase Sapphire Reserve",
-      logo: "💎",
-      color: "#1A1F36",
-      accent: "#004977",
-      perks: "3x travel/dining, $300 travel credit, Priority Pass, DoorDash",
-      annualFee: 550,
-      bonusCategories: { flights: 3, hotels: 3, dining: 3, other: 1 },
-    },
+    { id: "amex_plat", name: "Amex Platinum", logo: "💳", color: "#B4B4B4", accent: "#006FCF", unit: "Membership Rewards", loginUrl: "https://www.americanexpress.com/en-us/account/login", perks: "5x flights, Marriott/Hilton Gold, Centurion Lounge, $200 airline credit", annualFee: 695, bonusCategories: { flights: 5, hotels: 5, dining: 1, other: 1 } },
+    { id: "amex_gold", name: "Amex Gold", logo: "✨", color: "#C5993C", accent: "#006FCF", unit: "Membership Rewards", loginUrl: "https://www.americanexpress.com/en-us/account/login", perks: "4x dining & groceries, $120 dining credit, $120 Uber credit", annualFee: 325, bonusCategories: { flights: 3, dining: 4, other: 1 } },
+    { id: "amex_green", name: "Amex Green", logo: "🌿", color: "#006845", accent: "#006FCF", unit: "Membership Rewards", loginUrl: "https://www.americanexpress.com/en-us/account/login", perks: "3x travel & transit, LoungeBuddy credit, Global Entry credit", annualFee: 150, bonusCategories: { flights: 3, dining: 3, other: 1 } },
+    { id: "chase_sapphire", name: "Chase Sapphire Reserve", logo: "💎", color: "#1A1F36", accent: "#004977", unit: "Ultimate Rewards", loginUrl: "https://www.chase.com/personal/credit-cards/login-account-access", perks: "3x travel/dining, $300 travel credit, Priority Pass, DoorDash", annualFee: 550, bonusCategories: { flights: 3, hotels: 3, dining: 3, other: 1 } },
+    { id: "chase_sapphire_pref", name: "Chase Sapphire Preferred", logo: "💠", color: "#004977", accent: "#1A1F36", unit: "Ultimate Rewards", loginUrl: "https://www.chase.com/personal/credit-cards/login-account-access", perks: "5x travel via Chase, 3x dining/streaming, $50 hotel credit", annualFee: 95, bonusCategories: { flights: 2, hotels: 5, dining: 3, other: 1 } },
+    { id: "cap1_venturex", name: "Capital One Venture X", logo: "🚀", color: "#D03027", accent: "#1A1F36", unit: "Miles", loginUrl: "https://myaccounts.capitalone.com/", perks: "2x everything, 10x hotels/cars via Capital One, $300 travel credit", annualFee: 395, bonusCategories: { flights: 2, hotels: 10, dining: 2, other: 2 } },
+    { id: "cap1_venture", name: "Capital One Venture", logo: "🗺️", color: "#D03027", accent: "#FFFFFF", unit: "Miles", loginUrl: "https://myaccounts.capitalone.com/", perks: "2x on every purchase, transfer to 15+ partners", annualFee: 95, bonusCategories: { flights: 2, hotels: 2, dining: 2, other: 2 } },
+    { id: "citi_premier", name: "Citi Premier", logo: "🏦", color: "#003B70", accent: "#0066CC", unit: "ThankYou Points", loginUrl: "https://www.citi.com/login", perks: "3x travel/gas/restaurants/supermarkets, transfer to AA", annualFee: 95, bonusCategories: { flights: 3, hotels: 3, dining: 3, other: 1 } },
+    { id: "bilt", name: "Bilt Mastercard", logo: "🏠", color: "#000000", accent: "#E0E0E0", unit: "Bilt Points", loginUrl: "https://app.biltrewards.com/", perks: "Points on rent, 3x dining, 2x travel, Hyatt/AA transfers", annualFee: 0, bonusCategories: { flights: 2, hotels: 2, dining: 3, other: 1 } },
+    { id: "delta_reserve", name: "Delta Reserve Amex", logo: "🔺", color: "#003366", accent: "#B4B4B4", unit: "SkyMiles", loginUrl: "https://www.americanexpress.com/en-us/account/login", perks: "3x Delta, Sky Club access, companion cert, Medallion boost", annualFee: 650, bonusCategories: { flights: 3, dining: 1, other: 1 } },
+    { id: "delta_gold", name: "Delta Gold Amex", logo: "🔺", color: "#C5993C", accent: "#003366", unit: "SkyMiles", loginUrl: "https://www.americanexpress.com/en-us/account/login", perks: "2x Delta/restaurants, free checked bag, priority boarding", annualFee: 150, bonusCategories: { flights: 2, dining: 2, other: 1 } },
+    { id: "united_club", name: "United Club Infinite Card", logo: "🌐", color: "#002244", accent: "#B4B4B4", unit: "MileagePlus Miles", loginUrl: "https://www.chase.com/personal/credit-cards/login-account-access", perks: "4x United, 2x travel/dining, United Club membership, free bags", annualFee: 525, bonusCategories: { flights: 4, dining: 2, other: 1 } },
+    { id: "united_explorer", name: "United Explorer Card", logo: "🌐", color: "#0066CC", accent: "#002244", unit: "MileagePlus Miles", loginUrl: "https://www.chase.com/personal/credit-cards/login-account-access", perks: "2x United/dining/hotels, free checked bag, priority boarding", annualFee: 95, bonusCategories: { flights: 2, dining: 2, other: 1 } },
+    { id: "aa_exec", name: "Citi AAdvantage Executive", logo: "✈️", color: "#0078D2", accent: "#003B70", unit: "AAdvantage Miles", loginUrl: "https://www.citi.com/login", perks: "Admirals Club, 4x AA/hotels, companion cert, Global Entry", annualFee: 595, bonusCategories: { flights: 4, hotels: 4, dining: 1, other: 1 } },
+    { id: "marriott_boundless", name: "Marriott Bonvoy Boundless", logo: "🏨", color: "#7C2529", accent: "#B5985A", unit: "Bonvoy Points", loginUrl: "https://www.chase.com/personal/credit-cards/login-account-access", perks: "6x Marriott, free night award annually, auto Silver Elite", annualFee: 95, bonusCategories: { flights: 2, hotels: 6, dining: 2, other: 1 } },
+    { id: "hilton_aspire", name: "Hilton Honors Aspire", logo: "🌟", color: "#003B5C", accent: "#FFD700", unit: "Hilton Honors Points", loginUrl: "https://www.americanexpress.com/en-us/account/login", perks: "14x Hilton, auto Diamond, $250 resort credit, free night", annualFee: 550, bonusCategories: { flights: 7, hotels: 14, dining: 7, other: 3 } },
+    { id: "hilton_surpass", name: "Hilton Honors Surpass", logo: "🌟", color: "#0099CC", accent: "#003B5C", unit: "Hilton Honors Points", loginUrl: "https://www.americanexpress.com/en-us/account/login", perks: "12x Hilton, auto Gold, free night after $15k spend", annualFee: 150, bonusCategories: { flights: 6, hotels: 12, dining: 6, other: 3 } },
+    { id: "hyatt_card", name: "World of Hyatt Credit Card", logo: "🏛️", color: "#1C4B82", accent: "#D4A553", unit: "World of Hyatt Points", loginUrl: "https://www.chase.com/personal/credit-cards/login-account-access", perks: "4x Hyatt, auto Discoverist, free night annually, bonus nights", annualFee: 95, bonusCategories: { flights: 2, hotels: 4, dining: 2, other: 1 } },
+    { id: "ihg_premier", name: "IHG One Rewards Premier", logo: "🔑", color: "#2E1A47", accent: "#B4B4B4", unit: "IHG Points", loginUrl: "https://www.chase.com/personal/credit-cards/login-account-access", perks: "10x IHG, 4th night free, auto Platinum, Global Entry", annualFee: 99, bonusCategories: { flights: 2, hotels: 10, dining: 2, other: 1 } },
+    { id: "sw_priority", name: "Southwest Priority Card", logo: "❤️", color: "#304CB2", accent: "#FFBF27", unit: "Rapid Rewards Points", loginUrl: "https://www.chase.com/personal/credit-cards/login-account-access", perks: "3x Southwest, $75 travel credit, 7,500 anniversary points", annualFee: 149, bonusCategories: { flights: 3, dining: 2, other: 1 } },
+    { id: "atmos_summit", name: "Atmos Rewards Summit Visa Infinite", logo: "🏔️", color: "#01426A", accent: "#64CCC9", unit: "Atmos Points", loginUrl: "https://www.alaskaair.com/account/overview", perks: "3x Alaska/Hawaiian, Global Companion Award, status boost", annualFee: 250, bonusCategories: { flights: 3, dining: 2, other: 1 } },
   ],
+};
+
+// Build the same shape used by the rest of the app
+const LOYALTY_PROGRAMS = {
+  airlines: PROGRAM_DIRECTORY.airlines,
+  hotels: PROGRAM_DIRECTORY.hotels,
+  rentals: PROGRAM_DIRECTORY.rentals,
+  creditCards: PROGRAM_DIRECTORY.creditCards,
 };
 
 const SAMPLE_USER = {
@@ -303,7 +382,7 @@ export default function EliteStatusTracker() {
   const [showExpenseReport, setShowExpenseReport] = useState(null); // tripId for report modal
   const [customPrograms, setCustomPrograms] = useState([]);
   const [showAddProgram, setShowAddProgram] = useState(false);
-  const [newProgram, setNewProgram] = useState({ name: "", category: "airline", logo: "✈️", color: "#06b6d4", memberId: "", unit: "Points", tiers: "" });
+  const [newProgram, setNewProgram] = useState({ name: "", category: "airline", logo: "✈️", color: "#06b6d4", memberId: "", unit: "Points", tiers: "", selectedId: "", search: "" });
 
   useEffect(() => { setTimeout(() => setAnimateIn(true), 100); }, []);
 
@@ -776,11 +855,28 @@ export default function EliteStatusTracker() {
                       </div>
                     )}
 
-                    <button onClick={() => isLinked ? null : (setShowLinkModal(prog.id), setLinkForm({ memberId: "" }))} style={{
-                      width: "100%", padding: "9px 0", borderRadius: 10, border: `1px solid ${isLinked ? "rgba(255,255,255,0.08)" : prog.color + "40"}`,
-                      background: isLinked ? "rgba(255,255,255,0.03)" : `${prog.color}15`, color: isLinked ? "rgba(255,255,255,0.4)" : "#fff",
-                      fontSize: 12, fontWeight: 600, cursor: isLinked ? "default" : "pointer", fontFamily: "DM Sans", transition: "all 0.3s",
-                    }}>{isLinked ? "✓ Connected" : "Link Account"}</button>
+                    {isLinked ? (
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <span style={{
+                          flex: 1, padding: "9px 0", borderRadius: 10, border: "1px solid rgba(255,255,255,0.08)",
+                          background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.4)",
+                          fontSize: 12, fontWeight: 600, fontFamily: "DM Sans", textAlign: "center",
+                        }}>✓ Connected</span>
+                        {prog.loginUrl && (
+                          <a href={prog.loginUrl} target="_blank" rel="noopener noreferrer" style={{
+                            padding: "9px 14px", borderRadius: 10, border: `1px solid ${prog.color}40`,
+                            background: `${prog.color}15`, color: "#fff", textDecoration: "none",
+                            fontSize: 12, fontWeight: 600, fontFamily: "DM Sans", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 4,
+                          }}>View ↗</a>
+                        )}
+                      </div>
+                    ) : (
+                      <button onClick={() => (setShowLinkModal(prog.id), setLinkForm({ memberId: "" }))} style={{
+                        width: "100%", padding: "9px 0", borderRadius: 10, border: `1px solid ${prog.color + "40"}`,
+                        background: `${prog.color}15`, color: "#fff",
+                        fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "DM Sans", transition: "all 0.3s",
+                      }}>Link Account</button>
+                    )}
                   </div>
                 );
               })}
@@ -1594,111 +1690,193 @@ export default function EliteStatusTracker() {
       )}
 
       {/* Add Program Modal */}
-      {showAddProgram && (
+      {showAddProgram && (() => {
+        const cats = { airline: PROGRAM_DIRECTORY.airlines, hotel: PROGRAM_DIRECTORY.hotels, rental: PROGRAM_DIRECTORY.rentals, card: PROGRAM_DIRECTORY.creditCards };
+        const available = cats[newProgram.category] || [];
+        const selectedProg = available.find(p => p.id === newProgram.selectedId);
+        const searchTerm = (newProgram.search || "").toLowerCase();
+        const filtered = searchTerm ? available.filter(p => p.name.toLowerCase().includes(searchTerm)) : available;
+        const alreadyLinked = Object.keys(linkedAccounts);
+        return (
         <div style={{
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
         }} onClick={() => setShowAddProgram(false)}>
           <div onClick={e => e.stopPropagation()} style={{
-            background: "#0c1225", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: 28, width: "100%", maxWidth: 460,
+            background: "#0c1225", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: 28, width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto",
           }}>
             <h3 style={{ fontSize: 18, fontWeight: 800, color: "#fff", margin: "0 0 6px", fontFamily: "Outfit" }}>Add Loyalty Program</h3>
-            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, margin: "0 0 20px", fontFamily: "DM Sans" }}>Add any airline, hotel, rental car, or credit card program</p>
+            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, margin: "0 0 20px", fontFamily: "DM Sans" }}>Choose from {PROGRAM_DIRECTORY.airlines.length + PROGRAM_DIRECTORY.hotels.length + PROGRAM_DIRECTORY.rentals.length + PROGRAM_DIRECTORY.creditCards.length}+ programs or add a custom one</p>
 
-            {/* Category */}
+            {/* Category Tabs */}
             <div style={{ marginBottom: 16 }}>
-              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans", display: "block", marginBottom: 8 }}>Category</span>
-              <div style={{ display: "flex", gap: 8 }}>
+              <div style={{ display: "flex", gap: 6 }}>
                 {[
-                  { id: "airline", label: "Airline", icon: "✈️" },
-                  { id: "hotel", label: "Hotel", icon: "🏨" },
-                  { id: "rental", label: "Rental", icon: "🚗" },
-                  { id: "card", label: "Card", icon: "💳" },
+                  { id: "airline", label: "Airlines", icon: "✈️", count: PROGRAM_DIRECTORY.airlines.length },
+                  { id: "hotel", label: "Hotels", icon: "🏨", count: PROGRAM_DIRECTORY.hotels.length },
+                  { id: "rental", label: "Rentals", icon: "🚗", count: PROGRAM_DIRECTORY.rentals.length },
+                  { id: "card", label: "Cards", icon: "💳", count: PROGRAM_DIRECTORY.creditCards.length },
                 ].map(cat => (
-                  <button key={cat.id} onClick={() => setNewProgram(p => ({ ...p, category: cat.id, logo: cat.icon }))} style={{
-                    flex: 1, padding: "10px 0", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "DM Sans",
+                  <button key={cat.id} onClick={() => setNewProgram(p => ({ ...p, category: cat.id, selectedId: "", search: "" }))} style={{
+                    flex: 1, padding: "8px 0", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600, fontFamily: "DM Sans",
                     background: newProgram.category === cat.id ? "rgba(8,145,178,0.2)" : "rgba(255,255,255,0.04)",
                     color: newProgram.category === cat.id ? "#67e8f9" : "rgba(255,255,255,0.4)", transition: "all 0.2s",
-                  }}>{cat.icon} {cat.label}</button>
+                  }}>{cat.icon} {cat.label} ({cat.count})</button>
                 ))}
               </div>
             </div>
 
-            {/* Program Name */}
-            <label style={{ display: "block", marginBottom: 14 }}>
-              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans" }}>Program Name</span>
-              <input value={newProgram.name} onChange={e => setNewProgram(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Southwest Rapid Rewards, Hyatt World of Hyatt"
-                style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 13, fontFamily: "DM Sans", outline: "none", boxSizing: "border-box" }} />
-            </label>
-
-            <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
-              {/* Member ID */}
-              <label style={{ flex: 1 }}>
-                <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans" }}>Member ID</span>
-                <input value={newProgram.memberId} onChange={e => setNewProgram(p => ({ ...p, memberId: e.target.value }))} placeholder="Your member number"
-                  style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 13, fontFamily: "DM Sans", outline: "none", boxSizing: "border-box" }} />
-              </label>
-              {/* Points Unit */}
-              <label style={{ flex: 1 }}>
-                <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans" }}>Points Unit</span>
-                <input value={newProgram.unit} onChange={e => setNewProgram(p => ({ ...p, unit: e.target.value }))} placeholder="e.g. Points, Miles, Nights"
-                  style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 13, fontFamily: "DM Sans", outline: "none", boxSizing: "border-box" }} />
-              </label>
+            {/* Search */}
+            <div style={{ position: "relative", marginBottom: 12 }}>
+              <input
+                value={newProgram.search || ""}
+                onChange={e => setNewProgram(p => ({ ...p, search: e.target.value, selectedId: "" }))}
+                placeholder={`Search ${newProgram.category === "card" ? "credit cards" : newProgram.category + "s"}...`}
+                style={{ display: "block", width: "100%", padding: "10px 12px 10px 36px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 13, fontFamily: "DM Sans", outline: "none", boxSizing: "border-box" }}
+              />
+              <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", opacity: 0.3 }}>🔍</span>
             </div>
 
-            {/* Brand Color */}
-            <div style={{ marginBottom: 14 }}>
-              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans", display: "block", marginBottom: 8 }}>Brand Color</span>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                {["#06b6d4", "#8b5cf6", "#ef4444", "#f59e0b", "#10b981", "#ec4899", "#3b82f6", "#6366f1", "#14b8a6", "#f97316"].map(c => (
-                  <button key={c} onClick={() => setNewProgram(p => ({ ...p, color: c }))} style={{
-                    width: 32, height: 32, borderRadius: 8, border: newProgram.color === c ? "2px solid #fff" : "2px solid transparent",
-                    background: c, cursor: "pointer", transition: "all 0.2s",
-                  }} />
-                ))}
+            {/* Program List */}
+            {!selectedProg && (
+              <div style={{ maxHeight: 240, overflowY: "auto", marginBottom: 14, borderRadius: 12, border: "1px solid rgba(255,255,255,0.06)" }}>
+                {filtered.map(prog => {
+                  const isLinked = alreadyLinked.includes(prog.id);
+                  return (
+                    <button key={prog.id} onClick={() => !isLinked && setNewProgram(p => ({ ...p, selectedId: prog.id, search: "" }))}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 14px", background: "transparent",
+                        border: "none", borderBottom: "1px solid rgba(255,255,255,0.04)", cursor: isLinked ? "default" : "pointer",
+                        opacity: isLinked ? 0.4 : 1, transition: "background 0.15s", textAlign: "left",
+                      }}
+                      onMouseEnter={e => { if (!isLinked) e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+                    >
+                      <span style={{ fontSize: 20, width: 28, textAlign: "center" }}>{prog.logo}</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", fontFamily: "DM Sans", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{prog.name}</div>
+                        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", fontFamily: "DM Sans" }}>
+                          {prog.tiers ? `${prog.tiers.length} tiers · ${prog.unit}` : prog.perks ? prog.perks.substring(0, 50) + "..." : prog.unit}
+                        </div>
+                      </div>
+                      {isLinked ? (
+                        <span style={{ fontSize: 10, color: "#22d3ee", fontWeight: 600, fontFamily: "DM Sans" }}>Linked ✓</span>
+                      ) : (
+                        <span style={{ width: 8, height: 8, borderRadius: "50%", background: prog.color, flexShrink: 0 }} />
+                      )}
+                    </button>
+                  );
+                })}
+                {filtered.length === 0 && (
+                  <div style={{ padding: 20, textAlign: "center", color: "rgba(255,255,255,0.3)", fontSize: 13, fontFamily: "DM Sans" }}>
+                    No programs match your search
+                  </div>
+                )}
               </div>
-            </div>
+            )}
 
-            {/* Icon/Emoji */}
-            <div style={{ marginBottom: 20 }}>
-              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans", display: "block", marginBottom: 8 }}>Icon</span>
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                {["✈️", "🛫", "🏨", "🏩", "🌟", "🚗", "🚙", "💳", "💎", "🔑", "🌐", "🔺", "🟢", "⭐", "🎯", "👑"].map(emoji => (
-                  <button key={emoji} onClick={() => setNewProgram(p => ({ ...p, logo: emoji }))} style={{
-                    width: 36, height: 36, borderRadius: 8, border: newProgram.logo === emoji ? "2px solid #67e8f9" : "1px solid rgba(255,255,255,0.06)",
-                    background: newProgram.logo === emoji ? "rgba(8,145,178,0.15)" : "rgba(255,255,255,0.03)",
-                    cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center",
-                  }}>{emoji}</button>
-                ))}
+            {/* Selected Program Detail */}
+            {selectedProg && (
+              <div style={{ marginBottom: 16 }}>
+                {/* Program Card */}
+                <div style={{
+                  background: `linear-gradient(135deg, ${selectedProg.color}18, ${(selectedProg.accent || selectedProg.color)}10)`,
+                  border: `1px solid ${selectedProg.color}30`, borderRadius: 14, padding: 16, marginBottom: 14,
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                    <span style={{ fontSize: 28 }}>{selectedProg.logo}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: "Outfit" }}>{selectedProg.name}</div>
+                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "DM Sans" }}>
+                        {selectedProg.tiers ? `${selectedProg.tiers.length} elite tiers · ${selectedProg.unit}` : `${selectedProg.unit} · $${selectedProg.annualFee}/yr`}
+                      </div>
+                    </div>
+                    <button onClick={() => setNewProgram(p => ({ ...p, selectedId: "" }))} style={{
+                      background: "rgba(255,255,255,0.06)", border: "none", borderRadius: 8, width: 28, height: 28, color: "rgba(255,255,255,0.4)", cursor: "pointer", fontSize: 14,
+                    }}>✕</button>
+                  </div>
+                  {/* Tier badges */}
+                  {selectedProg.tiers && (
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+                      {selectedProg.tiers.map((t, i) => (
+                        <span key={i} style={{
+                          padding: "3px 8px", borderRadius: 6, fontSize: 10, fontWeight: 600, fontFamily: "DM Sans",
+                          background: `${selectedProg.color}20`, color: selectedProg.color, border: `1px solid ${selectedProg.color}30`,
+                        }}>{t.name}</span>
+                      ))}
+                    </div>
+                  )}
+                  {selectedProg.perks && (
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", fontFamily: "DM Sans", lineHeight: 1.5 }}>{selectedProg.perks}</div>
+                  )}
+                </div>
+
+                {/* Connect Account CTA */}
+                {selectedProg.loginUrl && (
+                  <a href={selectedProg.loginUrl} target="_blank" rel="noopener noreferrer" style={{
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px 16px", borderRadius: 12,
+                    background: `linear-gradient(135deg, ${selectedProg.color}, ${selectedProg.accent || selectedProg.color})`,
+                    color: "#fff", textDecoration: "none", fontWeight: 700, fontSize: 13, fontFamily: "Outfit", marginBottom: 14,
+                    boxShadow: `0 4px 15px ${selectedProg.color}40`, transition: "all 0.2s",
+                  }}>
+                    🔗 Connect to {selectedProg.name.split(" ")[0]} Account
+                    <span style={{ fontSize: 11, opacity: 0.7 }}>↗</span>
+                  </a>
+                )}
+                <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontFamily: "DM Sans", textAlign: "center", margin: "0 0 12px" }}>
+                  Opens {selectedProg.name.split(" ")[0]}'s website — log in to view your live status & points balance
+                </p>
+
+                {/* Member ID input */}
+                <label style={{ display: "block", marginBottom: 12 }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans" }}>Member / Account Number</span>
+                  <input value={newProgram.memberId} onChange={e => setNewProgram(p => ({ ...p, memberId: e.target.value }))} placeholder="Enter your member number to link"
+                    style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 13, fontFamily: "DM Sans", outline: "none", boxSizing: "border-box" }} />
+                </label>
               </div>
-            </div>
+            )}
 
+            {/* Action buttons */}
             <div style={{ display: "flex", gap: 10 }}>
-              <button onClick={() => setShowAddProgram(false)} style={{
+              <button onClick={() => { setShowAddProgram(false); setNewProgram({ name: "", category: "airline", logo: "✈️", color: "#06b6d4", memberId: "", unit: "Points", tiers: "", selectedId: "", search: "" }); }} style={{
                 flex: 1, padding: "11px 0", borderRadius: 10, border: "1px solid rgba(255,255,255,0.08)", background: "transparent",
                 color: "rgba(255,255,255,0.5)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "DM Sans",
               }}>Cancel</button>
-              <button onClick={() => {
-                if (!newProgram.name.trim()) return;
-                const id = "custom_" + Date.now();
-                const prog = {
-                  id, name: newProgram.name, logo: newProgram.logo, color: newProgram.color, accent: newProgram.color,
-                  unit: newProgram.unit || "Points", tiers: [], earnRate: {},
-                  isCustom: true, category: newProgram.category,
-                };
-                setCustomPrograms(prev => [...prev, prog]);
-                if (newProgram.memberId) {
-                  setLinkedAccounts(prev => ({ ...prev, [id]: { memberId: newProgram.memberId, currentPoints: 0, currentNights: 0, currentRentals: 0 } }));
-                }
-                setShowAddProgram(false);
-                setNewProgram({ name: "", category: "airline", logo: "✈️", color: "#06b6d4", memberId: "", unit: "Points", tiers: "" });
-              }} style={{
-                flex: 1, padding: "11px 0", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Outfit",
-                background: "linear-gradient(135deg, #0891b2, #06b6d4)", color: "#fff",
-              }}>Add Program</button>
+              {selectedProg ? (
+                <button onClick={() => {
+                  const prog = selectedProg;
+                  if (!alreadyLinked.includes(prog.id)) {
+                    setLinkedAccounts(prev => ({ ...prev, [prog.id]: { memberId: newProgram.memberId || "Pending", currentPoints: 0, currentNights: 0, currentRentals: 0 } }));
+                  }
+                  setShowAddProgram(false);
+                  setNewProgram({ name: "", category: "airline", logo: "✈️", color: "#06b6d4", memberId: "", unit: "Points", tiers: "", selectedId: "", search: "" });
+                }} style={{
+                  flex: 1, padding: "11px 0", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Outfit",
+                  background: `linear-gradient(135deg, #0891b2, #06b6d4)`, color: "#fff",
+                }}>Link {selectedProg.name.split(" ")[0]}</button>
+              ) : (
+                <button onClick={() => {
+                  if (!newProgram.name || !newProgram.name.trim()) return;
+                  const id = "custom_" + Date.now();
+                  const prog = {
+                    id, name: newProgram.name, logo: newProgram.logo, color: newProgram.color, accent: newProgram.color,
+                    unit: newProgram.unit || "Points", tiers: [], earnRate: {}, isCustom: true, category: newProgram.category,
+                  };
+                  setCustomPrograms(prev => [...prev, prog]);
+                  if (newProgram.memberId) {
+                    setLinkedAccounts(prev => ({ ...prev, [id]: { memberId: newProgram.memberId, currentPoints: 0, currentNights: 0, currentRentals: 0 } }));
+                  }
+                  setShowAddProgram(false);
+                  setNewProgram({ name: "", category: "airline", logo: "✈️", color: "#06b6d4", memberId: "", unit: "Points", tiers: "", selectedId: "", search: "" });
+                }} style={{
+                  flex: 1, padding: "11px 0", borderRadius: 10, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.04)",
+                  color: "rgba(255,255,255,0.4)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "DM Sans",
+                }}>+ Add Custom</button>
+              )}
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* Upgrade Modal */}
       {showUpgrade && (
