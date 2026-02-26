@@ -103,37 +103,37 @@ const FlightPath = ({ color = "#F7A86A", style = {} }) => (
 // Per-page hero banner with travel photography
 const PAGE_HEROES = {
   dashboard: {
-    img: "https://images.unsplash.com/photo-1436491865332-7a61a109db05?w=1400&q=80",
-    alt: "Airplane wing above clouds at sunset",
+    img: "https://images.unsplash.com/photo-1569154941061-e231b4725ef1?w=1400&q=80&auto=format&fit=crop",
+    alt: "Airplane wing above clouds at golden hour",
     accent: "#F5944E",
   },
   programs: {
-    img: "https://images.unsplash.com/photo-1529074963764-98f45c47344b?w=1400&q=80",
-    alt: "Airport terminal at golden hour",
+    img: "https://images.unsplash.com/photo-1556388158-158ea5ccacbd?w=1400&q=80&auto=format&fit=crop",
+    alt: "Airport departure board and terminal",
     accent: "#F26B3A",
   },
   trips: {
-    img: "https://images.unsplash.com/photo-1488085061387-422e29b40080?w=1400&q=80",
-    alt: "World map with passport and camera",
+    img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1400&q=80&auto=format&fit=crop",
+    alt: "Tropical beach with turquoise water",
     accent: "#34d399",
   },
   expenses: {
-    img: "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=1400&q=80",
-    alt: "Luxury hotel poolside at twilight",
+    img: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1400&q=80&auto=format&fit=crop",
+    alt: "Luxury resort pool at dusk",
     accent: "#f59e0b",
   },
   optimizer: {
-    img: "https://images.unsplash.com/photo-1500835556837-99ac94a94552?w=1400&q=80",
-    alt: "First class airplane cabin",
+    img: "https://images.unsplash.com/photo-1540339832862-474599807836?w=1400&q=80&auto=format&fit=crop",
+    alt: "Business class airplane cabin",
     accent: "#8b5cf6",
   },
   reports: {
-    img: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1400&q=80",
-    alt: "Aerial view of tropical island and turquoise water",
+    img: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1400&q=80&auto=format&fit=crop",
+    alt: "Lake surrounded by mountains from above",
     accent: "#F26B3A",
   },
   premium: {
-    img: "https://images.unsplash.com/photo-1540541338287-41700207dee6?w=1400&q=80",
+    img: "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=1400&q=80&auto=format&fit=crop",
     alt: "Infinity pool overlooking ocean at sunset",
     accent: "#f59e0b",
   },
@@ -431,16 +431,16 @@ const SAMPLE_USER = {
     chase_sapphire: { last4: "5678", pointsBalance: 88000 },
   },
   upcomingTrips: [
-    { id: 1, type: "flight", program: "aa", route: "JFK → LAX", date: "2026-03-15", class: "premium", estimatedPoints: 4200, status: "confirmed" },
-    { id: 2, type: "hotel", program: "marriott", property: "JW Marriott LA Live", date: "2026-03-15", nights: 3, estimatedNights: 3, status: "confirmed" },
-    { id: 3, type: "flight", program: "dl", route: "LAX → ATL", date: "2026-03-18", class: "domestic", estimatedPoints: 2800, status: "confirmed" },
-    { id: 4, type: "flight", program: "aa", route: "DFW → LHR", date: "2026-04-10", class: "international", estimatedPoints: 9200, status: "planned" },
-    { id: 5, type: "hotel", program: "hilton", property: "Waldorf Astoria London", date: "2026-04-10", nights: 5, estimatedNights: 5, status: "planned" },
-    { id: 6, type: "rental", program: "hertz", location: "London Heathrow", date: "2026-04-10", days: 3, estimatedRentals: 1, status: "planned" },
-    { id: 7, type: "flight", program: "ua", route: "SFO → NRT", date: "2026-06-20", class: "premium", estimatedPoints: 8800, status: "planned" },
-    { id: 8, type: "hotel", program: "marriott", property: "Ritz-Carlton Tokyo", date: "2026-06-20", nights: 7, estimatedNights: 7, status: "planned" },
-    { id: 9, type: "flight", program: "dl", route: "JFK → CDG", date: "2026-08-05", class: "international", estimatedPoints: 7500, status: "wishlist" },
-    { id: 10, type: "hotel", program: "ihg", property: "InterContinental Paris", date: "2026-08-05", nights: 4, estimatedNights: 4, status: "wishlist" },
+    { id: 1, type: "flight", program: "aa", route: "JFK → LAX", date: "2026-03-15", class: "premium", estimatedPoints: 4200, status: "confirmed", tripName: "LA Business Trip" },
+    { id: 2, type: "hotel", program: "marriott", property: "JW Marriott LA Live", date: "2026-03-15", nights: 3, estimatedNights: 3, status: "confirmed", tripName: "LA Business Trip" },
+    { id: 3, type: "flight", program: "dl", route: "LAX → ATL", date: "2026-03-18", class: "domestic", estimatedPoints: 2800, status: "confirmed", tripName: "Atlanta Connecting" },
+    { id: 4, type: "flight", program: "aa", route: "DFW → LHR", date: "2026-04-10", class: "international", estimatedPoints: 9200, status: "planned", tripName: "London Spring Getaway" },
+    { id: 5, type: "hotel", program: "hilton", property: "Waldorf Astoria London", date: "2026-04-10", nights: 5, estimatedNights: 5, status: "planned", tripName: "London Spring Getaway" },
+    { id: 6, type: "rental", program: "hertz", location: "London Heathrow", date: "2026-04-10", days: 3, estimatedRentals: 1, status: "planned", tripName: "London Spring Getaway" },
+    { id: 7, type: "flight", program: "ua", route: "SFO → NRT", date: "2026-06-20", class: "premium", estimatedPoints: 8800, status: "planned", tripName: "Tokyo Anniversary" },
+    { id: 8, type: "hotel", program: "marriott", property: "Ritz-Carlton Tokyo", date: "2026-06-20", nights: 7, estimatedNights: 7, status: "planned", tripName: "Tokyo Anniversary" },
+    { id: 9, type: "flight", program: "dl", route: "JFK → CDG", date: "2026-08-05", class: "international", estimatedPoints: 7500, status: "wishlist", tripName: "Paris Summer Dream" },
+    { id: 10, type: "hotel", program: "ihg", property: "InterContinental Paris", date: "2026-08-05", nights: 4, estimatedNights: 4, status: "wishlist", tripName: "Paris Summer Dream" },
   ],
 };
 
@@ -510,7 +510,7 @@ export default function EliteStatusTracker() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [registerForm, setRegisterForm] = useState({ name: "", email: "", password: "" });
   const [showAddTrip, setShowAddTrip] = useState(false);
-  const [newTrip, setNewTrip] = useState({ type: "flight", program: "aa", route: "", date: "", class: "domestic", nights: 1, status: "planned" });
+  const [newTrip, setNewTrip] = useState({ type: "flight", program: "aa", route: "", date: "", class: "domestic", nights: 1, status: "planned", tripName: "" });
   const [trips, setTrips] = useState([]);
   const [linkedAccounts, setLinkedAccounts] = useState({});
   const [showLinkModal, setShowLinkModal] = useState(null);
@@ -592,7 +592,7 @@ export default function EliteStatusTracker() {
     }
     setTrips(prev => [...prev, { ...newTrip, id, estimatedPoints, estimatedNights, estimatedRentals }]);
     setShowAddTrip(false);
-    setNewTrip({ type: "flight", program: "aa", route: "", date: "", class: "domestic", nights: 1, status: "planned" });
+    setNewTrip({ type: "flight", program: "aa", route: "", date: "", class: "domestic", nights: 1, status: "planned", tripName: "" });
   };
 
   const removeTrip = (id) => setTrips(prev => prev.filter(t => t.id !== id));
@@ -609,7 +609,7 @@ export default function EliteStatusTracker() {
 
   const getTripExpenses = (tripId) => expenses.filter(e => e.tripId === tripId);
   const getTripTotal = (tripId) => getTripExpenses(tripId).reduce((sum, e) => sum + e.amount, 0);
-  const getTripName = (trip) => trip.route || trip.property || trip.location || "Trip";
+  const getTripName = (trip) => trip.tripName || trip.route || trip.property || trip.location || "Trip";
 
   const handleLinkAccount = (programId) => {
     const existing = SAMPLE_USER.linkedAccounts[programId];
@@ -653,7 +653,7 @@ export default function EliteStatusTracker() {
         fontFamily: "'Plus Jakarta Sans', 'Space Grotesk', system-ui, sans-serif", padding: 20, position: "relative", overflow: "hidden",
       }}>
         {/* Full-bleed travel background photo */}
-        <img src="https://images.unsplash.com/photo-1436491865332-7a61a109db05?w=1920&q=80" alt="Above the clouds"
+        <img src="/bermuda-bg.webp" alt="Bermuda beach with turquoise water"
           style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 60%" }} />
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg, rgba(4,11,24,0.88) 0%, rgba(7,26,46,0.75) 30%, rgba(10,30,56,0.7) 50%, rgba(4,11,24,0.85) 100%)" }} />
         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "40%", background: "linear-gradient(to top, rgba(4,11,24,0.95), transparent)" }} />
@@ -1093,6 +1093,7 @@ export default function EliteStatusTracker() {
                   background: prog ? `${prog.color}15` : "rgba(255,255,255,0.04)",
                 }}>{trip.type === "flight" ? "✈️" : trip.type === "hotel" ? "🏨" : "🚗"}</div>
                 <div>
+                  {trip.tripName && <div style={{ fontSize: 13, fontWeight: 700, color: "#F7A86A", fontFamily: "Plus Jakarta Sans", marginBottom: 2 }}>{trip.tripName}</div>}
                   <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: "Plus Jakarta Sans" }}>{trip.route || trip.property || trip.location}</div>
                   <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: "Space Grotesk", marginTop: 2 }}>
                     {trip.date} • {prog?.name || "Unknown"} {trip.nights ? `• ${trip.nights} nights` : ""}
@@ -1728,6 +1729,17 @@ export default function EliteStatusTracker() {
             background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: 28, width: "100%", maxWidth: 440,
           }}>
             <h3 style={{ fontSize: 18, fontWeight: 800, color: "#fff", margin: "0 0 20px", fontFamily: "Plus Jakarta Sans" }}>Add Trip</h3>
+
+            {/* Trip Name */}
+            <label style={{ display: "block", marginBottom: 16 }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Space Grotesk" }}>Trip Name</span>
+              <input value={newTrip.tripName} onChange={e => setNewTrip(p => ({ ...p, tripName: e.target.value }))}
+                placeholder="e.g. London Spring Getaway, Tokyo Anniversary"
+                style={{
+                  display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 13, fontFamily: "Space Grotesk", outline: "none", boxSizing: "border-box",
+                }} />
+            </label>
 
             <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
               {["flight", "hotel", "rental"].map(type => (
