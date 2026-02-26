@@ -301,6 +301,9 @@ export default function EliteStatusTracker() {
   const [newExpense, setNewExpense] = useState({ category: "flight", description: "", amount: "", currency: "USD", date: "", paymentMethod: "", receipt: false, receiptImage: null, notes: "" });
   const [expenseViewTrip, setExpenseViewTrip] = useState(null); // null = overview, tripId = detail
   const [showExpenseReport, setShowExpenseReport] = useState(null); // tripId for report modal
+  const [customPrograms, setCustomPrograms] = useState([]);
+  const [showAddProgram, setShowAddProgram] = useState(false);
+  const [newProgram, setNewProgram] = useState({ name: "", category: "airline", logo: "✈️", color: "#06b6d4", memberId: "", unit: "Points", tiers: "" });
 
   useEffect(() => { setTimeout(() => setAnimateIn(true), 100); }, []);
 
@@ -413,7 +416,7 @@ export default function EliteStatusTracker() {
     return { current, projected, tripBoosts, currentTier, nextTier, projectedTier, program, willAdvance: projectedTier && currentTier && projectedTier.name !== currentTier?.name };
   }, [linkedAccounts, trips]);
 
-  const allPrograms = useMemo(() => [...LOYALTY_PROGRAMS.airlines, ...LOYALTY_PROGRAMS.hotels, ...LOYALTY_PROGRAMS.rentals], []);
+  const allPrograms = useMemo(() => [...LOYALTY_PROGRAMS.airlines, ...LOYALTY_PROGRAMS.hotels, ...LOYALTY_PROGRAMS.rentals, ...customPrograms], [customPrograms]);
 
   // ============================================================
   // LOGIN / REGISTER SCREEN
@@ -685,11 +688,17 @@ export default function EliteStatusTracker() {
   };
 
   const renderPrograms = () => {
+    const customByCategory = {
+      airline: customPrograms.filter(p => p.category === "airline"),
+      hotel: customPrograms.filter(p => p.category === "hotel"),
+      rental: customPrograms.filter(p => p.category === "rental"),
+      card: customPrograms.filter(p => p.category === "card"),
+    };
     const categories = [
-      { label: "Airlines", icon: "✈️", programs: LOYALTY_PROGRAMS.airlines },
-      { label: "Hotels", icon: "🏨", programs: LOYALTY_PROGRAMS.hotels },
-      { label: "Rental Cars", icon: "🚗", programs: LOYALTY_PROGRAMS.rentals },
-      { label: "Credit Cards", icon: "💳", programs: LOYALTY_PROGRAMS.creditCards },
+      { label: "Airlines", icon: "✈️", programs: [...LOYALTY_PROGRAMS.airlines, ...customByCategory.airline] },
+      { label: "Hotels", icon: "🏨", programs: [...LOYALTY_PROGRAMS.hotels, ...customByCategory.hotel] },
+      { label: "Rental Cars", icon: "🚗", programs: [...LOYALTY_PROGRAMS.rentals, ...customByCategory.rental] },
+      { label: "Credit Cards", icon: "💳", programs: [...LOYALTY_PROGRAMS.creditCards, ...customByCategory.card] },
     ];
 
     return (
@@ -699,6 +708,10 @@ export default function EliteStatusTracker() {
             <h2 style={{ fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, fontFamily: "Outfit" }}>Loyalty Programs</h2>
             <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, margin: "4px 0 0", fontFamily: "DM Sans" }}>Link and manage all your accounts</p>
           </div>
+          <button onClick={() => setShowAddProgram(true)} style={{
+            padding: "10px 20px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Outfit",
+            background: "linear-gradient(135deg, #0891b2, #06b6d4)", color: "#fff", boxShadow: "0 4px 15px rgba(6,182,212,0.3)",
+          }}>+ Add Program</button>
         </div>
 
         {categories.map((cat, ci) => (
@@ -1465,7 +1478,7 @@ export default function EliteStatusTracker() {
                 display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
                 borderRadius: 10, color: "#fff", fontSize: 13, fontFamily: "DM Sans", outline: "none", boxSizing: "border-box",
               }}>
-                {(newTrip.type === "flight" ? LOYALTY_PROGRAMS.airlines : newTrip.type === "hotel" ? LOYALTY_PROGRAMS.hotels : LOYALTY_PROGRAMS.rentals).map(p => (
+                {(newTrip.type === "flight" ? [...LOYALTY_PROGRAMS.airlines, ...customPrograms.filter(p => p.category === "airline")] : newTrip.type === "hotel" ? [...LOYALTY_PROGRAMS.hotels, ...customPrograms.filter(p => p.category === "hotel")] : [...LOYALTY_PROGRAMS.rentals, ...customPrograms.filter(p => p.category === "rental")]).map(p => (
                   <option key={p.id} value={p.id} style={{ background: "#0c1225" }}>{p.name}</option>
                 ))}
               </select>
@@ -1575,6 +1588,113 @@ export default function EliteStatusTracker() {
                 flex: 1, padding: "11px 0", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Outfit",
                 background: "linear-gradient(135deg, #0891b2, #06b6d4)", color: "#fff",
               }}>Link Account</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Program Modal */}
+      {showAddProgram && (
+        <div style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
+        }} onClick={() => setShowAddProgram(false)}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: "#0c1225", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: 28, width: "100%", maxWidth: 460,
+          }}>
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: "#fff", margin: "0 0 6px", fontFamily: "Outfit" }}>Add Loyalty Program</h3>
+            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, margin: "0 0 20px", fontFamily: "DM Sans" }}>Add any airline, hotel, rental car, or credit card program</p>
+
+            {/* Category */}
+            <div style={{ marginBottom: 16 }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans", display: "block", marginBottom: 8 }}>Category</span>
+              <div style={{ display: "flex", gap: 8 }}>
+                {[
+                  { id: "airline", label: "Airline", icon: "✈️" },
+                  { id: "hotel", label: "Hotel", icon: "🏨" },
+                  { id: "rental", label: "Rental", icon: "🚗" },
+                  { id: "card", label: "Card", icon: "💳" },
+                ].map(cat => (
+                  <button key={cat.id} onClick={() => setNewProgram(p => ({ ...p, category: cat.id, logo: cat.icon }))} style={{
+                    flex: 1, padding: "10px 0", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "DM Sans",
+                    background: newProgram.category === cat.id ? "rgba(8,145,178,0.2)" : "rgba(255,255,255,0.04)",
+                    color: newProgram.category === cat.id ? "#67e8f9" : "rgba(255,255,255,0.4)", transition: "all 0.2s",
+                  }}>{cat.icon} {cat.label}</button>
+                ))}
+              </div>
+            </div>
+
+            {/* Program Name */}
+            <label style={{ display: "block", marginBottom: 14 }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans" }}>Program Name</span>
+              <input value={newProgram.name} onChange={e => setNewProgram(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Southwest Rapid Rewards, Hyatt World of Hyatt"
+                style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 13, fontFamily: "DM Sans", outline: "none", boxSizing: "border-box" }} />
+            </label>
+
+            <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
+              {/* Member ID */}
+              <label style={{ flex: 1 }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans" }}>Member ID</span>
+                <input value={newProgram.memberId} onChange={e => setNewProgram(p => ({ ...p, memberId: e.target.value }))} placeholder="Your member number"
+                  style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 13, fontFamily: "DM Sans", outline: "none", boxSizing: "border-box" }} />
+              </label>
+              {/* Points Unit */}
+              <label style={{ flex: 1 }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans" }}>Points Unit</span>
+                <input value={newProgram.unit} onChange={e => setNewProgram(p => ({ ...p, unit: e.target.value }))} placeholder="e.g. Points, Miles, Nights"
+                  style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 13, fontFamily: "DM Sans", outline: "none", boxSizing: "border-box" }} />
+              </label>
+            </div>
+
+            {/* Brand Color */}
+            <div style={{ marginBottom: 14 }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans", display: "block", marginBottom: 8 }}>Brand Color</span>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {["#06b6d4", "#8b5cf6", "#ef4444", "#f59e0b", "#10b981", "#ec4899", "#3b82f6", "#6366f1", "#14b8a6", "#f97316"].map(c => (
+                  <button key={c} onClick={() => setNewProgram(p => ({ ...p, color: c }))} style={{
+                    width: 32, height: 32, borderRadius: 8, border: newProgram.color === c ? "2px solid #fff" : "2px solid transparent",
+                    background: c, cursor: "pointer", transition: "all 0.2s",
+                  }} />
+                ))}
+              </div>
+            </div>
+
+            {/* Icon/Emoji */}
+            <div style={{ marginBottom: 20 }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans", display: "block", marginBottom: 8 }}>Icon</span>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {["✈️", "🛫", "🏨", "🏩", "🌟", "🚗", "🚙", "💳", "💎", "🔑", "🌐", "🔺", "🟢", "⭐", "🎯", "👑"].map(emoji => (
+                  <button key={emoji} onClick={() => setNewProgram(p => ({ ...p, logo: emoji }))} style={{
+                    width: 36, height: 36, borderRadius: 8, border: newProgram.logo === emoji ? "2px solid #67e8f9" : "1px solid rgba(255,255,255,0.06)",
+                    background: newProgram.logo === emoji ? "rgba(8,145,178,0.15)" : "rgba(255,255,255,0.03)",
+                    cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>{emoji}</button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => setShowAddProgram(false)} style={{
+                flex: 1, padding: "11px 0", borderRadius: 10, border: "1px solid rgba(255,255,255,0.08)", background: "transparent",
+                color: "rgba(255,255,255,0.5)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "DM Sans",
+              }}>Cancel</button>
+              <button onClick={() => {
+                if (!newProgram.name.trim()) return;
+                const id = "custom_" + Date.now();
+                const prog = {
+                  id, name: newProgram.name, logo: newProgram.logo, color: newProgram.color, accent: newProgram.color,
+                  unit: newProgram.unit || "Points", tiers: [], earnRate: {},
+                  isCustom: true, category: newProgram.category,
+                };
+                setCustomPrograms(prev => [...prev, prog]);
+                if (newProgram.memberId) {
+                  setLinkedAccounts(prev => ({ ...prev, [id]: { memberId: newProgram.memberId, currentPoints: 0, currentNights: 0, currentRentals: 0 } }));
+                }
+                setShowAddProgram(false);
+                setNewProgram({ name: "", category: "airline", logo: "✈️", color: "#06b6d4", memberId: "", unit: "Points", tiers: "" });
+              }} style={{
+                flex: 1, padding: "11px 0", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Outfit",
+                background: "linear-gradient(135deg, #0891b2, #06b6d4)", color: "#fff",
+              }}>Add Program</button>
             </div>
           </div>
         </div>
