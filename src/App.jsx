@@ -107,6 +107,88 @@ const FlightPath = ({ color = "#67e8f9", style = {} }) => (
   </svg>
 );
 
+// Per-page hero banner with travel photography
+const PAGE_HEROES = {
+  dashboard: {
+    img: "https://images.unsplash.com/photo-1436491865332-7a61a109db05?w=1400&q=80",
+    alt: "Airplane wing above clouds at sunset",
+    accent: "#22d3ee",
+  },
+  programs: {
+    img: "https://images.unsplash.com/photo-1529074963764-98f45c47344b?w=1400&q=80",
+    alt: "Airport terminal at golden hour",
+    accent: "#06b6d4",
+  },
+  trips: {
+    img: "https://images.unsplash.com/photo-1488085061387-422e29b40080?w=1400&q=80",
+    alt: "World map with passport and camera",
+    accent: "#34d399",
+  },
+  expenses: {
+    img: "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=1400&q=80",
+    alt: "Luxury hotel poolside at twilight",
+    accent: "#f59e0b",
+  },
+  optimizer: {
+    img: "https://images.unsplash.com/photo-1500835556837-99ac94a94552?w=1400&q=80",
+    alt: "First class airplane cabin",
+    accent: "#8b5cf6",
+  },
+  reports: {
+    img: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1400&q=80",
+    alt: "Aerial view of tropical island and turquoise water",
+    accent: "#06b6d4",
+  },
+  premium: {
+    img: "https://images.unsplash.com/photo-1540541338287-41700207dee6?w=1400&q=80",
+    alt: "Infinity pool overlooking ocean at sunset",
+    accent: "#f59e0b",
+  },
+};
+
+const PageHeroBanner = ({ view, title, subtitle }) => {
+  const hero = PAGE_HEROES[view];
+  if (!hero) return null;
+  return (
+    <div style={{
+      position: "relative", width: "100%", height: 180, borderRadius: 20, overflow: "hidden", marginBottom: 24,
+      boxShadow: `0 8px 40px rgba(0,0,0,0.4), 0 0 80px ${hero.accent}08`,
+    }}>
+      <img src={hero.img} alt={hero.alt} loading="eager" style={{
+        position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 40%",
+        animation: "hero-fade-in 1.2s ease-out forwards",
+      }} />
+      {/* Dark gradient overlay */}
+      <div style={{
+        position: "absolute", inset: 0,
+        background: `linear-gradient(135deg, rgba(4,11,24,0.82) 0%, rgba(4,11,24,0.45) 40%, rgba(4,11,24,0.25) 60%, ${hero.accent}08 100%)`,
+      }} />
+      {/* Bottom fade to page bg */}
+      <div style={{
+        position: "absolute", bottom: 0, left: 0, right: 0, height: 80,
+        background: "linear-gradient(to top, rgba(4,11,24,0.95), transparent)",
+      }} />
+      {/* Subtle scan lines texture */}
+      <div style={{
+        position: "absolute", inset: 0, opacity: 0.03,
+        backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.1) 2px, rgba(255,255,255,0.1) 3px)",
+      }} />
+      {/* Accent glow line at bottom */}
+      <div style={{
+        position: "absolute", bottom: 0, left: "10%", right: "10%", height: 1,
+        background: `linear-gradient(90deg, transparent, ${hero.accent}30, transparent)`,
+      }} />
+      {/* Title overlay */}
+      {title && (
+        <div style={{ position: "absolute", bottom: 20, left: 28, right: 28, zIndex: 2 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 800, color: "#fff", margin: 0, fontFamily: "Outfit", textShadow: "0 2px 20px rgba(0,0,0,0.5)" }}>{title}</h1>
+          {subtitle && <p style={{ fontSize: 12, color: `${hero.accent}cc`, fontFamily: "DM Sans", marginTop: 4, textShadow: "0 1px 10px rgba(0,0,0,0.5)" }}>{subtitle}</p>}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ============================================================
 // DATA & CONSTANTS
 // ============================================================
@@ -574,9 +656,14 @@ export default function EliteStatusTracker() {
     return (
       <div style={{
         minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
-        background: "linear-gradient(160deg, #040b18 0%, #071a2e 25%, #0a1e38 50%, #061428 75%, #040b18 100%)",
+        background: "#040b18",
         fontFamily: "'Outfit', 'DM Sans', system-ui, sans-serif", padding: 20, position: "relative", overflow: "hidden",
       }}>
+        {/* Full-bleed travel background photo */}
+        <img src="https://images.unsplash.com/photo-1436491865332-7a61a109db05?w=1920&q=80" alt="Above the clouds"
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 60%" }} />
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg, rgba(4,11,24,0.88) 0%, rgba(7,26,46,0.75) 30%, rgba(10,30,56,0.7) 50%, rgba(4,11,24,0.85) 100%)" }} />
+        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "40%", background: "linear-gradient(to top, rgba(4,11,24,0.95), transparent)" }} />
         <TravelAtmosphere />
         <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
         <div style={{
@@ -1610,25 +1697,26 @@ export default function EliteStatusTracker() {
       {/* Main Content */}
       <main style={{ flex: 1, padding: "28px 40px", overflowY: "auto", minWidth: 0, position: "relative", zIndex: 1 }}>
         {/* Top Bar */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28 }}>
-          <div>
-            <h1 style={{ fontSize: 22, fontWeight: 800, color: "#fff", margin: 0, fontFamily: "Outfit" }}>
-              {activeView === "dashboard" ? `Welcome back, ${user?.name?.split(" ")[0]}` : navItems.find(n => n.id === activeView)?.label}
-            </h1>
-            <p style={{ fontSize: 12, color: "rgba(103,232,249,0.5)", fontFamily: "DM Sans", marginTop: 3 }}>
-              {activeView === "dashboard" ? `${new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })} · ${Object.keys(linkedAccounts).length} programs tracked` : ""}
-            </p>
-            {activeView === "dashboard" && (
-              <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 13, margin: "4px 0 0", fontFamily: "DM Sans" }}>
-                Here's your elite status overview for 2026
-              </p>
-            )}
-          </div>
+        <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: 16 }}>
           <div style={{ display: "flex", gap: 6 }}>
             <IconBtn icon="🔔" label="Notifications" badge />
             <IconBtn icon="⚙️" label="Settings" />
           </div>
         </div>
+
+        {/* Hero Banner */}
+        <PageHeroBanner view={activeView}
+          title={activeView === "dashboard" ? `Welcome back, ${user?.name?.split(" ")[0]}` : navItems.find(n => n.id === activeView)?.label}
+          subtitle={
+            activeView === "dashboard" ? `${new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })} · ${Object.keys(linkedAccounts).length} programs tracked` :
+            activeView === "programs" ? "Link and manage all your loyalty accounts" :
+            activeView === "trips" ? "Plan, track, and optimize your upcoming travel" :
+            activeView === "expenses" ? "Track spending and receipts across every trip" :
+            activeView === "optimizer" ? "AI-powered recommendations to maximize your status" :
+            activeView === "reports" ? "Insights and analytics across all programs" :
+            activeView === "premium" ? "Unlock the full power of Continuum" : ""
+          }
+        />
 
         {/* View Content */}
         {viewRenderers[activeView]?.()}
