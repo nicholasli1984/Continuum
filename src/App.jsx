@@ -298,7 +298,7 @@ export default function EliteStatusTracker() {
   const [animateIn, setAnimateIn] = useState(false);
   const [expenses, setExpenses] = useState([]);
   const [showAddExpense, setShowAddExpense] = useState(null); // null or tripId
-  const [newExpense, setNewExpense] = useState({ category: "flight", description: "", amount: "", currency: "USD", date: "", paymentMethod: "", receipt: false, notes: "" });
+  const [newExpense, setNewExpense] = useState({ category: "flight", description: "", amount: "", currency: "USD", date: "", paymentMethod: "", receipt: false, receiptImage: null, notes: "" });
   const [expenseViewTrip, setExpenseViewTrip] = useState(null); // null = overview, tripId = detail
   const [showExpenseReport, setShowExpenseReport] = useState(null); // tripId for report modal
 
@@ -375,7 +375,7 @@ export default function EliteStatusTracker() {
     const exp = { ...newExpense, id, tripId: showAddExpense, amount: parseFloat(newExpense.amount) || 0 };
     setExpenses(prev => [...prev, exp]);
     setShowAddExpense(null);
-    setNewExpense({ category: "flight", description: "", amount: "", currency: "USD", date: "", paymentMethod: "", receipt: false, notes: "" });
+    setNewExpense({ category: "flight", description: "", amount: "", currency: "USD", date: "", paymentMethod: "", receipt: false, receiptImage: null, notes: "" });
   };
 
   const removeExpense = (id) => setExpenses(prev => prev.filter(e => e.id !== id));
@@ -958,6 +958,11 @@ export default function EliteStatusTracker() {
                       <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", fontFamily: "DM Sans", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.description}</div>
                       <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: "DM Sans" }}>
                         {exp.date} • {exp.paymentMethod || "—"} {exp.receipt ? "• 🧾" : ""} {exp.notes ? `• ${exp.notes}` : ""}
+                      </div>
+                      {exp.receiptImage?.data && exp.receiptImage.type?.startsWith("image/") && (
+                        <img src={exp.receiptImage.data} alt="Receipt" style={{ width: 32, height: 32, objectFit: "cover", borderRadius: 4, marginTop: 4, border: "1px solid rgba(255,255,255,0.1)", cursor: "pointer" }}
+                          onClick={(e) => { e.stopPropagation(); window.open(exp.receiptImage.data, "_blank"); }} title="Click to view full receipt" />
+                      )}
                       </div>
                     </div>
                   </div>
@@ -1669,10 +1674,85 @@ export default function EliteStatusTracker() {
                 style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 13, fontFamily: "DM Sans", outline: "none", boxSizing: "border-box" }} />
             </label>
 
-            <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20, cursor: "pointer" }}>
-              <input type="checkbox" checked={newExpense.receipt} onChange={e => setNewExpense(p => ({ ...p, receipt: e.target.checked }))} style={{ width: 16, height: 16, accentColor: "#06b6d4" }} />
-              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", fontFamily: "DM Sans" }}>I have a receipt for this expense</span>
-            </label>
+            {/* Receipt Upload / Camera */}
+            <div style={{ marginBottom: 20 }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans", display: "block", marginBottom: 8 }}>Receipt</span>
+              
+              {!newExpense.receiptImage ? (
+                <div style={{ display: "flex", gap: 10 }}>
+                  {/* Upload file button */}
+                  <label style={{
+                    flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
+                    padding: "18px 12px", borderRadius: 12, border: "2px dashed rgba(6,182,212,0.25)", background: "rgba(6,182,212,0.04)",
+                    cursor: "pointer", transition: "all 0.2s",
+                  }}>
+                    <span style={{ fontSize: 22 }}>📄</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "#22d3ee", fontFamily: "DM Sans" }}>Upload File</span>
+                    <span style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", fontFamily: "DM Sans" }}>JPG, PNG, PDF</span>
+                    <input type="file" accept="image/*,.pdf" style={{ display: "none" }} onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (ev) => setNewExpense(p => ({ ...p, receipt: true, receiptImage: { name: file.name, size: file.size, type: file.type, data: ev.target.result } }));
+                        reader.readAsDataURL(file);
+                      }
+                    }} />
+                  </label>
+
+                  {/* Take photo button */}
+                  <label style={{
+                    flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
+                    padding: "18px 12px", borderRadius: 12, border: "2px dashed rgba(6,182,212,0.25)", background: "rgba(6,182,212,0.04)",
+                    cursor: "pointer", transition: "all 0.2s",
+                  }}>
+                    <span style={{ fontSize: 22 }}>📸</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "#22d3ee", fontFamily: "DM Sans" }}>Take Photo</span>
+                    <span style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", fontFamily: "DM Sans" }}>Use camera</span>
+                    <input type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (ev) => setNewExpense(p => ({ ...p, receipt: true, receiptImage: { name: file.name, size: file.size, type: file.type, data: ev.target.result } }));
+                        reader.readAsDataURL(file);
+                      }
+                    }} />
+                  </label>
+
+                  {/* No receipt option */}
+                  <button onClick={() => setNewExpense(p => ({ ...p, receipt: false, receiptImage: null }))} style={{
+                    flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
+                    padding: "18px 12px", borderRadius: 12, border: `2px dashed ${!newExpense.receipt ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.06)"}`,
+                    background: !newExpense.receipt ? "rgba(255,255,255,0.03)" : "transparent", cursor: "pointer",
+                  }}>
+                    <span style={{ fontSize: 22 }}>⊘</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", fontFamily: "DM Sans" }}>No Receipt</span>
+                    <span style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", fontFamily: "DM Sans" }}>&nbsp;</span>
+                  </button>
+                </div>
+              ) : (
+                /* Receipt preview */
+                <div style={{
+                  borderRadius: 12, border: "1px solid rgba(52,211,153,0.3)", background: "rgba(52,211,153,0.06)", padding: 14,
+                  display: "flex", alignItems: "center", gap: 12,
+                }}>
+                  {newExpense.receiptImage.type?.startsWith("image/") ? (
+                    <img src={newExpense.receiptImage.data} alt="Receipt" style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)" }} />
+                  ) : (
+                    <div style={{ width: 56, height: 56, borderRadius: 8, background: "rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>📄</div>
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: "#34d399", fontFamily: "DM Sans" }}>✓ Receipt attached</div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: "DM Sans", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {newExpense.receiptImage.name} • {(newExpense.receiptImage.size / 1024).toFixed(0)} KB
+                    </div>
+                  </div>
+                  <button onClick={() => setNewExpense(p => ({ ...p, receipt: false, receiptImage: null }))} style={{
+                    width: 30, height: 30, borderRadius: 8, border: "none", background: "rgba(239,68,68,0.1)", color: "#ef4444",
+                    fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                  }}>×</button>
+                </div>
+              )}
+            </div>
 
             <div style={{ display: "flex", gap: 10 }}>
               <button onClick={() => setShowAddExpense(null)} style={{
