@@ -296,14 +296,47 @@ export default function EliteStatusTracker() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [animateIn, setAnimateIn] = useState(false);
+  const [expenses, setExpenses] = useState([]);
+  const [showAddExpense, setShowAddExpense] = useState(null); // null or tripId
+  const [newExpense, setNewExpense] = useState({ category: "flight", description: "", amount: "", currency: "USD", date: "", paymentMethod: "", receipt: false, notes: "" });
+  const [expenseViewTrip, setExpenseViewTrip] = useState(null); // null = overview, tripId = detail
+  const [showExpenseReport, setShowExpenseReport] = useState(null); // tripId for report modal
 
   useEffect(() => { setTimeout(() => setAnimateIn(true), 100); }, []);
+
+  const EXPENSE_CATEGORIES = [
+    { id: "flight", label: "Flights", icon: "✈️", color: "#06b6d4" },
+    { id: "hotel", label: "Hotels", icon: "🏨", color: "#8b5cf6" },
+    { id: "rental", label: "Car Rental", icon: "🚗", color: "#f59e0b" },
+    { id: "dining", label: "Dining", icon: "🍽️", color: "#ef4444" },
+    { id: "transport", label: "Transport", icon: "🚕", color: "#10b981" },
+    { id: "lounge", label: "Lounge", icon: "🛋️", color: "#6366f1" },
+    { id: "shopping", label: "Shopping", icon: "🛍️", color: "#ec4899" },
+    { id: "tips", label: "Tips", icon: "💵", color: "#14b8a6" },
+    { id: "other", label: "Other", icon: "📎", color: "#6b7280" },
+  ];
+
+  const SAMPLE_EXPENSES = [
+    { id: 101, tripId: 1, category: "flight", description: "JFK→LAX Business Class", amount: 1850, currency: "USD", date: "2026-03-15", paymentMethod: "Amex Platinum", receipt: true, notes: "" },
+    { id: 102, tripId: 2, category: "hotel", description: "JW Marriott LA Live — 3 nights", amount: 1290, currency: "USD", date: "2026-03-15", paymentMethod: "Chase Sapphire", receipt: true, notes: "Suite upgrade applied" },
+    { id: 103, tripId: 1, category: "lounge", description: "Centurion Lounge JFK", amount: 0, currency: "USD", date: "2026-03-15", paymentMethod: "Amex Platinum", receipt: false, notes: "Complimentary" },
+    { id: 104, tripId: 2, category: "dining", description: "Nobu Los Angeles", amount: 285, currency: "USD", date: "2026-03-16", paymentMethod: "Amex Platinum", receipt: true, notes: "Client dinner" },
+    { id: 105, tripId: 2, category: "transport", description: "Uber LAX → Hotel", amount: 42, currency: "USD", date: "2026-03-15", paymentMethod: "Chase Sapphire", receipt: true, notes: "" },
+    { id: 106, tripId: 2, category: "tips", description: "Hotel staff tips", amount: 60, currency: "USD", date: "2026-03-18", paymentMethod: "Cash", receipt: false, notes: "" },
+    { id: 107, tripId: 4, category: "flight", description: "DFW→LHR First Class", amount: 4200, currency: "USD", date: "2026-04-10", paymentMethod: "Amex Platinum", receipt: true, notes: "Systemwide upgrade used" },
+    { id: 108, tripId: 5, category: "hotel", description: "Waldorf Astoria London — 5 nights", amount: 3750, currency: "USD", date: "2026-04-10", paymentMethod: "Amex Platinum", receipt: true, notes: "" },
+    { id: 109, tripId: 5, category: "dining", description: "Restaurant Gordon Ramsay", amount: 420, currency: "USD", date: "2026-04-12", paymentMethod: "Chase Sapphire", receipt: true, notes: "Business meal" },
+    { id: 110, tripId: 6, category: "rental", description: "Hertz Premium SUV — 3 days", amount: 385, currency: "USD", date: "2026-04-10", paymentMethod: "Amex Platinum", receipt: true, notes: "" },
+    { id: 111, tripId: 5, category: "transport", description: "Heathrow Express", amount: 55, currency: "USD", date: "2026-04-10", paymentMethod: "Chase Sapphire", receipt: true, notes: "" },
+    { id: 112, tripId: 5, category: "shopping", description: "Harrods gifts", amount: 320, currency: "USD", date: "2026-04-13", paymentMethod: "Amex Platinum", receipt: true, notes: "Personal" },
+  ];
 
   const handleLogin = (e) => {
     if (e) e.preventDefault();
     setUser(SAMPLE_USER);
     setTrips(SAMPLE_USER.upcomingTrips);
     setLinkedAccounts(SAMPLE_USER.linkedAccounts);
+    setExpenses(SAMPLE_EXPENSES);
     setIsLoggedIn(true);
   };
 
@@ -336,6 +369,20 @@ export default function EliteStatusTracker() {
   };
 
   const removeTrip = (id) => setTrips(prev => prev.filter(t => t.id !== id));
+
+  const handleAddExpense = () => {
+    const id = Date.now();
+    const exp = { ...newExpense, id, tripId: showAddExpense, amount: parseFloat(newExpense.amount) || 0 };
+    setExpenses(prev => [...prev, exp]);
+    setShowAddExpense(null);
+    setNewExpense({ category: "flight", description: "", amount: "", currency: "USD", date: "", paymentMethod: "", receipt: false, notes: "" });
+  };
+
+  const removeExpense = (id) => setExpenses(prev => prev.filter(e => e.id !== id));
+
+  const getTripExpenses = (tripId) => expenses.filter(e => e.tripId === tripId);
+  const getTripTotal = (tripId) => getTripExpenses(tripId).reduce((sum, e) => sum + e.amount, 0);
+  const getTripName = (trip) => trip.route || trip.property || trip.location || "Trip";
 
   const handleLinkAccount = (programId) => {
     const existing = SAMPLE_USER.linkedAccounts[programId];
@@ -812,6 +859,223 @@ export default function EliteStatusTracker() {
     </div>
   );
 
+  const renderExpenses = () => {
+    const tripsWithExpenses = trips.map(t => ({ ...t, expenses: getTripExpenses(t.id), total: getTripTotal(t.id) }));
+    const grandTotal = expenses.reduce((s, e) => s + e.amount, 0);
+    const totalByCategory = EXPENSE_CATEGORIES.map(cat => ({
+      ...cat, total: expenses.filter(e => e.category === cat.id).reduce((s, e) => s + e.amount, 0),
+    })).filter(c => c.total > 0).sort((a, b) => b.total - a.total);
+
+    // Per-trip detail view
+    if (expenseViewTrip) {
+      const trip = trips.find(t => t.id === expenseViewTrip);
+      if (!trip) { setExpenseViewTrip(null); return null; }
+      const tripExps = getTripExpenses(trip.id);
+      const tripTotal = tripExps.reduce((s, e) => s + e.amount, 0);
+      const prog = allPrograms.find(p => p.id === trip.program);
+      const catBreakdown = EXPENSE_CATEGORIES.map(cat => ({
+        ...cat, total: tripExps.filter(e => e.category === cat.id).reduce((s, e) => s + e.amount, 0),
+        items: tripExps.filter(e => e.category === cat.id),
+      })).filter(c => c.total > 0);
+
+      return (
+        <div>
+          <button onClick={() => setExpenseViewTrip(null)} style={{
+            background: "none", border: "none", color: "#67e8f9", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "DM Sans", marginBottom: 16, padding: 0,
+          }}>← Back to All Trips</button>
+
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
+            <div>
+              <h2 style={{ fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, fontFamily: "Outfit" }}>
+                {trip.type === "flight" ? "✈️" : trip.type === "hotel" ? "🏨" : "🚗"} {getTripName(trip)}
+              </h2>
+              <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, margin: "4px 0 0", fontFamily: "DM Sans" }}>
+                {trip.date} • {prog?.name} • {tripExps.length} expenses
+              </p>
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => setShowExpenseReport(trip.id)} style={{
+                padding: "9px 18px", borderRadius: 10, border: "1px solid rgba(6,182,212,0.3)", background: "rgba(6,182,212,0.08)",
+                color: "#22d3ee", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "DM Sans",
+              }}>📄 Generate Report</button>
+              <button onClick={() => setShowAddExpense(trip.id)} style={{
+                padding: "9px 18px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "Outfit",
+                background: "linear-gradient(135deg, #0891b2, #06b6d4)", color: "#fff",
+              }}>+ Add Expense</button>
+            </div>
+          </div>
+
+          {/* Trip expense summary */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginBottom: 24 }}>
+            <div style={{ background: "rgba(6,182,212,0.08)", border: "1px solid rgba(6,182,212,0.2)", borderRadius: 14, padding: 18 }}>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", fontFamily: "Outfit" }}>${tripTotal.toLocaleString()}</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "DM Sans" }}>Total Spend</div>
+            </div>
+            <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: 18 }}>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", fontFamily: "Outfit" }}>{tripExps.length}</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "DM Sans" }}>Expenses</div>
+            </div>
+            <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: 18 }}>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", fontFamily: "Outfit" }}>{tripExps.filter(e => e.receipt).length}</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "DM Sans" }}>With Receipts</div>
+            </div>
+          </div>
+
+          {/* Category breakdown bar */}
+          {tripTotal > 0 && (
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ display: "flex", height: 10, borderRadius: 8, overflow: "hidden", marginBottom: 10 }}>
+                {catBreakdown.map((cat, i) => (
+                  <div key={i} style={{ width: `${(cat.total / tripTotal) * 100}%`, background: cat.color, transition: "width 0.5s ease" }} title={`${cat.label}: $${cat.total}`} />
+                ))}
+              </div>
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                {catBreakdown.map((cat, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "rgba(255,255,255,0.5)", fontFamily: "DM Sans" }}>
+                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: cat.color, flexShrink: 0 }} />
+                    {cat.label}: ${cat.total.toLocaleString()} ({Math.round((cat.total / tripTotal) * 100)}%)
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Expense list */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {tripExps.sort((a, b) => new Date(a.date) - new Date(b.date)).map(exp => {
+              const cat = EXPENSE_CATEGORIES.find(c => c.id === exp.category);
+              return (
+                <div key={exp.id} style={{
+                  background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "14px 18px",
+                  display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12,
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
+                    <div style={{
+                      width: 38, height: 38, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 18, background: `${cat?.color || "#666"}15`, flexShrink: 0,
+                    }}>{cat?.icon || "📎"}</div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", fontFamily: "DM Sans", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.description}</div>
+                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: "DM Sans" }}>
+                        {exp.date} • {exp.paymentMethod || "—"} {exp.receipt ? "• 🧾" : ""} {exp.notes ? `• ${exp.notes}` : ""}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: exp.amount === 0 ? "#34d399" : "#fff", fontFamily: "Outfit" }}>
+                      {exp.amount === 0 ? "Free" : `$${exp.amount.toLocaleString()}`}
+                    </div>
+                    <button onClick={() => removeExpense(exp.id)} style={{
+                      width: 26, height: 26, borderRadius: 7, border: "none", background: "rgba(239,68,68,0.1)", color: "#ef4444",
+                      fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>×</button>
+                  </div>
+                </div>
+              );
+            })}
+            {tripExps.length === 0 && (
+              <div style={{ textAlign: "center", padding: 40, color: "rgba(255,255,255,0.25)", fontSize: 13, fontFamily: "DM Sans" }}>
+                No expenses yet for this trip. Click "+ Add Expense" to start tracking.
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // Overview: all trips with expense totals
+    return (
+      <div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
+          <div>
+            <h2 style={{ fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, fontFamily: "Outfit" }}>Trip Expenses</h2>
+            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, margin: "4px 0 0", fontFamily: "DM Sans" }}>Track spending across all your trips</p>
+          </div>
+        </div>
+
+        {/* Grand total stats */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14, marginBottom: 28 }}>
+          <div style={{ background: "rgba(6,182,212,0.08)", border: "1px solid rgba(6,182,212,0.2)", borderRadius: 14, padding: 18 }}>
+            <div style={{ fontSize: 26, fontWeight: 800, color: "#fff", fontFamily: "Outfit" }}>${grandTotal.toLocaleString()}</div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "DM Sans" }}>Total Across All Trips</div>
+          </div>
+          <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: 18 }}>
+            <div style={{ fontSize: 26, fontWeight: 800, color: "#fff", fontFamily: "Outfit" }}>{expenses.length}</div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "DM Sans" }}>Total Expenses</div>
+          </div>
+          <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: 18 }}>
+            <div style={{ fontSize: 26, fontWeight: 800, color: "#fff", fontFamily: "Outfit" }}>{tripsWithExpenses.filter(t => t.total > 0).length}</div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "DM Sans" }}>Trips With Expenses</div>
+          </div>
+        </div>
+
+        {/* Spending by category */}
+        {totalByCategory.length > 0 && (
+          <div style={{ marginBottom: 28 }}>
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.6)", marginBottom: 12, fontFamily: "Outfit" }}>Spending by Category</h3>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 10 }}>
+              {totalByCategory.map((cat, i) => (
+                <div key={i} style={{ background: `${cat.color}10`, border: `1px solid ${cat.color}25`, borderRadius: 12, padding: 14, textAlign: "center" }}>
+                  <div style={{ fontSize: 22, marginBottom: 4 }}>{cat.icon}</div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: "#fff", fontFamily: "Outfit" }}>${cat.total.toLocaleString()}</div>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontFamily: "DM Sans" }}>{cat.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Trip-by-trip list */}
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.6)", marginBottom: 12, fontFamily: "Outfit" }}>Expenses by Trip</h3>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {trips.map(trip => {
+            const tripExps = getTripExpenses(trip.id);
+            const tripTotal = getTripTotal(trip.id);
+            const prog = allPrograms.find(p => p.id === trip.program);
+            return (
+              <div key={trip.id} style={{
+                background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "16px 20px",
+                cursor: "pointer", transition: "all 0.2s",
+              }} onClick={() => setExpenseViewTrip(trip.id)}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1 }}>
+                    <div style={{
+                      width: 42, height: 42, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20,
+                      background: prog ? `${prog.color}15` : "rgba(255,255,255,0.04)",
+                    }}>{trip.type === "flight" ? "✈️" : trip.type === "hotel" ? "🏨" : "🚗"}</div>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: "Outfit" }}>{getTripName(trip)}</div>
+                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: "DM Sans" }}>
+                        {trip.date} • {tripExps.length} expense{tripExps.length !== 1 ? "s" : ""}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: tripTotal > 0 ? "#fff" : "rgba(255,255,255,0.25)", fontFamily: "Outfit" }}>
+                        {tripTotal > 0 ? `$${tripTotal.toLocaleString()}` : "—"}
+                      </div>
+                    </div>
+                    <button onClick={(e) => { e.stopPropagation(); setShowAddExpense(trip.id); }} style={{
+                      width: 32, height: 32, borderRadius: 8, border: "1px solid rgba(6,182,212,0.2)", background: "rgba(6,182,212,0.06)",
+                      color: "#22d3ee", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>+</button>
+                    <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 14 }}>→</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          {trips.length === 0 && (
+            <div style={{ textAlign: "center", padding: 40, color: "rgba(255,255,255,0.25)", fontSize: 13, fontFamily: "DM Sans" }}>
+              Add trips first, then track expenses for each one.
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const renderOptimizer = () => {
     const scenarioTrips = trips.filter(t => t.type === "flight");
     return (
@@ -1078,12 +1342,13 @@ export default function EliteStatusTracker() {
     { id: "dashboard", label: "Dashboard", icon: "📊" },
     { id: "programs", label: "Programs", icon: "🔗" },
     { id: "trips", label: "Trips", icon: "🗺️" },
+    { id: "expenses", label: "Expenses", icon: "🧾" },
     { id: "optimizer", label: "Optimizer", icon: "🧠" },
     { id: "reports", label: "Reports", icon: "📈" },
     { id: "premium", label: "Premium", icon: "💎" },
   ];
 
-  const viewRenderers = { dashboard: renderDashboard, programs: renderPrograms, trips: renderTrips, optimizer: renderOptimizer, reports: renderReports, premium: renderPremium };
+  const viewRenderers = { dashboard: renderDashboard, programs: renderPrograms, trips: renderTrips, expenses: renderExpenses, optimizer: renderOptimizer, reports: renderReports, premium: renderPremium };
 
   // ============================================================
   // MAIN LAYOUT
@@ -1337,6 +1602,227 @@ export default function EliteStatusTracker() {
           </div>
         </div>
       )}
+
+      {/* Add Expense Modal */}
+      {showAddExpense && (
+        <div style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
+        }} onClick={() => setShowAddExpense(null)}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: "#0c1225", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: 28, width: "100%", maxWidth: 480,
+          }}>
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: "#fff", margin: "0 0 6px", fontFamily: "Outfit" }}>Add Expense</h3>
+            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, margin: "0 0 20px", fontFamily: "DM Sans" }}>
+              {(() => { const t = trips.find(t => t.id === showAddExpense); return t ? `${t.type === "flight" ? "✈️" : t.type === "hotel" ? "🏨" : "🚗"} ${getTripName(t)}` : ""; })()}
+            </p>
+
+            {/* Category selector */}
+            <div style={{ marginBottom: 16 }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans", display: "block", marginBottom: 8 }}>Category</span>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {EXPENSE_CATEGORIES.map(cat => (
+                  <button key={cat.id} onClick={() => setNewExpense(p => ({ ...p, category: cat.id }))} style={{
+                    padding: "6px 12px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600, fontFamily: "DM Sans",
+                    background: newExpense.category === cat.id ? `${cat.color}25` : "rgba(255,255,255,0.04)",
+                    color: newExpense.category === cat.id ? cat.color : "rgba(255,255,255,0.4)", transition: "all 0.2s",
+                  }}>{cat.icon} {cat.label}</button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
+              <label style={{ flex: 2 }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans" }}>Description</span>
+                <input value={newExpense.description} onChange={e => setNewExpense(p => ({ ...p, description: e.target.value }))} placeholder="e.g. Marriott 3 nights"
+                  style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 13, fontFamily: "DM Sans", outline: "none", boxSizing: "border-box" }} />
+              </label>
+              <label style={{ flex: 1 }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans" }}>Amount ($)</span>
+                <input type="number" min="0" step="0.01" value={newExpense.amount} onChange={e => setNewExpense(p => ({ ...p, amount: e.target.value }))} placeholder="0.00"
+                  style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 13, fontFamily: "DM Sans", outline: "none", boxSizing: "border-box" }} />
+              </label>
+            </div>
+
+            <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
+              <label style={{ flex: 1 }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans" }}>Date</span>
+                <input type="date" value={newExpense.date} onChange={e => setNewExpense(p => ({ ...p, date: e.target.value }))}
+                  style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 13, fontFamily: "DM Sans", outline: "none", boxSizing: "border-box" }} />
+              </label>
+              <label style={{ flex: 1 }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans" }}>Payment Method</span>
+                <select value={newExpense.paymentMethod} onChange={e => setNewExpense(p => ({ ...p, paymentMethod: e.target.value }))}
+                  style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 13, fontFamily: "DM Sans", outline: "none", boxSizing: "border-box" }}>
+                  <option value="" style={{ background: "#0c1225" }}>Select...</option>
+                  <option value="Amex Platinum" style={{ background: "#0c1225" }}>Amex Platinum</option>
+                  <option value="Chase Sapphire" style={{ background: "#0c1225" }}>Chase Sapphire Reserve</option>
+                  <option value="Cash" style={{ background: "#0c1225" }}>Cash</option>
+                  <option value="Debit Card" style={{ background: "#0c1225" }}>Debit Card</option>
+                  <option value="Other" style={{ background: "#0c1225" }}>Other</option>
+                </select>
+              </label>
+            </div>
+
+            <label style={{ display: "block", marginBottom: 14 }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans" }}>Notes (optional)</span>
+              <input value={newExpense.notes} onChange={e => setNewExpense(p => ({ ...p, notes: e.target.value }))} placeholder="Business meal, personal, etc."
+                style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 13, fontFamily: "DM Sans", outline: "none", boxSizing: "border-box" }} />
+            </label>
+
+            <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20, cursor: "pointer" }}>
+              <input type="checkbox" checked={newExpense.receipt} onChange={e => setNewExpense(p => ({ ...p, receipt: e.target.checked }))} style={{ width: 16, height: 16, accentColor: "#06b6d4" }} />
+              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", fontFamily: "DM Sans" }}>I have a receipt for this expense</span>
+            </label>
+
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => setShowAddExpense(null)} style={{
+                flex: 1, padding: "11px 0", borderRadius: 10, border: "1px solid rgba(255,255,255,0.08)", background: "transparent",
+                color: "rgba(255,255,255,0.5)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "DM Sans",
+              }}>Cancel</button>
+              <button onClick={handleAddExpense} style={{
+                flex: 1, padding: "11px 0", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Outfit",
+                background: "linear-gradient(135deg, #0891b2, #06b6d4)", color: "#fff",
+              }}>Add Expense</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Expense Report Modal */}
+      {showExpenseReport && (() => {
+        const trip = trips.find(t => t.id === showExpenseReport);
+        if (!trip) return null;
+        const tripExps = getTripExpenses(trip.id).sort((a, b) => new Date(a.date) - new Date(b.date));
+        const tripTotal = tripExps.reduce((s, e) => s + e.amount, 0);
+        const prog = allPrograms.find(p => p.id === trip.program);
+        const catSummary = EXPENSE_CATEGORIES.map(cat => ({
+          ...cat, total: tripExps.filter(e => e.category === cat.id).reduce((s, e) => s + e.amount, 0),
+          count: tripExps.filter(e => e.category === cat.id).length,
+        })).filter(c => c.total > 0);
+        const receiptCount = tripExps.filter(e => e.receipt).length;
+
+        return (
+          <div style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
+          }} onClick={() => setShowExpenseReport(null)}>
+            <div onClick={e => e.stopPropagation()} style={{
+              background: "#0c1225", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: 32, width: "100%", maxWidth: 600,
+              maxHeight: "85vh", overflowY: "auto",
+            }}>
+              {/* Report Header */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                    <LogoMark size={24} />
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "#67e8f9", fontFamily: "Outfit" }}>Continuum</span>
+                  </div>
+                  <h3 style={{ fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, fontFamily: "Outfit" }}>Expense Report</h3>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "DM Sans" }}>Generated {new Date().toLocaleDateString()}</div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: "DM Sans" }}>Report #{trip.id}-{Date.now().toString(36).slice(-4)}</div>
+                </div>
+              </div>
+
+              {/* Trip Info */}
+              <div style={{
+                background: "rgba(6,182,212,0.06)", border: "1px solid rgba(6,182,212,0.15)", borderRadius: 14, padding: 18, marginBottom: 20,
+              }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#fff", fontFamily: "Outfit", marginBottom: 4 }}>
+                  {trip.type === "flight" ? "✈️" : trip.type === "hotel" ? "🏨" : "🚗"} {getTripName(trip)}
+                </div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontFamily: "DM Sans" }}>
+                  {trip.date} • {prog?.name || "Unknown"} • {trip.status}
+                </div>
+              </div>
+
+              {/* Summary Stats */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 20 }}>
+                <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 10, padding: 14, textAlign: "center" }}>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: "#22d3ee", fontFamily: "Outfit" }}>${tripTotal.toLocaleString()}</div>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontFamily: "DM Sans" }}>Total</div>
+                </div>
+                <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 10, padding: 14, textAlign: "center" }}>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", fontFamily: "Outfit" }}>{tripExps.length}</div>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontFamily: "DM Sans" }}>Items</div>
+                </div>
+                <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 10, padding: 14, textAlign: "center" }}>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: "#34d399", fontFamily: "Outfit" }}>{receiptCount}/{tripExps.length}</div>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontFamily: "DM Sans" }}>Receipts</div>
+                </div>
+              </div>
+
+              {/* Category Summary */}
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.5)", fontFamily: "Outfit", marginBottom: 10 }}>BREAKDOWN BY CATEGORY</div>
+                {catSummary.map((cat, i) => (
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 14 }}>{cat.icon}</span>
+                      <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", fontFamily: "DM Sans" }}>{cat.label} ({cat.count})</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <div style={{ width: 80, height: 5, borderRadius: 3, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+                        <div style={{ width: `${(cat.total / tripTotal) * 100}%`, height: "100%", background: cat.color, borderRadius: 3 }} />
+                      </div>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: "Outfit", minWidth: 70, textAlign: "right" }}>${cat.total.toLocaleString()}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Line Items */}
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.5)", fontFamily: "Outfit", marginBottom: 10 }}>LINE ITEMS</div>
+                <div style={{ background: "rgba(255,255,255,0.02)", borderRadius: 10, overflow: "hidden" }}>
+                  {/* Header */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 80px 90px 70px 28px", gap: 8, padding: "10px 14px", background: "rgba(255,255,255,0.03)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", fontFamily: "DM Sans", textTransform: "uppercase" }}>Description</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", fontFamily: "DM Sans", textTransform: "uppercase" }}>Date</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", fontFamily: "DM Sans", textTransform: "uppercase" }}>Payment</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", fontFamily: "DM Sans", textTransform: "uppercase", textAlign: "right" }}>Amount</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", fontFamily: "DM Sans", textAlign: "center" }}>🧾</span>
+                  </div>
+                  {/* Rows */}
+                  {tripExps.map((exp, i) => {
+                    const cat = EXPENSE_CATEGORIES.find(c => c.id === exp.category);
+                    return (
+                      <div key={exp.id} style={{ display: "grid", gridTemplateColumns: "1fr 80px 90px 70px 28px", gap: 8, padding: "10px 14px", borderBottom: i < tripExps.length - 1 ? "1px solid rgba(255,255,255,0.03)" : "none", alignItems: "center" }}>
+                        <div>
+                          <span style={{ fontSize: 12, color: "#fff", fontFamily: "DM Sans" }}>{cat?.icon} {exp.description}</span>
+                          {exp.notes && <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 1 }}>{exp.notes}</div>}
+                        </div>
+                        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "DM Sans" }}>{exp.date?.slice(5)}</span>
+                        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "DM Sans", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.paymentMethod || "—"}</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: exp.amount === 0 ? "#34d399" : "#fff", fontFamily: "Outfit", textAlign: "right" }}>
+                          {exp.amount === 0 ? "Free" : `$${exp.amount.toLocaleString()}`}
+                        </span>
+                        <span style={{ fontSize: 12, textAlign: "center" }}>{exp.receipt ? "✓" : "—"}</span>
+                      </div>
+                    );
+                  })}
+                  {/* Total */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 70px", gap: 8, padding: "12px 14px", background: "rgba(6,182,212,0.06)", borderTop: "2px solid rgba(6,182,212,0.2)" }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "#67e8f9", fontFamily: "Outfit" }}>TOTAL</span>
+                    <span style={{ fontSize: 14, fontWeight: 800, color: "#22d3ee", fontFamily: "Outfit", textAlign: "right" }}>${tripTotal.toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: 10 }}>
+                <button onClick={() => setShowExpenseReport(null)} style={{
+                  flex: 1, padding: "11px 0", borderRadius: 10, border: "1px solid rgba(255,255,255,0.08)", background: "transparent",
+                  color: "rgba(255,255,255,0.5)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "DM Sans",
+                }}>Close</button>
+                <button onClick={() => window.print()} style={{
+                  flex: 1, padding: "11px 0", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Outfit",
+                  background: "linear-gradient(135deg, #0891b2, #06b6d4)", color: "#fff",
+                }}>🖨️ Print / Save PDF</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
