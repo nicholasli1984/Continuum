@@ -190,9 +190,9 @@ const LOYALTY_PROGRAMS = {
 };
 
 const SAMPLE_USER = {
-  name: "Alex Rivera",
+  name: "Nicholas Li",
   email: "alex@example.com",
-  avatar: "AR",
+  avatar: "NL",
   tier: "premium",
   linkedAccounts: {
     aa: { memberId: "****4829", currentPoints: 68500, tierCredits: 68500 },
