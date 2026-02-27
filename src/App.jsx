@@ -4,23 +4,24 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 // LOGO COMPONENT — Geometric travel icon in Neuron brand style
 // Rounded container, arrow/compass motif, orange gradient
 // ============================================================
-const AirplaneLogo = ({ size = 40, color = "#F26B3A", className = "" }) => (
+const AirplaneLogo = ({ size = 40, color = "#8B9E7C", className = "" }) => (
   <svg width={size} height={size} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
     <defs>
       <linearGradient id="brandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#F5944E" />
-        <stop offset="100%" stopColor="#E05A2B" />
+        <stop offset="0%" stopColor="#8B9E7C" />
+        <stop offset="50%" stopColor="#A8B89A" />
+        <stop offset="100%" stopColor="#6B7E5C" />
       </linearGradient>
     </defs>
-    {/* Rounded square container */}
-    <rect x="4" y="4" width="56" height="56" rx="16" fill="url(#brandGrad)" />
-    {/* Abstract airplane/arrow — white on orange */}
-    <path d="M44 20 L28 36 L18 32 L16 35 L26 38 L22 48 L25 49 L30 40 L34 38 L48 22 L44 20Z" 
-      fill="#fff" opacity="0.95" />
-    {/* Compass dot accent */}
-    <circle cx="46" cy="18" r="2.5" fill="#fff" opacity="0.7" />
-    {/* Subtle inner border */}
-    <rect x="4" y="4" width="56" height="56" rx="16" fill="none" stroke="#fff" strokeWidth="0.5" opacity="0.15" />
+    {/* Soft circular container */}
+    <circle cx="32" cy="32" r="28" fill="url(#brandGrad)" />
+    {/* Leaf/compass motif — organic */}
+    <path d="M32 16 C24 24, 20 32, 32 48 C44 32, 40 24, 32 16Z" fill="#FEFCF9" opacity="0.9" />
+    <path d="M20 32 C28 24, 36 20, 48 32 C36 40, 28 44, 20 32Z" fill="#FEFCF9" opacity="0.5" />
+    {/* Center dot */}
+    <circle cx="32" cy="32" r="3" fill="#FEFCF9" opacity="0.8" />
+    {/* Subtle inner ring */}
+    <circle cx="32" cy="32" r="28" fill="none" stroke="#FEFCF9" strokeWidth="0.5" opacity="0.2" />
   </svg>
 );
 
@@ -30,157 +31,56 @@ const LogoMark = ({ size = 40 }) => (
   </div>
 );
 
-// Atmospheric travel background with animated elements
+// Organic atmosphere — holistic & grounded
 const TravelAtmosphere = () => (
   <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0, overflow: "hidden" }}>
-    {/* Deep sky gradient */}
+    {/* Warm cream base with subtle grain texture */}
+    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(170deg, #FAF8F3 0%, #F5F0E8 40%, #EDE5D8 70%, #F5F0E8 100%)" }} />
+    {/* Soft organic blob shapes — floating gently */}
     <div style={{
-      position: "absolute", inset: 0,
-      background: "radial-gradient(ellipse 120% 80% at 20% 10%, rgba(242,107,58,0.08) 0%, transparent 50%), radial-gradient(ellipse 100% 60% at 80% 90%, rgba(242,107,58,0.06) 0%, transparent 50%), radial-gradient(ellipse 80% 80% at 50% 50%, rgba(229,90,43,0.04) 0%, transparent 60%)",
-    }} />
-    {/* Aurora band */}
-    <div style={{
-      position: "absolute", top: 0, left: "-50%", right: "-50%", height: 400,
-      background: "linear-gradient(90deg, transparent, rgba(242,107,58,0.04), rgba(242,107,58,0.03), rgba(229,90,43,0.04), transparent)",
-      backgroundSize: "200% 100%", animation: "aurora 20s ease-in-out infinite", transform: "skewY(-3deg)", transformOrigin: "top left",
-    }} />
-    {/* Scattered stars */}
-    {[
-      { x: "10%", y: "15%", d: "0s", s: 2 }, { x: "25%", y: "8%", d: "1.5s", s: 1.5 }, { x: "45%", y: "20%", d: "3s", s: 1 },
-      { x: "60%", y: "5%", d: "0.8s", s: 2 }, { x: "75%", y: "18%", d: "2.2s", s: 1.5 }, { x: "90%", y: "12%", d: "4s", s: 1 },
-      { x: "15%", y: "85%", d: "1s", s: 1 }, { x: "35%", y: "75%", d: "2.5s", s: 1.5 }, { x: "55%", y: "90%", d: "3.5s", s: 2 },
-      { x: "80%", y: "80%", d: "0.5s", s: 1 }, { x: "95%", y: "70%", d: "1.8s", s: 1.5 }, { x: "5%", y: "50%", d: "2.8s", s: 1 },
-      { x: "70%", y: "45%", d: "4.2s", s: 1.5 }, { x: "40%", y: "55%", d: "1.2s", s: 1 }, { x: "85%", y: "35%", d: "3.8s", s: 2 },
-    ].map((star, i) => (
-      <div key={i} style={{
-        position: "absolute", left: star.x, top: star.y, width: star.s, height: star.s, borderRadius: "50%",
-        background: "#F7A86A", animation: `twinkle ${3 + (i % 3)}s ease-in-out ${star.d} infinite`,
-      }} />
-    ))}
-    {/* Floating cloud wisps */}
-    <div style={{
-      position: "absolute", top: "30%", left: 0, right: 0, height: 2,
-      background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.02) 20%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.02) 80%, transparent 100%)",
-      animation: "drift 60s linear infinite",
+      position: "absolute", top: "-10%", right: "-5%", width: "50vmax", height: "50vmax", borderRadius: "40% 60% 55% 45% / 50% 40% 60% 50%",
+      background: "radial-gradient(ellipse, rgba(139,158,124,0.08) 0%, transparent 70%)",
+      animation: "drift-gentle 40s ease-in-out infinite",
     }} />
     <div style={{
-      position: "absolute", top: "60%", left: 0, right: 0, height: 1,
-      background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.015) 30%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.015) 70%, transparent 100%)",
-      animation: "drift 80s linear 10s infinite",
+      position: "absolute", bottom: "-15%", left: "-8%", width: "45vmax", height: "45vmax", borderRadius: "55% 45% 50% 50% / 45% 55% 45% 55%",
+      background: "radial-gradient(ellipse, rgba(198,123,92,0.06) 0%, transparent 70%)",
+      animation: "drift-gentle 50s ease-in-out 5s infinite",
     }} />
-    {/* Globe grid pattern in bottom right */}
-    <svg style={{ position: "absolute", bottom: -60, right: -60, width: 400, height: 400, opacity: 0.025, animation: "globe-rotate 120s linear infinite" }} viewBox="0 0 400 400">
-      <circle cx="200" cy="200" r="180" stroke="#F7A86A" strokeWidth="0.5" fill="none" />
-      <circle cx="200" cy="200" r="140" stroke="#F7A86A" strokeWidth="0.5" fill="none" />
-      <circle cx="200" cy="200" r="100" stroke="#F7A86A" strokeWidth="0.5" fill="none" />
-      <ellipse cx="200" cy="200" rx="60" ry="180" stroke="#F7A86A" strokeWidth="0.5" fill="none" />
-      <ellipse cx="200" cy="200" rx="120" ry="180" stroke="#F7A86A" strokeWidth="0.5" fill="none" />
-      <line x1="20" y1="200" x2="380" y2="200" stroke="#F7A86A" strokeWidth="0.5" />
-      <line x1="200" y1="20" x2="200" y2="380" stroke="#F7A86A" strokeWidth="0.5" />
-      <line x1="20" y1="140" x2="380" y2="140" stroke="#F7A86A" strokeWidth="0.3" />
-      <line x1="20" y1="260" x2="380" y2="260" stroke="#F7A86A" strokeWidth="0.3" />
+    <div style={{
+      position: "absolute", top: "30%", left: "50%", width: "35vmax", height: "35vmax", borderRadius: "50% 50% 45% 55% / 55% 45% 50% 50%",
+      background: "radial-gradient(ellipse, rgba(184,150,90,0.05) 0%, transparent 65%)",
+      animation: "drift-gentle 35s ease-in-out 10s infinite",
+    }} />
+    {/* Circular decorative rings — barely visible */}
+    <svg style={{ position: "absolute", top: "8%", right: "12%", width: 300, height: 300, opacity: 0.04 }} viewBox="0 0 300 300">
+      <circle cx="150" cy="150" r="140" stroke="#8B9E7C" strokeWidth="0.8" fill="none" />
+      <circle cx="150" cy="150" r="100" stroke="#C67B5C" strokeWidth="0.5" fill="none" />
+      <circle cx="150" cy="150" r="60" stroke="#B8965A" strokeWidth="0.5" fill="none" />
     </svg>
-    {/* Runway lights along bottom */}
-    <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 1, display: "flex", justifyContent: "center", gap: 40 }}>
-      {Array.from({ length: 20 }).map((_, i) => (
-        <div key={i} style={{
-          width: 2, height: 2, borderRadius: "50%", background: i % 3 === 0 ? "#F7A86A" : "#f59e0b",
-          animation: `runway-light 2s ease-in-out ${i * 0.15}s infinite`, opacity: 0.3,
-        }} />
-      ))}
-    </div>
+    <svg style={{ position: "absolute", bottom: "15%", left: "8%", width: 200, height: 200, opacity: 0.03, animation: "slow-spin 120s linear infinite" }} viewBox="0 0 200 200">
+      <circle cx="100" cy="100" r="90" stroke="#8B9E7C" strokeWidth="0.8" fill="none" strokeDasharray="4 8" />
+      <circle cx="100" cy="100" r="50" stroke="#D4C9B8" strokeWidth="0.5" fill="none" />
+    </svg>
+    {/* Subtle grain overlay */}
+    <div style={{
+      position: "absolute", inset: 0, opacity: 0.015, mixBlendMode: "multiply",
+      backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+      backgroundSize: "200px 200px", animation: "grain-shift 8s steps(10) infinite",
+    }} />
   </div>
 );
 
-// Decorative flight path SVG for cards
-const FlightPath = ({ color = "#F7A86A", style = {} }) => (
-  <svg viewBox="0 0 200 40" style={{ position: "absolute", opacity: 0.06, ...style }} fill="none">
-    <path d="M0 30 Q50 5, 100 20 T200 10" stroke={color} strokeWidth="1" strokeDasharray="4 4" />
-    <circle cx="200" cy="10" r="3" fill={color} />
+// Decorative organic curve for cards
+const FlightPath = ({ color = "#8B9E7C", style = {} }) => (
+  <svg viewBox="0 0 200 40" style={{ position: "absolute", opacity: 0.08, ...style }} fill="none">
+    <path d="M0 30 C40 30, 60 10, 100 20 S160 30, 200 15" stroke={color} strokeWidth="1.2" strokeLinecap="round" />
+    <circle cx="200" cy="15" r="2.5" fill={color} opacity="0.5" />
   </svg>
 );
 
 // Per-page hero banner with travel photography
-const PAGE_HEROES = {
-  dashboard: {
-    img: "https://images.unsplash.com/photo-1569154941061-e231b4725ef1?w=1400&q=80&auto=format&fit=crop",
-    alt: "Airplane wing above clouds at golden hour",
-    accent: "#F5944E",
-  },
-  programs: {
-    img: "https://images.unsplash.com/photo-1556388158-158ea5ccacbd?w=1400&q=80&auto=format&fit=crop",
-    alt: "Airport departure board and terminal",
-    accent: "#F26B3A",
-  },
-  trips: {
-    img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1400&q=80&auto=format&fit=crop",
-    alt: "Tropical beach with turquoise water",
-    accent: "#34d399",
-  },
-  expenses: {
-    img: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1400&q=80&auto=format&fit=crop",
-    alt: "Luxury resort pool at dusk",
-    accent: "#f59e0b",
-  },
-  optimizer: {
-    img: "https://images.unsplash.com/photo-1540339832862-474599807836?w=1400&q=80&auto=format&fit=crop",
-    alt: "Business class airplane cabin",
-    accent: "#8b5cf6",
-  },
-  reports: {
-    img: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1400&q=80&auto=format&fit=crop",
-    alt: "Lake surrounded by mountains from above",
-    accent: "#F26B3A",
-  },
-  premium: {
-    img: "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=1400&q=80&auto=format&fit=crop",
-    alt: "Infinity pool overlooking ocean at sunset",
-    accent: "#f59e0b",
-  },
-};
-
-const PageHeroBanner = ({ view, title, subtitle }) => {
-  const hero = PAGE_HEROES[view];
-  if (!hero) return null;
-  return (
-    <div style={{
-      position: "relative", width: "100%", height: 180, borderRadius: 20, overflow: "hidden", marginBottom: 24,
-      boxShadow: `0 8px 40px rgba(0,0,0,0.4), 0 0 80px ${hero.accent}08`,
-    }}>
-      <img src={hero.img} alt={hero.alt} loading="eager" style={{
-        position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 40%",
-        animation: "hero-fade-in 1.2s ease-out forwards",
-      }} />
-      {/* Dark gradient overlay */}
-      <div style={{
-        position: "absolute", inset: 0,
-        background: `linear-gradient(135deg, rgba(4,11,24,0.82) 0%, rgba(4,11,24,0.45) 40%, rgba(4,11,24,0.25) 60%, ${hero.accent}08 100%)`,
-      }} />
-      {/* Bottom fade to page bg */}
-      <div style={{
-        position: "absolute", bottom: 0, left: 0, right: 0, height: 80,
-        background: "linear-gradient(to top, rgba(4,11,24,0.95), transparent)",
-      }} />
-      {/* Subtle scan lines texture */}
-      <div style={{
-        position: "absolute", inset: 0, opacity: 0.03,
-        backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.1) 2px, rgba(255,255,255,0.1) 3px)",
-      }} />
-      {/* Accent glow line at bottom */}
-      <div style={{
-        position: "absolute", bottom: 0, left: "10%", right: "10%", height: 1,
-        background: `linear-gradient(90deg, transparent, ${hero.accent}30, transparent)`,
-      }} />
-      {/* Title overlay */}
-      {title && (
-        <div style={{ position: "absolute", bottom: 20, left: 28, right: 28, zIndex: 2 }}>
-          <h1 style={{ fontSize: 24, fontWeight: 800, color: "#fff", margin: 0, fontFamily: "Plus Jakarta Sans", textShadow: "0 2px 20px rgba(0,0,0,0.5)" }}>{title}</h1>
-          {subtitle && <p style={{ fontSize: 12, color: `${hero.accent}cc`, fontFamily: "Space Grotesk", marginTop: 4, textShadow: "0 1px 10px rgba(0,0,0,0.5)" }}>{subtitle}</p>}
-        </div>
-      )}
-    </div>
-  );
-};
+// Hero banners removed — clean cosmic dashboard
 
 // ============================================================
 // DATA & CONSTANTS
@@ -457,42 +357,42 @@ const CREDIT_CARD_OFFERS = [
 // ============================================================
 // UTILITY COMPONENTS
 // ============================================================
-const ProgressRing = ({ progress, size = 80, stroke = 6, color = "#F26B3A", label, sublabel }) => {
+const ProgressRing = ({ progress, size = 80, stroke = 6, color = "#C67B5C", label, sublabel }) => {
   const radius = (size - stroke) / 2;
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (Math.min(progress, 100) / 100) * circumference;
   return (
     <div style={{ position: "relative", width: size, height: size }}>
       <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
-        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={stroke} />
+        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="rgba(139,158,124,0.12)" strokeWidth={stroke} />
         <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round"
           strokeDasharray={circumference} strokeDashoffset={offset} style={{ transition: "stroke-dashoffset 1s ease" }} />
       </svg>
       <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-        <span style={{ fontSize: size * 0.2, fontWeight: 700, color: "#fff" }}>{label}</span>
-        {sublabel && <span style={{ fontSize: size * 0.12, color: "rgba(255,255,255,0.5)", marginTop: 1 }}>{sublabel}</span>}
+        <span style={{ fontSize: size * 0.2, fontWeight: 700, color: "#2C2418" }}>{label}</span>
+        {sublabel && <span style={{ fontSize: size * 0.12, color: "rgba(44,36,24,0.5)", marginTop: 1 }}>{sublabel}</span>}
       </div>
     </div>
   );
 };
 
-const Badge = ({ children, color = "#F26B3A", small }) => (
+const Badge = ({ children, color = "#C67B5C", small }) => (
   <span style={{
-    display: "inline-block", padding: small ? "1px 6px" : "2px 10px", borderRadius: 20, fontSize: small ? 10 : 11,
+    display: "inline-block", padding: small ? "1px 6px" : "2px 10px", borderRadius: 28, fontSize: small ? 10 : 11,
     fontWeight: 600, background: `${color}22`, color: color, border: `1px solid ${color}33`, letterSpacing: 0.3,
   }}>{children}</span>
 );
 
 const MiniBar = ({ value, max, color, height = 6 }) => (
-  <div style={{ width: "100%", height, borderRadius: height, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+  <div style={{ width: "100%", height, borderRadius: height, background: "rgba(139,158,124,0.08)", overflow: "hidden" }}>
     <div style={{ width: `${Math.min((value / max) * 100, 100)}%`, height: "100%", borderRadius: height, background: `linear-gradient(90deg, ${color}, ${color}99)`, transition: "width 1s ease" }} />
   </div>
 );
 
 const IconBtn = ({ icon, label, active, onClick, badge }) => (
   <button onClick={onClick} title={label} style={{
-    position: "relative", width: 44, height: 44, borderRadius: 12, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18,
-    background: active ? "rgba(242,107,58,0.15)" : "transparent", color: active ? "#F7A86A" : "rgba(255,255,255,0.45)", transition: "all 0.2s",
+    position: "relative", width: 44, height: 44, borderRadius: 28, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18,
+    background: active ? "rgba(198,123,92,0.15)" : "transparent", color: active ? "#B8965A" : "rgba(255,255,255,0.45)", transition: "all 0.2s",
   }}>
     {icon}
     {badge && <span style={{ position: "absolute", top: 4, right: 4, width: 8, height: 8, borderRadius: "50%", background: "#ef4444" }} />}
@@ -528,7 +428,7 @@ export default function EliteStatusTracker() {
   const [showExpenseReport, setShowExpenseReport] = useState(null); // tripId for report modal
   const [customPrograms, setCustomPrograms] = useState([]);
   const [showAddProgram, setShowAddProgram] = useState(false);
-  const [newProgram, setNewProgram] = useState({ name: "", category: "airline", logo: "✈️", color: "#F26B3A", memberId: "", unit: "Points", tiers: "", selectedId: "", search: "" });
+  const [newProgram, setNewProgram] = useState({ name: "", category: "airline", logo: "✈️", color: "#C67B5C", memberId: "", unit: "Points", tiers: "", selectedId: "", search: "" });
   const [conciergeProgram, setConciergeProgram] = useState(null); // program object for AI concierge
   const [conciergeMessages, setConciergeMessages] = useState([]); // { role, content }
   const [conciergeInput, setConciergeInput] = useState("");
@@ -686,7 +586,7 @@ Start by introducing yourself briefly in-character with personality, and give an
   }, [conciergeInput, conciergeLoading, conciergeProgram, conciergeMessages, speakText]);
 
   const EXPENSE_CATEGORIES = [
-    { id: "flight", label: "Flights", icon: "✈️", color: "#F26B3A" },
+    { id: "flight", label: "Flights", icon: "✈️", color: "#C67B5C" },
     { id: "hotel", label: "Hotels", icon: "🏨", color: "#8b5cf6" },
     { id: "rental", label: "Car Rental", icon: "🚗", color: "#f59e0b" },
     { id: "dining", label: "Dining", icon: "🍽️", color: "#ef4444" },
@@ -810,34 +710,34 @@ Start by introducing yourself briefly in-character with personality, and give an
       { id: "forums", label: "Forums" },
     ];
     const goTo = (page) => { setPublicPage(page); window.scrollTo(0, 0); };
-    const fontLink = <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />;
+    const fontLink = <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Nunito:wght@300;400;500;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />;
 
     // --- Shared top nav bar ---
     const TopNav = () => (
       <nav style={{
         position: "sticky", top: 0, zIndex: 100, padding: "12px 28px",
-        background: "rgba(15,15,15,0.65)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
-        borderBottom: "1px solid rgba(242,107,58,0.1)",
+        background: "rgba(250,248,243,0.85)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
+        borderBottom: "1px solid rgba(198,123,92,0.1)",
         display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
       }}>
         <button onClick={() => goTo("landing")} style={{ display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", cursor: "pointer", flexShrink: 0 }}>
           <LogoMark size={28} />
-          <span style={{ fontSize: 17, fontWeight: 800, color: "#fff", fontFamily: "Plus Jakarta Sans", letterSpacing: -0.3 }}>Continuum</span>
+          <span style={{ fontSize: 17, fontWeight: 800, color: "#2C2418", fontFamily: "DM Serif Display", letterSpacing: -0.3 }}>Continuum</span>
         </button>
         <div style={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap", justifyContent: "flex-end" }}>
           {navLinks.map(n => (
             <button key={n.id} onClick={() => goTo(n.id)} style={{
               padding: "6px 12px", borderRadius: 8, border: "none", cursor: "pointer",
-              fontSize: 11.5, fontWeight: publicPage === n.id ? 700 : 500, fontFamily: "Space Grotesk",
-              background: publicPage === n.id ? "rgba(242,107,58,0.15)" : "transparent",
-              color: publicPage === n.id ? "#F7A86A" : "rgba(255,255,255,0.5)", transition: "all 0.2s",
+              fontSize: 11.5, fontWeight: publicPage === n.id ? 700 : 500, fontFamily: "Nunito",
+              background: publicPage === n.id ? "rgba(139,158,124,0.12)" : "transparent",
+              color: publicPage === n.id ? "#6B7E5C" : "rgba(44,36,24,0.5)", transition: "all 0.2s",
             }}>{n.label}</button>
           ))}
           <button onClick={() => goTo("login")} style={{
-            padding: "7px 18px", borderRadius: 10, border: "none", cursor: "pointer", marginLeft: 6,
-            fontSize: 12, fontWeight: 700, fontFamily: "Plus Jakarta Sans",
-            background: publicPage === "login" ? "#F26B3A" : "linear-gradient(135deg, #E05A2B, #F26B3A)", color: "#fff",
-            boxShadow: "0 2px 12px rgba(229,90,43,0.25)",
+            padding: "7px 18px", borderRadius: 24, border: "none", cursor: "pointer", marginLeft: 6,
+            fontSize: 12, fontWeight: 700, fontFamily: "DM Serif Display",
+            background: publicPage === "login" ? "#C67B5C" : "linear-gradient(135deg, #8B9E7C, #A8B89A)", color: "#FEFCF9",
+            boxShadow: "0 2px 12px rgba(139,158,124,0.25)",
           }}>Log In</button>
         </div>
       </nav>
@@ -845,11 +745,11 @@ Start by introducing yourself briefly in-character with personality, and give an
 
     // --- Shared footer ---
     const Footer = () => (
-      <footer style={{ position: "relative", zIndex: 1, padding: "40px 28px 20px", borderTop: "1px solid rgba(255,255,255,0.05)", background: "rgba(15,15,15,0.92)", marginTop: 60 }}>
+      <footer style={{ position: "relative", zIndex: 1, padding: "40px 28px 20px", borderTop: "1px solid rgba(139,158,124,0.06)", background: "rgba(250,248,243,0.97)", marginTop: 60 }}>
         <div style={{ maxWidth: 1000, margin: "0 auto", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 28 }}>
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}><LogoMark size={22} /><span style={{ fontSize: 14, fontWeight: 800, fontFamily: "Plus Jakarta Sans", color: "#fff" }}>Continuum</span></div>
-            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: "Space Grotesk", maxWidth: 260, lineHeight: 1.6 }}>The elite status intelligence platform. Track, optimize, and maximize every mile, point, and night.</p>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}><LogoMark size={22} /><span style={{ fontSize: 14, fontWeight: 800, fontFamily: "DM Serif Display", color: "#2C2418" }}>Continuum</span></div>
+            <p style={{ fontSize: 11, color: "rgba(44,36,24,0.3)", fontFamily: "Nunito", maxWidth: 260, lineHeight: 1.6 }}>The elite status intelligence platform. Track, optimize, and maximize every mile, point, and night.</p>
           </div>
           <div style={{ display: "flex", gap: 36, flexWrap: "wrap" }}>
             {[
@@ -858,26 +758,26 @@ Start by introducing yourself briefly in-character with personality, and give an
               { title: "Community", items: [{ label: "Blogs", id: "blogs" }, { label: "Forums", id: "forums" }, { label: "Airline Reviews", id: "airline-reviews" }, { label: "Hotel Reviews", id: "hotel-reviews" }] },
             ].map(col => (
               <div key={col.title}>
-                <h4 style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Space Grotesk", marginBottom: 10 }}>{col.title}</h4>
+                <h4 style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Nunito", marginBottom: 10 }}>{col.title}</h4>
                 {col.items.map(link => (
-                  <button key={link.label} onClick={() => goTo(link.id)} style={{ display: "block", background: "none", border: "none", color: "rgba(255,255,255,0.3)", fontSize: 11, fontFamily: "Space Grotesk", cursor: "pointer", padding: "2px 0" }}>{link.label}</button>
+                  <button key={link.label} onClick={() => goTo(link.id)} style={{ display: "block", background: "none", border: "none", color: "rgba(44,36,24,0.3)", fontSize: 11, fontFamily: "Nunito", cursor: "pointer", padding: "2px 0" }}>{link.label}</button>
                 ))}
               </div>
             ))}
           </div>
         </div>
-        <div style={{ textAlign: "center", marginTop: 24, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,0.04)" }}>
-          <p style={{ fontSize: 10, color: "rgba(255,255,255,0.18)", fontFamily: "Space Grotesk" }}>© 2026 Continuum. All rights reserved.</p>
+        <div style={{ textAlign: "center", marginTop: 24, paddingTop: 14, borderTop: "1px solid rgba(139,158,124,0.05)" }}>
+          <p style={{ fontSize: 10, color: "rgba(44,36,24,0.12)", fontFamily: "Nunito" }}>© 2026 Continuum. All rights reserved.</p>
         </div>
       </footer>
     );
 
     // --- Shared page shell (bermuda bg for landing, dark bg for content pages) ---
     const Shell = ({ children, showBg }) => (
-      <div style={{ minHeight: "100vh", background: "#0F0F0F", fontFamily: "'Plus Jakarta Sans', 'Space Grotesk', system-ui, sans-serif", color: "#fff", position: "relative" }}>
+      <div style={{ minHeight: "100vh", background: "#FAF8F3", fontFamily: "'DM Serif Display', 'Nunito', 'DM Sans', system-ui, sans-serif", color: "#2C2418", position: "relative" }}>
         {showBg && (<>
           <img src="/bermuda-bg.webp" alt="" style={{ position: "fixed", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 40%", zIndex: 0 }} />
-          <div style={{ position: "fixed", inset: 0, zIndex: 0, background: "linear-gradient(180deg, rgba(15,15,15,0.5) 0%, rgba(15,15,15,0.65) 35%, rgba(15,15,15,0.88) 65%, #0F0F0F 100%)" }} />
+          <div style={{ position: "fixed", inset: 0, zIndex: 0, background: "linear-gradient(180deg, rgba(250,248,243,0.75) 0%, rgba(250,248,243,0.85) 35%, rgba(250,248,243,0.95) 65%, #FAF8F3 100%)" }} />
         </>)}
         <TravelAtmosphere />
         {fontLink}
@@ -892,9 +792,9 @@ Start by introducing yourself briefly in-character with personality, and give an
       <div style={{ maxWidth: 920, margin: "0 auto", padding: "44px 28px 0" }}>
         <div style={{ marginBottom: 32 }}>
           <span style={{ fontSize: 30 }}>{icon}</span>
-          <h1 style={{ fontSize: 30, fontWeight: 800, color: "#fff", fontFamily: "Plus Jakarta Sans", margin: "8px 0 0" }}>{title}</h1>
-          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", fontFamily: "Space Grotesk", marginTop: 6 }}>{subtitle}</p>
-          <div style={{ width: 50, height: 3, borderRadius: 2, background: "linear-gradient(90deg, #E05A2B, #F5944E)", marginTop: 14 }} />
+          <h1 style={{ fontSize: 30, fontWeight: 800, color: "#2C2418", fontFamily: "DM Serif Display", margin: "8px 0 0" }}>{title}</h1>
+          <p style={{ fontSize: 13, color: "rgba(44,36,24,0.4)", fontFamily: "Nunito", marginTop: 6 }}>{subtitle}</p>
+          <div style={{ width: 50, height: 3, borderRadius: 2, background: "linear-gradient(90deg, #8B9E7C, #C67B5C)", marginTop: 14 }} />
         </div>
         {children}
       </div>
@@ -903,13 +803,13 @@ Start by introducing yourself briefly in-character with personality, and give an
     // Card helper
     const Card = ({ icon, title, desc, color, children, onClick, style: sx }) => (
       <div onClick={onClick} style={{
-        background: `linear-gradient(135deg, ${color || "rgba(242,107,58)"}08, rgba(255,255,255,0.02))`,
-        border: `1px solid ${color || "rgba(255,255,255)"}15`, borderRadius: 16, padding: 22,
+        background: `linear-gradient(135deg, ${color || "rgba(242,107,58)"}08, rgba(139,158,124,0.03))`,
+        border: `1px solid ${color || "rgba(255,255,255)"}15`, borderRadius: 24, padding: 22,
         cursor: onClick ? "pointer" : "default", transition: "border-color 0.2s", ...sx,
       }}>
         {icon && <span style={{ fontSize: 22, display: "block", marginBottom: 8 }}>{icon}</span>}
-        {title && <h3 style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: "Plus Jakarta Sans", margin: "0 0 5px" }}>{title}</h3>}
-        {desc && <p style={{ fontSize: 12, color: "rgba(255,255,255,0.38)", fontFamily: "Space Grotesk", lineHeight: 1.6, margin: 0 }}>{desc}</p>}
+        {title && <h3 style={{ fontSize: 14, fontWeight: 700, color: "#2C2418", fontFamily: "DM Serif Display", margin: "0 0 5px" }}>{title}</h3>}
+        {desc && <p style={{ fontSize: 12, color: "rgba(255,255,255,0.38)", fontFamily: "Nunito", lineHeight: 1.6, margin: 0 }}>{desc}</p>}
         {children}
       </div>
     );
@@ -918,44 +818,64 @@ Start by introducing yourself briefly in-character with personality, and give an
     if (publicPage === "landing") return (
       <Shell showBg>
         <div style={{ maxWidth: 1060, margin: "0 auto", padding: "0 28px" }}>
-          {/* Hero */}
-          <div style={{ textAlign: "center", padding: "90px 0 70px" }}>
-            <div style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}><LogoMark size={68} /></div>
-            <h1 style={{ fontSize: 48, fontWeight: 800, color: "#fff", fontFamily: "Plus Jakarta Sans", margin: 0, letterSpacing: -1, lineHeight: 1.1 }}>
-              Track Every Mile.<br />
-              <span style={{ background: "linear-gradient(135deg, #F5944E, #F26B3A, #E05A2B)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Maximize Every Status.</span>
-            </h1>
-            <p style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", fontFamily: "Space Grotesk", marginTop: 18, maxWidth: 500, marginLeft: "auto", marginRight: "auto", lineHeight: 1.7 }}>
-              All your airline, hotel, and credit card loyalty programs in one intelligent dashboard — never miss an upgrade, a tier, or a reward.
-            </p>
-            <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 32 }}>
-              <button onClick={() => goTo("login")} style={{
-                padding: "13px 34px", borderRadius: 12, border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "Plus Jakarta Sans",
-                background: "linear-gradient(135deg, #E05A2B, #F26B3A, #F5944E)", color: "#fff", boxShadow: "0 6px 28px rgba(229,90,43,0.35)",
-              }}>Get Started Free</button>
-              <button onClick={() => goTo("about")} style={{
-                padding: "13px 34px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.12)", cursor: "pointer", fontSize: 14, fontWeight: 600, fontFamily: "Space Grotesk",
-                background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.65)", backdropFilter: "blur(10px)",
-              }}>Learn More</button>
+          {/* Hero — Cosmic centered layout with orbital visual */}
+          <div style={{ textAlign: "center", padding: "70px 0 60px", position: "relative" }}>
+            {/* Orbital rings behind the logo */}
+            <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -55%)", width: 500, height: 500, pointerEvents: "none" }}>
+              <div style={{ position: "absolute", inset: 0, border: "1px solid rgba(198,123,92,0.08)", borderRadius: "50%", animation: "orbit 60s linear infinite" }}>
+                <div style={{ position: "absolute", top: 0, left: "50%", width: 8, height: 8, marginLeft: -4, marginTop: -4, borderRadius: "50%", background: "#C67B5C", boxShadow: "0 0 12px #C67B5C, 0 0 30px rgba(198,123,92,0.4)" }} />
+              </div>
+              <div style={{ position: "absolute", inset: 60, border: "1px solid rgba(100,150,255,0.06)", borderRadius: "50%", animation: "orbit-reverse 45s linear infinite" }}>
+                <div style={{ position: "absolute", bottom: 0, left: "50%", width: 6, height: 6, marginLeft: -3, marginBottom: -3, borderRadius: "50%", background: "#6496ff", boxShadow: "0 0 10px #6496ff" }} />
+              </div>
+              <div style={{ position: "absolute", inset: 130, border: "1px solid rgba(198,123,92,0.05)", borderRadius: "50%", animation: "orbit 35s linear infinite" }}>
+                <div style={{ position: "absolute", right: 0, top: "50%", width: 4, height: 4, marginRight: -2, marginTop: -2, borderRadius: "50%", background: "#B8965A", boxShadow: "0 0 8px #B8965A" }} />
+              </div>
+              {/* Central sun glow */}
+              <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 120, height: 120, borderRadius: "50%", background: "radial-gradient(circle, rgba(198,123,92,0.15) 0%, rgba(198,123,92,0.05) 50%, transparent 70%)", animation: "corona-pulse 6s ease-in-out infinite" }} />
+            </div>
+
+            <div style={{ position: "relative", zIndex: 1 }}>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}><LogoMark size={68} /></div>
+              <h1 style={{ fontSize: 48, fontWeight: 800, color: "#2C2418", fontFamily: "DM Serif Display", margin: 0, letterSpacing: -1, lineHeight: 1.1 }}>
+                Track Every Mile.<br />
+                <span style={{ background: "linear-gradient(135deg, #D4946E, #C67B5C, #A86040)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Maximize Every Status.</span>
+              </h1>
+              <p style={{ fontSize: 16, color: "rgba(44,36,24,0.5)", fontFamily: "Nunito", marginTop: 18, maxWidth: 500, marginLeft: "auto", marginRight: "auto", lineHeight: 1.7 }}>
+                All your airline, hotel, and credit card loyalty programs in one intelligent dashboard — never miss an upgrade, a tier, or a reward.
+              </p>
+              <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 32 }}>
+                <button onClick={() => goTo("login")} style={{
+                  padding: "13px 34px", borderRadius: 28, border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "DM Serif Display",
+                  background: "linear-gradient(135deg, #6B7E5C, #8B9E7C, #A8B89A)", color: "#2C2418",
+                  boxShadow: "0 6px 28px rgba(168,96,64,0.35), 0 0 60px rgba(198,123,92,0.15)",
+                }}>Get Started Free</button>
+                <button onClick={() => goTo("about")} style={{
+                  padding: "13px 34px", borderRadius: 28, border: "1px solid rgba(44,36,24,0.08)", cursor: "pointer", fontSize: 14, fontWeight: 600, fontFamily: "Nunito",
+                  background: "rgba(139,158,124,0.05)", color: "rgba(255,255,255,0.65)", backdropFilter: "blur(10px)",
+                }}>Learn More</button>
+              </div>
             </div>
           </div>
 
-          {/* Stats */}
+          {/* Stats — cosmic glass panel */}
           <div style={{
             display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 52,
-            padding: "24px 28px", borderRadius: 18, background: "rgba(15,15,15,0.55)", backdropFilter: "blur(20px)",
-            border: "1px solid rgba(255,255,255,0.06)",
+            padding: "24px 28px", borderRadius: 28,
+            background: "linear-gradient(135deg, rgba(10,10,30,0.7), rgba(5,5,20,0.6))",
+            backdropFilter: "blur(20px)", border: "1px solid rgba(198,123,92,0.08)",
+            boxShadow: "0 8px 40px rgba(44,36,24,0.1), inset 0 1px 0 rgba(139,158,124,0.05)",
           }}>
             {[{ v: "70+", l: "Loyalty Programs" }, { v: "18", l: "Airlines" }, { v: "12", l: "Hotel Chains" }, { v: "21", l: "Credit Cards" }].map((s, i) => (
               <div key={i} style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 26, fontWeight: 800, color: "#F7A86A", fontFamily: "Plus Jakarta Sans" }}>{s.v}</div>
-                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontFamily: "Space Grotesk", marginTop: 2 }}>{s.l}</div>
+                <div style={{ fontSize: 26, fontWeight: 800, color: "#B8965A", fontFamily: "DM Serif Display", textShadow: "0 0 20px rgba(198,123,92,0.3)" }}>{s.v}</div>
+                <div style={{ fontSize: 10, color: "rgba(44,36,24,0.4)", fontFamily: "Nunito", marginTop: 2 }}>{s.l}</div>
               </div>
             ))}
           </div>
 
           {/* Features */}
-          <h2 style={{ fontSize: 22, fontWeight: 800, color: "#fff", fontFamily: "Plus Jakarta Sans", textAlign: "center", marginBottom: 24 }}>Everything You Need to Travel Smarter</h2>
+          <h2 style={{ fontSize: 22, fontWeight: 800, color: "#2C2418", fontFamily: "DM Serif Display", textAlign: "center", marginBottom: 24 }}>Everything You Need to Travel Smarter</h2>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14, marginBottom: 52 }}>
             {[
               { icon: "📊", title: "Unified Dashboard", desc: "See all airline, hotel, and rental car elite status in one place with real-time projections." },
@@ -969,15 +889,15 @@ Start by introducing yourself briefly in-character with personality, and give an
 
           {/* CTA */}
           <div style={{
-            textAlign: "center", padding: "40px 28px", borderRadius: 22,
-            background: "linear-gradient(135deg, rgba(242,107,58,0.1), rgba(245,148,78,0.04))",
-            border: "1px solid rgba(242,107,58,0.12)",
+            textAlign: "center", padding: "40px 28px", borderRadius: 30,
+            background: "linear-gradient(135deg, rgba(198,123,92,0.1), rgba(212,148,110,0.04))",
+            border: "1px solid rgba(198,123,92,0.12)",
           }}>
-            <h2 style={{ fontSize: 22, fontWeight: 800, color: "#fff", fontFamily: "Plus Jakarta Sans", margin: "0 0 6px" }}>Ready to take control?</h2>
-            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", fontFamily: "Space Grotesk", marginBottom: 20 }}>Join thousands of travelers who never miss an upgrade.</p>
+            <h2 style={{ fontSize: 22, fontWeight: 800, color: "#2C2418", fontFamily: "DM Serif Display", margin: "0 0 6px" }}>Ready to take control?</h2>
+            <p style={{ fontSize: 13, color: "rgba(44,36,24,0.4)", fontFamily: "Nunito", marginBottom: 20 }}>Join thousands of travelers who never miss an upgrade.</p>
             <button onClick={() => goTo("login")} style={{
-              padding: "13px 36px", borderRadius: 12, border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "Plus Jakarta Sans",
-              background: "linear-gradient(135deg, #E05A2B, #F26B3A, #F5944E)", color: "#fff", boxShadow: "0 6px 28px rgba(229,90,43,0.35)",
+              padding: "13px 36px", borderRadius: 28, border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "DM Serif Display",
+              background: "linear-gradient(135deg, #6B7E5C, #8B9E7C, #A8B89A)", color: "#2C2418", boxShadow: "0 6px 28px rgba(168,96,64,0.35)",
             }}>Sign Up Free →</button>
           </div>
         </div>
@@ -1005,11 +925,11 @@ Start by introducing yourself briefly in-character with personality, and give an
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 12, marginBottom: 28 }}>
             {[...LOYALTY_PROGRAMS.airlines.slice(0, 8), ...LOYALTY_PROGRAMS.hotels.slice(0, 6)].map((p, i) => (
               <div key={i} style={{
-                background: `linear-gradient(135deg, ${p.color}10, rgba(255,255,255,0.02))`, border: `1px solid ${p.color}20`,
-                borderRadius: 14, padding: "16px 14px", display: "flex", alignItems: "center", gap: 10,
+                background: `linear-gradient(135deg, ${p.color}10, rgba(139,158,124,0.03))`, border: `1px solid ${p.color}20`,
+                borderRadius: 30, padding: "16px 14px", display: "flex", alignItems: "center", gap: 10,
               }}>
                 <span style={{ fontSize: 20 }}>{p.logo}</span>
-                <span style={{ fontSize: 12, fontWeight: 600, color: "#fff", fontFamily: "Space Grotesk" }}>{p.name}</span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: "#2C2418", fontFamily: "Nunito" }}>{p.name}</span>
               </div>
             ))}
           </div>
@@ -1031,15 +951,15 @@ Start by introducing yourself briefly in-character with personality, and give an
               { title: "The Rise of Credit Card Travel Lounges", date: "Jan 22, 2026", tag: "Lounges", desc: "Chase, Amex, and Capital One are all building lounge empires. What it means for you." },
             ].map((post, i) => (
               <div key={i} style={{
-                background: "linear-gradient(135deg, rgba(242,107,58,0.03), rgba(255,255,255,0.02))",
-                border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: 22, cursor: "pointer",
+                background: "linear-gradient(135deg, rgba(198,123,92,0.03), rgba(139,158,124,0.03))",
+                border: "1px solid rgba(139,158,124,0.08)", borderRadius: 24, padding: 22, cursor: "pointer",
               }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: "#F7A86A", background: "rgba(242,107,58,0.15)", padding: "2px 8px", borderRadius: 5, fontFamily: "Space Grotesk" }}>{post.tag}</span>
-                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: "Space Grotesk" }}>{post.date}</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: "#B8965A", background: "rgba(198,123,92,0.15)", padding: "2px 8px", borderRadius: 5, fontFamily: "Nunito" }}>{post.tag}</span>
+                  <span style={{ fontSize: 11, color: "rgba(44,36,24,0.3)", fontFamily: "Nunito" }}>{post.date}</span>
                 </div>
-                <h3 style={{ fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: "Plus Jakarta Sans", margin: "0 0 4px" }}>{post.title}</h3>
-                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.38)", fontFamily: "Space Grotesk", lineHeight: 1.6, margin: 0 }}>{post.desc}</p>
+                <h3 style={{ fontSize: 15, fontWeight: 700, color: "#2C2418", fontFamily: "DM Serif Display", margin: "0 0 4px" }}>{post.title}</h3>
+                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.38)", fontFamily: "Nunito", lineHeight: 1.6, margin: 0 }}>{post.desc}</p>
               </div>
             ))}
           </div>
@@ -1060,11 +980,11 @@ Start by introducing yourself briefly in-character with personality, and give an
       const lastAssistantMsg = [...conciergeMessages].reverse().find(m => m.role === "assistant");
       const isTalking = conciergeSpeaking;
       return (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.82)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000, padding: 16 }}
+        <div style={{ position: "fixed", inset: 0, background: "rgba(44,36,24,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000, padding: 16 }}
           onClick={() => { window.speechSynthesis?.cancel(); setConciergeProgram(null); setConciergeMessages([]); setConciergeSpeaking(false); }}>
           <div onClick={e => e.stopPropagation()} style={{
             width: "100%", maxWidth: 600, maxHeight: "90vh", borderRadius: 24,
-            background: `linear-gradient(160deg, #0F0F0F, #141414, ${p.color}08)`,
+            background: `linear-gradient(160deg, #FAF8F3, #FEFCF9, ${p.color}08)`,
             border: `1px solid ${p.color}25`,
             display: "flex", flexDirection: "column", overflow: "hidden",
             boxShadow: `0 40px 100px rgba(0,0,0,0.7), 0 0 80px ${p.color}08`,
@@ -1073,13 +993,13 @@ Start by introducing yourself briefly in-character with personality, and give an
             <div style={{ padding: "12px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: `1px solid ${p.color}15` }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ fontSize: 18 }}>{p.logo}</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: "Plus Jakarta Sans" }}>{p.name}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#2C2418", fontFamily: "DM Serif Display" }}>{p.name}</span>
               </div>
               <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                <span style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", fontFamily: "Space Grotesk", background: "rgba(255,255,255,0.06)", padding: "2px 7px", borderRadius: 4 }}>
+                <span style={{ fontSize: 9, color: "rgba(44,36,24,0.35)", fontFamily: "Nunito", background: "rgba(139,158,124,0.08)", padding: "2px 7px", borderRadius: 4 }}>
                   🌍 {(VOICE_PROFILES[p.id] || { accent: "International" }).accent}
                 </span>
-                {isTalking && <span style={{ fontSize: 9, color: "#34d399", fontFamily: "Space Grotesk", fontWeight: 600 }}>🔊 Speaking...</span>}
+                {isTalking && <span style={{ fontSize: 9, color: "#34d399", fontFamily: "Nunito", fontWeight: 600 }}>🔊 Speaking...</span>}
                 {isTalking && (
                   <button onClick={() => { window.speechSynthesis?.cancel(); setConciergeSpeaking(false); }} style={{
                     width: 26, height: 26, borderRadius: 6, border: "none", background: "rgba(239,68,68,0.15)", color: "#ef4444",
@@ -1087,7 +1007,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                   }} title="Stop speaking">🔇</button>
                 )}
                 <button onClick={() => { window.speechSynthesis?.cancel(); setConciergeProgram(null); setConciergeMessages([]); setConciergeSpeaking(false); }} style={{
-                  width: 30, height: 30, borderRadius: 8, border: "none", background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)",
+                  width: 30, height: 30, borderRadius: 8, border: "none", background: "rgba(139,158,124,0.08)", color: "rgba(44,36,24,0.4)",
                   cursor: "pointer", fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center",
                 }}>✕</button>
               </div>
@@ -1166,8 +1086,8 @@ Start by introducing yourself briefly in-character with personality, and give an
 
                 {/* Character name */}
                 <div style={{ marginTop: 10, textAlign: "center" }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: "Plus Jakarta Sans" }}>{char.title}</div>
-                  <div style={{ fontSize: 11, color: `${p.color}`, fontFamily: "Space Grotesk", marginTop: 2 }}>{p.name} Expert</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#2C2418", fontFamily: "DM Serif Display" }}>{char.title}</div>
+                  <div style={{ fontSize: 11, color: `${p.color}`, fontFamily: "Nunito", marginTop: 2 }}>{p.name} Expert</div>
                 </div>
               </div>
 
@@ -1175,8 +1095,8 @@ Start by introducing yourself briefly in-character with personality, and give an
               <div style={{ padding: "0 24px 16px" }}>
                 {lastAssistantMsg && (
                   <div style={{
-                    position: "relative", padding: "16px 20px", borderRadius: 18,
-                    background: `linear-gradient(135deg, ${p.color}10, rgba(255,255,255,0.03))`,
+                    position: "relative", padding: "16px 20px", borderRadius: 28,
+                    background: `linear-gradient(135deg, ${p.color}10, rgba(139,158,124,0.04))`,
                     border: `1px solid ${p.color}18`, animation: "speech-bubble-in 0.4s ease-out",
                   }}>
                     {/* Bubble arrow pointing up */}
@@ -1185,7 +1105,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                       width: 0, height: 0, borderLeft: "8px solid transparent", borderRight: "8px solid transparent",
                       borderBottom: `8px solid ${p.color}18`,
                     }} />
-                    <p style={{ fontSize: 13, color: "rgba(255,255,255,0.85)", fontFamily: "Space Grotesk", lineHeight: 1.7, margin: 0 }}>{lastAssistantMsg.content}</p>
+                    <p style={{ fontSize: 13, color: "rgba(255,255,255,0.85)", fontFamily: "Nunito", lineHeight: 1.7, margin: 0 }}>{lastAssistantMsg.content}</p>
                     {isTalking && (
                       <div style={{ display: "flex", gap: 3, marginTop: 8, alignItems: "center" }}>
                         {[0,1,2,3,4].map(i => (
@@ -1195,22 +1115,22 @@ Start by introducing yourself briefly in-character with personality, and give an
                             height: 8 + Math.sin(i) * 6,
                           }} />
                         ))}
-                        <span style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", fontFamily: "Space Grotesk", marginLeft: 6 }}>Speaking aloud...</span>
+                        <span style={{ fontSize: 10, color: "rgba(44,36,24,0.35)", fontFamily: "Nunito", marginLeft: 6 }}>Speaking aloud...</span>
                       </div>
                     )}
                   </div>
                 )}
                 {conciergeLoading && !lastAssistantMsg && (
                   <div style={{
-                    padding: "16px 20px", borderRadius: 18, textAlign: "center",
-                    background: `linear-gradient(135deg, ${p.color}08, rgba(255,255,255,0.02))`, border: `1px solid ${p.color}12`,
+                    padding: "16px 20px", borderRadius: 28, textAlign: "center",
+                    background: `linear-gradient(135deg, ${p.color}08, rgba(139,158,124,0.03))`, border: `1px solid ${p.color}12`,
                   }}>
                     <div style={{ display: "flex", gap: 5, justifyContent: "center" }}>
                       {[0,1,2].map(d => (
                         <div key={d} style={{ width: 8, height: 8, borderRadius: "50%", background: p.color, opacity: 0.5, animation: `twinkle 1s ease-in-out ${d * 0.2}s infinite` }} />
                       ))}
                     </div>
-                    <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: "Space Grotesk", marginTop: 8 }}>Preparing your briefing...</p>
+                    <p style={{ fontSize: 11, color: "rgba(44,36,24,0.3)", fontFamily: "Nunito", marginTop: 8 }}>Preparing your briefing...</p>
                   </div>
                 )}
               </div>
@@ -1218,14 +1138,14 @@ Start by introducing yourself briefly in-character with personality, and give an
               {/* Conversation history (collapsed, scrollable) */}
               {conciergeMessages.length > 1 && (
                 <div style={{ padding: "0 24px 12px" }}>
-                  <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.25)", fontFamily: "Space Grotesk", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Conversation</div>
+                  <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(44,36,24,0.25)", fontFamily: "Nunito", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Conversation</div>
                   <div style={{ maxHeight: 160, overflowY: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
                     {conciergeMessages.slice(0, -1).map((msg, i) => (
                       <div key={i} style={{
-                        padding: "6px 10px", borderRadius: 10, fontSize: 11, fontFamily: "Space Grotesk", lineHeight: 1.5,
-                        background: msg.role === "user" ? "rgba(242,107,58,0.12)" : "rgba(255,255,255,0.03)",
-                        color: msg.role === "user" ? "#F7A86A" : "rgba(255,255,255,0.45)",
-                        borderLeft: msg.role === "user" ? "2px solid #F26B3A" : `2px solid ${p.color}30`,
+                        padding: "6px 10px", borderRadius: 24, fontSize: 11, fontFamily: "Nunito", lineHeight: 1.5,
+                        background: msg.role === "user" ? "rgba(198,123,92,0.12)" : "rgba(139,158,124,0.04)",
+                        color: msg.role === "user" ? "#B8965A" : "rgba(255,255,255,0.45)",
+                        borderLeft: msg.role === "user" ? "2px solid #C67B5C" : `2px solid ${p.color}30`,
                       }}>{msg.role === "user" ? "You: " : ""}{msg.content.slice(0, 120)}{msg.content.length > 120 ? "..." : ""}</div>
                     ))}
                   </div>
@@ -1235,8 +1155,8 @@ Start by introducing yourself briefly in-character with personality, and give an
 
             {/* Input bar */}
             <div style={{
-              padding: "14px 18px", borderTop: "1px solid rgba(255,255,255,0.06)",
-              display: "flex", gap: 10, background: "rgba(0,0,0,0.25)",
+              padding: "14px 18px", borderTop: "1px solid rgba(139,158,124,0.08)",
+              display: "flex", gap: 10, background: "rgba(44,36,24,0.08)",
             }}>
               <input
                 value={conciergeInput}
@@ -1245,15 +1165,15 @@ Start by introducing yourself briefly in-character with personality, and give an
                 placeholder={`Ask ${char.title.toLowerCase()} a question...`}
                 autoFocus
                 style={{
-                  flex: 1, padding: "10px 14px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
-                  borderRadius: 12, color: "#fff", fontSize: 13, fontFamily: "Space Grotesk", outline: "none",
+                  flex: 1, padding: "10px 14px", background: "rgba(139,158,124,0.06)", border: "1px solid rgba(139,158,124,0.12)",
+                  borderRadius: 28, color: "#2C2418", fontSize: 13, fontFamily: "Nunito", outline: "none",
                 }}
               />
               <button onClick={sendConciergeMessage} disabled={conciergeLoading || !conciergeInput.trim()} style={{
-                padding: "10px 20px", borderRadius: 12, border: "none", cursor: conciergeLoading ? "not-allowed" : "pointer",
-                fontSize: 13, fontWeight: 700, fontFamily: "Plus Jakarta Sans",
-                background: conciergeLoading || !conciergeInput.trim() ? "rgba(255,255,255,0.06)" : `linear-gradient(135deg, #E05A2B, #F26B3A)`,
-                color: conciergeLoading || !conciergeInput.trim() ? "rgba(255,255,255,0.25)" : "#fff",
+                padding: "10px 20px", borderRadius: 28, border: "none", cursor: conciergeLoading ? "not-allowed" : "pointer",
+                fontSize: 13, fontWeight: 700, fontFamily: "DM Serif Display",
+                background: conciergeLoading || !conciergeInput.trim() ? "rgba(139,158,124,0.08)" : `linear-gradient(135deg, #6B7E5C, #8B9E7C)`,
+                color: conciergeLoading || !conciergeInput.trim() ? "rgba(44,36,24,0.25)" : "#FEFCF9",
               }}>Ask</button>
             </div>
           </div>
@@ -1268,26 +1188,26 @@ Start by introducing yourself briefly in-character with personality, and give an
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(270px, 1fr))", gap: 14 }}>
             {LOYALTY_PROGRAMS.airlines.slice(0, 12).map((a, i) => (
               <div key={i} onClick={() => openConcierge(a, "airline")} style={{
-                background: `linear-gradient(135deg, ${a.color}10, rgba(255,255,255,0.02))`, border: `1px solid ${a.color}20`,
-                borderRadius: 16, padding: 20, position: "relative", overflow: "hidden", cursor: "pointer",
+                background: `linear-gradient(135deg, ${a.color}10, rgba(139,158,124,0.03))`, border: `1px solid ${a.color}20`,
+                borderRadius: 24, padding: 20, position: "relative", overflow: "hidden", cursor: "pointer",
                 transition: "border-color 0.2s, transform 0.2s",
               }}>
                 <FlightPath color={a.color} style={{ top: 4, right: 4, width: 90, height: 18 }} />
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
                   <span style={{ fontSize: 26 }}>{a.logo}</span>
                   <div>
-                    <h3 style={{ fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: "Plus Jakarta Sans", margin: 0 }}>{a.name}</h3>
-                    <p style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", fontFamily: "Space Grotesk", margin: "2px 0 0" }}>{a.tiers?.length || 0} tiers · {a.unit}</p>
+                    <h3 style={{ fontSize: 13, fontWeight: 700, color: "#2C2418", fontFamily: "DM Serif Display", margin: 0 }}>{a.name}</h3>
+                    <p style={{ fontSize: 10, color: "rgba(44,36,24,0.35)", fontFamily: "Nunito", margin: "2px 0 0" }}>{a.tiers?.length || 0} tiers · {a.unit}</p>
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 3, flexWrap: "wrap", marginBottom: 8 }}>
                   {(a.tiers || []).map((t, ti) => (
-                    <span key={ti} style={{ fontSize: 9, fontWeight: 600, padding: "1px 6px", borderRadius: 4, background: `${a.color}12`, color: a.color, fontFamily: "Space Grotesk", border: `1px solid ${a.color}22` }}>{t.name}</span>
+                    <span key={ti} style={{ fontSize: 9, fontWeight: 600, padding: "1px 6px", borderRadius: 4, background: `${a.color}12`, color: a.color, fontFamily: "Nunito", border: `1px solid ${a.color}22` }}>{t.name}</span>
                   ))}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}>
                   <span style={{ fontSize: 14 }}>👨‍✈️</span>
-                  <span style={{ fontSize: 11, color: "#F7A86A", fontWeight: 600, fontFamily: "Space Grotesk" }}>Chat with AI Crew Member →</span>
+                  <span style={{ fontSize: 11, color: "#B8965A", fontWeight: 600, fontFamily: "Nunito" }}>Chat with AI Crew Member →</span>
                 </div>
               </div>
             ))}
@@ -1304,24 +1224,24 @@ Start by introducing yourself briefly in-character with personality, and give an
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(270px, 1fr))", gap: 14 }}>
             {LOYALTY_PROGRAMS.hotels.map((h, i) => (
               <div key={i} onClick={() => openConcierge(h, "hotel")} style={{
-                background: `linear-gradient(135deg, ${h.color}10, rgba(255,255,255,0.02))`, border: `1px solid ${h.color}20`,
-                borderRadius: 16, padding: 20, cursor: "pointer", transition: "border-color 0.2s, transform 0.2s",
+                background: `linear-gradient(135deg, ${h.color}10, rgba(139,158,124,0.03))`, border: `1px solid ${h.color}20`,
+                borderRadius: 24, padding: 20, cursor: "pointer", transition: "border-color 0.2s, transform 0.2s",
               }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
                   <span style={{ fontSize: 26 }}>{h.logo}</span>
                   <div>
-                    <h3 style={{ fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: "Plus Jakarta Sans", margin: 0 }}>{h.name}</h3>
-                    <p style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", fontFamily: "Space Grotesk", margin: "2px 0 0" }}>{h.tiers?.length || 0} tiers · {h.unit}</p>
+                    <h3 style={{ fontSize: 13, fontWeight: 700, color: "#2C2418", fontFamily: "DM Serif Display", margin: 0 }}>{h.name}</h3>
+                    <p style={{ fontSize: 10, color: "rgba(44,36,24,0.35)", fontFamily: "Nunito", margin: "2px 0 0" }}>{h.tiers?.length || 0} tiers · {h.unit}</p>
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 3, flexWrap: "wrap", marginBottom: 8 }}>
                   {(h.tiers || []).map((t, ti) => (
-                    <span key={ti} style={{ fontSize: 9, fontWeight: 600, padding: "1px 6px", borderRadius: 4, background: `${h.color}12`, color: h.color, fontFamily: "Space Grotesk", border: `1px solid ${h.color}22` }}>{t.name}</span>
+                    <span key={ti} style={{ fontSize: 9, fontWeight: 600, padding: "1px 6px", borderRadius: 4, background: `${h.color}12`, color: h.color, fontFamily: "Nunito", border: `1px solid ${h.color}22` }}>{t.name}</span>
                   ))}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}>
                   <span style={{ fontSize: 14 }}>🛎️</span>
-                  <span style={{ fontSize: 11, color: "#F7A86A", fontWeight: 600, fontFamily: "Space Grotesk" }}>Chat with AI Concierge →</span>
+                  <span style={{ fontSize: 11, color: "#B8965A", fontWeight: 600, fontFamily: "Nunito" }}>Chat with AI Concierge →</span>
                 </div>
               </div>
             ))}
@@ -1345,27 +1265,27 @@ Start by introducing yourself briefly in-character with personality, and give an
               { title: "Deals & Offers", icon: "🔥", threads: 921, desc: "The latest travel deals, mistake fares, and bonus promotions." },
             ].map((f, i) => (
               <div key={i} style={{
-                background: "linear-gradient(135deg, rgba(242,107,58,0.03), rgba(255,255,255,0.02))",
-                border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "16px 20px",
+                background: "linear-gradient(135deg, rgba(198,123,92,0.03), rgba(139,158,124,0.03))",
+                border: "1px solid rgba(139,158,124,0.08)", borderRadius: 30, padding: "16px 20px",
                 display: "flex", alignItems: "center", gap: 14, cursor: "pointer",
               }}>
                 <span style={{ fontSize: 26, width: 40, textAlign: "center" }}>{f.icon}</span>
                 <div style={{ flex: 1 }}>
-                  <h3 style={{ fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: "Plus Jakarta Sans", margin: 0 }}>{f.title}</h3>
-                  <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: "Space Grotesk", margin: "2px 0 0" }}>{f.desc}</p>
+                  <h3 style={{ fontSize: 13, fontWeight: 700, color: "#2C2418", fontFamily: "DM Serif Display", margin: 0 }}>{f.title}</h3>
+                  <p style={{ fontSize: 11, color: "rgba(44,36,24,0.35)", fontFamily: "Nunito", margin: "2px 0 0" }}>{f.desc}</p>
                 </div>
                 <div style={{ textAlign: "right", flexShrink: 0 }}>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: "#F7A86A", fontFamily: "Plus Jakarta Sans" }}>{f.threads.toLocaleString()}</div>
-                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", fontFamily: "Space Grotesk" }}>threads</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: "#B8965A", fontFamily: "DM Serif Display" }}>{f.threads.toLocaleString()}</div>
+                  <div style={{ fontSize: 9, color: "rgba(44,36,24,0.3)", fontFamily: "Nunito" }}>threads</div>
                 </div>
               </div>
             ))}
           </div>
           <div style={{ marginTop: 24, textAlign: "center" }}>
-            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.38)", fontFamily: "Space Grotesk", marginBottom: 12 }}>Sign up to start posting and engage with the community.</p>
+            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.38)", fontFamily: "Nunito", marginBottom: 12 }}>Sign up to start posting and engage with the community.</p>
             <button onClick={() => goTo("login")} style={{
-              padding: "11px 28px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Plus Jakarta Sans",
-              background: "linear-gradient(135deg, #E05A2B, #F26B3A)", color: "#fff",
+              padding: "11px 28px", borderRadius: 24, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "DM Serif Display",
+              background: "linear-gradient(135deg, #6B7E5C, #8B9E7C)", color: "#2C2418",
             }}>Sign Up to Join →</button>
           </div>
         </PageSection>
@@ -1381,22 +1301,22 @@ Start by introducing yourself briefly in-character with personality, and give an
           }}>
             <div style={{ textAlign: "center", marginBottom: 32 }}>
               <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}><LogoMark size={52} /></div>
-              <h1 style={{ fontSize: 26, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: -0.5, fontFamily: "Plus Jakarta Sans" }}>Welcome Back</h1>
-              <p style={{ color: "rgba(247,168,106,0.6)", fontSize: 13, marginTop: 6, fontFamily: "Space Grotesk" }}>Sign in to your Continuum account</p>
+              <h1 style={{ fontSize: 26, fontWeight: 800, color: "#2C2418", margin: 0, letterSpacing: -0.5, fontFamily: "DM Serif Display" }}>Welcome Back</h1>
+              <p style={{ color: "rgba(184,150,90,0.6)", fontSize: 13, marginTop: 6, fontFamily: "Nunito" }}>Sign in to your Continuum account</p>
             </div>
             <div style={{
-              background: "linear-gradient(135deg, rgba(242,107,58,0.06), rgba(255,255,255,0.03), rgba(242,107,58,0.04))",
-              border: "1px solid rgba(247,168,106,0.1)", borderRadius: 20, padding: 30,
-              backdropFilter: "blur(40px)", boxShadow: "0 25px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(247,168,106,0.08)",
+              background: "linear-gradient(135deg, rgba(198,123,92,0.06), rgba(139,158,124,0.04), rgba(198,123,92,0.04))",
+              border: "1px solid rgba(184,150,90,0.1)", borderRadius: 28, padding: 30,
+              backdropFilter: "blur(40px)", boxShadow: "0 25px 60px rgba(44,36,24,0.2), inset 0 1px 0 rgba(184,150,90,0.08)",
               position: "relative", overflow: "hidden",
             }}>
               <FlightPath style={{ top: 8, right: 8, width: 130, height: 28 }} />
-              <div style={{ display: "flex", marginBottom: 24, background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: 3 }}>
+              <div style={{ display: "flex", marginBottom: 24, background: "rgba(139,158,124,0.05)", borderRadius: 28, padding: 3 }}>
                 {["Sign In", "Register"].map((tab, i) => (
                   <button key={tab} onClick={() => setIsRegistering(i === 1)} style={{
-                    flex: 1, padding: "9px 0", border: "none", borderRadius: 10, cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: "Space Grotesk",
-                    background: (i === 0 ? !isRegistering : isRegistering) ? "rgba(242,107,58,0.2)" : "transparent",
-                    color: (i === 0 ? !isRegistering : isRegistering) ? "#F7A86A" : "rgba(255,255,255,0.35)", transition: "all 0.3s",
+                    flex: 1, padding: "9px 0", border: "none", borderRadius: 24, cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: "Nunito",
+                    background: (i === 0 ? !isRegistering : isRegistering) ? "rgba(198,123,92,0.2)" : "transparent",
+                    color: (i === 0 ? !isRegistering : isRegistering) ? "#B8965A" : "rgba(44,36,24,0.35)", transition: "all 0.3s",
                   }}>{tab}</button>
                 ))}
               </div>
@@ -1404,50 +1324,50 @@ Start by introducing yourself briefly in-character with personality, and give an
               {!isRegistering ? (
                 <div>
                   <label style={{ display: "block", marginBottom: 14 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Space Grotesk" }}>Email</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(44,36,24,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Nunito" }}>Email</span>
                     <input type="email" value={loginForm.email} onChange={e => setLoginForm(p => ({ ...p, email: e.target.value }))} placeholder="alex@example.com"
-                      style={{ display: "block", width: "100%", marginTop: 6, padding: "11px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 14, fontFamily: "Space Grotesk", outline: "none", boxSizing: "border-box" }} />
+                      style={{ display: "block", width: "100%", marginTop: 6, padding: "11px 14px", background: "rgba(139,158,124,0.05)", border: "1px solid rgba(139,158,124,0.12)", borderRadius: 24, color: "#2C2418", fontSize: 14, fontFamily: "Nunito", outline: "none", boxSizing: "border-box" }} />
                   </label>
                   <label style={{ display: "block", marginBottom: 22 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Space Grotesk" }}>Password</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(44,36,24,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Nunito" }}>Password</span>
                     <input type="password" value={loginForm.password} onChange={e => setLoginForm(p => ({ ...p, password: e.target.value }))} placeholder="••••••••"
-                      style={{ display: "block", width: "100%", marginTop: 6, padding: "11px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 14, fontFamily: "Space Grotesk", outline: "none", boxSizing: "border-box" }} />
+                      style={{ display: "block", width: "100%", marginTop: 6, padding: "11px 14px", background: "rgba(139,158,124,0.05)", border: "1px solid rgba(139,158,124,0.12)", borderRadius: 24, color: "#2C2418", fontSize: 14, fontFamily: "Nunito", outline: "none", boxSizing: "border-box" }} />
                   </label>
                   <button onClick={handleLogin} style={{
-                    width: "100%", padding: "12px 0", border: "none", borderRadius: 12, cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "Plus Jakarta Sans",
-                    background: "linear-gradient(135deg, #E05A2B, #F26B3A, #F5944E)", color: "#fff", boxShadow: "0 4px 20px rgba(229,90,43,0.3)",
+                    width: "100%", padding: "12px 0", border: "none", borderRadius: 28, cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "DM Serif Display",
+                    background: "linear-gradient(135deg, #6B7E5C, #8B9E7C, #A8B89A)", color: "#2C2418", boxShadow: "0 4px 20px rgba(168,96,64,0.3)",
                   }}>Sign In</button>
                   <button onClick={() => { setLoginForm({ email: "alex@example.com", password: "demo" }); setTimeout(handleLogin, 100); }} style={{
-                    width: "100%", padding: "10px 0", border: "1px solid rgba(242,107,58,0.2)", borderRadius: 12, cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: "Space Grotesk",
-                    background: "transparent", color: "#F7A86A", marginTop: 10,
+                    width: "100%", padding: "10px 0", border: "1px solid rgba(198,123,92,0.2)", borderRadius: 28, cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: "Nunito",
+                    background: "transparent", color: "#B8965A", marginTop: 10,
                   }}>Try Demo Account →</button>
                 </div>
               ) : (
                 <div>
                   <label style={{ display: "block", marginBottom: 12 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Space Grotesk" }}>Full Name</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(44,36,24,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Nunito" }}>Full Name</span>
                     <input value={registerForm.name} onChange={e => setRegisterForm(p => ({ ...p, name: e.target.value }))} placeholder="Your name"
-                      style={{ display: "block", width: "100%", marginTop: 6, padding: "11px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 14, fontFamily: "Space Grotesk", outline: "none", boxSizing: "border-box" }} />
+                      style={{ display: "block", width: "100%", marginTop: 6, padding: "11px 14px", background: "rgba(139,158,124,0.05)", border: "1px solid rgba(139,158,124,0.12)", borderRadius: 24, color: "#2C2418", fontSize: 14, fontFamily: "Nunito", outline: "none", boxSizing: "border-box" }} />
                   </label>
                   <label style={{ display: "block", marginBottom: 12 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Space Grotesk" }}>Email</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(44,36,24,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Nunito" }}>Email</span>
                     <input type="email" value={registerForm.email} onChange={e => setRegisterForm(p => ({ ...p, email: e.target.value }))} placeholder="you@email.com"
-                      style={{ display: "block", width: "100%", marginTop: 6, padding: "11px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 14, fontFamily: "Space Grotesk", outline: "none", boxSizing: "border-box" }} />
+                      style={{ display: "block", width: "100%", marginTop: 6, padding: "11px 14px", background: "rgba(139,158,124,0.05)", border: "1px solid rgba(139,158,124,0.12)", borderRadius: 24, color: "#2C2418", fontSize: 14, fontFamily: "Nunito", outline: "none", boxSizing: "border-box" }} />
                   </label>
                   <label style={{ display: "block", marginBottom: 22 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Space Grotesk" }}>Password</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(44,36,24,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Nunito" }}>Password</span>
                     <input type="password" value={registerForm.password} onChange={e => setRegisterForm(p => ({ ...p, password: e.target.value }))} placeholder="••••••••"
-                      style={{ display: "block", width: "100%", marginTop: 6, padding: "11px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 14, fontFamily: "Space Grotesk", outline: "none", boxSizing: "border-box" }} />
+                      style={{ display: "block", width: "100%", marginTop: 6, padding: "11px 14px", background: "rgba(139,158,124,0.05)", border: "1px solid rgba(139,158,124,0.12)", borderRadius: 24, color: "#2C2418", fontSize: 14, fontFamily: "Nunito", outline: "none", boxSizing: "border-box" }} />
                   </label>
                   <button onClick={handleRegister} style={{
-                    width: "100%", padding: "12px 0", border: "none", borderRadius: 12, cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "Plus Jakarta Sans",
-                    background: "linear-gradient(135deg, #E05A2B, #F26B3A, #F5944E)", color: "#fff", boxShadow: "0 4px 20px rgba(229,90,43,0.3)",
+                    width: "100%", padding: "12px 0", border: "none", borderRadius: 28, cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "DM Serif Display",
+                    background: "linear-gradient(135deg, #6B7E5C, #8B9E7C, #A8B89A)", color: "#2C2418", boxShadow: "0 4px 20px rgba(168,96,64,0.3)",
                   }}>Create Account</button>
                 </div>
               )}
 
-              <div style={{ textAlign: "center", marginTop: 18, padding: "12px 0 0", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                <p style={{ color: "rgba(255,255,255,0.25)", fontSize: 11, fontFamily: "Space Grotesk", margin: 0 }}>By signing in, you agree to our Terms of Service</p>
+              <div style={{ textAlign: "center", marginTop: 18, padding: "12px 0 0", borderTop: "1px solid rgba(139,158,124,0.06)" }}>
+                <p style={{ color: "rgba(44,36,24,0.25)", fontSize: 11, fontFamily: "Nunito", margin: 0 }}>By signing in, you agree to our Terms of Service</p>
               </div>
             </div>
           </div>
@@ -1477,22 +1397,22 @@ Start by introducing yourself briefly in-character with personality, and give an
         {/* Stats Row */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14, marginBottom: 28 }}>
           {[
-            { label: "Linked Programs", value: Object.keys(linkedAccounts).length, icon: "🔗", color: "#F5944E" },
+            { label: "Linked Programs", value: Object.keys(linkedAccounts).length, icon: "🔗", color: "#D4946E" },
             { label: "Planned Trips", value: totalTrips, icon: "🗺️", color: "#34d399" },
             { label: "Confirmed", value: confirmedTrips, icon: "✅", color: "#fbbf24" },
             { label: "Status Advances", value: willAdvanceCount, icon: "🚀", color: "#f472b6" },
           ].map((stat, i) => (
             <div key={i} style={{
-              background: `linear-gradient(135deg, ${stat.color}08, rgba(255,255,255,0.02))`,
-              border: `1px solid ${stat.color}15`, borderRadius: 16, padding: "18px 20px",
+              background: `linear-gradient(135deg, ${stat.color}08, rgba(139,158,124,0.03))`,
+              border: `1px solid ${stat.color}15`, borderRadius: 24, padding: "18px 20px",
               display: "flex", alignItems: "center", gap: 14, position: "relative", overflow: "hidden",
               boxShadow: `0 4px 20px ${stat.color}08`,
             }}>
               <FlightPath color={stat.color} style={{ bottom: 4, left: 20, width: 120, height: 24 }} />
               <div style={{ fontSize: 28, position: "relative" }}>{stat.icon}</div>
               <div>
-                <div style={{ fontSize: 24, fontWeight: 800, color: "#fff", fontFamily: "Plus Jakarta Sans" }}>{stat.value}</div>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontWeight: 500, fontFamily: "Space Grotesk" }}>{stat.label}</div>
+                <div style={{ fontSize: 24, fontWeight: 800, color: "#2C2418", fontFamily: "DM Serif Display" }}>{stat.value}</div>
+                <div style={{ fontSize: 11, color: "rgba(44,36,24,0.4)", fontWeight: 500, fontFamily: "Nunito" }}>{stat.label}</div>
               </div>
             </div>
           ))}
@@ -1501,7 +1421,7 @@ Start by introducing yourself briefly in-character with personality, and give an
         {/* Airline Status Cards */}
         {airlineStatuses.length > 0 && (
           <div style={{ marginBottom: 28 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.7)", marginBottom: 14, fontFamily: "Plus Jakarta Sans" }}>✈️ Airline Elite Status</h3>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.7)", marginBottom: 14, fontFamily: "DM Serif Display" }}>✈️ Airline Elite Status</h3>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 14 }}>
               {airlineStatuses.map(p => {
                 const s = p.status;
@@ -1509,14 +1429,14 @@ Start by introducing yourself briefly in-character with personality, and give an
                 return (
                   <div key={p.id} onClick={() => { setSelectedProgram(p.id); setActiveView("programs"); }} style={{
                     background: `linear-gradient(135deg, ${p.color}15, ${p.accent}10)`, border: `1px solid ${p.color}30`,
-                    borderRadius: 16, padding: 22, cursor: "pointer", transition: "all 0.3s",
+                    borderRadius: 24, padding: 22, cursor: "pointer", transition: "all 0.3s",
                     boxShadow: `0 4px 25px ${p.color}10`, position: "relative", overflow: "hidden",
                   }}>
                     <FlightPath color={p.color} style={{ top: 6, right: 6, width: 100, height: 20 }} />
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
                       <div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: "Plus Jakarta Sans" }}>{p.name}</div>
-                        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "Space Grotesk", marginTop: 2 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "#2C2418", fontFamily: "DM Serif Display" }}>{p.name}</div>
+                        <div style={{ fontSize: 11, color: "rgba(44,36,24,0.4)", fontFamily: "Nunito", marginTop: 2 }}>
                           {s.currentTier ? s.currentTier.name : "Member"} → {s.nextTier?.name || "Top Tier"}
                         </div>
                       </div>
@@ -1525,13 +1445,13 @@ Start by introducing yourself briefly in-character with personality, and give an
                     <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                       <ProgressRing progress={Math.min(progress, 100)} size={70} color={p.color} label={`${Math.round(progress)}%`} sublabel={p.unit} />
                       <div style={{ flex: 1 }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 4, fontFamily: "Space Grotesk" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "rgba(44,36,24,0.4)", marginBottom: 4, fontFamily: "Nunito" }}>
                           <span>{s.projected.toLocaleString()} {p.unit}</span>
                           <span>{s.nextTier?.threshold.toLocaleString()}</span>
                         </div>
                         <MiniBar value={s.projected} max={s.nextTier?.threshold || s.projected} color={p.color} height={8} />
                         {s.tripBoosts > 0 && (
-                          <div style={{ fontSize: 10, color: "#34d399", marginTop: 6, fontFamily: "Space Grotesk" }}>+{s.tripBoosts.toLocaleString()} from upcoming trips</div>
+                          <div style={{ fontSize: 10, color: "#34d399", marginTop: 6, fontFamily: "Nunito" }}>+{s.tripBoosts.toLocaleString()} from upcoming trips</div>
                         )}
                       </div>
                     </div>
@@ -1545,7 +1465,7 @@ Start by introducing yourself briefly in-character with personality, and give an
         {/* Hotel Status Cards */}
         {hotelStatuses.length > 0 && (
           <div style={{ marginBottom: 28 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.7)", marginBottom: 14, fontFamily: "Plus Jakarta Sans" }}>🏨 Hotel Elite Status</h3>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.7)", marginBottom: 14, fontFamily: "DM Serif Display" }}>🏨 Hotel Elite Status</h3>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 14 }}>
               {hotelStatuses.map(p => {
                 const s = p.status;
@@ -1553,20 +1473,20 @@ Start by introducing yourself briefly in-character with personality, and give an
                 return (
                   <div key={p.id} onClick={() => { setSelectedProgram(p.id); setActiveView("programs"); }} style={{
                     background: `linear-gradient(135deg, ${p.color}15, ${p.accent}10)`, border: `1px solid ${p.color}30`,
-                    borderRadius: 16, padding: 22, cursor: "pointer", transition: "all 0.3s",
+                    borderRadius: 24, padding: 22, cursor: "pointer", transition: "all 0.3s",
                     boxShadow: `0 4px 25px ${p.color}10`,
                   }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
                       <div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: "Plus Jakarta Sans" }}>{p.name}</div>
-                        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "Space Grotesk", marginTop: 2 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "#2C2418", fontFamily: "DM Serif Display" }}>{p.name}</div>
+                        <div style={{ fontSize: 11, color: "rgba(44,36,24,0.4)", fontFamily: "Nunito", marginTop: 2 }}>
                           {s.currentTier ? s.currentTier.name : "Member"} • {s.current} nights YTD
                         </div>
                       </div>
                       {s.willAdvance && <Badge color="#34d399" small>↑ Tier Up!</Badge>}
                     </div>
                     <MiniBar value={s.projected} max={s.nextTier?.threshold || s.projected} color={p.color} height={8} />
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 6, fontFamily: "Space Grotesk" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "rgba(44,36,24,0.35)", marginTop: 6, fontFamily: "Nunito" }}>
                       <span>{s.projected} / {s.nextTier?.threshold || "MAX"} nights</span>
                       {s.tripBoosts > 0 && <span style={{ color: "#34d399" }}>+{s.tripBoosts} planned</span>}
                     </div>
@@ -1580,9 +1500,9 @@ Start by introducing yourself briefly in-character with personality, and give an
         {/* Upcoming Trips Timeline */}
         <div style={{ marginBottom: 28 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.7)", margin: 0, fontFamily: "Plus Jakarta Sans" }}>📅 Upcoming Trips</h3>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.7)", margin: 0, fontFamily: "DM Serif Display" }}>📅 Upcoming Trips</h3>
             <button onClick={() => setActiveView("trips")} style={{
-              background: "none", border: "none", color: "#F5944E", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Space Grotesk",
+              background: "none", border: "none", color: "#D4946E", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Nunito",
             }}>View All →</button>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -1590,24 +1510,24 @@ Start by introducing yourself briefly in-character with personality, and give an
               const prog = allPrograms.find(p => p.id === trip.program);
               return (
                 <div key={trip.id} style={{
-                  background: "linear-gradient(135deg, rgba(242,107,58,0.02), rgba(255,255,255,0.02))", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "14px 18px",
+                  background: "linear-gradient(135deg, rgba(198,123,92,0.02), rgba(139,158,124,0.03))", border: "1px solid rgba(139,158,124,0.08)", borderRadius: 28, padding: "14px 18px",
                   display: "flex", justifyContent: "space-between", alignItems: "center",
                 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <span style={{ fontSize: 22 }}>{trip.type === "flight" ? "✈️" : trip.type === "hotel" ? "🏨" : "🚗"}</span>
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", fontFamily: "Space Grotesk" }}>{trip.route || trip.property || trip.location}</div>
-                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: "Space Grotesk" }}>{trip.date} • {prog?.name}</div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#2C2418", fontFamily: "Nunito" }}>{trip.route || trip.property || trip.location}</div>
+                      <div style={{ fontSize: 11, color: "rgba(44,36,24,0.35)", fontFamily: "Nunito" }}>{trip.date} • {prog?.name}</div>
                     </div>
                   </div>
-                  <Badge color={trip.status === "confirmed" ? "#34d399" : trip.status === "planned" ? "#fbbf24" : "#F5944E"} small>
+                  <Badge color={trip.status === "confirmed" ? "#34d399" : trip.status === "planned" ? "#fbbf24" : "#D4946E"} small>
                     {trip.status}
                   </Badge>
                 </div>
               );
             })}
             {trips.length === 0 && (
-              <div style={{ textAlign: "center", padding: 40, color: "rgba(255,255,255,0.25)", fontSize: 13, fontFamily: "Space Grotesk" }}>
+              <div style={{ textAlign: "center", padding: 40, color: "rgba(44,36,24,0.25)", fontSize: 13, fontFamily: "Nunito" }}>
                 No trips yet. Add your first trip to start tracking! ✈️
               </div>
             )}
@@ -1617,24 +1537,24 @@ Start by introducing yourself briefly in-character with personality, and give an
         {/* Credit Card Recommendations - Monetization */}
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.7)", margin: 0, fontFamily: "Plus Jakarta Sans" }}>💳 Recommended Cards</h3>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.7)", margin: 0, fontFamily: "DM Serif Display" }}>💳 Recommended Cards</h3>
             <Badge color="#fbbf24" small>SPONSORED</Badge>
           </div>
           <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 8 }}>
             {CREDIT_CARD_OFFERS.slice(0, 3).map((card, i) => (
               <div key={i} style={{
                 minWidth: 220, background: `linear-gradient(135deg, ${card.color}20, ${card.color}08)`, border: `1px solid ${card.color}30`,
-                borderRadius: 14, padding: 18, flex: "0 0 auto",
+                borderRadius: 30, padding: 18, flex: "0 0 auto",
               }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: "Plus Jakarta Sans", marginBottom: 6 }}>{card.name}</div>
-                <div style={{ fontSize: 20, fontWeight: 800, color: "#fbbf24", fontFamily: "Plus Jakarta Sans", marginBottom: 4 }}>{card.bonus}</div>
-                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontFamily: "Space Grotesk", marginBottom: 10 }}>Spend {card.spend} • {card.fee}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#2C2418", fontFamily: "DM Serif Display", marginBottom: 6 }}>{card.name}</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: "#fbbf24", fontFamily: "DM Serif Display", marginBottom: 4 }}>{card.bonus}</div>
+                <div style={{ fontSize: 10, color: "rgba(44,36,24,0.4)", fontFamily: "Nunito", marginBottom: 10 }}>Spend {card.spend} • {card.fee}</div>
                 <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                  {card.tags.map((tag, j) => <Badge key={j} color={card.color || "#F26B3A"} small>{tag}</Badge>)}
+                  {card.tags.map((tag, j) => <Badge key={j} color={card.color || "#C67B5C"} small>{tag}</Badge>)}
                 </div>
                 <button style={{
                   width: "100%", marginTop: 12, padding: "8px 0", borderRadius: 8, border: `1px solid ${card.color}40`, background: "transparent",
-                  color: "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "Space Grotesk",
+                  color: "#2C2418", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "Nunito",
                 }}>Apply Now →</button>
               </div>
             ))}
@@ -1662,18 +1582,18 @@ Start by introducing yourself briefly in-character with personality, and give an
       <div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
           <div>
-            <h2 style={{ fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, fontFamily: "Plus Jakarta Sans" }}>Loyalty Programs</h2>
-            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, margin: "4px 0 0", fontFamily: "Space Grotesk" }}>Link and manage all your accounts</p>
+            <h2 style={{ fontSize: 20, fontWeight: 800, color: "#2C2418", margin: 0, fontFamily: "DM Serif Display" }}>Loyalty Programs</h2>
+            <p style={{ color: "rgba(44,36,24,0.4)", fontSize: 12, margin: "4px 0 0", fontFamily: "Nunito" }}>Link and manage all your accounts</p>
           </div>
           <button onClick={() => setShowAddProgram(true)} style={{
-            padding: "10px 20px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Plus Jakarta Sans",
-            background: "linear-gradient(135deg, #E05A2B, #F26B3A)", color: "#fff", boxShadow: "0 4px 15px rgba(229,90,43,0.3)",
+            padding: "10px 20px", borderRadius: 24, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "DM Serif Display",
+            background: "linear-gradient(135deg, #6B7E5C, #8B9E7C)", color: "#2C2418", boxShadow: "0 4px 15px rgba(168,96,64,0.3)",
           }}>+ Add Program</button>
         </div>
 
         {categories.map((cat, ci) => (
           <div key={ci} style={{ marginBottom: 28 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.6)", marginBottom: 12, fontFamily: "Plus Jakarta Sans" }}>{cat.icon} {cat.label}</h3>
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.6)", marginBottom: 12, fontFamily: "DM Serif Display" }}>{cat.icon} {cat.label}</h3>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 14 }}>
               {cat.programs.map(prog => {
                 const isLinked = !!linkedAccounts[prog.id];
@@ -1683,31 +1603,31 @@ Start by introducing yourself briefly in-character with personality, and give an
                 return (
                   <div key={prog.id} style={{
                     background: isLinked ? `linear-gradient(135deg, ${prog.color}12, ${prog.accent || prog.color}08)` : "rgba(255,255,255,0.015)",
-                    border: `1px solid ${isLinked ? prog.color + "30" : "rgba(255,255,255,0.06)"}`,
-                    borderRadius: 16, padding: 22, transition: "all 0.3s",
+                    border: `1px solid ${isLinked ? prog.color + "30" : "rgba(139,158,124,0.08)"}`,
+                    borderRadius: 24, padding: 22, transition: "all 0.3s",
                   }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                         <span style={{ fontSize: 26 }}>{prog.logo}</span>
                         <div>
-                          <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: "Plus Jakarta Sans" }}>{prog.name}</div>
-                          {isLinked && !isCard && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: "Space Grotesk" }}>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: "#2C2418", fontFamily: "DM Serif Display" }}>{prog.name}</div>
+                          {isLinked && !isCard && <div style={{ fontSize: 11, color: "rgba(44,36,24,0.35)", fontFamily: "Nunito" }}>
                             ID: {linkedAccounts[prog.id].memberId}
                           </div>}
-                          {isCard && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: "Space Grotesk" }}>{prog.annualFee ? `$${prog.annualFee}/yr` : ""}</div>}
+                          {isCard && <div style={{ fontSize: 11, color: "rgba(44,36,24,0.35)", fontFamily: "Nunito" }}>{prog.annualFee ? `$${prog.annualFee}/yr` : ""}</div>}
                         </div>
                       </div>
-                      {isLinked ? <Badge color="#34d399" small>Linked</Badge> : <Badge color="rgba(255,255,255,0.3)" small>Not Linked</Badge>}
+                      {isLinked ? <Badge color="#34d399" small>Linked</Badge> : <Badge color="rgba(44,36,24,0.3)" small>Not Linked</Badge>}
                     </div>
 
                     {isLinked && status && !isCard && (
                       <div style={{ marginBottom: 14 }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 6, fontFamily: "Space Grotesk" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "rgba(44,36,24,0.4)", marginBottom: 6, fontFamily: "Nunito" }}>
                           <span>Current: {status.currentTier?.name || "Member"}</span>
                           <span>Next: {status.nextTier?.name}</span>
                         </div>
                         <MiniBar value={status.projected} max={status.nextTier?.threshold || status.projected} color={prog.color} height={8} />
-                        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 4, fontFamily: "Space Grotesk" }}>
+                        <div style={{ fontSize: 10, color: "rgba(44,36,24,0.3)", marginTop: 4, fontFamily: "Nunito" }}>
                           {status.projected.toLocaleString()} / {(status.nextTier?.threshold || status.projected).toLocaleString()} {prog.unit}
                           {status.willAdvance && <span style={{ color: "#34d399", marginLeft: 8 }}>🎉 On track to advance!</span>}
                         </div>
@@ -1716,17 +1636,17 @@ Start by introducing yourself briefly in-character with personality, and give an
 
                     {isCard && isLinked && (
                       <div style={{ marginBottom: 14 }}>
-                        <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", fontFamily: "Plus Jakarta Sans" }}>
+                        <div style={{ fontSize: 18, fontWeight: 800, color: "#2C2418", fontFamily: "DM Serif Display" }}>
                           {(linkedAccounts[prog.id]?.pointsBalance || 0).toLocaleString()} pts
                         </div>
-                        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: "Space Grotesk", marginTop: 2 }}>{prog.perks}</div>
+                        <div style={{ fontSize: 11, color: "rgba(44,36,24,0.35)", fontFamily: "Nunito", marginTop: 2 }}>{prog.perks}</div>
                       </div>
                     )}
 
                     {!isCard && prog.tiers && (
                       <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 14 }}>
                         {prog.tiers.map((tier, ti) => (
-                          <Badge key={ti} color={status?.currentTier?.name === tier.name ? prog.color : "rgba(255,255,255,0.15)"} small>
+                          <Badge key={ti} color={status?.currentTier?.name === tier.name ? prog.color : "rgba(44,36,24,0.1)"} small>
                             {tier.name}
                           </Badge>
                         ))}
@@ -1736,23 +1656,23 @@ Start by introducing yourself briefly in-character with personality, and give an
                     {isLinked ? (
                       <div style={{ display: "flex", gap: 6 }}>
                         <span style={{
-                          flex: 1, padding: "9px 0", borderRadius: 10, border: "1px solid rgba(255,255,255,0.08)",
-                          background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.4)",
-                          fontSize: 12, fontWeight: 600, fontFamily: "Space Grotesk", textAlign: "center",
+                          flex: 1, padding: "9px 0", borderRadius: 24, border: "1px solid rgba(139,158,124,0.12)",
+                          background: "rgba(139,158,124,0.04)", color: "rgba(44,36,24,0.4)",
+                          fontSize: 12, fontWeight: 600, fontFamily: "Nunito", textAlign: "center",
                         }}>✓ Connected</span>
                         {prog.loginUrl && (
                           <a href={prog.loginUrl} target="_blank" rel="noopener noreferrer" style={{
-                            padding: "9px 14px", borderRadius: 10, border: `1px solid ${prog.color}40`,
-                            background: `${prog.color}15`, color: "#fff", textDecoration: "none",
-                            fontSize: 12, fontWeight: 600, fontFamily: "Space Grotesk", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 4,
+                            padding: "9px 14px", borderRadius: 24, border: `1px solid ${prog.color}40`,
+                            background: `${prog.color}15`, color: "#2C2418", textDecoration: "none",
+                            fontSize: 12, fontWeight: 600, fontFamily: "Nunito", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 4,
                           }}>View ↗</a>
                         )}
                       </div>
                     ) : (
                       <button onClick={() => (setShowLinkModal(prog.id), setLinkForm({ memberId: "" }))} style={{
-                        width: "100%", padding: "9px 0", borderRadius: 10, border: `1px solid ${prog.color + "40"}`,
-                        background: `${prog.color}15`, color: "#fff",
-                        fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Space Grotesk", transition: "all 0.3s",
+                        width: "100%", padding: "9px 0", borderRadius: 24, border: `1px solid ${prog.color + "40"}`,
+                        background: `${prog.color}15`, color: "#2C2418",
+                        fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Nunito", transition: "all 0.3s",
                       }}>Link Account</button>
                     )}
                   </div>
@@ -1769,12 +1689,12 @@ Start by introducing yourself briefly in-character with personality, and give an
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
         <div>
-          <h2 style={{ fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, fontFamily: "Plus Jakarta Sans" }}>Annual Travel Plan</h2>
-          <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, margin: "4px 0 0", fontFamily: "Space Grotesk" }}>{trips.length} trips planned for 2026</p>
+          <h2 style={{ fontSize: 20, fontWeight: 800, color: "#2C2418", margin: 0, fontFamily: "DM Serif Display" }}>Annual Travel Plan</h2>
+          <p style={{ color: "rgba(44,36,24,0.4)", fontSize: 12, margin: "4px 0 0", fontFamily: "Nunito" }}>{trips.length} trips planned for 2026</p>
         </div>
         <button onClick={() => setShowAddTrip(true)} style={{
-          padding: "10px 20px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Plus Jakarta Sans",
-          background: "linear-gradient(135deg, #E05A2B, #F26B3A)", color: "#fff", boxShadow: "0 4px 15px rgba(229,90,43,0.3)",
+          padding: "10px 20px", borderRadius: 24, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "DM Serif Display",
+          background: "linear-gradient(135deg, #6B7E5C, #8B9E7C)", color: "#2C2418", boxShadow: "0 4px 15px rgba(168,96,64,0.3)",
         }}>+ Add Trip</button>
       </div>
 
@@ -1782,14 +1702,14 @@ Start by introducing yourself briefly in-character with personality, and give an
       <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
         <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search trips..."
           style={{
-            padding: "8px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
-            borderRadius: 10, color: "#fff", fontSize: 12, fontFamily: "Space Grotesk", outline: "none", flex: 1, minWidth: 160,
+            padding: "8px 14px", background: "rgba(139,158,124,0.05)", border: "1px solid rgba(139,158,124,0.12)",
+            borderRadius: 24, color: "#2C2418", fontSize: 12, fontFamily: "Nunito", outline: "none", flex: 1, minWidth: 160,
           }} />
         {["all", "confirmed", "planned", "wishlist"].map(s => (
           <button key={s} onClick={() => setFilterStatus(s)} style={{
-            padding: "8px 14px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600, fontFamily: "Space Grotesk",
-            background: filterStatus === s ? "rgba(242,107,58,0.2)" : "rgba(255,255,255,0.04)",
-            color: filterStatus === s ? "#F7A86A" : "rgba(255,255,255,0.4)", textTransform: "capitalize",
+            padding: "8px 14px", borderRadius: 24, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600, fontFamily: "Nunito",
+            background: filterStatus === s ? "rgba(198,123,92,0.2)" : "rgba(139,158,124,0.05)",
+            color: filterStatus === s ? "#B8965A" : "rgba(44,36,24,0.4)", textTransform: "capitalize",
           }}>{s}</button>
         ))}
       </div>
@@ -1800,18 +1720,18 @@ Start by introducing yourself briefly in-character with personality, and give an
           const prog = allPrograms.find(p => p.id === trip.program);
           return (
             <div key={trip.id} style={{
-              background: "linear-gradient(135deg, rgba(242,107,58,0.02), rgba(255,255,255,0.02))", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "16px 20px",
+              background: "linear-gradient(135deg, rgba(198,123,92,0.02), rgba(139,158,124,0.03))", border: "1px solid rgba(139,158,124,0.08)", borderRadius: 30, padding: "16px 20px",
               display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12,
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                 <div style={{
-                  width: 44, height: 44, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22,
-                  background: prog ? `${prog.color}15` : "rgba(255,255,255,0.04)",
+                  width: 44, height: 44, borderRadius: 28, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22,
+                  background: prog ? `${prog.color}15` : "rgba(139,158,124,0.05)",
                 }}>{trip.type === "flight" ? "✈️" : trip.type === "hotel" ? "🏨" : "🚗"}</div>
                 <div>
-                  {trip.tripName && <div style={{ fontSize: 13, fontWeight: 700, color: "#F7A86A", fontFamily: "Plus Jakarta Sans", marginBottom: 2 }}>{trip.tripName}</div>}
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: "Plus Jakarta Sans" }}>{trip.route || trip.property || trip.location}</div>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: "Space Grotesk", marginTop: 2 }}>
+                  {trip.tripName && <div style={{ fontSize: 13, fontWeight: 700, color: "#B8965A", fontFamily: "DM Serif Display", marginBottom: 2 }}>{trip.tripName}</div>}
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#2C2418", fontFamily: "DM Serif Display" }}>{trip.route || trip.property || trip.location}</div>
+                  <div style={{ fontSize: 11, color: "rgba(44,36,24,0.35)", fontFamily: "Nunito", marginTop: 2 }}>
                     {trip.date} • {prog?.name || "Unknown"} {trip.nights ? `• ${trip.nights} nights` : ""}
                   </div>
                 </div>
@@ -1819,17 +1739,17 @@ Start by introducing yourself briefly in-character with personality, and give an
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 {trip.estimatedPoints > 0 && (
                   <div style={{ textAlign: "right" }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: "#fbbf24", fontFamily: "Plus Jakarta Sans" }}>+{trip.estimatedPoints.toLocaleString()}</div>
-                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontFamily: "Space Grotesk" }}>points</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "#fbbf24", fontFamily: "DM Serif Display" }}>+{trip.estimatedPoints.toLocaleString()}</div>
+                    <div style={{ fontSize: 10, color: "rgba(44,36,24,0.3)", fontFamily: "Nunito" }}>points</div>
                   </div>
                 )}
                 {trip.estimatedNights > 0 && (
                   <div style={{ textAlign: "right" }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: "#34d399", fontFamily: "Plus Jakarta Sans" }}>+{trip.estimatedNights}</div>
-                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontFamily: "Space Grotesk" }}>nights</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "#34d399", fontFamily: "DM Serif Display" }}>+{trip.estimatedNights}</div>
+                    <div style={{ fontSize: 10, color: "rgba(44,36,24,0.3)", fontFamily: "Nunito" }}>nights</div>
                   </div>
                 )}
-                <Badge color={trip.status === "confirmed" ? "#34d399" : trip.status === "planned" ? "#fbbf24" : "#F5944E"} small>{trip.status}</Badge>
+                <Badge color={trip.status === "confirmed" ? "#34d399" : trip.status === "planned" ? "#fbbf24" : "#D4946E"} small>{trip.status}</Badge>
                 <button onClick={() => removeTrip(trip.id)} style={{
                   width: 28, height: 28, borderRadius: 8, border: "none", background: "rgba(239,68,68,0.1)", color: "#ef4444",
                   fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
@@ -1839,7 +1759,7 @@ Start by introducing yourself briefly in-character with personality, and give an
           );
         })}
         {filteredTrips.length === 0 && (
-          <div style={{ textAlign: "center", padding: 50, color: "rgba(255,255,255,0.25)", fontSize: 13, fontFamily: "Space Grotesk" }}>
+          <div style={{ textAlign: "center", padding: 50, color: "rgba(44,36,24,0.25)", fontSize: 13, fontFamily: "Nunito" }}>
             No trips match your filters
           </div>
         )}
@@ -1869,43 +1789,43 @@ Start by introducing yourself briefly in-character with personality, and give an
       return (
         <div>
           <button onClick={() => setExpenseViewTrip(null)} style={{
-            background: "none", border: "none", color: "#F7A86A", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Space Grotesk", marginBottom: 16, padding: 0,
+            background: "none", border: "none", color: "#B8965A", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Nunito", marginBottom: 16, padding: 0,
           }}>← Back to All Trips</button>
 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
             <div>
-              <h2 style={{ fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, fontFamily: "Plus Jakarta Sans" }}>
+              <h2 style={{ fontSize: 20, fontWeight: 800, color: "#2C2418", margin: 0, fontFamily: "DM Serif Display" }}>
                 {trip.type === "flight" ? "✈️" : trip.type === "hotel" ? "🏨" : "🚗"} {getTripName(trip)}
               </h2>
-              <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, margin: "4px 0 0", fontFamily: "Space Grotesk" }}>
+              <p style={{ color: "rgba(44,36,24,0.4)", fontSize: 12, margin: "4px 0 0", fontFamily: "Nunito" }}>
                 {trip.date} • {prog?.name} • {tripExps.length} expenses
               </p>
             </div>
             <div style={{ display: "flex", gap: 8 }}>
               <button onClick={() => setShowExpenseReport(trip.id)} style={{
-                padding: "9px 18px", borderRadius: 10, border: "1px solid rgba(229,90,43,0.3)", background: "rgba(229,90,43,0.08)",
-                color: "#F5944E", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Space Grotesk",
+                padding: "9px 18px", borderRadius: 24, border: "1px solid rgba(168,96,64,0.3)", background: "rgba(168,96,64,0.08)",
+                color: "#D4946E", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Nunito",
               }}>📄 Generate Report</button>
               <button onClick={() => setShowAddExpense(trip.id)} style={{
-                padding: "9px 18px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "Plus Jakarta Sans",
-                background: "linear-gradient(135deg, #E05A2B, #F26B3A)", color: "#fff",
+                padding: "9px 18px", borderRadius: 24, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "DM Serif Display",
+                background: "linear-gradient(135deg, #6B7E5C, #8B9E7C)", color: "#2C2418",
               }}>+ Add Expense</button>
             </div>
           </div>
 
           {/* Trip expense summary */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginBottom: 24 }}>
-            <div style={{ background: "rgba(229,90,43,0.08)", border: "1px solid rgba(229,90,43,0.2)", borderRadius: 14, padding: 18 }}>
-              <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", fontFamily: "Plus Jakarta Sans" }}>${tripTotal.toLocaleString()}</div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "Space Grotesk" }}>Total Spend</div>
+            <div style={{ background: "rgba(168,96,64,0.08)", border: "1px solid rgba(168,96,64,0.2)", borderRadius: 30, padding: 18 }}>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "#2C2418", fontFamily: "DM Serif Display" }}>${tripTotal.toLocaleString()}</div>
+              <div style={{ fontSize: 11, color: "rgba(44,36,24,0.4)", fontFamily: "Nunito" }}>Total Spend</div>
             </div>
-            <div style={{ background: "linear-gradient(135deg, rgba(242,107,58,0.02), rgba(255,255,255,0.02))", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: 18 }}>
-              <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", fontFamily: "Plus Jakarta Sans" }}>{tripExps.length}</div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "Space Grotesk" }}>Expenses</div>
+            <div style={{ background: "linear-gradient(135deg, rgba(198,123,92,0.02), rgba(139,158,124,0.03))", border: "1px solid rgba(139,158,124,0.08)", borderRadius: 30, padding: 18 }}>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "#2C2418", fontFamily: "DM Serif Display" }}>{tripExps.length}</div>
+              <div style={{ fontSize: 11, color: "rgba(44,36,24,0.4)", fontFamily: "Nunito" }}>Expenses</div>
             </div>
-            <div style={{ background: "linear-gradient(135deg, rgba(242,107,58,0.02), rgba(255,255,255,0.02))", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: 18 }}>
-              <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", fontFamily: "Plus Jakarta Sans" }}>{tripExps.filter(e => e.receipt).length}</div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "Space Grotesk" }}>With Receipts</div>
+            <div style={{ background: "linear-gradient(135deg, rgba(198,123,92,0.02), rgba(139,158,124,0.03))", border: "1px solid rgba(139,158,124,0.08)", borderRadius: 30, padding: 18 }}>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "#2C2418", fontFamily: "DM Serif Display" }}>{tripExps.filter(e => e.receipt).length}</div>
+              <div style={{ fontSize: 11, color: "rgba(44,36,24,0.4)", fontFamily: "Nunito" }}>With Receipts</div>
             </div>
           </div>
 
@@ -1919,7 +1839,7 @@ Start by introducing yourself briefly in-character with personality, and give an
               </div>
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                 {catBreakdown.map((cat, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "rgba(255,255,255,0.5)", fontFamily: "Space Grotesk" }}>
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "rgba(44,36,24,0.5)", fontFamily: "Nunito" }}>
                     <span style={{ width: 8, height: 8, borderRadius: "50%", background: cat.color, flexShrink: 0 }} />
                     {cat.label}: ${cat.total.toLocaleString()} ({Math.round((cat.total / tripTotal) * 100)}%)
                   </div>
@@ -1934,27 +1854,27 @@ Start by introducing yourself briefly in-character with personality, and give an
               const cat = EXPENSE_CATEGORIES.find(c => c.id === exp.category);
               return (
                 <div key={exp.id} style={{
-                  background: "linear-gradient(135deg, rgba(242,107,58,0.02), rgba(255,255,255,0.02))", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "14px 18px",
+                  background: "linear-gradient(135deg, rgba(198,123,92,0.02), rgba(139,158,124,0.03))", border: "1px solid rgba(139,158,124,0.08)", borderRadius: 28, padding: "14px 18px",
                   display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12,
                 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
                     <div style={{
-                      width: 38, height: 38, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center",
+                      width: 38, height: 38, borderRadius: 24, display: "flex", alignItems: "center", justifyContent: "center",
                       fontSize: 18, background: `${cat?.color || "#666"}15`, flexShrink: 0,
                     }}>{cat?.icon || "📎"}</div>
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", fontFamily: "Space Grotesk", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.description}</div>
-                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: "Space Grotesk" }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#2C2418", fontFamily: "Nunito", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.description}</div>
+                      <div style={{ fontSize: 11, color: "rgba(44,36,24,0.35)", fontFamily: "Nunito" }}>
                         {exp.date} • {exp.paymentMethod || "—"} {exp.receipt ? "• 🧾" : ""} {exp.notes ? `• ${exp.notes}` : ""}
                       </div>
                       {exp.receiptImage?.data && exp.receiptImage.type?.startsWith("image/") && (
-                        <img src={exp.receiptImage.data} alt="Receipt" style={{ width: 32, height: 32, objectFit: "cover", borderRadius: 4, marginTop: 4, border: "1px solid rgba(255,255,255,0.1)", cursor: "pointer" }}
+                        <img src={exp.receiptImage.data} alt="Receipt" style={{ width: 32, height: 32, objectFit: "cover", borderRadius: 4, marginTop: 4, border: "1px solid rgba(44,36,24,0.06)", cursor: "pointer" }}
                           onClick={(e) => { e.stopPropagation(); window.open(exp.receiptImage.data, "_blank"); }} title="Click to view full receipt" />
                       )}
                     </div>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: exp.amount === 0 ? "#34d399" : "#fff", fontFamily: "Plus Jakarta Sans" }}>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: exp.amount === 0 ? "#34d399" : "#FEFCF9", fontFamily: "DM Serif Display" }}>
                       {exp.amount === 0 ? "Free" : `$${exp.amount.toLocaleString()}`}
                     </div>
                     <button onClick={() => removeExpense(exp.id)} style={{
@@ -1966,7 +1886,7 @@ Start by introducing yourself briefly in-character with personality, and give an
               );
             })}
             {tripExps.length === 0 && (
-              <div style={{ textAlign: "center", padding: 40, color: "rgba(255,255,255,0.25)", fontSize: 13, fontFamily: "Space Grotesk" }}>
+              <div style={{ textAlign: "center", padding: 40, color: "rgba(44,36,24,0.25)", fontSize: 13, fontFamily: "Nunito" }}>
                 No expenses yet for this trip. Click "+ Add Expense" to start tracking.
               </div>
             )}
@@ -1980,37 +1900,37 @@ Start by introducing yourself briefly in-character with personality, and give an
       <div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
           <div>
-            <h2 style={{ fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, fontFamily: "Plus Jakarta Sans" }}>Trip Expenses</h2>
-            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, margin: "4px 0 0", fontFamily: "Space Grotesk" }}>Track spending across all your trips</p>
+            <h2 style={{ fontSize: 20, fontWeight: 800, color: "#2C2418", margin: 0, fontFamily: "DM Serif Display" }}>Trip Expenses</h2>
+            <p style={{ color: "rgba(44,36,24,0.4)", fontSize: 12, margin: "4px 0 0", fontFamily: "Nunito" }}>Track spending across all your trips</p>
           </div>
         </div>
 
         {/* Grand total stats */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14, marginBottom: 28 }}>
-          <div style={{ background: "rgba(229,90,43,0.08)", border: "1px solid rgba(229,90,43,0.2)", borderRadius: 14, padding: 18 }}>
-            <div style={{ fontSize: 26, fontWeight: 800, color: "#fff", fontFamily: "Plus Jakarta Sans" }}>${grandTotal.toLocaleString()}</div>
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "Space Grotesk" }}>Total Across All Trips</div>
+          <div style={{ background: "rgba(168,96,64,0.08)", border: "1px solid rgba(168,96,64,0.2)", borderRadius: 30, padding: 18 }}>
+            <div style={{ fontSize: 26, fontWeight: 800, color: "#2C2418", fontFamily: "DM Serif Display" }}>${grandTotal.toLocaleString()}</div>
+            <div style={{ fontSize: 11, color: "rgba(44,36,24,0.4)", fontFamily: "Nunito" }}>Total Across All Trips</div>
           </div>
-          <div style={{ background: "linear-gradient(135deg, rgba(242,107,58,0.02), rgba(255,255,255,0.02))", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: 18 }}>
-            <div style={{ fontSize: 26, fontWeight: 800, color: "#fff", fontFamily: "Plus Jakarta Sans" }}>{expenses.length}</div>
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "Space Grotesk" }}>Total Expenses</div>
+          <div style={{ background: "linear-gradient(135deg, rgba(198,123,92,0.02), rgba(139,158,124,0.03))", border: "1px solid rgba(139,158,124,0.08)", borderRadius: 30, padding: 18 }}>
+            <div style={{ fontSize: 26, fontWeight: 800, color: "#2C2418", fontFamily: "DM Serif Display" }}>{expenses.length}</div>
+            <div style={{ fontSize: 11, color: "rgba(44,36,24,0.4)", fontFamily: "Nunito" }}>Total Expenses</div>
           </div>
-          <div style={{ background: "linear-gradient(135deg, rgba(242,107,58,0.02), rgba(255,255,255,0.02))", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: 18 }}>
-            <div style={{ fontSize: 26, fontWeight: 800, color: "#fff", fontFamily: "Plus Jakarta Sans" }}>{tripsWithExpenses.filter(t => t.total > 0).length}</div>
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "Space Grotesk" }}>Trips With Expenses</div>
+          <div style={{ background: "linear-gradient(135deg, rgba(198,123,92,0.02), rgba(139,158,124,0.03))", border: "1px solid rgba(139,158,124,0.08)", borderRadius: 30, padding: 18 }}>
+            <div style={{ fontSize: 26, fontWeight: 800, color: "#2C2418", fontFamily: "DM Serif Display" }}>{tripsWithExpenses.filter(t => t.total > 0).length}</div>
+            <div style={{ fontSize: 11, color: "rgba(44,36,24,0.4)", fontFamily: "Nunito" }}>Trips With Expenses</div>
           </div>
         </div>
 
         {/* Spending by category */}
         {totalByCategory.length > 0 && (
           <div style={{ marginBottom: 28 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.6)", marginBottom: 12, fontFamily: "Plus Jakarta Sans" }}>Spending by Category</h3>
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.6)", marginBottom: 12, fontFamily: "DM Serif Display" }}>Spending by Category</h3>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 10 }}>
               {totalByCategory.map((cat, i) => (
-                <div key={i} style={{ background: `${cat.color}10`, border: `1px solid ${cat.color}25`, borderRadius: 12, padding: 14, textAlign: "center" }}>
+                <div key={i} style={{ background: `${cat.color}10`, border: `1px solid ${cat.color}25`, borderRadius: 28, padding: 14, textAlign: "center" }}>
                   <div style={{ fontSize: 22, marginBottom: 4 }}>{cat.icon}</div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: "#fff", fontFamily: "Plus Jakarta Sans" }}>${cat.total.toLocaleString()}</div>
-                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontFamily: "Space Grotesk" }}>{cat.label}</div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: "#2C2418", fontFamily: "DM Serif Display" }}>${cat.total.toLocaleString()}</div>
+                  <div style={{ fontSize: 10, color: "rgba(44,36,24,0.4)", fontFamily: "Nunito" }}>{cat.label}</div>
                 </div>
               ))}
             </div>
@@ -2018,7 +1938,7 @@ Start by introducing yourself briefly in-character with personality, and give an
         )}
 
         {/* Trip-by-trip list */}
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.6)", marginBottom: 12, fontFamily: "Plus Jakarta Sans" }}>Expenses by Trip</h3>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.6)", marginBottom: 12, fontFamily: "DM Serif Display" }}>Expenses by Trip</h3>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {trips.map(trip => {
             const tripExps = getTripExpenses(trip.id);
@@ -2026,40 +1946,40 @@ Start by introducing yourself briefly in-character with personality, and give an
             const prog = allPrograms.find(p => p.id === trip.program);
             return (
               <div key={trip.id} style={{
-                background: "linear-gradient(135deg, rgba(242,107,58,0.02), rgba(255,255,255,0.02))", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "16px 20px",
+                background: "linear-gradient(135deg, rgba(198,123,92,0.02), rgba(139,158,124,0.03))", border: "1px solid rgba(139,158,124,0.08)", borderRadius: 30, padding: "16px 20px",
                 cursor: "pointer", transition: "all 0.2s",
               }} onClick={() => setExpenseViewTrip(trip.id)}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1 }}>
                     <div style={{
-                      width: 42, height: 42, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20,
-                      background: prog ? `${prog.color}15` : "rgba(255,255,255,0.04)",
+                      width: 42, height: 42, borderRadius: 28, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20,
+                      background: prog ? `${prog.color}15` : "rgba(139,158,124,0.05)",
                     }}>{trip.type === "flight" ? "✈️" : trip.type === "hotel" ? "🏨" : "🚗"}</div>
                     <div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: "Plus Jakarta Sans" }}>{getTripName(trip)}</div>
-                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: "Space Grotesk" }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "#2C2418", fontFamily: "DM Serif Display" }}>{getTripName(trip)}</div>
+                      <div style={{ fontSize: 11, color: "rgba(44,36,24,0.35)", fontFamily: "Nunito" }}>
                         {trip.date} • {tripExps.length} expense{tripExps.length !== 1 ? "s" : ""}
                       </div>
                     </div>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <div style={{ textAlign: "right" }}>
-                      <div style={{ fontSize: 16, fontWeight: 700, color: tripTotal > 0 ? "#fff" : "rgba(255,255,255,0.25)", fontFamily: "Plus Jakarta Sans" }}>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: tripTotal > 0 ? "#fff" : "rgba(44,36,24,0.25)", fontFamily: "DM Serif Display" }}>
                         {tripTotal > 0 ? `$${tripTotal.toLocaleString()}` : "—"}
                       </div>
                     </div>
                     <button onClick={(e) => { e.stopPropagation(); setShowAddExpense(trip.id); }} style={{
-                      width: 32, height: 32, borderRadius: 8, border: "1px solid rgba(229,90,43,0.2)", background: "rgba(229,90,43,0.06)",
-                      color: "#F5944E", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                      width: 32, height: 32, borderRadius: 8, border: "1px solid rgba(168,96,64,0.2)", background: "rgba(168,96,64,0.06)",
+                      color: "#D4946E", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
                     }}>+</button>
-                    <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 14 }}>→</span>
+                    <span style={{ color: "rgba(44,36,24,0.15)", fontSize: 14 }}>→</span>
                   </div>
                 </div>
               </div>
             );
           })}
           {trips.length === 0 && (
-            <div style={{ textAlign: "center", padding: 40, color: "rgba(255,255,255,0.25)", fontSize: 13, fontFamily: "Space Grotesk" }}>
+            <div style={{ textAlign: "center", padding: 40, color: "rgba(44,36,24,0.25)", fontSize: 13, fontFamily: "Nunito" }}>
               Add trips first, then track expenses for each one.
             </div>
           )}
@@ -2074,34 +1994,34 @@ Start by introducing yourself briefly in-character with personality, and give an
       <div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
           <div>
-            <h2 style={{ fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, fontFamily: "Plus Jakarta Sans" }}>Trip Optimizer</h2>
-            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, margin: "4px 0 0", fontFamily: "Space Grotesk" }}>See how crediting flights differently affects your status</p>
+            <h2 style={{ fontSize: 20, fontWeight: 800, color: "#2C2418", margin: 0, fontFamily: "DM Serif Display" }}>Trip Optimizer</h2>
+            <p style={{ color: "rgba(44,36,24,0.4)", fontSize: 12, margin: "4px 0 0", fontFamily: "Nunito" }}>See how crediting flights differently affects your status</p>
           </div>
           <Badge color="#f59e0b">★ PREMIUM</Badge>
         </div>
 
         {user?.tier !== "premium" ? (
           <div style={{
-            background: "linear-gradient(135deg, rgba(245,158,11,0.08), rgba(242,107,58,0.08))", border: "1px solid rgba(245,158,11,0.2)",
-            borderRadius: 20, padding: 40, textAlign: "center",
+            background: "linear-gradient(135deg, rgba(245,158,11,0.08), rgba(198,123,92,0.08))", border: "1px solid rgba(245,158,11,0.2)",
+            borderRadius: 28, padding: 40, textAlign: "center",
           }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
-            <h3 style={{ fontSize: 20, fontWeight: 800, color: "#fff", fontFamily: "Plus Jakarta Sans", margin: "0 0 8px" }}>Unlock Trip Optimizer</h3>
-            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, fontFamily: "Space Grotesk", maxWidth: 400, margin: "0 auto 24px" }}>
+            <h3 style={{ fontSize: 20, fontWeight: 800, color: "#2C2418", fontFamily: "DM Serif Display", margin: "0 0 8px" }}>Unlock Trip Optimizer</h3>
+            <p style={{ color: "rgba(44,36,24,0.5)", fontSize: 13, fontFamily: "Nunito", maxWidth: 400, margin: "0 auto 24px" }}>
               See the optimal way to credit each flight across your airline programs. Find hidden status shortcuts and maximize every trip.
             </p>
             <button onClick={() => setShowUpgrade(true)} style={{
-              padding: "12px 32px", borderRadius: 12, border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "Plus Jakarta Sans",
+              padding: "12px 32px", borderRadius: 28, border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "DM Serif Display",
               background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#000", boxShadow: "0 4px 20px rgba(245,158,11,0.3)",
             }}>Upgrade to Premium — $9.99/mo</button>
           </div>
         ) : (
           <div>
             <div style={{
-              background: "linear-gradient(135deg, rgba(242,107,58,0.02), rgba(255,255,255,0.02))", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: 22, marginBottom: 20,
+              background: "linear-gradient(135deg, rgba(198,123,92,0.02), rgba(139,158,124,0.03))", border: "1px solid rgba(139,158,124,0.08)", borderRadius: 24, padding: 22, marginBottom: 20,
             }}>
-              <h4 style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: "Plus Jakarta Sans", marginBottom: 14 }}>Optimal Credit Strategy for 2026</h4>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", fontFamily: "Space Grotesk", marginBottom: 16 }}>
+              <h4 style={{ fontSize: 14, fontWeight: 700, color: "#2C2418", fontFamily: "DM Serif Display", marginBottom: 14 }}>Optimal Credit Strategy for 2026</h4>
+              <div style={{ fontSize: 12, color: "rgba(44,36,24,0.5)", fontFamily: "Nunito", marginBottom: 16 }}>
                 Based on your {scenarioTrips.length} planned flights, here's the best way to allocate credits:
               </div>
               {LOYALTY_PROGRAMS.airlines.map(airline => {
@@ -2110,18 +2030,18 @@ Start by introducing yourself briefly in-character with personality, and give an
                 const status = getProjectedStatus(airline.id);
                 return (
                   <div key={airline.id} style={{
-                    background: `${airline.color}10`, border: `1px solid ${airline.color}20`, borderRadius: 12, padding: 16, marginBottom: 10,
+                    background: `${airline.color}10`, border: `1px solid ${airline.color}20`, borderRadius: 28, padding: 16, marginBottom: 10,
                   }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: "Plus Jakarta Sans" }}>{airline.name}</div>
-                        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "Space Grotesk" }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "#2C2418", fontFamily: "DM Serif Display" }}>{airline.name}</div>
+                        <div style={{ fontSize: 11, color: "rgba(44,36,24,0.4)", fontFamily: "Nunito" }}>
                           {airlineTrips.length} flights • +{totalPts.toLocaleString()} pts projected
                         </div>
                       </div>
                       {status?.willAdvance && <Badge color="#34d399">Will advance to {status.projectedTier.name}!</Badge>}
                       {status && !status.willAdvance && status.nextTier && (
-                        <div style={{ fontSize: 11, color: "#fbbf24", fontFamily: "Space Grotesk" }}>
+                        <div style={{ fontSize: 11, color: "#fbbf24", fontFamily: "Nunito" }}>
                           Need {(status.nextTier.threshold - status.projected).toLocaleString()} more for {status.nextTier.name}
                         </div>
                       )}
@@ -2133,9 +2053,9 @@ Start by introducing yourself briefly in-character with personality, and give an
 
             <div style={{
               background: "linear-gradient(135deg, rgba(52,211,153,0.08), rgba(16,185,129,0.04))", border: "1px solid rgba(52,211,153,0.2)",
-              borderRadius: 16, padding: 22,
+              borderRadius: 24, padding: 22,
             }}>
-              <h4 style={{ fontSize: 14, fontWeight: 700, color: "#34d399", fontFamily: "Plus Jakarta Sans", marginBottom: 10 }}>💡 Optimizer Recommendations</h4>
+              <h4 style={{ fontSize: 14, fontWeight: 700, color: "#34d399", fontFamily: "DM Serif Display", marginBottom: 10 }}>💡 Optimizer Recommendations</h4>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {[
                   "Consider crediting your LAX→ATL flight to AA instead of Delta to push closer to Platinum Pro",
@@ -2144,8 +2064,8 @@ Start by introducing yourself briefly in-character with personality, and give an
                   "Your Amex Platinum earns 5x on flights — ensure all bookings use this card",
                 ].map((tip, i) => (
                   <div key={i} style={{
-                    background: "rgba(255,255,255,0.03)", borderRadius: 10, padding: "10px 14px", fontSize: 12,
-                    color: "rgba(255,255,255,0.6)", fontFamily: "Space Grotesk", display: "flex", gap: 8,
+                    background: "rgba(139,158,124,0.04)", borderRadius: 24, padding: "10px 14px", fontSize: 12,
+                    color: "rgba(255,255,255,0.6)", fontFamily: "Nunito", display: "flex", gap: 8,
                   }}>
                     <span style={{ color: "#34d399", fontWeight: 700, flexShrink: 0 }}>→</span> {tip}
                   </div>
@@ -2177,30 +2097,30 @@ Start by introducing yourself briefly in-character with personality, and give an
       <div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
           <div>
-            <h2 style={{ fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, fontFamily: "Plus Jakarta Sans" }}>Annual Reports</h2>
-            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, margin: "4px 0 0", fontFamily: "Space Grotesk" }}>Your 2026 travel year at a glance</p>
+            <h2 style={{ fontSize: 20, fontWeight: 800, color: "#2C2418", margin: 0, fontFamily: "DM Serif Display" }}>Annual Reports</h2>
+            <p style={{ color: "rgba(44,36,24,0.4)", fontSize: 12, margin: "4px 0 0", fontFamily: "Nunito" }}>Your 2026 travel year at a glance</p>
           </div>
           <button onClick={() => setShowUpgrade(true)} style={{
             padding: "8px 16px", borderRadius: 8, border: "1px solid rgba(245,158,11,0.3)", background: "rgba(245,158,11,0.08)",
-            color: "#f59e0b", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "Space Grotesk",
+            color: "#f59e0b", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "Nunito",
           }}>★ Export PDF — Premium</button>
         </div>
 
         {/* Bar Chart */}
-        <div style={{ background: "linear-gradient(135deg, rgba(242,107,58,0.02), rgba(255,255,255,0.02))", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: 22, marginBottom: 20 }}>
-          <h4 style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: "Plus Jakarta Sans", marginBottom: 18 }}>Points Earned by Month</h4>
+        <div style={{ background: "linear-gradient(135deg, rgba(198,123,92,0.02), rgba(139,158,124,0.03))", border: "1px solid rgba(139,158,124,0.08)", borderRadius: 24, padding: 22, marginBottom: 20 }}>
+          <h4 style={{ fontSize: 14, fontWeight: 700, color: "#2C2418", fontFamily: "DM Serif Display", marginBottom: 18 }}>Points Earned by Month</h4>
           <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 140 }}>
             {monthlyData.map((d, i) => (
               <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                <div style={{ fontSize: 9, color: "#fbbf24", fontWeight: 600, fontFamily: "Space Grotesk" }}>
+                <div style={{ fontSize: 9, color: "#fbbf24", fontWeight: 600, fontFamily: "Nunito" }}>
                   {d.points > 0 ? `${(d.points / 1000).toFixed(1)}k` : ""}
                 </div>
                 <div style={{
                   width: "100%", maxWidth: 32, height: `${Math.max((d.points / maxPts) * 100, 3)}%`, minHeight: 3,
-                  borderRadius: "4px 4px 0 0", background: d.points > 0 ? "linear-gradient(180deg, #F5944E, #F26B3A)" : "rgba(255,255,255,0.04)",
+                  borderRadius: "4px 4px 0 0", background: d.points > 0 ? "linear-gradient(180deg, #D4946E, #C67B5C)" : "rgba(139,158,124,0.05)",
                   transition: "height 1s ease",
                 }} />
-                <span style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", fontFamily: "Space Grotesk" }}>{d.month}</span>
+                <span style={{ fontSize: 9, color: "rgba(44,36,24,0.3)", fontFamily: "Nunito" }}>{d.month}</span>
               </div>
             ))}
           </div>
@@ -2210,36 +2130,36 @@ Start by introducing yourself briefly in-character with personality, and give an
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14, marginBottom: 20 }}>
           {[
             { label: "Total Points Projected", value: trips.reduce((s, t) => s + (t.estimatedPoints || 0), 0).toLocaleString(), icon: "⭐", color: "#fbbf24" },
-            { label: "Hotel Nights Planned", value: trips.reduce((s, t) => s + (t.estimatedNights || t.nights || 0), 0), icon: "🌙", color: "#F5944E" },
+            { label: "Hotel Nights Planned", value: trips.reduce((s, t) => s + (t.estimatedNights || t.nights || 0), 0), icon: "🌙", color: "#D4946E" },
             { label: "Flights Planned", value: trips.filter(t => t.type === "flight").length, icon: "✈️", color: "#34d399" },
             { label: "Est. Travel Spend", value: "$" + (trips.length * 850).toLocaleString(), icon: "💰", color: "#f472b6" },
           ].map((stat, i) => (
             <div key={i} style={{
-              background: `${stat.color}08`, border: `1px solid ${stat.color}20`, borderRadius: 14, padding: 20,
+              background: `${stat.color}08`, border: `1px solid ${stat.color}20`, borderRadius: 30, padding: 20,
             }}>
               <div style={{ fontSize: 24, marginBottom: 6 }}>{stat.icon}</div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", fontFamily: "Plus Jakarta Sans" }}>{stat.value}</div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "Space Grotesk", marginTop: 2 }}>{stat.label}</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "#2C2418", fontFamily: "DM Serif Display" }}>{stat.value}</div>
+              <div style={{ fontSize: 11, color: "rgba(44,36,24,0.4)", fontFamily: "Nunito", marginTop: 2 }}>{stat.label}</div>
             </div>
           ))}
         </div>
 
         {/* Status Forecast */}
-        <div style={{ background: "linear-gradient(135deg, rgba(242,107,58,0.02), rgba(255,255,255,0.02))", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: 22 }}>
-          <h4 style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: "Plus Jakarta Sans", marginBottom: 14 }}>Year-End Status Forecast</h4>
+        <div style={{ background: "linear-gradient(135deg, rgba(198,123,92,0.02), rgba(139,158,124,0.03))", border: "1px solid rgba(139,158,124,0.08)", borderRadius: 24, padding: 22 }}>
+          <h4 style={{ fontSize: 14, fontWeight: 700, color: "#2C2418", fontFamily: "DM Serif Display", marginBottom: 14 }}>Year-End Status Forecast</h4>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: 10 }}>
             {allPrograms.filter(p => linkedAccounts[p.id] && p.tiers).map(prog => {
               const status = getProjectedStatus(prog.id);
               if (!status) return null;
               return (
                 <div key={prog.id} style={{
-                  display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderRadius: 10,
-                  background: "linear-gradient(135deg, rgba(242,107,58,0.02), rgba(255,255,255,0.02))", border: "1px solid rgba(255,255,255,0.04)",
+                  display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderRadius: 24,
+                  background: "linear-gradient(135deg, rgba(198,123,92,0.02), rgba(139,158,124,0.03))", border: "1px solid rgba(139,158,124,0.05)",
                 }}>
                   <span style={{ fontSize: 20 }}>{prog.logo}</span>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: "#fff", fontFamily: "Space Grotesk" }}>{prog.name}</div>
-                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", fontFamily: "Space Grotesk" }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: "#2C2418", fontFamily: "Nunito" }}>{prog.name}</div>
+                    <div style={{ fontSize: 10, color: "rgba(44,36,24,0.35)", fontFamily: "Nunito" }}>
                       {status.projectedTier?.name || "Member"} {status.willAdvance ? "🎉" : ""}
                     </div>
                   </div>
@@ -2257,44 +2177,44 @@ Start by introducing yourself briefly in-character with personality, and give an
     <div>
       <div style={{ textAlign: "center", marginBottom: 40 }}>
         <div style={{ fontSize: 48, marginBottom: 12, display: "flex", justifyContent: "center" }}><LogoMark size={64} /></div>
-        <h2 style={{ fontSize: 26, fontWeight: 800, color: "#fff", margin: 0, fontFamily: "Plus Jakarta Sans" }}>Continuum Premium</h2>
-        <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 14, fontFamily: "Space Grotesk", marginTop: 6 }}>Maximize every mile, every night, every point.</p>
+        <h2 style={{ fontSize: 26, fontWeight: 800, color: "#2C2418", margin: 0, fontFamily: "DM Serif Display" }}>Continuum Premium</h2>
+        <p style={{ color: "rgba(44,36,24,0.4)", fontSize: 14, fontFamily: "Nunito", marginTop: 6 }}>Maximize every mile, every night, every point.</p>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20, marginBottom: 36 }}>
         {[
-          { name: "Free", price: "$0", period: "forever", color: "rgba(255,255,255,0.1)", features: ["3 linked programs", "Basic dashboard", "Manual trip entry", "Annual summary", "Community support"] },
-          { name: "Premium", price: "$9.99", period: "/month", color: "#E05A2B", popular: true, features: ["Unlimited programs", "Trip Optimizer AI", "Status match alerts", "PDF reports & exports", "Credit card recommendations", "Mileage expiration alerts", "Priority support", "Ad-free experience"] },
+          { name: "Free", price: "$0", period: "forever", color: "rgba(44,36,24,0.06)", features: ["3 linked programs", "Basic dashboard", "Manual trip entry", "Annual summary", "Community support"] },
+          { name: "Premium", price: "$9.99", period: "/month", color: "#A86040", popular: true, features: ["Unlimited programs", "Trip Optimizer AI", "Status match alerts", "PDF reports & exports", "Credit card recommendations", "Mileage expiration alerts", "Priority support", "Ad-free experience"] },
           { name: "Pro", price: "$24.99", period: "/month", color: "#f59e0b", features: ["Everything in Premium", "API access & integrations", "Multi-year status tracking", "Tax deduction reports", "Team/family accounts", "White-label option", "Dedicated account manager", "Custom analytics"] },
         ].map((plan, i) => (
           <div key={i} style={{
-            background: plan.popular ? `linear-gradient(135deg, ${plan.color}15, ${plan.color}08)` : "rgba(255,255,255,0.02)",
-            border: `1px solid ${plan.popular ? plan.color + "40" : "rgba(255,255,255,0.06)"}`,
-            borderRadius: 20, padding: 28, position: "relative", overflow: "hidden",
+            background: plan.popular ? `linear-gradient(135deg, ${plan.color}15, ${plan.color}08)` : "rgba(139,158,124,0.03)",
+            border: `1px solid ${plan.popular ? plan.color + "40" : "rgba(139,158,124,0.08)"}`,
+            borderRadius: 28, padding: 28, position: "relative", overflow: "hidden",
           }}>
             {plan.popular && (
               <div style={{
-                position: "absolute", top: 14, right: -28, background: plan.color, color: "#fff", fontSize: 10, fontWeight: 700,
-                padding: "4px 36px", transform: "rotate(45deg)", fontFamily: "Space Grotesk",
+                position: "absolute", top: 14, right: -28, background: plan.color, color: "#2C2418", fontSize: 10, fontWeight: 700,
+                padding: "4px 36px", transform: "rotate(45deg)", fontFamily: "Nunito",
               }}>POPULAR</div>
             )}
-            <div style={{ fontSize: 16, fontWeight: 700, color: plan.popular ? "#F7A86A" : "#fff", fontFamily: "Plus Jakarta Sans", marginBottom: 6 }}>{plan.name}</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: plan.popular ? "#B8965A" : "#FEFCF9", fontFamily: "DM Serif Display", marginBottom: 6 }}>{plan.name}</div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 18 }}>
-              <span style={{ fontSize: 36, fontWeight: 800, color: "#fff", fontFamily: "Plus Jakarta Sans" }}>{plan.price}</span>
-              <span style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", fontFamily: "Space Grotesk" }}>{plan.period}</span>
+              <span style={{ fontSize: 36, fontWeight: 800, color: "#2C2418", fontFamily: "DM Serif Display" }}>{plan.price}</span>
+              <span style={{ fontSize: 13, color: "rgba(44,36,24,0.4)", fontFamily: "Nunito" }}>{plan.period}</span>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 22 }}>
               {plan.features.map((f, fi) => (
-                <div key={fi} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "rgba(255,255,255,0.6)", fontFamily: "Space Grotesk" }}>
-                  <span style={{ color: plan.popular ? "#F7A86A" : "#34d399", fontSize: 13 }}>✓</span> {f}
+                <div key={fi} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "rgba(255,255,255,0.6)", fontFamily: "Nunito" }}>
+                  <span style={{ color: plan.popular ? "#B8965A" : "#34d399", fontSize: 13 }}>✓</span> {f}
                 </div>
               ))}
             </div>
             <button style={{
-              width: "100%", padding: "12px 0", borderRadius: 12, border: plan.popular ? "none" : "1px solid rgba(255,255,255,0.1)",
-              background: plan.popular ? `linear-gradient(135deg, #E05A2B, #F26B3A)` : "rgba(255,255,255,0.04)",
-              color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "Plus Jakarta Sans",
-              boxShadow: plan.popular ? "0 4px 20px rgba(229,90,43,0.3)" : "none",
+              width: "100%", padding: "12px 0", borderRadius: 28, border: plan.popular ? "none" : "1px solid rgba(44,36,24,0.06)",
+              background: plan.popular ? `linear-gradient(135deg, #6B7E5C, #8B9E7C)` : "rgba(139,158,124,0.05)",
+              color: "#2C2418", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "DM Serif Display",
+              boxShadow: plan.popular ? "0 4px 20px rgba(168,96,64,0.3)" : "none",
             }}>{plan.price === "$0" ? "Current Plan" : "Upgrade Now"}</button>
           </div>
         ))}
@@ -2302,9 +2222,9 @@ Start by introducing yourself briefly in-character with personality, and give an
 
       {/* Feature Highlights */}
       <div style={{
-        background: "linear-gradient(135deg, rgba(242,107,58,0.02), rgba(255,255,255,0.02))", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: 24,
+        background: "linear-gradient(135deg, rgba(198,123,92,0.02), rgba(139,158,124,0.03))", border: "1px solid rgba(139,158,124,0.08)", borderRadius: 24, padding: 24,
       }}>
-        <h3 style={{ fontSize: 16, fontWeight: 700, color: "#fff", fontFamily: "Plus Jakarta Sans", marginBottom: 16 }}>Why Go Premium?</h3>
+        <h3 style={{ fontSize: 16, fontWeight: 700, color: "#2C2418", fontFamily: "DM Serif Display", marginBottom: 16 }}>Why Go Premium?</h3>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
           {[
             { icon: "🧠", title: "AI Trip Optimizer", desc: "Know exactly where to credit every flight for maximum status acceleration" },
@@ -2315,11 +2235,11 @@ Start by introducing yourself briefly in-character with personality, and give an
             { icon: "👨‍👩‍👧‍👦", title: "Family Accounts", desc: "Track status for your whole family and optimize household loyalty strategy" },
           ].map((f, i) => (
             <div key={i} style={{
-              background: "linear-gradient(135deg, rgba(242,107,58,0.02), rgba(255,255,255,0.02))", borderRadius: 12, padding: 16,
+              background: "linear-gradient(135deg, rgba(198,123,92,0.02), rgba(139,158,124,0.03))", borderRadius: 28, padding: 16,
             }}>
               <div style={{ fontSize: 24, marginBottom: 8 }}>{f.icon}</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: "Plus Jakarta Sans", marginBottom: 4 }}>{f.title}</div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "Space Grotesk", lineHeight: 1.5 }}>{f.desc}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#2C2418", fontFamily: "DM Serif Display", marginBottom: 4 }}>{f.title}</div>
+              <div style={{ fontSize: 11, color: "rgba(44,36,24,0.4)", fontFamily: "Nunito", lineHeight: 1.5 }}>{f.desc}</div>
             </div>
           ))}
         </div>
@@ -2347,33 +2267,33 @@ Start by introducing yourself briefly in-character with personality, and give an
   // ============================================================
   return (
     <div style={{
-      minHeight: "100vh", background: "linear-gradient(160deg, #0F0F0F 0%, #141414 25%, #1A1A1A 50%, #121212 75%, #0F0F0F 100%)",
-      fontFamily: "'Plus Jakarta Sans', 'Space Grotesk', system-ui, sans-serif", color: "#fff", display: "flex", position: "relative",
+      minHeight: "100vh", background: "linear-gradient(160deg, #FAF8F3 0%, #FEFCF9 25%, #F5F0E8 50%, #FAF8F3 75%, #FAF8F3 100%)",
+      fontFamily: "'DM Serif Display', 'Nunito', 'DM Sans', system-ui, sans-serif", color: "#2C2418", display: "flex", position: "relative",
     }}>
       <TravelAtmosphere />
-      <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+      <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Nunito:wght@300;400;500;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
       {/* Sidebar */}
       <aside style={{
         width: 220, minHeight: "100vh",
-        background: "linear-gradient(180deg, rgba(242,107,58,0.06) 0%, rgba(0,0,0,0.4) 30%, rgba(0,0,0,0.35) 100%)",
-        borderRight: "2px solid rgba(242,107,58,0.15)",
+        background: "linear-gradient(180deg, rgba(198,123,92,0.06) 0%, rgba(0,0,0,0.4) 30%, rgba(0,0,0,0.35) 100%)",
+        borderRight: "2px solid rgba(198,123,92,0.15)",
         padding: "20px 12px", display: "flex", flexDirection: "column", flexShrink: 0,
         position: "sticky", top: 0, height: "100vh", overflowY: "auto", boxSizing: "border-box",
         backdropFilter: "blur(20px)", zIndex: 10,
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 8px", marginBottom: 28 }}>
           <LogoMark size={28} />
-          <span style={{ fontSize: 17, fontWeight: 800, fontFamily: "Plus Jakarta Sans", letterSpacing: -0.3 }}>Continuum</span>
+          <span style={{ fontSize: 17, fontWeight: 800, fontFamily: "DM Serif Display", letterSpacing: -0.3 }}>Continuum</span>
         </div>
 
         <nav style={{ display: "flex", flexDirection: "column", gap: 3, flex: 1 }}>
           {navItems.map(item => (
             <button key={item.id} onClick={() => setActiveView(item.id)} style={{
-              display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, border: "none", cursor: "pointer",
-              background: activeView === item.id ? "rgba(242,107,58,0.12)" : "transparent",
-              color: activeView === item.id ? "#F7A86A" : "rgba(255,255,255,0.4)",
-              fontSize: 13, fontWeight: activeView === item.id ? 600 : 500, fontFamily: "Space Grotesk", textAlign: "left", transition: "all 0.2s", width: "100%",
+              display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 24, border: "none", cursor: "pointer",
+              background: activeView === item.id ? "rgba(198,123,92,0.12)" : "transparent",
+              color: activeView === item.id ? "#B8965A" : "rgba(44,36,24,0.4)",
+              fontSize: 13, fontWeight: activeView === item.id ? 600 : 500, fontFamily: "Nunito", textAlign: "left", transition: "all 0.2s", width: "100%",
             }}>
               <span style={{ fontSize: 16, width: 22, textAlign: "center" }}>{item.icon}</span>
               {item.label}
@@ -2384,22 +2304,22 @@ Start by introducing yourself briefly in-character with personality, and give an
 
         {/* User Card */}
         <div style={{
-          background: "linear-gradient(135deg, rgba(242,107,58,0.08), rgba(255,255,255,0.03))",
-          border: "1px solid rgba(247,168,106,0.08)", borderRadius: 12, padding: 14, marginTop: 12,
+          background: "linear-gradient(135deg, rgba(198,123,92,0.08), rgba(139,158,124,0.04))",
+          border: "1px solid rgba(184,150,90,0.08)", borderRadius: 28, padding: 14, marginTop: 12,
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
             <div style={{
-              width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg, #E05A2B, #F26B3A)",
+              width: 36, height: 36, borderRadius: 24, background: "linear-gradient(135deg, #6B7E5C, #8B9E7C)",
               display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700,
             }}>{user?.avatar || "U"}</div>
             <div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "#fff", fontFamily: "Space Grotesk" }}>{user?.name}</div>
-              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontFamily: "Space Grotesk" }}>{user?.tier === "premium" ? "Premium" : "Free Plan"}</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#2C2418", fontFamily: "Nunito" }}>{user?.name}</div>
+              <div style={{ fontSize: 10, color: "rgba(44,36,24,0.3)", fontFamily: "Nunito" }}>{user?.tier === "premium" ? "Premium" : "Free Plan"}</div>
             </div>
           </div>
           <button onClick={handleLogout} style={{
-            width: "100%", padding: "7px 0", borderRadius: 8, border: "1px solid rgba(255,255,255,0.06)", background: "transparent",
-            color: "rgba(255,255,255,0.35)", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "Space Grotesk",
+            width: "100%", padding: "7px 0", borderRadius: 8, border: "1px solid rgba(139,158,124,0.08)", background: "transparent",
+            color: "rgba(44,36,24,0.35)", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "Nunito",
           }}>Sign Out</button>
         </div>
       </aside>
@@ -2414,19 +2334,22 @@ Start by introducing yourself briefly in-character with personality, and give an
           </div>
         </div>
 
-        {/* Hero Banner */}
-        <PageHeroBanner view={activeView}
-          title={activeView === "dashboard" ? `Welcome back, ${user?.name?.split(" ")[0]}` : navItems.find(n => n.id === activeView)?.label}
-          subtitle={
-            activeView === "dashboard" ? `${new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })} · ${Object.keys(linkedAccounts).length} programs tracked` :
+        {/* Page Header — clean text, no hero image */}
+        <div style={{ marginBottom: 20, padding: "4px 0" }}>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: "#2C2418", margin: 0, fontFamily: "DM Serif Display" }}>
+            {activeView === "dashboard" ? `Welcome back, ${user?.name?.split(" ")[0]}` : navItems.find(n => n.id === activeView)?.label}
+          </h1>
+          <p style={{ fontSize: 12, color: "rgba(184,150,90,0.6)", fontFamily: "Nunito", marginTop: 4 }}>
+            {activeView === "dashboard" ? `${new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })} · ${Object.keys(linkedAccounts).length} programs tracked` :
             activeView === "programs" ? "Link and manage all your loyalty accounts" :
             activeView === "trips" ? "Plan, track, and optimize your upcoming travel" :
             activeView === "expenses" ? "Track spending and receipts across every trip" :
             activeView === "optimizer" ? "AI-powered recommendations to maximize your status" :
             activeView === "reports" ? "Insights and analytics across all programs" :
-            activeView === "premium" ? "Unlock the full power of Continuum" : ""
-          }
-        />
+            activeView === "premium" ? "Unlock the full power of Continuum" : ""}
+          </p>
+          <div style={{ width: 50, height: 2, borderRadius: 1, background: "linear-gradient(90deg, #8B9E7C, #C67B5C)", marginTop: 10 }} />
+        </div>
 
         {/* View Content */}
         {viewRenderers[activeView]?.()}
@@ -2442,107 +2365,107 @@ Start by introducing yourself briefly in-character with personality, and give an
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
         }} onClick={() => setShowAddTrip(false)}>
           <div onClick={e => e.stopPropagation()} style={{
-            background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: 28, width: "100%", maxWidth: 440,
+            background: "linear-gradient(135deg, #F5F0E8, #EDE5D8)", border: "1px solid rgba(139,158,124,0.12)", borderRadius: 28, padding: 28, width: "100%", maxWidth: 440,
           }}>
-            <h3 style={{ fontSize: 18, fontWeight: 800, color: "#fff", margin: "0 0 20px", fontFamily: "Plus Jakarta Sans" }}>Add Trip</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: "#2C2418", margin: "0 0 20px", fontFamily: "DM Serif Display" }}>Add Trip</h3>
 
             {/* Trip Name */}
             <label style={{ display: "block", marginBottom: 16 }}>
-              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Space Grotesk" }}>Trip Name</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(44,36,24,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Nunito" }}>Trip Name</span>
               <input value={newTrip.tripName} onChange={e => setNewTrip(p => ({ ...p, tripName: e.target.value }))}
                 placeholder="e.g. London Spring Getaway, Tokyo Anniversary"
                 style={{
-                  display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.04)",
-                  border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 13, fontFamily: "Space Grotesk", outline: "none", boxSizing: "border-box",
+                  display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(139,158,124,0.05)",
+                  border: "1px solid rgba(139,158,124,0.12)", borderRadius: 24, color: "#2C2418", fontSize: 13, fontFamily: "Nunito", outline: "none", boxSizing: "border-box",
                 }} />
             </label>
 
             <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
               {["flight", "hotel", "rental"].map(type => (
                 <button key={type} onClick={() => setNewTrip(p => ({ ...p, type, program: type === "flight" ? "aa" : type === "hotel" ? "marriott" : "hertz" }))} style={{
-                  flex: 1, padding: "10px 0", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "Space Grotesk",
-                  background: newTrip.type === type ? "rgba(242,107,58,0.2)" : "rgba(255,255,255,0.04)",
-                  color: newTrip.type === type ? "#F7A86A" : "rgba(255,255,255,0.4)", textTransform: "capitalize",
+                  flex: 1, padding: "10px 0", borderRadius: 24, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "Nunito",
+                  background: newTrip.type === type ? "rgba(198,123,92,0.2)" : "rgba(139,158,124,0.05)",
+                  color: newTrip.type === type ? "#B8965A" : "rgba(44,36,24,0.4)", textTransform: "capitalize",
                 }}>{type === "flight" ? "✈️" : type === "hotel" ? "🏨" : "🚗"} {type}</button>
               ))}
             </div>
 
             <label style={{ display: "block", marginBottom: 14 }}>
-              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Space Grotesk" }}>Program</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(44,36,24,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Nunito" }}>Program</span>
               <select value={newTrip.program} onChange={e => setNewTrip(p => ({ ...p, program: e.target.value }))} style={{
-                display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
-                borderRadius: 10, color: "#fff", fontSize: 13, fontFamily: "Space Grotesk", outline: "none", boxSizing: "border-box",
+                display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(139,158,124,0.05)", border: "1px solid rgba(139,158,124,0.12)",
+                borderRadius: 24, color: "#2C2418", fontSize: 13, fontFamily: "Nunito", outline: "none", boxSizing: "border-box",
               }}>
                 {(newTrip.type === "flight" ? [...LOYALTY_PROGRAMS.airlines, ...customPrograms.filter(p => p.category === "airline")] : newTrip.type === "hotel" ? [...LOYALTY_PROGRAMS.hotels, ...customPrograms.filter(p => p.category === "hotel")] : [...LOYALTY_PROGRAMS.rentals, ...customPrograms.filter(p => p.category === "rental")]).map(p => (
-                  <option key={p.id} value={p.id} style={{ background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)" }}>{p.name}</option>
+                  <option key={p.id} value={p.id} style={{ background: "linear-gradient(135deg, #F5F0E8, #EDE5D8)" }}>{p.name}</option>
                 ))}
               </select>
             </label>
 
             <label style={{ display: "block", marginBottom: 14 }}>
-              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Space Grotesk" }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(44,36,24,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Nunito" }}>
                 {newTrip.type === "flight" ? "Route" : newTrip.type === "hotel" ? "Property" : "Location"}
               </span>
               <input value={newTrip.route} onChange={e => setNewTrip(p => ({ ...p, route: e.target.value, property: e.target.value, location: e.target.value }))}
                 placeholder={newTrip.type === "flight" ? "JFK → LAX" : newTrip.type === "hotel" ? "Hotel name" : "City"}
                 style={{
-                  display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.04)",
-                  border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 13, fontFamily: "Space Grotesk", outline: "none", boxSizing: "border-box",
+                  display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(139,158,124,0.05)",
+                  border: "1px solid rgba(139,158,124,0.12)", borderRadius: 24, color: "#2C2418", fontSize: 13, fontFamily: "Nunito", outline: "none", boxSizing: "border-box",
                 }} />
             </label>
 
             <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
               <label style={{ flex: 1 }}>
-                <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Space Grotesk" }}>Date</span>
+                <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(44,36,24,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Nunito" }}>Date</span>
                 <input type="date" value={newTrip.date} onChange={e => setNewTrip(p => ({ ...p, date: e.target.value }))} style={{
-                  display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.04)",
-                  border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 13, fontFamily: "Space Grotesk", outline: "none", boxSizing: "border-box",
+                  display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(139,158,124,0.05)",
+                  border: "1px solid rgba(139,158,124,0.12)", borderRadius: 24, color: "#2C2418", fontSize: 13, fontFamily: "Nunito", outline: "none", boxSizing: "border-box",
                 }} />
               </label>
               {newTrip.type === "flight" && (
                 <label style={{ flex: 1 }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Space Grotesk" }}>Class</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(44,36,24,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Nunito" }}>Class</span>
                   <select value={newTrip.class} onChange={e => setNewTrip(p => ({ ...p, class: e.target.value }))} style={{
-                    display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 13, fontFamily: "Space Grotesk", outline: "none", boxSizing: "border-box",
+                    display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(139,158,124,0.05)",
+                    border: "1px solid rgba(139,158,124,0.12)", borderRadius: 24, color: "#2C2418", fontSize: 13, fontFamily: "Nunito", outline: "none", boxSizing: "border-box",
                   }}>
-                    <option value="domestic" style={{ background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)" }}>Domestic Economy</option>
-                    <option value="international" style={{ background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)" }}>International</option>
-                    <option value="premium" style={{ background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)" }}>Premium / Business</option>
+                    <option value="domestic" style={{ background: "linear-gradient(135deg, #F5F0E8, #EDE5D8)" }}>Domestic Economy</option>
+                    <option value="international" style={{ background: "linear-gradient(135deg, #F5F0E8, #EDE5D8)" }}>International</option>
+                    <option value="premium" style={{ background: "linear-gradient(135deg, #F5F0E8, #EDE5D8)" }}>Premium / Business</option>
                   </select>
                 </label>
               )}
               {newTrip.type === "hotel" && (
                 <label style={{ flex: 1 }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Space Grotesk" }}>Nights</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(44,36,24,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Nunito" }}>Nights</span>
                   <input type="number" min={1} value={newTrip.nights} onChange={e => setNewTrip(p => ({ ...p, nights: parseInt(e.target.value) || 1 }))} style={{
-                    display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 13, fontFamily: "Space Grotesk", outline: "none", boxSizing: "border-box",
+                    display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(139,158,124,0.05)",
+                    border: "1px solid rgba(139,158,124,0.12)", borderRadius: 24, color: "#2C2418", fontSize: 13, fontFamily: "Nunito", outline: "none", boxSizing: "border-box",
                   }} />
                 </label>
               )}
             </div>
 
             <label style={{ display: "block", marginBottom: 20 }}>
-              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Space Grotesk" }}>Status</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(44,36,24,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Nunito" }}>Status</span>
               <select value={newTrip.status} onChange={e => setNewTrip(p => ({ ...p, status: e.target.value }))} style={{
-                display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 13, fontFamily: "Space Grotesk", outline: "none", boxSizing: "border-box",
+                display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(139,158,124,0.05)",
+                border: "1px solid rgba(139,158,124,0.12)", borderRadius: 24, color: "#2C2418", fontSize: 13, fontFamily: "Nunito", outline: "none", boxSizing: "border-box",
               }}>
-                <option value="confirmed" style={{ background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)" }}>Confirmed</option>
-                <option value="planned" style={{ background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)" }}>Planned</option>
-                <option value="wishlist" style={{ background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)" }}>Wishlist</option>
+                <option value="confirmed" style={{ background: "linear-gradient(135deg, #F5F0E8, #EDE5D8)" }}>Confirmed</option>
+                <option value="planned" style={{ background: "linear-gradient(135deg, #F5F0E8, #EDE5D8)" }}>Planned</option>
+                <option value="wishlist" style={{ background: "linear-gradient(135deg, #F5F0E8, #EDE5D8)" }}>Wishlist</option>
               </select>
             </label>
 
             <div style={{ display: "flex", gap: 10 }}>
               <button onClick={() => setShowAddTrip(false)} style={{
-                flex: 1, padding: "11px 0", borderRadius: 10, border: "1px solid rgba(255,255,255,0.08)", background: "transparent",
-                color: "rgba(255,255,255,0.5)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Space Grotesk",
+                flex: 1, padding: "11px 0", borderRadius: 24, border: "1px solid rgba(139,158,124,0.12)", background: "transparent",
+                color: "rgba(44,36,24,0.5)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Nunito",
               }}>Cancel</button>
               <button onClick={handleAddTrip} style={{
-                flex: 1, padding: "11px 0", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Plus Jakarta Sans",
-                background: "linear-gradient(135deg, #E05A2B, #F26B3A)", color: "#fff",
+                flex: 1, padding: "11px 0", borderRadius: 24, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "DM Serif Display",
+                background: "linear-gradient(135deg, #6B7E5C, #8B9E7C)", color: "#2C2418",
               }}>Add Trip</button>
             </div>
           </div>
@@ -2555,33 +2478,33 @@ Start by introducing yourself briefly in-character with personality, and give an
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
         }} onClick={() => setShowLinkModal(null)}>
           <div onClick={e => e.stopPropagation()} style={{
-            background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: 28, width: "100%", maxWidth: 400,
+            background: "linear-gradient(135deg, #F5F0E8, #EDE5D8)", border: "1px solid rgba(139,158,124,0.12)", borderRadius: 28, padding: 28, width: "100%", maxWidth: 400,
           }}>
-            <h3 style={{ fontSize: 18, fontWeight: 800, color: "#fff", margin: "0 0 6px", fontFamily: "Plus Jakarta Sans" }}>Link Account</h3>
-            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, margin: "0 0 20px", fontFamily: "Space Grotesk" }}>
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: "#2C2418", margin: "0 0 6px", fontFamily: "DM Serif Display" }}>Link Account</h3>
+            <p style={{ color: "rgba(44,36,24,0.4)", fontSize: 12, margin: "0 0 20px", fontFamily: "Nunito" }}>
               Connect your {allPrograms.find(p => p.id === showLinkModal)?.name || "loyalty"} account
             </p>
 
             <label style={{ display: "block", marginBottom: 18 }}>
-              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Space Grotesk" }}>Member ID</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(44,36,24,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Nunito" }}>Member ID</span>
               <input value={linkForm.memberId} onChange={e => setLinkForm(p => ({ ...p, memberId: e.target.value }))} placeholder="Enter your member number"
                 style={{
-                  display: "block", width: "100%", marginTop: 6, padding: "12px 14px", background: "rgba(255,255,255,0.04)",
-                  border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 14, fontFamily: "Space Grotesk", outline: "none", boxSizing: "border-box",
+                  display: "block", width: "100%", marginTop: 6, padding: "12px 14px", background: "rgba(139,158,124,0.05)",
+                  border: "1px solid rgba(139,158,124,0.12)", borderRadius: 24, color: "#2C2418", fontSize: 14, fontFamily: "Nunito", outline: "none", boxSizing: "border-box",
                 }} />
             </label>
-            <p style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", fontFamily: "Space Grotesk", marginBottom: 20 }}>
+            <p style={{ fontSize: 10, color: "rgba(44,36,24,0.25)", fontFamily: "Nunito", marginBottom: 20 }}>
               In production, this would use OAuth to securely connect to the loyalty program's API. Demo mode uses sample data.
             </p>
 
             <div style={{ display: "flex", gap: 10 }}>
               <button onClick={() => setShowLinkModal(null)} style={{
-                flex: 1, padding: "11px 0", borderRadius: 10, border: "1px solid rgba(255,255,255,0.08)", background: "transparent",
-                color: "rgba(255,255,255,0.5)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Space Grotesk",
+                flex: 1, padding: "11px 0", borderRadius: 24, border: "1px solid rgba(139,158,124,0.12)", background: "transparent",
+                color: "rgba(44,36,24,0.5)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Nunito",
               }}>Cancel</button>
               <button onClick={() => handleLinkAccount(showLinkModal)} style={{
-                flex: 1, padding: "11px 0", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Plus Jakarta Sans",
-                background: "linear-gradient(135deg, #E05A2B, #F26B3A)", color: "#fff",
+                flex: 1, padding: "11px 0", borderRadius: 24, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "DM Serif Display",
+                background: "linear-gradient(135deg, #6B7E5C, #8B9E7C)", color: "#2C2418",
               }}>Link Account</button>
             </div>
           </div>
@@ -2601,10 +2524,10 @@ Start by introducing yourself briefly in-character with personality, and give an
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
         }} onClick={() => setShowAddProgram(false)}>
           <div onClick={e => e.stopPropagation()} style={{
-            background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: 28, width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto",
+            background: "linear-gradient(135deg, #F5F0E8, #EDE5D8)", border: "1px solid rgba(139,158,124,0.12)", borderRadius: 28, padding: 28, width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto",
           }}>
-            <h3 style={{ fontSize: 18, fontWeight: 800, color: "#fff", margin: "0 0 6px", fontFamily: "Plus Jakarta Sans" }}>Add Loyalty Program</h3>
-            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, margin: "0 0 20px", fontFamily: "Space Grotesk" }}>Choose from {PROGRAM_DIRECTORY.airlines.length + PROGRAM_DIRECTORY.hotels.length + PROGRAM_DIRECTORY.rentals.length + PROGRAM_DIRECTORY.creditCards.length}+ programs or add a custom one</p>
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: "#2C2418", margin: "0 0 6px", fontFamily: "DM Serif Display" }}>Add Loyalty Program</h3>
+            <p style={{ color: "rgba(44,36,24,0.4)", fontSize: 12, margin: "0 0 20px", fontFamily: "Nunito" }}>Choose from {PROGRAM_DIRECTORY.airlines.length + PROGRAM_DIRECTORY.hotels.length + PROGRAM_DIRECTORY.rentals.length + PROGRAM_DIRECTORY.creditCards.length}+ programs or add a custom one</p>
 
             {/* Category Tabs */}
             <div style={{ marginBottom: 16 }}>
@@ -2616,9 +2539,9 @@ Start by introducing yourself briefly in-character with personality, and give an
                   { id: "card", label: "Cards", icon: "💳", count: PROGRAM_DIRECTORY.creditCards.length },
                 ].map(cat => (
                   <button key={cat.id} onClick={() => setNewProgram(p => ({ ...p, category: cat.id, selectedId: "", search: "" }))} style={{
-                    flex: 1, padding: "8px 0", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600, fontFamily: "Space Grotesk",
-                    background: newProgram.category === cat.id ? "rgba(242,107,58,0.2)" : "rgba(255,255,255,0.04)",
-                    color: newProgram.category === cat.id ? "#F7A86A" : "rgba(255,255,255,0.4)", transition: "all 0.2s",
+                    flex: 1, padding: "8px 0", borderRadius: 24, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600, fontFamily: "Nunito",
+                    background: newProgram.category === cat.id ? "rgba(198,123,92,0.2)" : "rgba(139,158,124,0.05)",
+                    color: newProgram.category === cat.id ? "#B8965A" : "rgba(44,36,24,0.4)", transition: "all 0.2s",
                   }}>{cat.icon} {cat.label} ({cat.count})</button>
                 ))}
               </div>
@@ -2630,35 +2553,35 @@ Start by introducing yourself briefly in-character with personality, and give an
                 value={newProgram.search || ""}
                 onChange={e => setNewProgram(p => ({ ...p, search: e.target.value, selectedId: "" }))}
                 placeholder={`Search ${newProgram.category === "card" ? "credit cards" : newProgram.category + "s"}...`}
-                style={{ display: "block", width: "100%", padding: "10px 12px 10px 36px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 13, fontFamily: "Space Grotesk", outline: "none", boxSizing: "border-box" }}
+                style={{ display: "block", width: "100%", padding: "10px 12px 10px 36px", background: "rgba(139,158,124,0.05)", border: "1px solid rgba(139,158,124,0.12)", borderRadius: 24, color: "#2C2418", fontSize: 13, fontFamily: "Nunito", outline: "none", boxSizing: "border-box" }}
               />
               <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", opacity: 0.3 }}>🔍</span>
             </div>
 
             {/* Program List */}
             {!selectedProg && (
-              <div style={{ maxHeight: 240, overflowY: "auto", marginBottom: 14, borderRadius: 12, border: "1px solid rgba(255,255,255,0.06)" }}>
+              <div style={{ maxHeight: 240, overflowY: "auto", marginBottom: 14, borderRadius: 28, border: "1px solid rgba(139,158,124,0.08)" }}>
                 {filtered.map(prog => {
                   const isLinked = alreadyLinked.includes(prog.id);
                   return (
                     <button key={prog.id} onClick={() => !isLinked && setNewProgram(p => ({ ...p, selectedId: prog.id, search: "" }))}
                       style={{
                         display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 14px", background: "transparent",
-                        border: "none", borderBottom: "1px solid rgba(255,255,255,0.04)", cursor: isLinked ? "default" : "pointer",
+                        border: "none", borderBottom: "1px solid rgba(139,158,124,0.05)", cursor: isLinked ? "default" : "pointer",
                         opacity: isLinked ? 0.4 : 1, transition: "background 0.15s", textAlign: "left",
                       }}
-                      onMouseEnter={e => { if (!isLinked) e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
+                      onMouseEnter={e => { if (!isLinked) e.currentTarget.style.background = "rgba(139,158,124,0.05)"; }}
                       onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
                     >
                       <span style={{ fontSize: 20, width: 28, textAlign: "center" }}>{prog.logo}</span>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", fontFamily: "Space Grotesk", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{prog.name}</div>
-                        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", fontFamily: "Space Grotesk" }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: "#2C2418", fontFamily: "Nunito", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{prog.name}</div>
+                        <div style={{ fontSize: 10, color: "rgba(44,36,24,0.35)", fontFamily: "Nunito" }}>
                           {prog.tiers ? `${prog.tiers.length} tiers · ${prog.unit}` : prog.perks ? prog.perks.substring(0, 50) + "..." : prog.unit}
                         </div>
                       </div>
                       {isLinked ? (
-                        <span style={{ fontSize: 10, color: "#F5944E", fontWeight: 600, fontFamily: "Space Grotesk" }}>Linked ✓</span>
+                        <span style={{ fontSize: 10, color: "#D4946E", fontWeight: 600, fontFamily: "Nunito" }}>Linked ✓</span>
                       ) : (
                         <span style={{ width: 8, height: 8, borderRadius: "50%", background: prog.color, flexShrink: 0 }} />
                       )}
@@ -2666,7 +2589,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                   );
                 })}
                 {filtered.length === 0 && (
-                  <div style={{ padding: 20, textAlign: "center", color: "rgba(255,255,255,0.3)", fontSize: 13, fontFamily: "Space Grotesk" }}>
+                  <div style={{ padding: 20, textAlign: "center", color: "rgba(44,36,24,0.3)", fontSize: 13, fontFamily: "Nunito" }}>
                     No programs match your search
                   </div>
                 )}
@@ -2679,18 +2602,18 @@ Start by introducing yourself briefly in-character with personality, and give an
                 {/* Program Card */}
                 <div style={{
                   background: `linear-gradient(135deg, ${selectedProg.color}18, ${(selectedProg.accent || selectedProg.color)}10)`,
-                  border: `1px solid ${selectedProg.color}30`, borderRadius: 14, padding: 16, marginBottom: 14,
+                  border: `1px solid ${selectedProg.color}30`, borderRadius: 30, padding: 16, marginBottom: 14,
                 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
                     <span style={{ fontSize: 28 }}>{selectedProg.logo}</span>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: "Plus Jakarta Sans" }}>{selectedProg.name}</div>
-                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "Space Grotesk" }}>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: "#2C2418", fontFamily: "DM Serif Display" }}>{selectedProg.name}</div>
+                      <div style={{ fontSize: 11, color: "rgba(44,36,24,0.4)", fontFamily: "Nunito" }}>
                         {selectedProg.tiers ? `${selectedProg.tiers.length} elite tiers · ${selectedProg.unit}` : `${selectedProg.unit} · $${selectedProg.annualFee}/yr`}
                       </div>
                     </div>
                     <button onClick={() => setNewProgram(p => ({ ...p, selectedId: "" }))} style={{
-                      background: "rgba(255,255,255,0.06)", border: "none", borderRadius: 8, width: 28, height: 28, color: "rgba(255,255,255,0.4)", cursor: "pointer", fontSize: 14,
+                      background: "rgba(139,158,124,0.08)", border: "none", borderRadius: 8, width: 28, height: 28, color: "rgba(44,36,24,0.4)", cursor: "pointer", fontSize: 14,
                     }}>✕</button>
                   </div>
                   {/* Tier badges */}
@@ -2698,47 +2621,47 @@ Start by introducing yourself briefly in-character with personality, and give an
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
                       {selectedProg.tiers.map((t, i) => (
                         <span key={i} style={{
-                          padding: "3px 8px", borderRadius: 6, fontSize: 10, fontWeight: 600, fontFamily: "Space Grotesk",
+                          padding: "3px 8px", borderRadius: 6, fontSize: 10, fontWeight: 600, fontFamily: "Nunito",
                           background: `${selectedProg.color}20`, color: selectedProg.color, border: `1px solid ${selectedProg.color}30`,
                         }}>{t.name}</span>
                       ))}
                     </div>
                   )}
                   {selectedProg.perks && (
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", fontFamily: "Space Grotesk", lineHeight: 1.5 }}>{selectedProg.perks}</div>
+                    <div style={{ fontSize: 11, color: "rgba(44,36,24,0.5)", fontFamily: "Nunito", lineHeight: 1.5 }}>{selectedProg.perks}</div>
                   )}
                 </div>
 
                 {/* Connect Account CTA */}
                 {selectedProg.loginUrl && (
                   <a href={selectedProg.loginUrl} target="_blank" rel="noopener noreferrer" style={{
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px 16px", borderRadius: 12,
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px 16px", borderRadius: 28,
                     background: `linear-gradient(135deg, ${selectedProg.color}, ${selectedProg.accent || selectedProg.color})`,
-                    color: "#fff", textDecoration: "none", fontWeight: 700, fontSize: 13, fontFamily: "Plus Jakarta Sans", marginBottom: 14,
+                    color: "#2C2418", textDecoration: "none", fontWeight: 700, fontSize: 13, fontFamily: "DM Serif Display", marginBottom: 14,
                     boxShadow: `0 4px 15px ${selectedProg.color}40`, transition: "all 0.2s",
                   }}>
                     🔗 Connect to {selectedProg.name.split(" ")[0]} Account
                     <span style={{ fontSize: 11, opacity: 0.7 }}>↗</span>
                   </a>
                 )}
-                <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontFamily: "Space Grotesk", textAlign: "center", margin: "0 0 12px" }}>
+                <p style={{ fontSize: 10, color: "rgba(44,36,24,0.3)", fontFamily: "Nunito", textAlign: "center", margin: "0 0 12px" }}>
                   Opens {selectedProg.name.split(" ")[0]}'s website — log in to view your live status & points balance
                 </p>
 
                 {/* Member ID input */}
                 <label style={{ display: "block", marginBottom: 12 }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Space Grotesk" }}>Member / Account Number</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(44,36,24,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Nunito" }}>Member / Account Number</span>
                   <input value={newProgram.memberId} onChange={e => setNewProgram(p => ({ ...p, memberId: e.target.value }))} placeholder="Enter your member number to link"
-                    style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 13, fontFamily: "Space Grotesk", outline: "none", boxSizing: "border-box" }} />
+                    style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(139,158,124,0.05)", border: "1px solid rgba(139,158,124,0.12)", borderRadius: 24, color: "#2C2418", fontSize: 13, fontFamily: "Nunito", outline: "none", boxSizing: "border-box" }} />
                 </label>
               </div>
             )}
 
             {/* Action buttons */}
             <div style={{ display: "flex", gap: 10 }}>
-              <button onClick={() => { setShowAddProgram(false); setNewProgram({ name: "", category: "airline", logo: "✈️", color: "#F26B3A", memberId: "", unit: "Points", tiers: "", selectedId: "", search: "" }); }} style={{
-                flex: 1, padding: "11px 0", borderRadius: 10, border: "1px solid rgba(255,255,255,0.08)", background: "transparent",
-                color: "rgba(255,255,255,0.5)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Space Grotesk",
+              <button onClick={() => { setShowAddProgram(false); setNewProgram({ name: "", category: "airline", logo: "✈️", color: "#C67B5C", memberId: "", unit: "Points", tiers: "", selectedId: "", search: "" }); }} style={{
+                flex: 1, padding: "11px 0", borderRadius: 24, border: "1px solid rgba(139,158,124,0.12)", background: "transparent",
+                color: "rgba(44,36,24,0.5)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Nunito",
               }}>Cancel</button>
               {selectedProg ? (
                 <button onClick={() => {
@@ -2747,10 +2670,10 @@ Start by introducing yourself briefly in-character with personality, and give an
                     setLinkedAccounts(prev => ({ ...prev, [prog.id]: { memberId: newProgram.memberId || "Pending", currentPoints: 0, currentNights: 0, currentRentals: 0 } }));
                   }
                   setShowAddProgram(false);
-                  setNewProgram({ name: "", category: "airline", logo: "✈️", color: "#F26B3A", memberId: "", unit: "Points", tiers: "", selectedId: "", search: "" });
+                  setNewProgram({ name: "", category: "airline", logo: "✈️", color: "#C67B5C", memberId: "", unit: "Points", tiers: "", selectedId: "", search: "" });
                 }} style={{
-                  flex: 1, padding: "11px 0", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Plus Jakarta Sans",
-                  background: `linear-gradient(135deg, #E05A2B, #F26B3A)`, color: "#fff",
+                  flex: 1, padding: "11px 0", borderRadius: 24, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "DM Serif Display",
+                  background: `linear-gradient(135deg, #6B7E5C, #8B9E7C)`, color: "#2C2418",
                 }}>Link {selectedProg.name.split(" ")[0]}</button>
               ) : (
                 <button onClick={() => {
@@ -2765,10 +2688,10 @@ Start by introducing yourself briefly in-character with personality, and give an
                     setLinkedAccounts(prev => ({ ...prev, [id]: { memberId: newProgram.memberId, currentPoints: 0, currentNights: 0, currentRentals: 0 } }));
                   }
                   setShowAddProgram(false);
-                  setNewProgram({ name: "", category: "airline", logo: "✈️", color: "#F26B3A", memberId: "", unit: "Points", tiers: "", selectedId: "", search: "" });
+                  setNewProgram({ name: "", category: "airline", logo: "✈️", color: "#C67B5C", memberId: "", unit: "Points", tiers: "", selectedId: "", search: "" });
                 }} style={{
-                  flex: 1, padding: "11px 0", borderRadius: 10, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.04)",
-                  color: "rgba(255,255,255,0.4)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Space Grotesk",
+                  flex: 1, padding: "11px 0", borderRadius: 24, border: "1px solid rgba(139,158,124,0.12)", background: "rgba(139,158,124,0.05)",
+                  color: "rgba(44,36,24,0.4)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Nunito",
                 }}>+ Add Custom</button>
               )}
             </div>
@@ -2783,22 +2706,22 @@ Start by introducing yourself briefly in-character with personality, and give an
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
         }} onClick={() => setShowUpgrade(false)}>
           <div onClick={e => e.stopPropagation()} style={{
-            background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 20, padding: 32, width: "100%", maxWidth: 400, textAlign: "center",
+            background: "linear-gradient(135deg, #F5F0E8, #EDE5D8)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 28, padding: 32, width: "100%", maxWidth: 400, textAlign: "center",
           }}>
             <div style={{ fontSize: 42, marginBottom: 12, display: "flex", justifyContent: "center" }}><LogoMark size={56} /></div>
-            <h3 style={{ fontSize: 20, fontWeight: 800, color: "#fff", margin: "0 0 8px", fontFamily: "Plus Jakarta Sans" }}>Upgrade to Premium</h3>
-            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, fontFamily: "Space Grotesk", marginBottom: 24 }}>
+            <h3 style={{ fontSize: 20, fontWeight: 800, color: "#2C2418", margin: "0 0 8px", fontFamily: "DM Serif Display" }}>Upgrade to Premium</h3>
+            <p style={{ color: "rgba(44,36,24,0.4)", fontSize: 13, fontFamily: "Nunito", marginBottom: 24 }}>
               Unlock the Trip Optimizer, status match alerts, PDF exports, and more.
             </p>
-            <div style={{ fontSize: 36, fontWeight: 800, color: "#fff", fontFamily: "Plus Jakarta Sans", marginBottom: 4 }}>$9.99<span style={{ fontSize: 14, color: "rgba(255,255,255,0.4)" }}>/mo</span></div>
-            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: "Space Grotesk", marginBottom: 24 }}>Cancel anytime. 7-day free trial.</p>
+            <div style={{ fontSize: 36, fontWeight: 800, color: "#2C2418", fontFamily: "DM Serif Display", marginBottom: 4 }}>$9.99<span style={{ fontSize: 14, color: "rgba(44,36,24,0.4)" }}>/mo</span></div>
+            <p style={{ fontSize: 11, color: "rgba(44,36,24,0.3)", fontFamily: "Nunito", marginBottom: 24 }}>Cancel anytime. 7-day free trial.</p>
             <button onClick={() => { setUser(prev => ({ ...prev, tier: "premium" })); setShowUpgrade(false); }} style={{
-              width: "100%", padding: "13px 0", borderRadius: 12, border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "Plus Jakarta Sans",
+              width: "100%", padding: "13px 0", borderRadius: 28, border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "DM Serif Display",
               background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#000", boxShadow: "0 4px 20px rgba(245,158,11,0.3)", marginBottom: 10,
             }}>Start Free Trial</button>
             <button onClick={() => setShowUpgrade(false)} style={{
-              width: "100%", padding: "11px 0", borderRadius: 12, border: "1px solid rgba(255,255,255,0.08)", background: "transparent",
-              color: "rgba(255,255,255,0.4)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Space Grotesk",
+              width: "100%", padding: "11px 0", borderRadius: 28, border: "1px solid rgba(139,158,124,0.12)", background: "transparent",
+              color: "rgba(44,36,24,0.4)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Nunito",
             }}>Maybe Later</button>
           </div>
         </div>
@@ -2810,22 +2733,22 @@ Start by introducing yourself briefly in-character with personality, and give an
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
         }} onClick={() => setShowAddExpense(null)}>
           <div onClick={e => e.stopPropagation()} style={{
-            background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: 28, width: "100%", maxWidth: 480,
+            background: "linear-gradient(135deg, #F5F0E8, #EDE5D8)", border: "1px solid rgba(139,158,124,0.12)", borderRadius: 28, padding: 28, width: "100%", maxWidth: 480,
           }}>
-            <h3 style={{ fontSize: 18, fontWeight: 800, color: "#fff", margin: "0 0 6px", fontFamily: "Plus Jakarta Sans" }}>Add Expense</h3>
-            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, margin: "0 0 20px", fontFamily: "Space Grotesk" }}>
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: "#2C2418", margin: "0 0 6px", fontFamily: "DM Serif Display" }}>Add Expense</h3>
+            <p style={{ color: "rgba(44,36,24,0.4)", fontSize: 12, margin: "0 0 20px", fontFamily: "Nunito" }}>
               {(() => { const t = trips.find(t => t.id === showAddExpense); return t ? `${t.type === "flight" ? "✈️" : t.type === "hotel" ? "🏨" : "🚗"} ${getTripName(t)}` : ""; })()}
             </p>
 
             {/* Category selector */}
             <div style={{ marginBottom: 16 }}>
-              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Space Grotesk", display: "block", marginBottom: 8 }}>Category</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(44,36,24,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Nunito", display: "block", marginBottom: 8 }}>Category</span>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 {EXPENSE_CATEGORIES.map(cat => (
                   <button key={cat.id} onClick={() => setNewExpense(p => ({ ...p, category: cat.id }))} style={{
-                    padding: "6px 12px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600, fontFamily: "Space Grotesk",
-                    background: newExpense.category === cat.id ? `${cat.color}25` : "rgba(255,255,255,0.04)",
-                    color: newExpense.category === cat.id ? cat.color : "rgba(255,255,255,0.4)", transition: "all 0.2s",
+                    padding: "6px 12px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600, fontFamily: "Nunito",
+                    background: newExpense.category === cat.id ? `${cat.color}25` : "rgba(139,158,124,0.05)",
+                    color: newExpense.category === cat.id ? cat.color : "rgba(44,36,24,0.4)", transition: "all 0.2s",
                   }}>{cat.icon} {cat.label}</button>
                 ))}
               </div>
@@ -2833,58 +2756,58 @@ Start by introducing yourself briefly in-character with personality, and give an
 
             <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
               <label style={{ flex: 2 }}>
-                <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Space Grotesk" }}>Description</span>
+                <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(44,36,24,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Nunito" }}>Description</span>
                 <input value={newExpense.description} onChange={e => setNewExpense(p => ({ ...p, description: e.target.value }))} placeholder="e.g. Marriott 3 nights"
-                  style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 13, fontFamily: "Space Grotesk", outline: "none", boxSizing: "border-box" }} />
+                  style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(139,158,124,0.05)", border: "1px solid rgba(139,158,124,0.12)", borderRadius: 24, color: "#2C2418", fontSize: 13, fontFamily: "Nunito", outline: "none", boxSizing: "border-box" }} />
               </label>
               <label style={{ flex: 1 }}>
-                <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Space Grotesk" }}>Amount ($)</span>
+                <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(44,36,24,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Nunito" }}>Amount ($)</span>
                 <input type="number" min="0" step="0.01" value={newExpense.amount} onChange={e => setNewExpense(p => ({ ...p, amount: e.target.value }))} placeholder="0.00"
-                  style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 13, fontFamily: "Space Grotesk", outline: "none", boxSizing: "border-box" }} />
+                  style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(139,158,124,0.05)", border: "1px solid rgba(139,158,124,0.12)", borderRadius: 24, color: "#2C2418", fontSize: 13, fontFamily: "Nunito", outline: "none", boxSizing: "border-box" }} />
               </label>
             </div>
 
             <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
               <label style={{ flex: 1 }}>
-                <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Space Grotesk" }}>Date</span>
+                <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(44,36,24,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Nunito" }}>Date</span>
                 <input type="date" value={newExpense.date} onChange={e => setNewExpense(p => ({ ...p, date: e.target.value }))}
-                  style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 13, fontFamily: "Space Grotesk", outline: "none", boxSizing: "border-box" }} />
+                  style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(139,158,124,0.05)", border: "1px solid rgba(139,158,124,0.12)", borderRadius: 24, color: "#2C2418", fontSize: 13, fontFamily: "Nunito", outline: "none", boxSizing: "border-box" }} />
               </label>
               <label style={{ flex: 1 }}>
-                <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Space Grotesk" }}>Payment Method</span>
+                <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(44,36,24,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Nunito" }}>Payment Method</span>
                 <select value={newExpense.paymentMethod} onChange={e => setNewExpense(p => ({ ...p, paymentMethod: e.target.value }))}
-                  style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 13, fontFamily: "Space Grotesk", outline: "none", boxSizing: "border-box" }}>
-                  <option value="" style={{ background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)" }}>Select...</option>
-                  <option value="Amex Platinum" style={{ background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)" }}>Amex Platinum</option>
-                  <option value="Chase Sapphire" style={{ background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)" }}>Chase Sapphire Reserve</option>
-                  <option value="Cash" style={{ background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)" }}>Cash</option>
-                  <option value="Debit Card" style={{ background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)" }}>Debit Card</option>
-                  <option value="Other" style={{ background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)" }}>Other</option>
+                  style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(139,158,124,0.05)", border: "1px solid rgba(139,158,124,0.12)", borderRadius: 24, color: "#2C2418", fontSize: 13, fontFamily: "Nunito", outline: "none", boxSizing: "border-box" }}>
+                  <option value="" style={{ background: "linear-gradient(135deg, #F5F0E8, #EDE5D8)" }}>Select...</option>
+                  <option value="Amex Platinum" style={{ background: "linear-gradient(135deg, #F5F0E8, #EDE5D8)" }}>Amex Platinum</option>
+                  <option value="Chase Sapphire" style={{ background: "linear-gradient(135deg, #F5F0E8, #EDE5D8)" }}>Chase Sapphire Reserve</option>
+                  <option value="Cash" style={{ background: "linear-gradient(135deg, #F5F0E8, #EDE5D8)" }}>Cash</option>
+                  <option value="Debit Card" style={{ background: "linear-gradient(135deg, #F5F0E8, #EDE5D8)" }}>Debit Card</option>
+                  <option value="Other" style={{ background: "linear-gradient(135deg, #F5F0E8, #EDE5D8)" }}>Other</option>
                 </select>
               </label>
             </div>
 
             <label style={{ display: "block", marginBottom: 14 }}>
-              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Space Grotesk" }}>Notes (optional)</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(44,36,24,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Nunito" }}>Notes (optional)</span>
               <input value={newExpense.notes} onChange={e => setNewExpense(p => ({ ...p, notes: e.target.value }))} placeholder="Business meal, personal, etc."
-                style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 13, fontFamily: "Space Grotesk", outline: "none", boxSizing: "border-box" }} />
+                style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(139,158,124,0.05)", border: "1px solid rgba(139,158,124,0.12)", borderRadius: 24, color: "#2C2418", fontSize: 13, fontFamily: "Nunito", outline: "none", boxSizing: "border-box" }} />
             </label>
 
             {/* Receipt Upload / Camera */}
             <div style={{ marginBottom: 20 }}>
-              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Space Grotesk", display: "block", marginBottom: 8 }}>Receipt</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(44,36,24,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Nunito", display: "block", marginBottom: 8 }}>Receipt</span>
               
               {!newExpense.receiptImage ? (
                 <div style={{ display: "flex", gap: 10 }}>
                   {/* Upload file button */}
                   <label style={{
                     flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
-                    padding: "18px 12px", borderRadius: 12, border: "2px dashed rgba(229,90,43,0.25)", background: "rgba(229,90,43,0.04)",
+                    padding: "18px 12px", borderRadius: 28, border: "2px dashed rgba(168,96,64,0.25)", background: "rgba(168,96,64,0.04)",
                     cursor: "pointer", transition: "all 0.2s",
                   }}>
                     <span style={{ fontSize: 22 }}>📄</span>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: "#F5944E", fontFamily: "Space Grotesk" }}>Upload File</span>
-                    <span style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", fontFamily: "Space Grotesk" }}>JPG, PNG, PDF</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "#D4946E", fontFamily: "Nunito" }}>Upload File</span>
+                    <span style={{ fontSize: 9, color: "rgba(44,36,24,0.3)", fontFamily: "Nunito" }}>JPG, PNG, PDF</span>
                     <input type="file" accept="image/*,.pdf" style={{ display: "none" }} onChange={e => {
                       const file = e.target.files?.[0];
                       if (file) {
@@ -2898,12 +2821,12 @@ Start by introducing yourself briefly in-character with personality, and give an
                   {/* Take photo button */}
                   <label style={{
                     flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
-                    padding: "18px 12px", borderRadius: 12, border: "2px dashed rgba(229,90,43,0.25)", background: "rgba(229,90,43,0.04)",
+                    padding: "18px 12px", borderRadius: 28, border: "2px dashed rgba(168,96,64,0.25)", background: "rgba(168,96,64,0.04)",
                     cursor: "pointer", transition: "all 0.2s",
                   }}>
                     <span style={{ fontSize: 22 }}>📸</span>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: "#F5944E", fontFamily: "Space Grotesk" }}>Take Photo</span>
-                    <span style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", fontFamily: "Space Grotesk" }}>Use camera</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "#D4946E", fontFamily: "Nunito" }}>Take Photo</span>
+                    <span style={{ fontSize: 9, color: "rgba(44,36,24,0.3)", fontFamily: "Nunito" }}>Use camera</span>
                     <input type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={e => {
                       const file = e.target.files?.[0];
                       if (file) {
@@ -2917,28 +2840,28 @@ Start by introducing yourself briefly in-character with personality, and give an
                   {/* No receipt option */}
                   <button onClick={() => setNewExpense(p => ({ ...p, receipt: false, receiptImage: null }))} style={{
                     flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
-                    padding: "18px 12px", borderRadius: 12, border: `2px dashed ${!newExpense.receipt ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.06)"}`,
-                    background: !newExpense.receipt ? "rgba(255,255,255,0.03)" : "transparent", cursor: "pointer",
+                    padding: "18px 12px", borderRadius: 28, border: `2px dashed ${!newExpense.receipt ? "rgba(44,36,24,0.1)" : "rgba(139,158,124,0.08)"}`,
+                    background: !newExpense.receipt ? "rgba(139,158,124,0.04)" : "transparent", cursor: "pointer",
                   }}>
                     <span style={{ fontSize: 22 }}>⊘</span>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", fontFamily: "Space Grotesk" }}>No Receipt</span>
-                    <span style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", fontFamily: "Space Grotesk" }}>&nbsp;</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(44,36,24,0.4)", fontFamily: "Nunito" }}>No Receipt</span>
+                    <span style={{ fontSize: 9, color: "rgba(44,36,24,0.3)", fontFamily: "Nunito" }}>&nbsp;</span>
                   </button>
                 </div>
               ) : (
                 /* Receipt preview */
                 <div style={{
-                  borderRadius: 12, border: "1px solid rgba(52,211,153,0.3)", background: "rgba(52,211,153,0.06)", padding: 14,
+                  borderRadius: 28, border: "1px solid rgba(52,211,153,0.3)", background: "rgba(52,211,153,0.06)", padding: 14,
                   display: "flex", alignItems: "center", gap: 12,
                 }}>
                   {newExpense.receiptImage.type?.startsWith("image/") ? (
-                    <img src={newExpense.receiptImage.data} alt="Receipt" style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)" }} />
+                    <img src={newExpense.receiptImage.data} alt="Receipt" style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 8, border: "1px solid rgba(44,36,24,0.06)" }} />
                   ) : (
-                    <div style={{ width: 56, height: 56, borderRadius: 8, background: "rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>📄</div>
+                    <div style={{ width: 56, height: 56, borderRadius: 8, background: "rgba(139,158,124,0.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>📄</div>
                   )}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: "#34d399", fontFamily: "Space Grotesk" }}>✓ Receipt attached</div>
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: "Space Grotesk", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: "#34d399", fontFamily: "Nunito" }}>✓ Receipt attached</div>
+                    <div style={{ fontSize: 11, color: "rgba(44,36,24,0.35)", fontFamily: "Nunito", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {newExpense.receiptImage.name} • {(newExpense.receiptImage.size / 1024).toFixed(0)} KB
                     </div>
                   </div>
@@ -2952,12 +2875,12 @@ Start by introducing yourself briefly in-character with personality, and give an
 
             <div style={{ display: "flex", gap: 10 }}>
               <button onClick={() => setShowAddExpense(null)} style={{
-                flex: 1, padding: "11px 0", borderRadius: 10, border: "1px solid rgba(255,255,255,0.08)", background: "transparent",
-                color: "rgba(255,255,255,0.5)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Space Grotesk",
+                flex: 1, padding: "11px 0", borderRadius: 24, border: "1px solid rgba(139,158,124,0.12)", background: "transparent",
+                color: "rgba(44,36,24,0.5)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Nunito",
               }}>Cancel</button>
               <button onClick={handleAddExpense} style={{
-                flex: 1, padding: "11px 0", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Plus Jakarta Sans",
-                background: "linear-gradient(135deg, #E05A2B, #F26B3A)", color: "#fff",
+                flex: 1, padding: "11px 0", borderRadius: 24, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "DM Serif Display",
+                background: "linear-gradient(135deg, #6B7E5C, #8B9E7C)", color: "#2C2418",
               }}>Add Expense</button>
             </div>
           </div>
@@ -2982,7 +2905,7 @@ Start by introducing yourself briefly in-character with personality, and give an
             position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
           }} onClick={() => setShowExpenseReport(null)}>
             <div onClick={e => e.stopPropagation()} style={{
-              background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: 32, width: "100%", maxWidth: 600,
+              background: "linear-gradient(135deg, #F5F0E8, #EDE5D8)", border: "1px solid rgba(139,158,124,0.12)", borderRadius: 28, padding: 32, width: "100%", maxWidth: 600,
               maxHeight: "85vh", overflowY: "auto",
             }}>
               {/* Report Header */}
@@ -2990,58 +2913,58 @@ Start by introducing yourself briefly in-character with personality, and give an
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                     <LogoMark size={24} />
-                    <span style={{ fontSize: 13, fontWeight: 700, color: "#F7A86A", fontFamily: "Plus Jakarta Sans" }}>Continuum</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "#B8965A", fontFamily: "DM Serif Display" }}>Continuum</span>
                   </div>
-                  <h3 style={{ fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, fontFamily: "Plus Jakarta Sans" }}>Expense Report</h3>
+                  <h3 style={{ fontSize: 20, fontWeight: 800, color: "#2C2418", margin: 0, fontFamily: "DM Serif Display" }}>Expense Report</h3>
                 </div>
                 <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "Space Grotesk" }}>Generated {new Date().toLocaleDateString()}</div>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: "Space Grotesk" }}>Report #{trip.id}-{Date.now().toString(36).slice(-4)}</div>
+                  <div style={{ fontSize: 11, color: "rgba(44,36,24,0.4)", fontFamily: "Nunito" }}>Generated {new Date().toLocaleDateString()}</div>
+                  <div style={{ fontSize: 11, color: "rgba(44,36,24,0.3)", fontFamily: "Nunito" }}>Report #{trip.id}-{Date.now().toString(36).slice(-4)}</div>
                 </div>
               </div>
 
               {/* Trip Info */}
               <div style={{
-                background: "rgba(229,90,43,0.06)", border: "1px solid rgba(229,90,43,0.15)", borderRadius: 14, padding: 18, marginBottom: 20,
+                background: "rgba(168,96,64,0.06)", border: "1px solid rgba(168,96,64,0.15)", borderRadius: 30, padding: 18, marginBottom: 20,
               }}>
-                <div style={{ fontSize: 16, fontWeight: 700, color: "#fff", fontFamily: "Plus Jakarta Sans", marginBottom: 4 }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#2C2418", fontFamily: "DM Serif Display", marginBottom: 4 }}>
                   {trip.type === "flight" ? "✈️" : trip.type === "hotel" ? "🏨" : "🚗"} {getTripName(trip)}
                 </div>
-                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontFamily: "Space Grotesk" }}>
+                <div style={{ fontSize: 12, color: "rgba(44,36,24,0.4)", fontFamily: "Nunito" }}>
                   {trip.date} • {prog?.name || "Unknown"} • {trip.status}
                 </div>
               </div>
 
               {/* Summary Stats */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 20 }}>
-                <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 10, padding: 14, textAlign: "center" }}>
-                  <div style={{ fontSize: 20, fontWeight: 800, color: "#F5944E", fontFamily: "Plus Jakarta Sans" }}>${tripTotal.toLocaleString()}</div>
-                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontFamily: "Space Grotesk" }}>Total</div>
+                <div style={{ background: "rgba(139,158,124,0.04)", borderRadius: 24, padding: 14, textAlign: "center" }}>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: "#D4946E", fontFamily: "DM Serif Display" }}>${tripTotal.toLocaleString()}</div>
+                  <div style={{ fontSize: 10, color: "rgba(44,36,24,0.4)", fontFamily: "Nunito" }}>Total</div>
                 </div>
-                <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 10, padding: 14, textAlign: "center" }}>
-                  <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", fontFamily: "Plus Jakarta Sans" }}>{tripExps.length}</div>
-                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontFamily: "Space Grotesk" }}>Items</div>
+                <div style={{ background: "rgba(139,158,124,0.04)", borderRadius: 24, padding: 14, textAlign: "center" }}>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: "#2C2418", fontFamily: "DM Serif Display" }}>{tripExps.length}</div>
+                  <div style={{ fontSize: 10, color: "rgba(44,36,24,0.4)", fontFamily: "Nunito" }}>Items</div>
                 </div>
-                <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 10, padding: 14, textAlign: "center" }}>
-                  <div style={{ fontSize: 20, fontWeight: 800, color: "#34d399", fontFamily: "Plus Jakarta Sans" }}>{receiptCount}/{tripExps.length}</div>
-                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontFamily: "Space Grotesk" }}>Receipts</div>
+                <div style={{ background: "rgba(139,158,124,0.04)", borderRadius: 24, padding: 14, textAlign: "center" }}>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: "#34d399", fontFamily: "DM Serif Display" }}>{receiptCount}/{tripExps.length}</div>
+                  <div style={{ fontSize: 10, color: "rgba(44,36,24,0.4)", fontFamily: "Nunito" }}>Receipts</div>
                 </div>
               </div>
 
               {/* Category Summary */}
               <div style={{ marginBottom: 20 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.5)", fontFamily: "Plus Jakarta Sans", marginBottom: 10 }}>BREAKDOWN BY CATEGORY</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(44,36,24,0.5)", fontFamily: "DM Serif Display", marginBottom: 10 }}>BREAKDOWN BY CATEGORY</div>
                 {catSummary.map((cat, i) => (
-                  <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid rgba(139,158,124,0.05)" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       <span style={{ fontSize: 14 }}>{cat.icon}</span>
-                      <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", fontFamily: "Space Grotesk" }}>{cat.label} ({cat.count})</span>
+                      <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", fontFamily: "Nunito" }}>{cat.label} ({cat.count})</span>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <div style={{ width: 80, height: 5, borderRadius: 3, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+                      <div style={{ width: 80, height: 5, borderRadius: 3, background: "rgba(139,158,124,0.08)", overflow: "hidden" }}>
                         <div style={{ width: `${(cat.total / tripTotal) * 100}%`, height: "100%", background: cat.color, borderRadius: 3 }} />
                       </div>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: "Plus Jakarta Sans", minWidth: 70, textAlign: "right" }}>${cat.total.toLocaleString()}</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "#2C2418", fontFamily: "DM Serif Display", minWidth: 70, textAlign: "right" }}>${cat.total.toLocaleString()}</span>
                     </div>
                   </div>
                 ))}
@@ -3049,28 +2972,28 @@ Start by introducing yourself briefly in-character with personality, and give an
 
               {/* Line Items */}
               <div style={{ marginBottom: 24 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.5)", fontFamily: "Plus Jakarta Sans", marginBottom: 10 }}>LINE ITEMS</div>
-                <div style={{ background: "linear-gradient(135deg, rgba(242,107,58,0.02), rgba(255,255,255,0.02))", borderRadius: 10, overflow: "hidden" }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(44,36,24,0.5)", fontFamily: "DM Serif Display", marginBottom: 10 }}>LINE ITEMS</div>
+                <div style={{ background: "linear-gradient(135deg, rgba(198,123,92,0.02), rgba(139,158,124,0.03))", borderRadius: 24, overflow: "hidden" }}>
                   {/* Header */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 80px 90px 70px 28px", gap: 8, padding: "10px 14px", background: "rgba(255,255,255,0.03)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", fontFamily: "Space Grotesk", textTransform: "uppercase" }}>Description</span>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", fontFamily: "Space Grotesk", textTransform: "uppercase" }}>Date</span>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", fontFamily: "Space Grotesk", textTransform: "uppercase" }}>Payment</span>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", fontFamily: "Space Grotesk", textTransform: "uppercase", textAlign: "right" }}>Amount</span>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", fontFamily: "Space Grotesk", textAlign: "center" }}>🧾</span>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 80px 90px 70px 28px", gap: 8, padding: "10px 14px", background: "rgba(139,158,124,0.04)", borderBottom: "1px solid rgba(139,158,124,0.08)" }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(44,36,24,0.4)", fontFamily: "Nunito", textTransform: "uppercase" }}>Description</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(44,36,24,0.4)", fontFamily: "Nunito", textTransform: "uppercase" }}>Date</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(44,36,24,0.4)", fontFamily: "Nunito", textTransform: "uppercase" }}>Payment</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(44,36,24,0.4)", fontFamily: "Nunito", textTransform: "uppercase", textAlign: "right" }}>Amount</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(44,36,24,0.4)", fontFamily: "Nunito", textAlign: "center" }}>🧾</span>
                   </div>
                   {/* Rows */}
                   {tripExps.map((exp, i) => {
                     const cat = EXPENSE_CATEGORIES.find(c => c.id === exp.category);
                     return (
-                      <div key={exp.id} style={{ display: "grid", gridTemplateColumns: "1fr 80px 90px 70px 28px", gap: 8, padding: "10px 14px", borderBottom: i < tripExps.length - 1 ? "1px solid rgba(255,255,255,0.03)" : "none", alignItems: "center" }}>
+                      <div key={exp.id} style={{ display: "grid", gridTemplateColumns: "1fr 80px 90px 70px 28px", gap: 8, padding: "10px 14px", borderBottom: i < tripExps.length - 1 ? "1px solid rgba(139,158,124,0.04)" : "none", alignItems: "center" }}>
                         <div>
-                          <span style={{ fontSize: 12, color: "#fff", fontFamily: "Space Grotesk" }}>{cat?.icon} {exp.description}</span>
-                          {exp.notes && <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 1 }}>{exp.notes}</div>}
+                          <span style={{ fontSize: 12, color: "#2C2418", fontFamily: "Nunito" }}>{cat?.icon} {exp.description}</span>
+                          {exp.notes && <div style={{ fontSize: 10, color: "rgba(44,36,24,0.3)", marginTop: 1 }}>{exp.notes}</div>}
                         </div>
-                        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "Space Grotesk" }}>{exp.date?.slice(5)}</span>
-                        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "Space Grotesk", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.paymentMethod || "—"}</span>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: exp.amount === 0 ? "#34d399" : "#fff", fontFamily: "Plus Jakarta Sans", textAlign: "right" }}>
+                        <span style={{ fontSize: 11, color: "rgba(44,36,24,0.4)", fontFamily: "Nunito" }}>{exp.date?.slice(5)}</span>
+                        <span style={{ fontSize: 11, color: "rgba(44,36,24,0.4)", fontFamily: "Nunito", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.paymentMethod || "—"}</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: exp.amount === 0 ? "#34d399" : "#FEFCF9", fontFamily: "DM Serif Display", textAlign: "right" }}>
                           {exp.amount === 0 ? "Free" : `$${exp.amount.toLocaleString()}`}
                         </span>
                         <span style={{ fontSize: 12, textAlign: "center" }}>{exp.receipt ? "✓" : "—"}</span>
@@ -3078,21 +3001,21 @@ Start by introducing yourself briefly in-character with personality, and give an
                     );
                   })}
                   {/* Total */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 70px", gap: 8, padding: "12px 14px", background: "rgba(229,90,43,0.06)", borderTop: "2px solid rgba(229,90,43,0.2)" }}>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: "#F7A86A", fontFamily: "Plus Jakarta Sans" }}>TOTAL</span>
-                    <span style={{ fontSize: 14, fontWeight: 800, color: "#F5944E", fontFamily: "Plus Jakarta Sans", textAlign: "right" }}>${tripTotal.toLocaleString()}</span>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 70px", gap: 8, padding: "12px 14px", background: "rgba(168,96,64,0.06)", borderTop: "2px solid rgba(168,96,64,0.2)" }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "#B8965A", fontFamily: "DM Serif Display" }}>TOTAL</span>
+                    <span style={{ fontSize: 14, fontWeight: 800, color: "#D4946E", fontFamily: "DM Serif Display", textAlign: "right" }}>${tripTotal.toLocaleString()}</span>
                   </div>
                 </div>
               </div>
 
               <div style={{ display: "flex", gap: 10 }}>
                 <button onClick={() => setShowExpenseReport(null)} style={{
-                  flex: 1, padding: "11px 0", borderRadius: 10, border: "1px solid rgba(255,255,255,0.08)", background: "transparent",
-                  color: "rgba(255,255,255,0.5)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Space Grotesk",
+                  flex: 1, padding: "11px 0", borderRadius: 24, border: "1px solid rgba(139,158,124,0.12)", background: "transparent",
+                  color: "rgba(44,36,24,0.5)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Nunito",
                 }}>Close</button>
                 <button onClick={() => window.print()} style={{
-                  flex: 1, padding: "11px 0", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Plus Jakarta Sans",
-                  background: "linear-gradient(135deg, #E05A2B, #F26B3A)", color: "#fff",
+                  flex: 1, padding: "11px 0", borderRadius: 24, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "DM Serif Display",
+                  background: "linear-gradient(135deg, #6B7E5C, #8B9E7C)", color: "#2C2418",
                 }}>🖨️ Print / Save PDF</button>
               </div>
             </div>

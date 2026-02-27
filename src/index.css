@@ -1,132 +1,101 @@
-*, *::before, *::after {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+:root {
+  --sand: #F5F0E8;
+  --cream: #FAF8F3;
+  --sage: #8B9E7C;
+  --sage-light: #A8B89A;
+  --sage-deep: #6B7E5C;
+  --terra: #C67B5C;
+  --terra-light: #D4946E;
+  --terra-deep: #A86040;
+  --earth: #2C2418;
+  --earth-mid: #4A3D2E;
+  --stone: #D4C9B8;
+  --stone-light: #E8E0D4;
+  --gold: #B8965A;
+  --warm-white: #FEFCF9;
+  --text-primary: #2C2418;
+  --text-secondary: #7A6E5E;
+  --text-muted: #A89E8E;
 }
 
-html {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; scroll-behavior: smooth; }
 body {
-  font-family: 'Plus Jakarta Sans', 'Space Grotesk', system-ui, -apple-system, sans-serif;
-  background: #0F0F0F;
-  color: #ffffff;
+  font-family: 'Nunito', 'DM Sans', system-ui, sans-serif;
+  background: var(--cream);
+  color: var(--text-primary);
   overflow-x: hidden;
   min-height: 100vh;
+  line-height: 1.6;
 }
+#root { min-height: 100vh; }
 
-#root {
-  min-height: 100vh;
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--sand); }
+::-webkit-scrollbar-thumb { background: var(--stone); border-radius: 20px; border: 2px solid var(--sand); }
+::-webkit-scrollbar-thumb:hover { background: var(--sage); }
+::selection { background: rgba(139,158,124,0.25); color: var(--earth); }
+
+input, select, textarea, button { font-family: inherit; }
+input::placeholder { color: var(--text-muted); }
+select option { background: var(--warm-white); color: var(--earth); }
+
+/* === ORGANIC ANIMATIONS — slow, gentle, breathable === */
+@keyframes gentle-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
 }
-
-::-webkit-scrollbar {
-  width: 6px;
+@keyframes soft-breathe {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.05); opacity: 0.8; }
 }
-
-::-webkit-scrollbar-track {
-  background: transparent;
+@keyframes fade-up {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
-
-::-webkit-scrollbar-thumb {
-  background: rgba(247, 168, 106, 0.15);
-  border-radius: 3px;
+@keyframes fade-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
 }
-
-::selection {
-  background: rgba(242, 107, 58, 0.3);
-  color: #fff;
-}
-
-input, select, textarea, button {
-  font-family: inherit;
-}
-
-input::placeholder {
-  color: rgba(255, 255, 255, 0.25);
-}
-
-select option {
-  background: #0a1628;
-  color: #fff;
-}
-
-input:-webkit-autofill {
-  -webkit-text-fill-color: #fff;
-  -webkit-box-shadow: 0 0 0 1000px rgba(255,255,255,0.04) inset;
-}
-
-/* Animated travel-themed background */
-@keyframes float-slow {
-  0%, 100% { transform: translateY(0) translateX(0) rotate(0deg); }
-  25% { transform: translateY(-20px) translateX(10px) rotate(1deg); }
-  50% { transform: translateY(-10px) translateX(-5px) rotate(-0.5deg); }
-  75% { transform: translateY(-25px) translateX(8px) rotate(0.5deg); }
-}
-
-@keyframes drift {
-  0% { transform: translateX(-10%) translateY(0); opacity: 0.03; }
-  50% { opacity: 0.06; }
-  100% { transform: translateX(110%) translateY(-20px); opacity: 0.03; }
-}
-
-@keyframes pulse-glow {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 0.8; }
-}
-
-@keyframes aurora {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-@keyframes globe-rotate {
+@keyframes slow-spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
-
-@keyframes twinkle {
-  0%, 100% { opacity: 0.2; }
-  50% { opacity: 0.8; }
+@keyframes drift-gentle {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(10px, -5px); }
+  50% { transform: translate(-5px, -10px); }
+  75% { transform: translate(8px, 3px); }
 }
-
-@keyframes runway-light {
-  0%, 100% { opacity: 0.15; }
-  50% { opacity: 0.5; }
+@keyframes wave-soft {
+  0%, 100% { d: path("M0 40 Q80 10 160 35 T320 30 T480 40 L480 80 L0 80Z"); }
+  50% { d: path("M0 35 Q80 45 160 25 T320 40 T480 30 L480 80 L0 80Z"); }
 }
-
-@keyframes hero-fade-in {
-  0% { opacity: 0; transform: scale(1.05); }
-  100% { opacity: 1; transform: scale(1); }
+@keyframes leaf-sway {
+  0%, 100% { transform: rotate(-2deg); }
+  50% { transform: rotate(2deg); }
 }
-
-@keyframes hero-shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+@keyframes pulse-warm {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(198,123,92,0.2); }
+  50% { box-shadow: 0 0 0 12px rgba(198,123,92,0); }
 }
-
-@keyframes avatar-breathe {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.02); }
+@keyframes grain-shift {
+  0% { transform: translate(0, 0); }
+  10% { transform: translate(-2%, -2%); }
+  20% { transform: translate(1%, 1%); }
+  30% { transform: translate(-1%, 2%); }
+  40% { transform: translate(2%, -1%); }
+  50% { transform: translate(-2%, 1%); }
+  60% { transform: translate(1%, -2%); }
+  70% { transform: translate(-1%, -1%); }
+  80% { transform: translate(2%, 2%); }
+  90% { transform: translate(-2%, 0); }
+  100% { transform: translate(0, 0); }
 }
-
-@keyframes avatar-talk {
-  0%, 100% { transform: scaleY(1); }
-  25% { transform: scaleY(0.6); }
-  50% { transform: scaleY(0.9); }
-  75% { transform: scaleY(0.5); }
-}
-
-@keyframes speech-bubble-in {
-  0% { opacity: 0; transform: translateY(10px) scale(0.95); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-@keyframes wave-hand {
-  0%, 100% { transform: rotate(0deg); }
-  25% { transform: rotate(20deg); }
-  50% { transform: rotate(-10deg); }
-  75% { transform: rotate(15deg); }
-}
+/* keep old animation names alive for concierge */
+@keyframes twinkle { 0%,100%{opacity:0.3} 50%{opacity:0.8} }
+@keyframes avatar-breathe { 0%,100%{transform:scale(1)} 50%{transform:scale(1.02)} }
+@keyframes avatar-talk { 0%,100%{transform:scaleY(1)} 25%{transform:scaleY(0.6)} 50%{transform:scaleY(0.9)} 75%{transform:scaleY(0.5)} }
+@keyframes speech-bubble-in { 0%{opacity:0;transform:translateY(10px) scale(0.95)} 100%{opacity:1;transform:translateY(0) scale(1)} }
+@keyframes corona-pulse { 0%{transform:scale(1);opacity:0.3} 50%{transform:scale(1.15);opacity:0.08} 100%{transform:scale(1.3);opacity:0} }
+@keyframes hero-shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
