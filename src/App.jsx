@@ -529,8 +529,68 @@ export default function EliteStatusTracker() {
   const [customPrograms, setCustomPrograms] = useState([]);
   const [showAddProgram, setShowAddProgram] = useState(false);
   const [newProgram, setNewProgram] = useState({ name: "", category: "airline", logo: "✈️", color: "#F26B3A", memberId: "", unit: "Points", tiers: "", selectedId: "", search: "" });
+  const [conciergeProgram, setConciergeProgram] = useState(null); // program object for AI concierge
+  const [conciergeMessages, setConciergeMessages] = useState([]); // { role, content }
+  const [conciergeInput, setConciergeInput] = useState("");
+  const [conciergeLoading, setConciergeLoading] = useState(false);
 
   useEffect(() => { setTimeout(() => setAnimateIn(true), 100); }, []);
+
+  // AI Concierge functions
+  const openConcierge = useCallback(async (program, type) => {
+    setConciergeProgram({ ...program, type });
+    setConciergeMessages([]);
+    setConciergeInput("");
+    setConciergeLoading(true);
+    const tierInfo = (program.tiers || []).map(t => `${t.name}: requires ${t.threshold} ${program.unit}, perks: ${t.perks}`).join("\n");
+    const role = type === "hotel" ? "a friendly hotel front desk concierge" : (Math.random() > 0.5 ? "a friendly airline pilot" : "a friendly airline flight attendant");
+    const sysPrompt = `You are ${role} who is an expert on the ${program.name} loyalty program. You speak in a warm, professional, conversational tone as if greeting a guest or passenger. Keep responses concise (3-5 sentences max). Use your character's perspective naturally.
+
+Program details:
+- Name: ${program.name}
+- Unit: ${program.unit}
+- Tiers:\n${tierInfo}
+${program.earnRate ? `- Earn rates: Domestic ${program.earnRate.domestic}x, International ${program.earnRate.international}x, Premium ${program.earnRate.premium}x` : ""}
+
+Start by introducing yourself briefly in-character and giving an engaging overview of the program — what makes it special, the tier structure, and one insider tip. Keep it under 5 sentences.`;
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ model: "claude-sonnet-4-5-20250929", max_tokens: 1000, system: sysPrompt, messages: [{ role: "user", content: "Please introduce yourself and give me an overview of this loyalty program." }] }),
+      });
+      const data = await res.json();
+      const text = data.content?.map(b => b.text || "").join("") || "Welcome! I'd be happy to tell you about this program.";
+      setConciergeMessages([{ role: "assistant", content: text }]);
+    } catch (e) {
+      setConciergeMessages([{ role: "assistant", content: `Welcome aboard! I'm your ${program.name} expert. This program has ${(program.tiers||[]).length} elite tiers earning ${program.unit}. The top tier, ${(program.tiers||[])[(program.tiers||[]).length-1]?.name}, offers incredible perks like ${(program.tiers||[])[(program.tiers||[]).length-1]?.perks}. Ask me anything about earning status, redeeming rewards, or maximizing your benefits!` }]);
+    }
+    setConciergeLoading(false);
+  }, []);
+
+  const sendConciergeMessage = useCallback(async () => {
+    if (!conciergeInput.trim() || conciergeLoading || !conciergeProgram) return;
+    const userMsg = conciergeInput.trim();
+    setConciergeInput("");
+    setConciergeMessages(prev => [...prev, { role: "user", content: userMsg }]);
+    setConciergeLoading(true);
+    const prog = conciergeProgram;
+    const tierInfo = (prog.tiers || []).map(t => `${t.name}: requires ${t.threshold} ${prog.unit}, perks: ${t.perks}`).join("\n");
+    const role = prog.type === "hotel" ? "a friendly hotel front desk concierge" : "a friendly airline crew member";
+    const sysPrompt = `You are ${role} expert on ${prog.name}. Be warm, concise (3-5 sentences), stay in character. Program: ${prog.name}, Unit: ${prog.unit}. Tiers:\n${tierInfo}\n${prog.earnRate ? `Earn rates: Dom ${prog.earnRate.domestic}x, Intl ${prog.earnRate.international}x, Prem ${prog.earnRate.premium}x` : ""}`;
+    const history = [...conciergeMessages, { role: "user", content: userMsg }].map(m => ({ role: m.role, content: m.content }));
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ model: "claude-sonnet-4-5-20250929", max_tokens: 1000, system: sysPrompt, messages: history }),
+      });
+      const data = await res.json();
+      const text = data.content?.map(b => b.text || "").join("") || "I'd be happy to help with that!";
+      setConciergeMessages(prev => [...prev, { role: "assistant", content: text }]);
+    } catch (e) {
+      setConciergeMessages(prev => [...prev, { role: "assistant", content: "I'm having trouble connecting right now. Please try again in a moment!" }]);
+    }
+    setConciergeLoading(false);
+  }, [conciergeInput, conciergeLoading, conciergeProgram, conciergeMessages]);
 
   const EXPENSE_CATEGORIES = [
     { id: "flight", label: "Flights", icon: "✈️", color: "#F26B3A" },
@@ -894,15 +954,127 @@ export default function EliteStatusTracker() {
       </Shell>
     );
 
+    // ==================== AI CONCIERGE MODAL ====================
+    const ConciergeModal = () => {
+      if (!conciergeProgram) return null;
+      const p = conciergeProgram;
+      const isHotel = p.type === "hotel";
+      const avatarEmoji = isHotel ? "🛎️" : "👨‍✈️";
+      const avatarLabel = isHotel ? "Concierge" : "Crew Member";
+      const messagesEndRef = useCallback(node => { if (node) node.scrollIntoView({ behavior: "smooth" }); }, [conciergeMessages.length]);
+      return (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000, padding: 16 }}
+          onClick={() => { setConciergeProgram(null); setConciergeMessages([]); }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            width: "100%", maxWidth: 520, maxHeight: "85vh", borderRadius: 22,
+            background: "linear-gradient(135deg, #141414, #1A1A1A)", border: `1px solid ${p.color}30`,
+            display: "flex", flexDirection: "column", overflow: "hidden",
+            boxShadow: `0 30px 80px rgba(0,0,0,0.6), 0 0 60px ${p.color}10`,
+          }}>
+            {/* Header */}
+            <div style={{
+              padding: "18px 22px", borderBottom: `1px solid ${p.color}20`,
+              background: `linear-gradient(135deg, ${p.color}15, ${p.color}05)`,
+              display: "flex", alignItems: "center", gap: 14,
+            }}>
+              <div style={{
+                width: 48, height: 48, borderRadius: 14, background: `linear-gradient(135deg, ${p.color}30, ${p.color}15)`,
+                display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, border: `1px solid ${p.color}30`,
+              }}>{avatarEmoji}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: "Plus Jakarta Sans" }}>{p.name}</div>
+                <div style={{ fontSize: 11, color: `${p.color}`, fontFamily: "Space Grotesk", marginTop: 1 }}>{avatarLabel} · AI Program Expert</div>
+              </div>
+              <div style={{ display: "flex", gap: 4 }}>
+                {(p.tiers || []).slice(0, 3).map((t, i) => (
+                  <span key={i} style={{ fontSize: 8, padding: "2px 6px", borderRadius: 4, background: `${p.color}15`, color: p.color, fontFamily: "Space Grotesk", fontWeight: 600 }}>{t.name}</span>
+                ))}
+              </div>
+              <button onClick={() => { setConciergeProgram(null); setConciergeMessages([]); }} style={{
+                width: 32, height: 32, borderRadius: 10, border: "none", background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)",
+                cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center",
+              }}>✕</button>
+            </div>
+
+            {/* Messages */}
+            <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
+              {conciergeMessages.map((msg, i) => (
+                <div key={i} style={{ display: "flex", gap: 10, flexDirection: msg.role === "user" ? "row-reverse" : "row", alignItems: "flex-start" }}>
+                  {msg.role === "assistant" && (
+                    <div style={{
+                      width: 34, height: 34, borderRadius: 10, background: `linear-gradient(135deg, ${p.color}25, ${p.color}10)`,
+                      display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0, border: `1px solid ${p.color}25`,
+                    }}>{avatarEmoji}</div>
+                  )}
+                  <div style={{
+                    maxWidth: "78%", padding: "10px 14px", borderRadius: msg.role === "user" ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
+                    background: msg.role === "user" ? "linear-gradient(135deg, #E05A2B, #F26B3A)" : `linear-gradient(135deg, ${p.color}12, rgba(255,255,255,0.04))`,
+                    border: msg.role === "user" ? "none" : `1px solid ${p.color}18`,
+                    color: "#fff", fontSize: 13, fontFamily: "Space Grotesk", lineHeight: 1.6,
+                  }}>{msg.content}</div>
+                </div>
+              ))}
+              {conciergeLoading && (
+                <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                  <div style={{
+                    width: 34, height: 34, borderRadius: 10, background: `linear-gradient(135deg, ${p.color}25, ${p.color}10)`,
+                    display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0, border: `1px solid ${p.color}25`,
+                  }}>{avatarEmoji}</div>
+                  <div style={{
+                    padding: "12px 18px", borderRadius: "14px 14px 14px 4px",
+                    background: `linear-gradient(135deg, ${p.color}12, rgba(255,255,255,0.04))`, border: `1px solid ${p.color}18`,
+                  }}>
+                    <div style={{ display: "flex", gap: 4 }}>
+                      {[0,1,2].map(d => (
+                        <div key={d} style={{
+                          width: 7, height: 7, borderRadius: "50%", background: p.color, opacity: 0.5,
+                          animation: `twinkle 1s ease-in-out ${d * 0.2}s infinite`,
+                        }} />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input */}
+            <div style={{
+              padding: "14px 18px", borderTop: "1px solid rgba(255,255,255,0.06)",
+              display: "flex", gap: 10, background: "rgba(0,0,0,0.2)",
+            }}>
+              <input
+                value={conciergeInput}
+                onChange={e => setConciergeInput(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendConciergeMessage(); } }}
+                placeholder={`Ask about ${p.name}...`}
+                style={{
+                  flex: 1, padding: "10px 14px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: 12, color: "#fff", fontSize: 13, fontFamily: "Space Grotesk", outline: "none",
+                }}
+              />
+              <button onClick={sendConciergeMessage} disabled={conciergeLoading || !conciergeInput.trim()} style={{
+                padding: "10px 18px", borderRadius: 12, border: "none", cursor: conciergeLoading ? "not-allowed" : "pointer",
+                fontSize: 13, fontWeight: 700, fontFamily: "Plus Jakarta Sans",
+                background: conciergeLoading || !conciergeInput.trim() ? "rgba(255,255,255,0.06)" : `linear-gradient(135deg, #E05A2B, #F26B3A)`,
+                color: conciergeLoading || !conciergeInput.trim() ? "rgba(255,255,255,0.25)" : "#fff",
+              }}>Send</button>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
     // ==================== AIRLINE REVIEWS ====================
     if (publicPage === "airline-reviews") return (
       <Shell>
-        <PageSection icon="✈️" title="Airline Reviews" subtitle="In-depth reviews of airline loyalty programs, cabins, and traveler experiences.">
+        <PageSection icon="✈️" title="Airline Reviews" subtitle="Click any program to chat with an AI crew member who'll explain everything about it.">
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(270px, 1fr))", gap: 14 }}>
             {LOYALTY_PROGRAMS.airlines.slice(0, 12).map((a, i) => (
-              <div key={i} style={{
+              <div key={i} onClick={() => openConcierge(a, "airline")} style={{
                 background: `linear-gradient(135deg, ${a.color}10, rgba(255,255,255,0.02))`, border: `1px solid ${a.color}20`,
-                borderRadius: 16, padding: 20, position: "relative", overflow: "hidden",
+                borderRadius: 16, padding: 20, position: "relative", overflow: "hidden", cursor: "pointer",
+                transition: "border-color 0.2s, transform 0.2s",
               }}>
                 <FlightPath color={a.color} style={{ top: 4, right: 4, width: 90, height: 18 }} />
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
@@ -917,23 +1089,27 @@ export default function EliteStatusTracker() {
                     <span key={ti} style={{ fontSize: 9, fontWeight: 600, padding: "1px 6px", borderRadius: 4, background: `${a.color}12`, color: a.color, fontFamily: "Space Grotesk", border: `1px solid ${a.color}22` }}>{t.name}</span>
                   ))}
                 </div>
-                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.28)", fontFamily: "Space Grotesk", lineHeight: 1.5, margin: 0 }}>Detailed review covering earning rates, redemption value, and elite benefits.</p>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}>
+                  <span style={{ fontSize: 14 }}>👨‍✈️</span>
+                  <span style={{ fontSize: 11, color: "#F7A86A", fontWeight: 600, fontFamily: "Space Grotesk" }}>Chat with AI Crew Member →</span>
+                </div>
               </div>
             ))}
           </div>
         </PageSection>
+        <ConciergeModal />
       </Shell>
     );
 
     // ==================== HOTEL REVIEWS ====================
     if (publicPage === "hotel-reviews") return (
       <Shell>
-        <PageSection icon="🏨" title="Hotel Reviews" subtitle="Comprehensive reviews of hotel loyalty programs, properties, and elite perks.">
+        <PageSection icon="🏨" title="Hotel Reviews" subtitle="Click any program to chat with an AI concierge who'll walk you through the details.">
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(270px, 1fr))", gap: 14 }}>
             {LOYALTY_PROGRAMS.hotels.map((h, i) => (
-              <div key={i} style={{
+              <div key={i} onClick={() => openConcierge(h, "hotel")} style={{
                 background: `linear-gradient(135deg, ${h.color}10, rgba(255,255,255,0.02))`, border: `1px solid ${h.color}20`,
-                borderRadius: 16, padding: 20,
+                borderRadius: 16, padding: 20, cursor: "pointer", transition: "border-color 0.2s, transform 0.2s",
               }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
                   <span style={{ fontSize: 26 }}>{h.logo}</span>
@@ -947,11 +1123,15 @@ export default function EliteStatusTracker() {
                     <span key={ti} style={{ fontSize: 9, fontWeight: 600, padding: "1px 6px", borderRadius: 4, background: `${h.color}12`, color: h.color, fontFamily: "Space Grotesk", border: `1px solid ${h.color}22` }}>{t.name}</span>
                   ))}
                 </div>
-                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.28)", fontFamily: "Space Grotesk", lineHeight: 1.5, margin: 0 }}>Full review covering point valuations, free nights, and best redemption strategies.</p>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}>
+                  <span style={{ fontSize: 14 }}>🛎️</span>
+                  <span style={{ fontSize: 11, color: "#F7A86A", fontWeight: 600, fontFamily: "Space Grotesk" }}>Chat with AI Concierge →</span>
+                </div>
               </div>
             ))}
           </div>
         </PageSection>
+        <ConciergeModal />
       </Shell>
     );
 
