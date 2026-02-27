@@ -29,8 +29,6 @@ const LogoMark = ({ size = 40 }) => (
   </div>
 );
 
-// Organic atmosphere — holistic & grounded
-const TravelAtmosphere = () => (
 // High Performance atmosphere — geometric grid, diagonal overlays, precision
 const TravelAtmosphere = () => (
   <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0, overflow: "hidden", background: "#0A0A0A" }}>
