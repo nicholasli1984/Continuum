@@ -1,132 +1,40 @@
-*, *::before, *::after {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+body { font-family: 'Plus Jakarta Sans', 'Space Grotesk', system-ui, -apple-system, sans-serif; background: #050510; color: #ffffff; overflow-x: hidden; min-height: 100vh; }
+#root { min-height: 100vh; }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(247,168,106,0.2); border-radius: 3px; }
+::selection { background: rgba(242,107,58,0.4); color: #fff; }
+input, select, textarea, button { font-family: inherit; }
+input::placeholder { color: rgba(255,255,255,0.25); }
+select option { background: #0a0a1a; color: #fff; }
+input:-webkit-autofill { -webkit-text-fill-color: #fff; -webkit-box-shadow: 0 0 0 1000px rgba(255,255,255,0.04) inset; }
 
-html {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+/* === CORE ANIMATIONS === */
+@keyframes float-slow { 0%,100%{transform:translateY(0) translateX(0) rotate(0deg)} 25%{transform:translateY(-20px) translateX(10px) rotate(1deg)} 50%{transform:translateY(-10px) translateX(-5px) rotate(-0.5deg)} 75%{transform:translateY(-25px) translateX(8px) rotate(0.5deg)} }
+@keyframes drift { 0%{transform:translateX(-10%) translateY(0);opacity:0.03} 50%{opacity:0.06} 100%{transform:translateX(110%) translateY(-20px);opacity:0.03} }
+@keyframes pulse-glow { 0%,100%{opacity:0.4} 50%{opacity:0.8} }
+@keyframes aurora { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+@keyframes globe-rotate { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
+@keyframes twinkle { 0%,100%{opacity:0.15;transform:scale(0.8)} 50%{opacity:0.9;transform:scale(1.2)} }
+@keyframes runway-light { 0%,100%{opacity:0.15} 50%{opacity:0.5} }
+@keyframes hero-fade-in { 0%{opacity:0;transform:scale(1.08) translateY(20px)} 100%{opacity:1;transform:scale(1) translateY(0)} }
+@keyframes hero-shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+@keyframes avatar-breathe { 0%,100%{transform:scale(1)} 50%{transform:scale(1.02)} }
+@keyframes avatar-talk { 0%,100%{transform:scaleY(1)} 25%{transform:scaleY(0.6)} 50%{transform:scaleY(0.9)} 75%{transform:scaleY(0.5)} }
+@keyframes speech-bubble-in { 0%{opacity:0;transform:translateY(10px) scale(0.95)} 100%{opacity:1;transform:translateY(0) scale(1)} }
+@keyframes wave-hand { 0%,100%{transform:rotate(0deg)} 25%{transform:rotate(20deg)} 50%{transform:rotate(-10deg)} 75%{transform:rotate(15deg)} }
 
-body {
-  font-family: 'Plus Jakarta Sans', 'Space Grotesk', system-ui, -apple-system, sans-serif;
-  background: #0F0F0F;
-  color: #ffffff;
-  overflow-x: hidden;
-  min-height: 100vh;
-}
-
-#root {
-  min-height: 100vh;
-}
-
-::-webkit-scrollbar {
-  width: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(247, 168, 106, 0.15);
-  border-radius: 3px;
-}
-
-::selection {
-  background: rgba(242, 107, 58, 0.3);
-  color: #fff;
-}
-
-input, select, textarea, button {
-  font-family: inherit;
-}
-
-input::placeholder {
-  color: rgba(255, 255, 255, 0.25);
-}
-
-select option {
-  background: #0a1628;
-  color: #fff;
-}
-
-input:-webkit-autofill {
-  -webkit-text-fill-color: #fff;
-  -webkit-box-shadow: 0 0 0 1000px rgba(255,255,255,0.04) inset;
-}
-
-/* Animated travel-themed background */
-@keyframes float-slow {
-  0%, 100% { transform: translateY(0) translateX(0) rotate(0deg); }
-  25% { transform: translateY(-20px) translateX(10px) rotate(1deg); }
-  50% { transform: translateY(-10px) translateX(-5px) rotate(-0.5deg); }
-  75% { transform: translateY(-25px) translateX(8px) rotate(0.5deg); }
-}
-
-@keyframes drift {
-  0% { transform: translateX(-10%) translateY(0); opacity: 0.03; }
-  50% { opacity: 0.06; }
-  100% { transform: translateX(110%) translateY(-20px); opacity: 0.03; }
-}
-
-@keyframes pulse-glow {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 0.8; }
-}
-
-@keyframes aurora {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-@keyframes globe-rotate {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-@keyframes twinkle {
-  0%, 100% { opacity: 0.2; }
-  50% { opacity: 0.8; }
-}
-
-@keyframes runway-light {
-  0%, 100% { opacity: 0.15; }
-  50% { opacity: 0.5; }
-}
-
-@keyframes hero-fade-in {
-  0% { opacity: 0; transform: scale(1.05); }
-  100% { opacity: 1; transform: scale(1); }
-}
-
-@keyframes hero-shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
-@keyframes avatar-breathe {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.02); }
-}
-
-@keyframes avatar-talk {
-  0%, 100% { transform: scaleY(1); }
-  25% { transform: scaleY(0.6); }
-  50% { transform: scaleY(0.9); }
-  75% { transform: scaleY(0.5); }
-}
-
-@keyframes speech-bubble-in {
-  0% { opacity: 0; transform: translateY(10px) scale(0.95); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-@keyframes wave-hand {
-  0%, 100% { transform: rotate(0deg); }
-  25% { transform: rotate(20deg); }
-  50% { transform: rotate(-10deg); }
-  75% { transform: rotate(15deg); }
-}
+/* === SOLAR SYSTEM SCOPE: COSMIC ANIMATIONS === */
+@keyframes orbit { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
+@keyframes orbit-reverse { 0%{transform:rotate(360deg)} 100%{transform:rotate(0deg)} }
+@keyframes lens-flare { 0%,100%{opacity:0;transform:scale(0.5)} 15%{opacity:0.6;transform:scale(1.2)} 30%{opacity:0;transform:scale(0.8)} 45%{opacity:0.3;transform:scale(1.1)} 60%{opacity:0;transform:scale(0.6)} }
+@keyframes shoot-star { 0%{transform:translateX(0) translateY(0) rotate(-35deg);opacity:0} 5%{opacity:1} 20%{opacity:0.6} 100%{transform:translateX(600px) translateY(300px) rotate(-35deg);opacity:0} }
+@keyframes corona-pulse { 0%{transform:scale(1);opacity:0.3} 50%{transform:scale(1.15);opacity:0.08} 100%{transform:scale(1.3);opacity:0} }
+@keyframes nebula-breathe { 0%,100%{transform:scale(1) rotate(0deg);opacity:0.5} 33%{transform:scale(1.1) rotate(2deg);opacity:0.7} 66%{transform:scale(0.95) rotate(-1deg);opacity:0.4} }
+@keyframes dust-drift { 0%{transform:translateY(0) translateX(0);opacity:0} 10%{opacity:0.6} 90%{opacity:0.4} 100%{transform:translateY(-100vh) translateX(50px);opacity:0} }
+@keyframes cosmic-fade-in { 0%{opacity:0;transform:translateY(24px) scale(0.96)} 100%{opacity:1;transform:translateY(0) scale(1)} }
+@keyframes ring-glow { 0%,100%{box-shadow:0 0 15px rgba(242,107,58,0.1),inset 0 0 15px rgba(242,107,58,0.05)} 50%{box-shadow:0 0 30px rgba(242,107,58,0.2),inset 0 0 25px rgba(242,107,58,0.1)} }
+@keyframes parallax-drift { 0%,100%{transform:translateY(0) translateX(0)} 25%{transform:translateY(-30px) translateX(15px)} 50%{transform:translateY(-15px) translateX(-10px)} 75%{transform:translateY(-40px) translateX(20px)} }
+@keyframes warp-line { 0%{transform:scaleX(0);opacity:0} 10%{opacity:0.8} 100%{transform:scaleX(1);opacity:0} }
