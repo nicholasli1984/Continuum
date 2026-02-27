@@ -30,107 +30,65 @@ const LogoMark = ({ size = 40 }) => (
   </div>
 );
 
-// Cosmic atmosphere — Solar System Scope inspired
+// Atmospheric travel background with animated elements
 const TravelAtmosphere = () => (
-  <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0, overflow: "hidden", background: "#050510" }}>
-    {/* Deep space gradient — nebula tones */}
+  <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0, overflow: "hidden" }}>
+    {/* Deep sky gradient */}
     <div style={{
       position: "absolute", inset: 0,
-      background: "radial-gradient(ellipse 80% 60% at 20% 15%, rgba(40,10,60,0.5) 0%, transparent 50%), radial-gradient(ellipse 60% 50% at 80% 80%, rgba(15,30,60,0.4) 0%, transparent 50%), radial-gradient(ellipse 100% 80% at 50% 50%, rgba(242,107,58,0.03) 0%, transparent 60%)",
+      background: "radial-gradient(ellipse 120% 80% at 20% 10%, rgba(242,107,58,0.08) 0%, transparent 50%), radial-gradient(ellipse 100% 60% at 80% 90%, rgba(242,107,58,0.06) 0%, transparent 50%), radial-gradient(ellipse 80% 80% at 50% 50%, rgba(229,90,43,0.04) 0%, transparent 60%)",
     }} />
-    {/* Nebula cloud — animated color shift */}
+    {/* Aurora band */}
     <div style={{
-      position: "absolute", top: "-20%", left: "-30%", width: "160%", height: "140%",
-      background: "radial-gradient(ellipse at 30% 20%, rgba(120,40,90,0.08) 0%, transparent 40%), radial-gradient(ellipse at 70% 70%, rgba(40,80,160,0.06) 0%, transparent 40%), radial-gradient(ellipse at 50% 50%, rgba(242,107,58,0.04) 0%, transparent 50%)",
-      animation: "nebula-breathe 30s ease-in-out infinite",
+      position: "absolute", top: 0, left: "-50%", right: "-50%", height: 400,
+      background: "linear-gradient(90deg, transparent, rgba(242,107,58,0.04), rgba(242,107,58,0.03), rgba(229,90,43,0.04), transparent)",
+      backgroundSize: "200% 100%", animation: "aurora 20s ease-in-out infinite", transform: "skewY(-3deg)", transformOrigin: "top left",
     }} />
-    {/* Star field — 40 stars with varied sizes, colors, and twinkle timing */}
+    {/* Scattered stars */}
     {[
-      { x:"3%",y:"5%",s:1.5,d:"0s",c:"#fff" },{ x:"8%",y:"12%",s:1,d:"2.1s",c:"#aaddff" },{ x:"15%",y:"3%",s:2,d:"0.5s",c:"#F7A86A" },
-      { x:"22%",y:"18%",s:1,d:"3.2s",c:"#fff" },{ x:"28%",y:"7%",s:1.5,d:"1.8s",c:"#ddeeff" },{ x:"35%",y:"14%",s:1,d:"4.1s",c:"#fff" },
-      { x:"42%",y:"2%",s:2.5,d:"0.3s",c:"#F7A86A" },{ x:"50%",y:"9%",s:1,d:"2.7s",c:"#aaddff" },{ x:"58%",y:"16%",s:1.5,d:"1.2s",c:"#fff" },
-      { x:"65%",y:"4%",s:1,d:"3.8s",c:"#ddeeff" },{ x:"72%",y:"11%",s:2,d:"0.7s",c:"#fff" },{ x:"80%",y:"6%",s:1,d:"2.4s",c:"#F7A86A" },
-      { x:"88%",y:"15%",s:1.5,d:"4.5s",c:"#aaddff" },{ x:"95%",y:"8%",s:1,d:"1.6s",c:"#fff" },
-      { x:"5%",y:"30%",s:1,d:"3.5s",c:"#ddeeff" },{ x:"12%",y:"45%",s:2,d:"0.9s",c:"#fff" },{ x:"20%",y:"55%",s:1,d:"2.3s",c:"#aaddff" },
-      { x:"30%",y:"40%",s:1.5,d:"4.7s",c:"#F7A86A" },{ x:"40%",y:"50%",s:1,d:"1.4s",c:"#fff" },{ x:"50%",y:"35%",s:2,d:"3.1s",c:"#ddeeff" },
-      { x:"60%",y:"48%",s:1,d:"0.6s",c:"#fff" },{ x:"70%",y:"38%",s:1.5,d:"2.9s",c:"#aaddff" },{ x:"82%",y:"45%",s:1,d:"4.3s",c:"#fff" },
-      { x:"92%",y:"33%",s:2,d:"1.1s",c:"#F7A86A" },
-      { x:"7%",y:"65%",s:1.5,d:"2.6s",c:"#fff" },{ x:"18%",y:"78%",s:1,d:"0.4s",c:"#ddeeff" },{ x:"25%",y:"88%",s:2,d:"3.9s",c:"#fff" },
-      { x:"38%",y:"72%",s:1,d:"1.7s",c:"#aaddff" },{ x:"48%",y:"82%",s:1.5,d:"4.8s",c:"#F7A86A" },{ x:"55%",y:"68%",s:1,d:"0.8s",c:"#fff" },
-      { x:"65%",y:"78%",s:2,d:"2.2s",c:"#ddeeff" },{ x:"75%",y:"85%",s:1,d:"3.4s",c:"#fff" },{ x:"85%",y:"70%",s:1.5,d:"1.3s",c:"#aaddff" },
-      { x:"93%",y:"88%",s:1,d:"4.0s",c:"#fff" },{ x:"98%",y:"55%",s:2,d:"0.2s",c:"#F7A86A" },
-      { x:"2%",y:"92%",s:1,d:"2.8s",c:"#fff" },{ x:"45%",y:"95%",s:1.5,d:"1.9s",c:"#ddeeff" },
-      { x:"33%",y:"25%",s:1,d:"3.6s",c:"#fff" },{ x:"77%",y:"22%",s:1.5,d:"0.1s",c:"#F7A86A" },{ x:"53%",y:"60%",s:1,d:"4.4s",c:"#aaddff" },
+      { x: "10%", y: "15%", d: "0s", s: 2 }, { x: "25%", y: "8%", d: "1.5s", s: 1.5 }, { x: "45%", y: "20%", d: "3s", s: 1 },
+      { x: "60%", y: "5%", d: "0.8s", s: 2 }, { x: "75%", y: "18%", d: "2.2s", s: 1.5 }, { x: "90%", y: "12%", d: "4s", s: 1 },
+      { x: "15%", y: "85%", d: "1s", s: 1 }, { x: "35%", y: "75%", d: "2.5s", s: 1.5 }, { x: "55%", y: "90%", d: "3.5s", s: 2 },
+      { x: "80%", y: "80%", d: "0.5s", s: 1 }, { x: "95%", y: "70%", d: "1.8s", s: 1.5 }, { x: "5%", y: "50%", d: "2.8s", s: 1 },
+      { x: "70%", y: "45%", d: "4.2s", s: 1.5 }, { x: "40%", y: "55%", d: "1.2s", s: 1 }, { x: "85%", y: "35%", d: "3.8s", s: 2 },
     ].map((star, i) => (
       <div key={i} style={{
         position: "absolute", left: star.x, top: star.y, width: star.s, height: star.s, borderRadius: "50%",
-        background: star.c, boxShadow: `0 0 ${star.s * 3}px ${star.c}`,
-        animation: `twinkle ${2.5 + (i % 4) * 1.2}s ease-in-out ${star.d} infinite`,
+        background: "#F7A86A", animation: `twinkle ${3 + (i % 3)}s ease-in-out ${star.d} infinite`,
       }} />
     ))}
-    {/* Orbital ring 1 — large, slow */}
+    {/* Floating cloud wisps */}
     <div style={{
-      position: "absolute", top: "50%", left: "50%", width: "120vmax", height: "120vmax",
-      marginTop: "-60vmax", marginLeft: "-60vmax",
-      border: "1px solid rgba(242,107,58,0.04)", borderRadius: "50%",
-      animation: "orbit 200s linear infinite",
+      position: "absolute", top: "30%", left: 0, right: 0, height: 2,
+      background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.02) 20%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.02) 80%, transparent 100%)",
+      animation: "drift 60s linear infinite",
     }} />
-    {/* Orbital ring 2 — medium, tilted */}
     <div style={{
-      position: "absolute", top: "50%", left: "50%", width: "80vmax", height: "80vmax",
-      marginTop: "-40vmax", marginLeft: "-40vmax",
-      border: "1px solid rgba(100,150,255,0.04)", borderRadius: "50%",
-      animation: "orbit-reverse 150s linear infinite", transform: "rotateX(60deg)",
+      position: "absolute", top: "60%", left: 0, right: 0, height: 1,
+      background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.015) 30%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.015) 70%, transparent 100%)",
+      animation: "drift 80s linear 10s infinite",
     }} />
-    {/* Orbital ring 3 — small, faster */}
-    <div style={{
-      position: "absolute", top: "50%", left: "50%", width: "50vmax", height: "50vmax",
-      marginTop: "-25vmax", marginLeft: "-25vmax",
-      border: "1px solid rgba(242,107,58,0.03)", borderRadius: "50%",
-      animation: "orbit 90s linear infinite",
-    }}>
-      {/* Orbiting body on this ring */}
-      <div style={{
-        position: "absolute", top: 0, left: "50%", width: 4, height: 4, marginLeft: -2, marginTop: -2,
-        borderRadius: "50%", background: "#F7A86A", boxShadow: "0 0 8px #F7A86A, 0 0 20px rgba(242,107,58,0.3)",
-      }} />
+    {/* Globe grid pattern in bottom right */}
+    <svg style={{ position: "absolute", bottom: -60, right: -60, width: 400, height: 400, opacity: 0.025, animation: "globe-rotate 120s linear infinite" }} viewBox="0 0 400 400">
+      <circle cx="200" cy="200" r="180" stroke="#F7A86A" strokeWidth="0.5" fill="none" />
+      <circle cx="200" cy="200" r="140" stroke="#F7A86A" strokeWidth="0.5" fill="none" />
+      <circle cx="200" cy="200" r="100" stroke="#F7A86A" strokeWidth="0.5" fill="none" />
+      <ellipse cx="200" cy="200" rx="60" ry="180" stroke="#F7A86A" strokeWidth="0.5" fill="none" />
+      <ellipse cx="200" cy="200" rx="120" ry="180" stroke="#F7A86A" strokeWidth="0.5" fill="none" />
+      <line x1="20" y1="200" x2="380" y2="200" stroke="#F7A86A" strokeWidth="0.5" />
+      <line x1="200" y1="20" x2="200" y2="380" stroke="#F7A86A" strokeWidth="0.5" />
+      <line x1="20" y1="140" x2="380" y2="140" stroke="#F7A86A" strokeWidth="0.3" />
+      <line x1="20" y1="260" x2="380" y2="260" stroke="#F7A86A" strokeWidth="0.3" />
+    </svg>
+    {/* Runway lights along bottom */}
+    <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 1, display: "flex", justifyContent: "center", gap: 40 }}>
+      {Array.from({ length: 20 }).map((_, i) => (
+        <div key={i} style={{
+          width: 2, height: 2, borderRadius: "50%", background: i % 3 === 0 ? "#F7A86A" : "#f59e0b",
+          animation: `runway-light 2s ease-in-out ${i * 0.15}s infinite`, opacity: 0.3,
+        }} />
+      ))}
     </div>
-    {/* Central star glow — warm orange solar body */}
-    <div style={{
-      position: "absolute", top: "15%", right: "10%", width: 200, height: 200,
-      borderRadius: "50%", background: "radial-gradient(circle, rgba(242,107,58,0.12) 0%, rgba(242,107,58,0.04) 40%, transparent 70%)",
-      animation: "corona-pulse 8s ease-in-out infinite",
-    }} />
-    {/* Secondary star glow — blue */}
-    <div style={{
-      position: "absolute", bottom: "20%", left: "5%", width: 150, height: 150,
-      borderRadius: "50%", background: "radial-gradient(circle, rgba(80,120,200,0.08) 0%, rgba(80,120,200,0.02) 40%, transparent 70%)",
-      animation: "corona-pulse 12s ease-in-out 4s infinite",
-    }} />
-    {/* Shooting star — periodic */}
-    <div style={{
-      position: "absolute", top: "10%", left: "5%", width: 80, height: 1,
-      background: "linear-gradient(90deg, rgba(255,255,255,0.8), transparent)",
-      animation: "shoot-star 8s ease-in 2s infinite", opacity: 0,
-    }} />
-    <div style={{
-      position: "absolute", top: "35%", left: "15%", width: 60, height: 1,
-      background: "linear-gradient(90deg, rgba(247,168,106,0.9), transparent)",
-      animation: "shoot-star 12s ease-in 7s infinite", opacity: 0,
-    }} />
-    {/* Cosmic dust particles */}
-    {[0,1,2,3,4,5,6,7].map(i => (
-      <div key={`dust-${i}`} style={{
-        position: "absolute", left: `${10 + i * 12}%`, bottom: 0, width: 1, height: 1,
-        borderRadius: "50%", background: "rgba(255,255,255,0.5)",
-        animation: `dust-drift ${15 + i * 5}s linear ${i * 3}s infinite`,
-      }} />
-    ))}
-    {/* Horizon glow — planet surface suggestion at bottom */}
-    <div style={{
-      position: "absolute", bottom: 0, left: 0, right: 0, height: 120,
-      background: "linear-gradient(to top, rgba(242,107,58,0.04), transparent)",
-    }} />
   </div>
 );
 
@@ -143,7 +101,86 @@ const FlightPath = ({ color = "#F7A86A", style = {} }) => (
 );
 
 // Per-page hero banner with travel photography
-// Hero banners removed — clean cosmic dashboard
+const PAGE_HEROES = {
+  dashboard: {
+    img: "https://images.unsplash.com/photo-1569154941061-e231b4725ef1?w=1400&q=80&auto=format&fit=crop",
+    alt: "Airplane wing above clouds at golden hour",
+    accent: "#F5944E",
+  },
+  programs: {
+    img: "https://images.unsplash.com/photo-1556388158-158ea5ccacbd?w=1400&q=80&auto=format&fit=crop",
+    alt: "Airport departure board and terminal",
+    accent: "#F26B3A",
+  },
+  trips: {
+    img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1400&q=80&auto=format&fit=crop",
+    alt: "Tropical beach with turquoise water",
+    accent: "#34d399",
+  },
+  expenses: {
+    img: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1400&q=80&auto=format&fit=crop",
+    alt: "Luxury resort pool at dusk",
+    accent: "#f59e0b",
+  },
+  optimizer: {
+    img: "https://images.unsplash.com/photo-1540339832862-474599807836?w=1400&q=80&auto=format&fit=crop",
+    alt: "Business class airplane cabin",
+    accent: "#8b5cf6",
+  },
+  reports: {
+    img: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1400&q=80&auto=format&fit=crop",
+    alt: "Lake surrounded by mountains from above",
+    accent: "#F26B3A",
+  },
+  premium: {
+    img: "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=1400&q=80&auto=format&fit=crop",
+    alt: "Infinity pool overlooking ocean at sunset",
+    accent: "#f59e0b",
+  },
+};
+
+const PageHeroBanner = ({ view, title, subtitle }) => {
+  const hero = PAGE_HEROES[view];
+  if (!hero) return null;
+  return (
+    <div style={{
+      position: "relative", width: "100%", height: 180, borderRadius: 20, overflow: "hidden", marginBottom: 24,
+      boxShadow: `0 8px 40px rgba(0,0,0,0.4), 0 0 80px ${hero.accent}08`,
+    }}>
+      <img src={hero.img} alt={hero.alt} loading="eager" style={{
+        position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 40%",
+        animation: "hero-fade-in 1.2s ease-out forwards",
+      }} />
+      {/* Dark gradient overlay */}
+      <div style={{
+        position: "absolute", inset: 0,
+        background: `linear-gradient(135deg, rgba(4,11,24,0.82) 0%, rgba(4,11,24,0.45) 40%, rgba(4,11,24,0.25) 60%, ${hero.accent}08 100%)`,
+      }} />
+      {/* Bottom fade to page bg */}
+      <div style={{
+        position: "absolute", bottom: 0, left: 0, right: 0, height: 80,
+        background: "linear-gradient(to top, rgba(4,11,24,0.95), transparent)",
+      }} />
+      {/* Subtle scan lines texture */}
+      <div style={{
+        position: "absolute", inset: 0, opacity: 0.03,
+        backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.1) 2px, rgba(255,255,255,0.1) 3px)",
+      }} />
+      {/* Accent glow line at bottom */}
+      <div style={{
+        position: "absolute", bottom: 0, left: "10%", right: "10%", height: 1,
+        background: `linear-gradient(90deg, transparent, ${hero.accent}30, transparent)`,
+      }} />
+      {/* Title overlay */}
+      {title && (
+        <div style={{ position: "absolute", bottom: 20, left: 28, right: 28, zIndex: 2 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 800, color: "#fff", margin: 0, fontFamily: "Plus Jakarta Sans", textShadow: "0 2px 20px rgba(0,0,0,0.5)" }}>{title}</h1>
+          {subtitle && <p style={{ fontSize: 12, color: `${hero.accent}cc`, fontFamily: "Space Grotesk", marginTop: 4, textShadow: "0 1px 10px rgba(0,0,0,0.5)" }}>{subtitle}</p>}
+        </div>
+      )}
+    </div>
+  );
+};
 
 // ============================================================
 // DATA & CONSTANTS
@@ -779,7 +816,7 @@ Start by introducing yourself briefly in-character with personality, and give an
     const TopNav = () => (
       <nav style={{
         position: "sticky", top: 0, zIndex: 100, padding: "12px 28px",
-        background: "rgba(5,5,16,0.7)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
+        background: "rgba(15,15,15,0.65)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
         borderBottom: "1px solid rgba(242,107,58,0.1)",
         display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
       }}>
@@ -808,7 +845,7 @@ Start by introducing yourself briefly in-character with personality, and give an
 
     // --- Shared footer ---
     const Footer = () => (
-      <footer style={{ position: "relative", zIndex: 1, padding: "40px 28px 20px", borderTop: "1px solid rgba(255,255,255,0.05)", background: "rgba(5,5,16,0.95)", marginTop: 60 }}>
+      <footer style={{ position: "relative", zIndex: 1, padding: "40px 28px 20px", borderTop: "1px solid rgba(255,255,255,0.05)", background: "rgba(15,15,15,0.92)", marginTop: 60 }}>
         <div style={{ maxWidth: 1000, margin: "0 auto", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 28 }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}><LogoMark size={22} /><span style={{ fontSize: 14, fontWeight: 800, fontFamily: "Plus Jakarta Sans", color: "#fff" }}>Continuum</span></div>
@@ -837,10 +874,10 @@ Start by introducing yourself briefly in-character with personality, and give an
 
     // --- Shared page shell (bermuda bg for landing, dark bg for content pages) ---
     const Shell = ({ children, showBg }) => (
-      <div style={{ minHeight: "100vh", background: "#050510", fontFamily: "'Plus Jakarta Sans', 'Space Grotesk', system-ui, sans-serif", color: "#fff", position: "relative" }}>
+      <div style={{ minHeight: "100vh", background: "#0F0F0F", fontFamily: "'Plus Jakarta Sans', 'Space Grotesk', system-ui, sans-serif", color: "#fff", position: "relative" }}>
         {showBg && (<>
           <img src="/bermuda-bg.webp" alt="" style={{ position: "fixed", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 40%", zIndex: 0 }} />
-          <div style={{ position: "fixed", inset: 0, zIndex: 0, background: "linear-gradient(180deg, rgba(5,5,16,0.55) 0%, rgba(5,5,16,0.7) 35%, rgba(5,5,16,0.9) 65%, #050510 100%)" }} />
+          <div style={{ position: "fixed", inset: 0, zIndex: 0, background: "linear-gradient(180deg, rgba(15,15,15,0.5) 0%, rgba(15,15,15,0.65) 35%, rgba(15,15,15,0.88) 65%, #0F0F0F 100%)" }} />
         </>)}
         <TravelAtmosphere />
         {fontLink}
@@ -881,57 +918,37 @@ Start by introducing yourself briefly in-character with personality, and give an
     if (publicPage === "landing") return (
       <Shell showBg>
         <div style={{ maxWidth: 1060, margin: "0 auto", padding: "0 28px" }}>
-          {/* Hero — Cosmic centered layout with orbital visual */}
-          <div style={{ textAlign: "center", padding: "70px 0 60px", position: "relative" }}>
-            {/* Orbital rings behind the logo */}
-            <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -55%)", width: 500, height: 500, pointerEvents: "none" }}>
-              <div style={{ position: "absolute", inset: 0, border: "1px solid rgba(242,107,58,0.08)", borderRadius: "50%", animation: "orbit 60s linear infinite" }}>
-                <div style={{ position: "absolute", top: 0, left: "50%", width: 8, height: 8, marginLeft: -4, marginTop: -4, borderRadius: "50%", background: "#F26B3A", boxShadow: "0 0 12px #F26B3A, 0 0 30px rgba(242,107,58,0.4)" }} />
-              </div>
-              <div style={{ position: "absolute", inset: 60, border: "1px solid rgba(100,150,255,0.06)", borderRadius: "50%", animation: "orbit-reverse 45s linear infinite" }}>
-                <div style={{ position: "absolute", bottom: 0, left: "50%", width: 6, height: 6, marginLeft: -3, marginBottom: -3, borderRadius: "50%", background: "#6496ff", boxShadow: "0 0 10px #6496ff" }} />
-              </div>
-              <div style={{ position: "absolute", inset: 130, border: "1px solid rgba(242,107,58,0.05)", borderRadius: "50%", animation: "orbit 35s linear infinite" }}>
-                <div style={{ position: "absolute", right: 0, top: "50%", width: 4, height: 4, marginRight: -2, marginTop: -2, borderRadius: "50%", background: "#F7A86A", boxShadow: "0 0 8px #F7A86A" }} />
-              </div>
-              {/* Central sun glow */}
-              <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 120, height: 120, borderRadius: "50%", background: "radial-gradient(circle, rgba(242,107,58,0.15) 0%, rgba(242,107,58,0.05) 50%, transparent 70%)", animation: "corona-pulse 6s ease-in-out infinite" }} />
-            </div>
-
-            <div style={{ position: "relative", zIndex: 1 }}>
-              <div style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}><LogoMark size={68} /></div>
-              <h1 style={{ fontSize: 48, fontWeight: 800, color: "#fff", fontFamily: "Plus Jakarta Sans", margin: 0, letterSpacing: -1, lineHeight: 1.1 }}>
-                Track Every Mile.<br />
-                <span style={{ background: "linear-gradient(135deg, #F5944E, #F26B3A, #E05A2B)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Maximize Every Status.</span>
-              </h1>
-              <p style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", fontFamily: "Space Grotesk", marginTop: 18, maxWidth: 500, marginLeft: "auto", marginRight: "auto", lineHeight: 1.7 }}>
-                All your airline, hotel, and credit card loyalty programs in one intelligent dashboard — never miss an upgrade, a tier, or a reward.
-              </p>
-              <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 32 }}>
-                <button onClick={() => goTo("login")} style={{
-                  padding: "13px 34px", borderRadius: 12, border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "Plus Jakarta Sans",
-                  background: "linear-gradient(135deg, #E05A2B, #F26B3A, #F5944E)", color: "#fff",
-                  boxShadow: "0 6px 28px rgba(229,90,43,0.35), 0 0 60px rgba(242,107,58,0.15)",
-                }}>Get Started Free</button>
-                <button onClick={() => goTo("about")} style={{
-                  padding: "13px 34px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.12)", cursor: "pointer", fontSize: 14, fontWeight: 600, fontFamily: "Space Grotesk",
-                  background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.65)", backdropFilter: "blur(10px)",
-                }}>Learn More</button>
-              </div>
+          {/* Hero */}
+          <div style={{ textAlign: "center", padding: "90px 0 70px" }}>
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}><LogoMark size={68} /></div>
+            <h1 style={{ fontSize: 48, fontWeight: 800, color: "#fff", fontFamily: "Plus Jakarta Sans", margin: 0, letterSpacing: -1, lineHeight: 1.1 }}>
+              Track Every Mile.<br />
+              <span style={{ background: "linear-gradient(135deg, #F5944E, #F26B3A, #E05A2B)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Maximize Every Status.</span>
+            </h1>
+            <p style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", fontFamily: "Space Grotesk", marginTop: 18, maxWidth: 500, marginLeft: "auto", marginRight: "auto", lineHeight: 1.7 }}>
+              All your airline, hotel, and credit card loyalty programs in one intelligent dashboard — never miss an upgrade, a tier, or a reward.
+            </p>
+            <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 32 }}>
+              <button onClick={() => goTo("login")} style={{
+                padding: "13px 34px", borderRadius: 12, border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "Plus Jakarta Sans",
+                background: "linear-gradient(135deg, #E05A2B, #F26B3A, #F5944E)", color: "#fff", boxShadow: "0 6px 28px rgba(229,90,43,0.35)",
+              }}>Get Started Free</button>
+              <button onClick={() => goTo("about")} style={{
+                padding: "13px 34px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.12)", cursor: "pointer", fontSize: 14, fontWeight: 600, fontFamily: "Space Grotesk",
+                background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.65)", backdropFilter: "blur(10px)",
+              }}>Learn More</button>
             </div>
           </div>
 
-          {/* Stats — cosmic glass panel */}
+          {/* Stats */}
           <div style={{
             display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 52,
-            padding: "24px 28px", borderRadius: 18,
-            background: "linear-gradient(135deg, rgba(10,10,30,0.7), rgba(5,5,20,0.6))",
-            backdropFilter: "blur(20px)", border: "1px solid rgba(242,107,58,0.08)",
-            boxShadow: "0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)",
+            padding: "24px 28px", borderRadius: 18, background: "rgba(15,15,15,0.55)", backdropFilter: "blur(20px)",
+            border: "1px solid rgba(255,255,255,0.06)",
           }}>
             {[{ v: "70+", l: "Loyalty Programs" }, { v: "18", l: "Airlines" }, { v: "12", l: "Hotel Chains" }, { v: "21", l: "Credit Cards" }].map((s, i) => (
               <div key={i} style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 26, fontWeight: 800, color: "#F7A86A", fontFamily: "Plus Jakarta Sans", textShadow: "0 0 20px rgba(242,107,58,0.3)" }}>{s.v}</div>
+                <div style={{ fontSize: 26, fontWeight: 800, color: "#F7A86A", fontFamily: "Plus Jakarta Sans" }}>{s.v}</div>
                 <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontFamily: "Space Grotesk", marginTop: 2 }}>{s.l}</div>
               </div>
             ))}
@@ -1047,7 +1064,7 @@ Start by introducing yourself briefly in-character with personality, and give an
           onClick={() => { window.speechSynthesis?.cancel(); setConciergeProgram(null); setConciergeMessages([]); setConciergeSpeaking(false); }}>
           <div onClick={e => e.stopPropagation()} style={{
             width: "100%", maxWidth: 600, maxHeight: "90vh", borderRadius: 24,
-            background: `linear-gradient(160deg, #050510, #0a0a1a, ${p.color}08)`,
+            background: `linear-gradient(160deg, #0F0F0F, #141414, ${p.color}08)`,
             border: `1px solid ${p.color}25`,
             display: "flex", flexDirection: "column", overflow: "hidden",
             boxShadow: `0 40px 100px rgba(0,0,0,0.7), 0 0 80px ${p.color}08`,
@@ -2330,7 +2347,7 @@ Start by introducing yourself briefly in-character with personality, and give an
   // ============================================================
   return (
     <div style={{
-      minHeight: "100vh", background: "linear-gradient(160deg, #050510 0%, #0a0a1a 25%, #0d0d20 50%, #080818 75%, #050510 100%)",
+      minHeight: "100vh", background: "linear-gradient(160deg, #0F0F0F 0%, #141414 25%, #1A1A1A 50%, #121212 75%, #0F0F0F 100%)",
       fontFamily: "'Plus Jakarta Sans', 'Space Grotesk', system-ui, sans-serif", color: "#fff", display: "flex", position: "relative",
     }}>
       <TravelAtmosphere />
@@ -2397,22 +2414,19 @@ Start by introducing yourself briefly in-character with personality, and give an
           </div>
         </div>
 
-        {/* Page Header — clean text, no hero image */}
-        <div style={{ marginBottom: 20, padding: "4px 0" }}>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: "#fff", margin: 0, fontFamily: "Plus Jakarta Sans" }}>
-            {activeView === "dashboard" ? `Welcome back, ${user?.name?.split(" ")[0]}` : navItems.find(n => n.id === activeView)?.label}
-          </h1>
-          <p style={{ fontSize: 12, color: "rgba(247,168,106,0.6)", fontFamily: "Space Grotesk", marginTop: 4 }}>
-            {activeView === "dashboard" ? `${new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })} · ${Object.keys(linkedAccounts).length} programs tracked` :
+        {/* Hero Banner */}
+        <PageHeroBanner view={activeView}
+          title={activeView === "dashboard" ? `Welcome back, ${user?.name?.split(" ")[0]}` : navItems.find(n => n.id === activeView)?.label}
+          subtitle={
+            activeView === "dashboard" ? `${new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })} · ${Object.keys(linkedAccounts).length} programs tracked` :
             activeView === "programs" ? "Link and manage all your loyalty accounts" :
             activeView === "trips" ? "Plan, track, and optimize your upcoming travel" :
             activeView === "expenses" ? "Track spending and receipts across every trip" :
             activeView === "optimizer" ? "AI-powered recommendations to maximize your status" :
             activeView === "reports" ? "Insights and analytics across all programs" :
-            activeView === "premium" ? "Unlock the full power of Continuum" : ""}
-          </p>
-          <div style={{ width: 50, height: 2, borderRadius: 1, background: "linear-gradient(90deg, #E05A2B, #F5944E)", marginTop: 10 }} />
-        </div>
+            activeView === "premium" ? "Unlock the full power of Continuum" : ""
+          }
+        />
 
         {/* View Content */}
         {viewRenderers[activeView]?.()}
@@ -2428,7 +2442,7 @@ Start by introducing yourself briefly in-character with personality, and give an
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
         }} onClick={() => setShowAddTrip(false)}>
           <div onClick={e => e.stopPropagation()} style={{
-            background: "linear-gradient(135deg, #0d0d20, #10102a)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: 28, width: "100%", maxWidth: 440,
+            background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: 28, width: "100%", maxWidth: 440,
           }}>
             <h3 style={{ fontSize: 18, fontWeight: 800, color: "#fff", margin: "0 0 20px", fontFamily: "Plus Jakarta Sans" }}>Add Trip</h3>
 
@@ -2460,7 +2474,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                 borderRadius: 10, color: "#fff", fontSize: 13, fontFamily: "Space Grotesk", outline: "none", boxSizing: "border-box",
               }}>
                 {(newTrip.type === "flight" ? [...LOYALTY_PROGRAMS.airlines, ...customPrograms.filter(p => p.category === "airline")] : newTrip.type === "hotel" ? [...LOYALTY_PROGRAMS.hotels, ...customPrograms.filter(p => p.category === "hotel")] : [...LOYALTY_PROGRAMS.rentals, ...customPrograms.filter(p => p.category === "rental")]).map(p => (
-                  <option key={p.id} value={p.id} style={{ background: "linear-gradient(135deg, #0d0d20, #10102a)" }}>{p.name}</option>
+                  <option key={p.id} value={p.id} style={{ background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)" }}>{p.name}</option>
                 ))}
               </select>
             </label>
@@ -2492,9 +2506,9 @@ Start by introducing yourself briefly in-character with personality, and give an
                     display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.04)",
                     border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 13, fontFamily: "Space Grotesk", outline: "none", boxSizing: "border-box",
                   }}>
-                    <option value="domestic" style={{ background: "linear-gradient(135deg, #0d0d20, #10102a)" }}>Domestic Economy</option>
-                    <option value="international" style={{ background: "linear-gradient(135deg, #0d0d20, #10102a)" }}>International</option>
-                    <option value="premium" style={{ background: "linear-gradient(135deg, #0d0d20, #10102a)" }}>Premium / Business</option>
+                    <option value="domestic" style={{ background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)" }}>Domestic Economy</option>
+                    <option value="international" style={{ background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)" }}>International</option>
+                    <option value="premium" style={{ background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)" }}>Premium / Business</option>
                   </select>
                 </label>
               )}
@@ -2515,9 +2529,9 @@ Start by introducing yourself briefly in-character with personality, and give an
                 display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.04)",
                 border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 13, fontFamily: "Space Grotesk", outline: "none", boxSizing: "border-box",
               }}>
-                <option value="confirmed" style={{ background: "linear-gradient(135deg, #0d0d20, #10102a)" }}>Confirmed</option>
-                <option value="planned" style={{ background: "linear-gradient(135deg, #0d0d20, #10102a)" }}>Planned</option>
-                <option value="wishlist" style={{ background: "linear-gradient(135deg, #0d0d20, #10102a)" }}>Wishlist</option>
+                <option value="confirmed" style={{ background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)" }}>Confirmed</option>
+                <option value="planned" style={{ background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)" }}>Planned</option>
+                <option value="wishlist" style={{ background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)" }}>Wishlist</option>
               </select>
             </label>
 
@@ -2541,7 +2555,7 @@ Start by introducing yourself briefly in-character with personality, and give an
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
         }} onClick={() => setShowLinkModal(null)}>
           <div onClick={e => e.stopPropagation()} style={{
-            background: "linear-gradient(135deg, #0d0d20, #10102a)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: 28, width: "100%", maxWidth: 400,
+            background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: 28, width: "100%", maxWidth: 400,
           }}>
             <h3 style={{ fontSize: 18, fontWeight: 800, color: "#fff", margin: "0 0 6px", fontFamily: "Plus Jakarta Sans" }}>Link Account</h3>
             <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, margin: "0 0 20px", fontFamily: "Space Grotesk" }}>
@@ -2587,7 +2601,7 @@ Start by introducing yourself briefly in-character with personality, and give an
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
         }} onClick={() => setShowAddProgram(false)}>
           <div onClick={e => e.stopPropagation()} style={{
-            background: "linear-gradient(135deg, #0d0d20, #10102a)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: 28, width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto",
+            background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: 28, width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto",
           }}>
             <h3 style={{ fontSize: 18, fontWeight: 800, color: "#fff", margin: "0 0 6px", fontFamily: "Plus Jakarta Sans" }}>Add Loyalty Program</h3>
             <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, margin: "0 0 20px", fontFamily: "Space Grotesk" }}>Choose from {PROGRAM_DIRECTORY.airlines.length + PROGRAM_DIRECTORY.hotels.length + PROGRAM_DIRECTORY.rentals.length + PROGRAM_DIRECTORY.creditCards.length}+ programs or add a custom one</p>
@@ -2769,7 +2783,7 @@ Start by introducing yourself briefly in-character with personality, and give an
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
         }} onClick={() => setShowUpgrade(false)}>
           <div onClick={e => e.stopPropagation()} style={{
-            background: "linear-gradient(135deg, #0d0d20, #10102a)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 20, padding: 32, width: "100%", maxWidth: 400, textAlign: "center",
+            background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 20, padding: 32, width: "100%", maxWidth: 400, textAlign: "center",
           }}>
             <div style={{ fontSize: 42, marginBottom: 12, display: "flex", justifyContent: "center" }}><LogoMark size={56} /></div>
             <h3 style={{ fontSize: 20, fontWeight: 800, color: "#fff", margin: "0 0 8px", fontFamily: "Plus Jakarta Sans" }}>Upgrade to Premium</h3>
@@ -2796,7 +2810,7 @@ Start by introducing yourself briefly in-character with personality, and give an
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
         }} onClick={() => setShowAddExpense(null)}>
           <div onClick={e => e.stopPropagation()} style={{
-            background: "linear-gradient(135deg, #0d0d20, #10102a)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: 28, width: "100%", maxWidth: 480,
+            background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: 28, width: "100%", maxWidth: 480,
           }}>
             <h3 style={{ fontSize: 18, fontWeight: 800, color: "#fff", margin: "0 0 6px", fontFamily: "Plus Jakarta Sans" }}>Add Expense</h3>
             <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, margin: "0 0 20px", fontFamily: "Space Grotesk" }}>
@@ -2840,12 +2854,12 @@ Start by introducing yourself briefly in-character with personality, and give an
                 <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Space Grotesk" }}>Payment Method</span>
                 <select value={newExpense.paymentMethod} onChange={e => setNewExpense(p => ({ ...p, paymentMethod: e.target.value }))}
                   style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 13, fontFamily: "Space Grotesk", outline: "none", boxSizing: "border-box" }}>
-                  <option value="" style={{ background: "linear-gradient(135deg, #0d0d20, #10102a)" }}>Select...</option>
-                  <option value="Amex Platinum" style={{ background: "linear-gradient(135deg, #0d0d20, #10102a)" }}>Amex Platinum</option>
-                  <option value="Chase Sapphire" style={{ background: "linear-gradient(135deg, #0d0d20, #10102a)" }}>Chase Sapphire Reserve</option>
-                  <option value="Cash" style={{ background: "linear-gradient(135deg, #0d0d20, #10102a)" }}>Cash</option>
-                  <option value="Debit Card" style={{ background: "linear-gradient(135deg, #0d0d20, #10102a)" }}>Debit Card</option>
-                  <option value="Other" style={{ background: "linear-gradient(135deg, #0d0d20, #10102a)" }}>Other</option>
+                  <option value="" style={{ background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)" }}>Select...</option>
+                  <option value="Amex Platinum" style={{ background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)" }}>Amex Platinum</option>
+                  <option value="Chase Sapphire" style={{ background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)" }}>Chase Sapphire Reserve</option>
+                  <option value="Cash" style={{ background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)" }}>Cash</option>
+                  <option value="Debit Card" style={{ background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)" }}>Debit Card</option>
+                  <option value="Other" style={{ background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)" }}>Other</option>
                 </select>
               </label>
             </div>
@@ -2968,7 +2982,7 @@ Start by introducing yourself briefly in-character with personality, and give an
             position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
           }} onClick={() => setShowExpenseReport(null)}>
             <div onClick={e => e.stopPropagation()} style={{
-              background: "linear-gradient(135deg, #0d0d20, #10102a)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: 32, width: "100%", maxWidth: 600,
+              background: "linear-gradient(135deg, #1A1A1A, #1E1E1E)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: 32, width: "100%", maxWidth: 600,
               maxHeight: "85vh", overflowY: "auto",
             }}>
               {/* Report Header */}
