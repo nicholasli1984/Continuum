@@ -537,22 +537,85 @@ export default function EliteStatusTracker() {
 
   useEffect(() => { setTimeout(() => setAnimateIn(true), 100); }, []);
 
-  // AI Concierge functions
-  const speakText = useCallback((text, isHotel) => {
+  // AI Concierge — Diverse voice profiles mapped to airline/hotel nationality
+  const VOICE_PROFILES = {
+    aa: { lang: "en-US", gender: "male", pitch: 0.95, rate: 0.92, accent: "American" },
+    dl: { lang: "en-US", gender: "female", pitch: 1.05, rate: 0.94, accent: "Southern American" },
+    ua: { lang: "en-US", gender: "male", pitch: 0.9, rate: 0.9, accent: "American" },
+    sw: { lang: "en-US", gender: "female", pitch: 1.1, rate: 0.96, accent: "Texan" },
+    b6: { lang: "en-US", gender: "male", pitch: 1.0, rate: 0.93, accent: "New York" },
+    atmos: { lang: "en-US", gender: "female", pitch: 1.05, rate: 0.88, accent: "Pacific Northwest" },
+    frontier: { lang: "en-US", gender: "male", pitch: 0.88, rate: 0.95, accent: "Midwestern" },
+    spirit: { lang: "en-US", gender: "female", pitch: 1.08, rate: 0.97, accent: "Miami" },
+    flying_blue: { lang: "fr-FR", gender: "female", pitch: 1.1, rate: 0.85, accent: "French" },
+    ba_avios: { lang: "en-GB", gender: "male", pitch: 0.85, rate: 0.88, accent: "British" },
+    aeroplan: { lang: "en-CA", gender: "female", pitch: 1.0, rate: 0.9, accent: "Canadian" },
+    emirates_skywards: { lang: "en-GB", gender: "male", pitch: 0.82, rate: 0.85, accent: "refined British" },
+    turkish_miles: { lang: "en-GB", gender: "male", pitch: 0.9, rate: 0.82, accent: "Turkish" },
+    qantas_ff: { lang: "en-AU", gender: "female", pitch: 1.05, rate: 0.92, accent: "Australian" },
+    singapore_kf: { lang: "en-SG", gender: "female", pitch: 1.08, rate: 0.88, accent: "Singaporean" },
+    etihad_guest: { lang: "en-GB", gender: "male", pitch: 0.88, rate: 0.84, accent: "Abu Dhabi" },
+    virgin_fc: { lang: "en-GB", gender: "female", pitch: 1.12, rate: 0.93, accent: "British" },
+    cathay_mp: { lang: "en-GB", gender: "female", pitch: 1.06, rate: 0.86, accent: "Hong Kong" },
+    marriott: { lang: "en-US", gender: "male", pitch: 0.92, rate: 0.88, accent: "American" },
+    hilton: { lang: "en-US", gender: "female", pitch: 1.05, rate: 0.9, accent: "American" },
+    ihg: { lang: "en-GB", gender: "male", pitch: 0.88, rate: 0.87, accent: "British" },
+    hyatt: { lang: "en-US", gender: "female", pitch: 1.02, rate: 0.91, accent: "American" },
+    choice: { lang: "en-US", gender: "male", pitch: 0.95, rate: 0.93, accent: "Midwestern" },
+    wyndham: { lang: "en-US", gender: "female", pitch: 1.08, rate: 0.92, accent: "Southern" },
+    accor: { lang: "fr-FR", gender: "female", pitch: 1.1, rate: 0.84, accent: "French" },
+    bestwestern: { lang: "en-US", gender: "male", pitch: 0.9, rate: 0.9, accent: "American" },
+    radisson: { lang: "en-GB", gender: "male", pitch: 0.92, rate: 0.86, accent: "Scandinavian" },
+    sonesta: { lang: "en-US", gender: "female", pitch: 1.04, rate: 0.91, accent: "American" },
+    omni: { lang: "en-US", gender: "male", pitch: 0.88, rate: 0.89, accent: "American" },
+    hertz: { lang: "en-US", gender: "male", pitch: 0.95, rate: 0.91, accent: "American" },
+    sixt: { lang: "de-DE", gender: "male", pitch: 0.88, rate: 0.85, accent: "German" },
+  };
+
+  const speakText = useCallback((text, programId) => {
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.rate = 1.0;
-    utter.pitch = isHotel ? 0.95 : 1.05;
-    utter.volume = 1;
-    // Try to pick a good voice
-    const voices = window.speechSynthesis.getVoices();
-    const preferred = voices.find(v => v.lang.startsWith("en") && v.name.includes("Google")) || voices.find(v => v.lang.startsWith("en")) || voices[0];
-    if (preferred) utter.voice = preferred;
-    setConciergeSpeaking(true);
-    utter.onend = () => setConciergeSpeaking(false);
-    utter.onerror = () => setConciergeSpeaking(false);
-    window.speechSynthesis.speak(utter);
+    const profile = VOICE_PROFILES[programId] || { lang: "en-US", gender: "male", pitch: 1.0, rate: 0.9 };
+    const trySpeak = () => {
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length === 0) { setTimeout(trySpeak, 100); return; }
+      // Break into sentences for natural delivery with micro-pauses
+      const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+      setConciergeSpeaking(true);
+      let totalUtterances = sentences.length;
+      let completed = 0;
+      sentences.forEach((sentence, idx) => {
+        const utter = new SpeechSynthesisUtterance(sentence.trim());
+        // Natural pitch/rate variation per sentence
+        utter.pitch = Math.max(0.1, Math.min(2, profile.pitch + (Math.random() * 0.12 - 0.06)));
+        utter.rate = Math.max(0.5, Math.min(1.2, profile.rate + (Math.random() * 0.08 - 0.04)));
+        utter.volume = 1;
+        // Smart voice selection: match language, then gender, prefer high-quality voices
+        const langBase = profile.lang.split("-")[0];
+        const langVoices = voices.filter(v => v.lang.startsWith(langBase));
+        const femaleHints = ["female", "woman", "Samantha", "Karen", "Fiona", "Victoria", "Tessa", "Amelie", "Nicky", "Zira", "Susan", "Hazel", "Google UK English Female"];
+        const maleHints = ["male", "man", "Daniel", "Alex", "Thomas", "James", "Fred", "David", "Mark", "Google UK English Male", "Oliver", "Arthur"];
+        const genderHints = profile.gender === "female" ? femaleHints : maleHints;
+        // Priority: exact lang match + gender + neural/premium, then lang match + gender, then any lang match, then English fallback
+        let voice = langVoices.find(v => genderHints.some(h => v.name.toLowerCase().includes(h.toLowerCase())) && (v.name.includes("Neural") || v.name.includes("Natural") || v.name.includes("Premium")));
+        if (!voice) voice = langVoices.find(v => genderHints.some(h => v.name.toLowerCase().includes(h.toLowerCase())));
+        if (!voice) voice = langVoices.find(v => v.name.includes("Google") || v.name.includes("Microsoft") || v.name.includes("Natural"));
+        if (!voice && langBase !== "en") {
+          // Fallback: try English voices with the gender preference for non-English programs
+          const enVoices = voices.filter(v => v.lang.startsWith("en"));
+          voice = enVoices.find(v => genderHints.some(h => v.name.toLowerCase().includes(h.toLowerCase())));
+          if (!voice) voice = enVoices[0];
+        }
+        if (!voice) voice = langVoices[0] || voices.find(v => v.lang.startsWith("en")) || voices[0];
+        if (voice) utter.voice = voice;
+        utter.onend = () => { completed++; if (completed >= totalUtterances) setConciergeSpeaking(false); };
+        utter.onerror = () => { completed++; if (completed >= totalUtterances) setConciergeSpeaking(false); };
+        window.speechSynthesis.speak(utter);
+      });
+    };
+    // Voices may load async — try immediately, retry if empty
+    if (window.speechSynthesis.getVoices().length > 0) trySpeak();
+    else { window.speechSynthesis.onvoiceschanged = trySpeak; setTimeout(trySpeak, 200); }
   }, []);
 
   const openConcierge = useCallback(async (program, type) => {
@@ -563,8 +626,11 @@ export default function EliteStatusTracker() {
     setConciergeLoading(true);
     setConciergeSpeaking(false);
     const tierInfo = (program.tiers || []).map(t => `${t.name}: requires ${t.threshold} ${program.unit}, perks: ${t.perks}`).join("\n");
-    const role = type === "hotel" ? "a friendly hotel front desk concierge" : (Math.random() > 0.5 ? "a friendly airline pilot" : "a friendly airline flight attendant");
-    const sysPrompt = `You are ${role} who is an expert on the ${program.name} loyalty program. You speak in a warm, professional, conversational tone as if greeting a guest or passenger. Keep responses concise (3-5 sentences max). Use your character's perspective naturally.
+    const vp = VOICE_PROFILES[program.id] || { accent: "professional", gender: "male" };
+    const charRole = type === "hotel"
+      ? (vp.gender === "female" ? "a warm, welcoming female hotel front desk concierge" : "a distinguished male hotel concierge")
+      : (vp.gender === "female" ? "a confident, friendly female senior flight attendant" : "an experienced, charismatic male airline captain");
+    const sysPrompt = `You are ${charRole} who is an expert on the ${program.name} loyalty program. Your personality reflects a ${vp.accent} background — use natural speech patterns, warmth, and occasional personality that fits your character. Your responses will be read aloud, so write in a natural spoken style: use contractions, conversational phrasing, and avoid bullet points or special characters. Keep responses concise (3-5 sentences max).
 
 Program details:
 - Name: ${program.name}
@@ -572,7 +638,7 @@ Program details:
 - Tiers:\n${tierInfo}
 ${program.earnRate ? `- Earn rates: Domestic ${program.earnRate.domestic}x, International ${program.earnRate.international}x, Premium ${program.earnRate.premium}x` : ""}
 
-Start by introducing yourself briefly in-character and giving an engaging overview of the program — what makes it special, the tier structure, and one insider tip. Keep it under 5 sentences.`;
+Start by introducing yourself briefly in-character with personality, and give an engaging spoken overview of the program — what makes it special, the tier structure, and one insider tip. Write as you would naturally speak. Keep it under 5 sentences.`;
     try {
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -581,11 +647,11 @@ Start by introducing yourself briefly in-character and giving an engaging overvi
       const data = await res.json();
       const text = data.content?.map(b => b.text || "").join("") || "Welcome! I'd be happy to tell you about this program.";
       setConciergeMessages([{ role: "assistant", content: text }]);
-      speakText(text, type === "hotel");
+      speakText(text, program.id);
     } catch (e) {
       const fallback = `Welcome aboard! I'm your ${program.name} expert. This program has ${(program.tiers||[]).length} elite tiers earning ${program.unit}. The top tier, ${(program.tiers||[])[(program.tiers||[]).length-1]?.name}, offers incredible perks like ${(program.tiers||[])[(program.tiers||[]).length-1]?.perks}. Ask me anything about earning status, redeeming rewards, or maximizing your benefits!`;
       setConciergeMessages([{ role: "assistant", content: fallback }]);
-      speakText(fallback, type === "hotel");
+      speakText(fallback, program.id);
     }
     setConciergeLoading(false);
   }, [speakText]);
@@ -598,8 +664,9 @@ Start by introducing yourself briefly in-character and giving an engaging overvi
     setConciergeLoading(true);
     const prog = conciergeProgram;
     const tierInfo = (prog.tiers || []).map(t => `${t.name}: requires ${t.threshold} ${prog.unit}, perks: ${t.perks}`).join("\n");
-    const role = prog.type === "hotel" ? "a friendly hotel front desk concierge" : "a friendly airline crew member";
-    const sysPrompt = `You are ${role} expert on ${prog.name}. Be warm, concise (3-5 sentences), stay in character. Program: ${prog.name}, Unit: ${prog.unit}. Tiers:\n${tierInfo}\n${prog.earnRate ? `Earn rates: Dom ${prog.earnRate.domestic}x, Intl ${prog.earnRate.international}x, Prem ${prog.earnRate.premium}x` : ""}`;
+    const vp2 = VOICE_PROFILES[prog.id] || { accent: "professional", gender: "male" };
+    const role2 = prog.type === "hotel" ? (vp2.gender === "female" ? "a warm female hotel concierge" : "a distinguished male hotel concierge") : (vp2.gender === "female" ? "a friendly female flight attendant" : "an experienced male airline captain");
+    const sysPrompt = `You are ${role2} expert on ${prog.name} with a ${vp2.accent} personality. Your responses will be read aloud, so write naturally as spoken word — use contractions, conversational phrasing, no bullet points or special characters. Be warm, concise (3-5 sentences), stay in character. Program: ${prog.name}, Unit: ${prog.unit}. Tiers:\n${tierInfo}\n${prog.earnRate ? `Earn rates: Dom ${prog.earnRate.domestic}x, Intl ${prog.earnRate.international}x, Prem ${prog.earnRate.premium}x` : ""}`;
     const history = [...conciergeMessages, { role: "user", content: userMsg }].map(m => ({ role: m.role, content: m.content }));
     try {
       const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -609,11 +676,11 @@ Start by introducing yourself briefly in-character and giving an engaging overvi
       const data = await res.json();
       const text = data.content?.map(b => b.text || "").join("") || "I'd be happy to help with that!";
       setConciergeMessages(prev => [...prev, { role: "assistant", content: text }]);
-      speakText(text, prog.type === "hotel");
+      speakText(text, prog.id);
     } catch (e) {
       const fallback = "I'm having trouble connecting right now. Please try again in a moment!";
       setConciergeMessages(prev => [...prev, { role: "assistant", content: fallback }]);
-      speakText(fallback, prog.type === "hotel");
+      speakText(fallback, prog.id);
     }
     setConciergeLoading(false);
   }, [conciergeInput, conciergeLoading, conciergeProgram, conciergeMessages, speakText]);
@@ -1008,8 +1075,17 @@ Start by introducing yourself briefly in-character and giving an engaging overvi
                 <span style={{ fontSize: 18 }}>{p.logo}</span>
                 <span style={{ fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: "Plus Jakarta Sans" }}>{p.name}</span>
               </div>
-              <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+              <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                <span style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", fontFamily: "Space Grotesk", background: "rgba(255,255,255,0.06)", padding: "2px 7px", borderRadius: 4 }}>
+                  🌍 {(VOICE_PROFILES[p.id] || { accent: "International" }).accent}
+                </span>
                 {isTalking && <span style={{ fontSize: 9, color: "#34d399", fontFamily: "Space Grotesk", fontWeight: 600 }}>🔊 Speaking...</span>}
+                {isTalking && (
+                  <button onClick={() => { window.speechSynthesis?.cancel(); setConciergeSpeaking(false); }} style={{
+                    width: 26, height: 26, borderRadius: 6, border: "none", background: "rgba(239,68,68,0.15)", color: "#ef4444",
+                    cursor: "pointer", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center",
+                  }} title="Stop speaking">🔇</button>
+                )}
                 <button onClick={() => { window.speechSynthesis?.cancel(); setConciergeProgram(null); setConciergeMessages([]); setConciergeSpeaking(false); }} style={{
                   width: 30, height: 30, borderRadius: 8, border: "none", background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)",
                   cursor: "pointer", fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center",
