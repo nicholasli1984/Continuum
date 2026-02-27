@@ -533,15 +533,35 @@ export default function EliteStatusTracker() {
   const [conciergeMessages, setConciergeMessages] = useState([]); // { role, content }
   const [conciergeInput, setConciergeInput] = useState("");
   const [conciergeLoading, setConciergeLoading] = useState(false);
+  const [conciergeSpeaking, setConciergeSpeaking] = useState(false);
 
   useEffect(() => { setTimeout(() => setAnimateIn(true), 100); }, []);
 
   // AI Concierge functions
+  const speakText = useCallback((text, isHotel) => {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.rate = 1.0;
+    utter.pitch = isHotel ? 0.95 : 1.05;
+    utter.volume = 1;
+    // Try to pick a good voice
+    const voices = window.speechSynthesis.getVoices();
+    const preferred = voices.find(v => v.lang.startsWith("en") && v.name.includes("Google")) || voices.find(v => v.lang.startsWith("en")) || voices[0];
+    if (preferred) utter.voice = preferred;
+    setConciergeSpeaking(true);
+    utter.onend = () => setConciergeSpeaking(false);
+    utter.onerror = () => setConciergeSpeaking(false);
+    window.speechSynthesis.speak(utter);
+  }, []);
+
   const openConcierge = useCallback(async (program, type) => {
+    window.speechSynthesis?.cancel();
     setConciergeProgram({ ...program, type });
     setConciergeMessages([]);
     setConciergeInput("");
     setConciergeLoading(true);
+    setConciergeSpeaking(false);
     const tierInfo = (program.tiers || []).map(t => `${t.name}: requires ${t.threshold} ${program.unit}, perks: ${t.perks}`).join("\n");
     const role = type === "hotel" ? "a friendly hotel front desk concierge" : (Math.random() > 0.5 ? "a friendly airline pilot" : "a friendly airline flight attendant");
     const sysPrompt = `You are ${role} who is an expert on the ${program.name} loyalty program. You speak in a warm, professional, conversational tone as if greeting a guest or passenger. Keep responses concise (3-5 sentences max). Use your character's perspective naturally.
@@ -561,11 +581,14 @@ Start by introducing yourself briefly in-character and giving an engaging overvi
       const data = await res.json();
       const text = data.content?.map(b => b.text || "").join("") || "Welcome! I'd be happy to tell you about this program.";
       setConciergeMessages([{ role: "assistant", content: text }]);
+      speakText(text, type === "hotel");
     } catch (e) {
-      setConciergeMessages([{ role: "assistant", content: `Welcome aboard! I'm your ${program.name} expert. This program has ${(program.tiers||[]).length} elite tiers earning ${program.unit}. The top tier, ${(program.tiers||[])[(program.tiers||[]).length-1]?.name}, offers incredible perks like ${(program.tiers||[])[(program.tiers||[]).length-1]?.perks}. Ask me anything about earning status, redeeming rewards, or maximizing your benefits!` }]);
+      const fallback = `Welcome aboard! I'm your ${program.name} expert. This program has ${(program.tiers||[]).length} elite tiers earning ${program.unit}. The top tier, ${(program.tiers||[])[(program.tiers||[]).length-1]?.name}, offers incredible perks like ${(program.tiers||[])[(program.tiers||[]).length-1]?.perks}. Ask me anything about earning status, redeeming rewards, or maximizing your benefits!`;
+      setConciergeMessages([{ role: "assistant", content: fallback }]);
+      speakText(fallback, type === "hotel");
     }
     setConciergeLoading(false);
-  }, []);
+  }, [speakText]);
 
   const sendConciergeMessage = useCallback(async () => {
     if (!conciergeInput.trim() || conciergeLoading || !conciergeProgram) return;
@@ -586,11 +609,14 @@ Start by introducing yourself briefly in-character and giving an engaging overvi
       const data = await res.json();
       const text = data.content?.map(b => b.text || "").join("") || "I'd be happy to help with that!";
       setConciergeMessages(prev => [...prev, { role: "assistant", content: text }]);
+      speakText(text, prog.type === "hotel");
     } catch (e) {
-      setConciergeMessages(prev => [...prev, { role: "assistant", content: "I'm having trouble connecting right now. Please try again in a moment!" }]);
+      const fallback = "I'm having trouble connecting right now. Please try again in a moment!";
+      setConciergeMessages(prev => [...prev, { role: "assistant", content: fallback }]);
+      speakText(fallback, prog.type === "hotel");
     }
     setConciergeLoading(false);
-  }, [conciergeInput, conciergeLoading, conciergeProgram, conciergeMessages]);
+  }, [conciergeInput, conciergeLoading, conciergeProgram, conciergeMessages, speakText]);
 
   const EXPENSE_CATEGORIES = [
     { id: "flight", label: "Flights", icon: "✈️", color: "#F26B3A" },
@@ -954,98 +980,193 @@ Start by introducing yourself briefly in-character and giving an engaging overvi
       </Shell>
     );
 
-    // ==================== AI CONCIERGE MODAL (inline JSX) ====================
+    // ==================== AI CONCIERGE MODAL (avatar-centric) ====================
     const conciergeModalJSX = conciergeProgram ? (() => {
       const p = conciergeProgram;
       const isHotel = p.type === "hotel";
-      const avatarEmoji = isHotel ? "🛎️" : "👨‍✈️";
-      const avatarLabel = isHotel ? "Concierge" : "Crew Member";
+      const characters = isHotel
+        ? [{ emoji: "🛎️", title: "Front Desk Concierge", hat: "#8B0000", uniform: "#1a1a2e", skin: "#D4A574" },
+           { emoji: "🧳", title: "Bell Captain", hat: "#4a0e0e", uniform: "#2d1b3d", skin: "#C68B59" }]
+        : [{ emoji: "👨‍✈️", title: "Captain", hat: "#1a2744", uniform: "#0a1628", skin: "#D4A574" },
+           { emoji: "💁‍♀️", title: "Senior Flight Attendant", hat: p.color, uniform: "#1a1a2e", skin: "#C68B59" }];
+      const char = characters[Math.floor(p.name.length % characters.length)];
+      const lastAssistantMsg = [...conciergeMessages].reverse().find(m => m.role === "assistant");
+      const isTalking = conciergeSpeaking;
       return (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000, padding: 16 }}
-          onClick={() => { setConciergeProgram(null); setConciergeMessages([]); }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.82)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000, padding: 16 }}
+          onClick={() => { window.speechSynthesis?.cancel(); setConciergeProgram(null); setConciergeMessages([]); setConciergeSpeaking(false); }}>
           <div onClick={e => e.stopPropagation()} style={{
-            width: "100%", maxWidth: 520, maxHeight: "85vh", borderRadius: 22,
-            background: "linear-gradient(135deg, #141414, #1A1A1A)", border: `1px solid ${p.color}30`,
+            width: "100%", maxWidth: 600, maxHeight: "90vh", borderRadius: 24,
+            background: `linear-gradient(160deg, #0F0F0F, #141414, ${p.color}08)`,
+            border: `1px solid ${p.color}25`,
             display: "flex", flexDirection: "column", overflow: "hidden",
-            boxShadow: `0 30px 80px rgba(0,0,0,0.6), 0 0 60px ${p.color}10`,
+            boxShadow: `0 40px 100px rgba(0,0,0,0.7), 0 0 80px ${p.color}08`,
           }}>
-            {/* Header */}
-            <div style={{
-              padding: "18px 22px", borderBottom: `1px solid ${p.color}20`,
-              background: `linear-gradient(135deg, ${p.color}15, ${p.color}05)`,
-              display: "flex", alignItems: "center", gap: 14,
-            }}>
-              <div style={{
-                width: 48, height: 48, borderRadius: 14, background: `linear-gradient(135deg, ${p.color}30, ${p.color}15)`,
-                display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, border: `1px solid ${p.color}30`,
-              }}>{avatarEmoji}</div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: "Plus Jakarta Sans" }}>{p.name}</div>
-                <div style={{ fontSize: 11, color: `${p.color}`, fontFamily: "Space Grotesk", marginTop: 1 }}>{avatarLabel} · AI Program Expert</div>
+            {/* Header bar */}
+            <div style={{ padding: "12px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: `1px solid ${p.color}15` }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 18 }}>{p.logo}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: "Plus Jakarta Sans" }}>{p.name}</span>
               </div>
-              <div style={{ display: "flex", gap: 4 }}>
-                {(p.tiers || []).slice(0, 3).map((t, i) => (
-                  <span key={i} style={{ fontSize: 8, padding: "2px 6px", borderRadius: 4, background: `${p.color}15`, color: p.color, fontFamily: "Space Grotesk", fontWeight: 600 }}>{t.name}</span>
-                ))}
+              <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                {isTalking && <span style={{ fontSize: 9, color: "#34d399", fontFamily: "Space Grotesk", fontWeight: 600 }}>🔊 Speaking...</span>}
+                <button onClick={() => { window.speechSynthesis?.cancel(); setConciergeProgram(null); setConciergeMessages([]); setConciergeSpeaking(false); }} style={{
+                  width: 30, height: 30, borderRadius: 8, border: "none", background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)",
+                  cursor: "pointer", fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center",
+                }}>✕</button>
               </div>
-              <button onClick={() => { setConciergeProgram(null); setConciergeMessages([]); }} style={{
-                width: 32, height: 32, borderRadius: 10, border: "none", background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)",
-                cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center",
-              }}>✕</button>
             </div>
 
-            {/* Messages */}
-            <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
-              {conciergeMessages.map((msg, i) => (
-                <div key={i} style={{ display: "flex", gap: 10, flexDirection: msg.role === "user" ? "row-reverse" : "row", alignItems: "flex-start" }}>
-                  {msg.role === "assistant" && (
-                    <div style={{
-                      width: 34, height: 34, borderRadius: 10, background: `linear-gradient(135deg, ${p.color}25, ${p.color}10)`,
-                      display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0, border: `1px solid ${p.color}25`,
-                    }}>{avatarEmoji}</div>
+            {/* Avatar + Speech area */}
+            <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column" }}>
+              {/* Character Stage */}
+              <div style={{
+                display: "flex", flexDirection: "column", alignItems: "center", padding: "28px 24px 16px",
+                background: `radial-gradient(ellipse at center bottom, ${p.color}10, transparent 70%)`,
+              }}>
+                {/* SVG Avatar Character */}
+                <svg width="140" height="160" viewBox="0 0 140 160" style={{
+                  animation: isTalking ? "none" : "avatar-breathe 3s ease-in-out infinite",
+                  filter: `drop-shadow(0 8px 24px ${p.color}30)`,
+                }}>
+                  {/* Body / Uniform */}
+                  <ellipse cx="70" cy="145" rx="45" ry="20" fill={char.uniform} opacity="0.6" />
+                  <path d={isHotel ? "M35 100 Q35 70 70 65 Q105 70 105 100 L105 145 Q105 155 70 155 Q35 155 35 145 Z" : "M30 95 Q30 65 70 60 Q110 65 110 95 L108 145 Q108 158 70 158 Q32 158 32 145 Z"} fill={char.uniform} />
+                  {/* Uniform details */}
+                  <line x1="70" y1="70" x2="70" y2="145" stroke={p.color} strokeWidth="1.5" opacity="0.3" />
+                  {isHotel ? (
+                    <>{/* Lapels */}
+                      <path d="M55 75 L70 90 L70 75" fill="none" stroke={p.color} strokeWidth="1" opacity="0.4" />
+                      <path d="M85 75 L70 90 L70 75" fill="none" stroke={p.color} strokeWidth="1" opacity="0.4" />
+                      {/* Name badge */}
+                      <rect x="52" y="100" width="36" height="12" rx="3" fill={p.color} opacity="0.3" />
+                      <line x1="56" y1="106" x2="84" y2="106" stroke="#fff" strokeWidth="1" opacity="0.5" />
+                    </>
+                  ) : (
+                    <>{/* Pilot epaulettes */}
+                      <rect x="32" y="68" width="18" height="6" rx="2" fill={p.color} opacity="0.5" />
+                      <rect x="90" y="68" width="18" height="6" rx="2" fill={p.color} opacity="0.5" />
+                      {/* Wings badge */}
+                      <path d="M50 95 L70 90 L90 95 L70 100 Z" fill={p.color} opacity="0.25" />
+                      <circle cx="70" cy="95" r="4" fill={p.color} opacity="0.4" />
+                    </>
                   )}
-                  <div style={{
-                    maxWidth: "78%", padding: "10px 14px", borderRadius: msg.role === "user" ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
-                    background: msg.role === "user" ? "linear-gradient(135deg, #E05A2B, #F26B3A)" : `linear-gradient(135deg, ${p.color}12, rgba(255,255,255,0.04))`,
-                    border: msg.role === "user" ? "none" : `1px solid ${p.color}18`,
-                    color: "#fff", fontSize: 13, fontFamily: "Space Grotesk", lineHeight: 1.6,
-                  }}>{msg.content}</div>
+                  {/* Neck */}
+                  <rect x="60" y="48" width="20" height="18" rx="6" fill={char.skin} />
+                  {/* Head */}
+                  <ellipse cx="70" cy="36" rx="24" ry="28" fill={char.skin} />
+                  {/* Eyes */}
+                  <ellipse cx="60" cy="33" rx="3.5" ry="4" fill="#1a1a2e" />
+                  <ellipse cx="80" cy="33" rx="3.5" ry="4" fill="#1a1a2e" />
+                  <circle cx="61.5" cy="32" r="1.2" fill="#fff" />
+                  <circle cx="81.5" cy="32" r="1.2" fill="#fff" />
+                  {/* Eyebrows */}
+                  <path d="M54 26 Q60 23 66 26" fill="none" stroke="#3d2b1f" strokeWidth="1.5" strokeLinecap="round" />
+                  <path d="M74 26 Q80 23 86 26" fill="none" stroke="#3d2b1f" strokeWidth="1.5" strokeLinecap="round" />
+                  {/* Smile / Mouth */}
+                  <ellipse cx="70" cy="44" rx={isTalking ? "5" : "7"} ry={isTalking ? "4" : "2"} fill="#c0504d"
+                    style={isTalking ? { animation: "avatar-talk 0.4s ease-in-out infinite" } : {}} />
+                  {/* Nose */}
+                  <ellipse cx="70" cy="38" rx="2.5" ry="2" fill={char.skin} style={{ filter: "brightness(0.92)" }} />
+                  {/* Hair / Hat */}
+                  {isHotel ? (
+                    <>{/* Concierge style short hair */}
+                      <path d="M46 30 Q46 8 70 8 Q94 8 94 30" fill="#2d1b1b" />
+                      <path d="M46 28 Q46 10 70 10 Q94 10 94 28 Q94 22 70 20 Q46 22 46 28" fill="#3d2b1f" />
+                    </>
+                  ) : (
+                    <>{/* Pilot cap */}
+                      <path d="M42 28 Q42 12 70 12 Q98 12 98 28 L98 24 Q98 18 70 15 Q42 18 42 24 Z" fill={char.hat} />
+                      <rect x="42" y="24" width="56" height="6" rx="2" fill={char.hat} style={{ filter: "brightness(0.8)" }} />
+                      <rect x="55" y="22" width="30" height="4" rx="1" fill={p.color} opacity="0.6" />
+                      {/* Cap badge */}
+                      <circle cx="70" cy="19" r="4" fill={p.color} opacity="0.5" />
+                    </>
+                  )}
+                  {/* Ears */}
+                  <ellipse cx="46" cy="36" rx="4" ry="6" fill={char.skin} style={{ filter: "brightness(0.95)" }} />
+                  <ellipse cx="94" cy="36" rx="4" ry="6" fill={char.skin} style={{ filter: "brightness(0.95)" }} />
+                </svg>
+
+                {/* Character name */}
+                <div style={{ marginTop: 10, textAlign: "center" }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: "Plus Jakarta Sans" }}>{char.title}</div>
+                  <div style={{ fontSize: 11, color: `${p.color}`, fontFamily: "Space Grotesk", marginTop: 2 }}>{p.name} Expert</div>
                 </div>
-              ))}
-              {conciergeLoading && (
-                <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+              </div>
+
+              {/* Speech Bubble — shows latest assistant message */}
+              <div style={{ padding: "0 24px 16px" }}>
+                {lastAssistantMsg && (
                   <div style={{
-                    width: 34, height: 34, borderRadius: 10, background: `linear-gradient(135deg, ${p.color}25, ${p.color}10)`,
-                    display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0, border: `1px solid ${p.color}25`,
-                  }}>{avatarEmoji}</div>
-                  <div style={{
-                    padding: "12px 18px", borderRadius: "14px 14px 14px 4px",
-                    background: `linear-gradient(135deg, ${p.color}12, rgba(255,255,255,0.04))`, border: `1px solid ${p.color}18`,
+                    position: "relative", padding: "16px 20px", borderRadius: 18,
+                    background: `linear-gradient(135deg, ${p.color}10, rgba(255,255,255,0.03))`,
+                    border: `1px solid ${p.color}18`, animation: "speech-bubble-in 0.4s ease-out",
                   }}>
-                    <div style={{ display: "flex", gap: 4 }}>
+                    {/* Bubble arrow pointing up */}
+                    <div style={{
+                      position: "absolute", top: -8, left: "50%", transform: "translateX(-50%)",
+                      width: 0, height: 0, borderLeft: "8px solid transparent", borderRight: "8px solid transparent",
+                      borderBottom: `8px solid ${p.color}18`,
+                    }} />
+                    <p style={{ fontSize: 13, color: "rgba(255,255,255,0.85)", fontFamily: "Space Grotesk", lineHeight: 1.7, margin: 0 }}>{lastAssistantMsg.content}</p>
+                    {isTalking && (
+                      <div style={{ display: "flex", gap: 3, marginTop: 8, alignItems: "center" }}>
+                        {[0,1,2,3,4].map(i => (
+                          <div key={i} style={{
+                            width: 3, background: p.color, borderRadius: 2, opacity: 0.6,
+                            animation: `avatar-talk 0.5s ease-in-out ${i * 0.1}s infinite`,
+                            height: 8 + Math.sin(i) * 6,
+                          }} />
+                        ))}
+                        <span style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", fontFamily: "Space Grotesk", marginLeft: 6 }}>Speaking aloud...</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {conciergeLoading && !lastAssistantMsg && (
+                  <div style={{
+                    padding: "16px 20px", borderRadius: 18, textAlign: "center",
+                    background: `linear-gradient(135deg, ${p.color}08, rgba(255,255,255,0.02))`, border: `1px solid ${p.color}12`,
+                  }}>
+                    <div style={{ display: "flex", gap: 5, justifyContent: "center" }}>
                       {[0,1,2].map(d => (
-                        <div key={d} style={{
-                          width: 7, height: 7, borderRadius: "50%", background: p.color, opacity: 0.5,
-                          animation: `twinkle 1s ease-in-out ${d * 0.2}s infinite`,
-                        }} />
+                        <div key={d} style={{ width: 8, height: 8, borderRadius: "50%", background: p.color, opacity: 0.5, animation: `twinkle 1s ease-in-out ${d * 0.2}s infinite` }} />
                       ))}
                     </div>
+                    <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: "Space Grotesk", marginTop: 8 }}>Preparing your briefing...</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Conversation history (collapsed, scrollable) */}
+              {conciergeMessages.length > 1 && (
+                <div style={{ padding: "0 24px 12px" }}>
+                  <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.25)", fontFamily: "Space Grotesk", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Conversation</div>
+                  <div style={{ maxHeight: 160, overflowY: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
+                    {conciergeMessages.slice(0, -1).map((msg, i) => (
+                      <div key={i} style={{
+                        padding: "6px 10px", borderRadius: 10, fontSize: 11, fontFamily: "Space Grotesk", lineHeight: 1.5,
+                        background: msg.role === "user" ? "rgba(242,107,58,0.12)" : "rgba(255,255,255,0.03)",
+                        color: msg.role === "user" ? "#F7A86A" : "rgba(255,255,255,0.45)",
+                        borderLeft: msg.role === "user" ? "2px solid #F26B3A" : `2px solid ${p.color}30`,
+                      }}>{msg.role === "user" ? "You: " : ""}{msg.content.slice(0, 120)}{msg.content.length > 120 ? "..." : ""}</div>
+                    ))}
                   </div>
                 </div>
               )}
-              <div ref={node => { if (node) node.scrollIntoView({ behavior: "smooth" }); }} />
             </div>
 
-            {/* Input */}
+            {/* Input bar */}
             <div style={{
               padding: "14px 18px", borderTop: "1px solid rgba(255,255,255,0.06)",
-              display: "flex", gap: 10, background: "rgba(0,0,0,0.2)",
+              display: "flex", gap: 10, background: "rgba(0,0,0,0.25)",
             }}>
               <input
                 value={conciergeInput}
                 onChange={e => setConciergeInput(e.target.value)}
                 onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendConciergeMessage(); } }}
-                placeholder={`Ask about ${p.name}...`}
+                placeholder={`Ask ${char.title.toLowerCase()} a question...`}
                 autoFocus
                 style={{
                   flex: 1, padding: "10px 14px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
@@ -1053,11 +1174,11 @@ Start by introducing yourself briefly in-character and giving an engaging overvi
                 }}
               />
               <button onClick={sendConciergeMessage} disabled={conciergeLoading || !conciergeInput.trim()} style={{
-                padding: "10px 18px", borderRadius: 12, border: "none", cursor: conciergeLoading ? "not-allowed" : "pointer",
+                padding: "10px 20px", borderRadius: 12, border: "none", cursor: conciergeLoading ? "not-allowed" : "pointer",
                 fontSize: 13, fontWeight: 700, fontFamily: "Plus Jakarta Sans",
                 background: conciergeLoading || !conciergeInput.trim() ? "rgba(255,255,255,0.06)" : `linear-gradient(135deg, #E05A2B, #F26B3A)`,
                 color: conciergeLoading || !conciergeInput.trim() ? "rgba(255,255,255,0.25)" : "#fff",
-              }}>Send</button>
+              }}>Ask</button>
             </div>
           </div>
         </div>

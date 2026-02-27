@@ -106,3 +106,27 @@ input:-webkit-autofill {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
+
+@keyframes avatar-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+@keyframes avatar-talk {
+  0%, 100% { transform: scaleY(1); }
+  25% { transform: scaleY(0.6); }
+  50% { transform: scaleY(0.9); }
+  75% { transform: scaleY(0.5); }
+}
+
+@keyframes speech-bubble-in {
+  0% { opacity: 0; transform: translateY(10px) scale(0.95); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes wave-hand {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(20deg); }
+  50% { transform: rotate(-10deg); }
+  75% { transform: rotate(15deg); }
+}
