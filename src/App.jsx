@@ -504,6 +504,7 @@ const IconBtn = ({ icon, label, active, onClick, badge }) => (
 // ============================================================
 export default function EliteStatusTracker() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [publicPage, setPublicPage] = useState("landing");
   const [user, setUser] = useState(null);
   const [activeView, setActiveView] = useState("dashboard");
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
@@ -575,7 +576,7 @@ export default function EliteStatusTracker() {
     setIsLoggedIn(true);
   };
 
-  const handleLogout = () => { setIsLoggedIn(false); setUser(null); setActiveView("dashboard"); };
+  const handleLogout = () => { setIsLoggedIn(false); setUser(null); setActiveView("dashboard"); setPublicPage("landing"); };
 
   const handleAddTrip = () => {
     const id = Date.now();
@@ -643,100 +644,439 @@ export default function EliteStatusTracker() {
   const allPrograms = useMemo(() => [...LOYALTY_PROGRAMS.airlines, ...LOYALTY_PROGRAMS.hotels, ...LOYALTY_PROGRAMS.rentals, ...customPrograms], [customPrograms]);
 
   // ============================================================
-  // LOGIN / REGISTER SCREEN
+  // PUBLIC SITE — Landing, Content Pages, Login
   // ============================================================
   if (!isLoggedIn) {
-    return (
-      <div style={{
-        minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
-        background: "#0F0F0F",
-        fontFamily: "'Plus Jakarta Sans', 'Space Grotesk', system-ui, sans-serif", padding: 20, position: "relative", overflow: "hidden",
+    const navLinks = [
+      { id: "landing", label: "Home" },
+      { id: "about", label: "About Us" },
+      { id: "partners", label: "Our Partners" },
+      { id: "blogs", label: "Blogs" },
+      { id: "airline-reviews", label: "Airline Reviews" },
+      { id: "hotel-reviews", label: "Hotel Reviews" },
+      { id: "forums", label: "Forums" },
+    ];
+    const goTo = (page) => { setPublicPage(page); window.scrollTo(0, 0); };
+    const fontLink = <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />;
+
+    // --- Shared top nav bar ---
+    const TopNav = () => (
+      <nav style={{
+        position: "sticky", top: 0, zIndex: 100, padding: "12px 28px",
+        background: "rgba(15,15,15,0.65)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
+        borderBottom: "1px solid rgba(242,107,58,0.1)",
+        display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
       }}>
-        {/* Full-bleed travel background photo */}
-        <img src="/bermuda-bg.webp" alt="Bermuda beach with turquoise water"
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 60%" }} />
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg, rgba(4,11,24,0.88) 0%, rgba(7,26,46,0.75) 30%, rgba(10,30,56,0.7) 50%, rgba(4,11,24,0.85) 100%)" }} />
-        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "40%", background: "linear-gradient(to top, rgba(4,11,24,0.95), transparent)" }} />
-        <TravelAtmosphere />
-        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
-        <div style={{
-          width: "100%", maxWidth: 440, opacity: animateIn ? 1 : 0, transform: animateIn ? "translateY(0)" : "translateY(20px)", transition: "all 0.8s cubic-bezier(0.16,1,0.3,1)",
-          position: "relative", zIndex: 1,
-        }}>
-          <div style={{ textAlign: "center", marginBottom: 36 }}>
-            <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}><LogoMark size={56} /></div>
-            <h1 style={{ fontSize: 28, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: -0.5, fontFamily: "Plus Jakarta Sans" }}>Continuum</h1>
-            <p style={{ color: "rgba(247,168,106,0.6)", fontSize: 14, marginTop: 6, fontFamily: "Space Grotesk" }}>Elite Status Intelligence Platform</p>
+        <button onClick={() => goTo("landing")} style={{ display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", cursor: "pointer", flexShrink: 0 }}>
+          <LogoMark size={28} />
+          <span style={{ fontSize: 17, fontWeight: 800, color: "#fff", fontFamily: "Plus Jakarta Sans", letterSpacing: -0.3 }}>Continuum</span>
+        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap", justifyContent: "flex-end" }}>
+          {navLinks.map(n => (
+            <button key={n.id} onClick={() => goTo(n.id)} style={{
+              padding: "6px 12px", borderRadius: 8, border: "none", cursor: "pointer",
+              fontSize: 11.5, fontWeight: publicPage === n.id ? 700 : 500, fontFamily: "Space Grotesk",
+              background: publicPage === n.id ? "rgba(242,107,58,0.15)" : "transparent",
+              color: publicPage === n.id ? "#F7A86A" : "rgba(255,255,255,0.5)", transition: "all 0.2s",
+            }}>{n.label}</button>
+          ))}
+          <button onClick={() => goTo("login")} style={{
+            padding: "7px 18px", borderRadius: 10, border: "none", cursor: "pointer", marginLeft: 6,
+            fontSize: 12, fontWeight: 700, fontFamily: "Plus Jakarta Sans",
+            background: publicPage === "login" ? "#F26B3A" : "linear-gradient(135deg, #E05A2B, #F26B3A)", color: "#fff",
+            boxShadow: "0 2px 12px rgba(229,90,43,0.25)",
+          }}>Log In</button>
+        </div>
+      </nav>
+    );
+
+    // --- Shared footer ---
+    const Footer = () => (
+      <footer style={{ position: "relative", zIndex: 1, padding: "40px 28px 20px", borderTop: "1px solid rgba(255,255,255,0.05)", background: "rgba(15,15,15,0.92)", marginTop: 60 }}>
+        <div style={{ maxWidth: 1000, margin: "0 auto", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 28 }}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}><LogoMark size={22} /><span style={{ fontSize: 14, fontWeight: 800, fontFamily: "Plus Jakarta Sans", color: "#fff" }}>Continuum</span></div>
+            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: "Space Grotesk", maxWidth: 260, lineHeight: 1.6 }}>The elite status intelligence platform. Track, optimize, and maximize every mile, point, and night.</p>
           </div>
-          <div style={{
-            background: "linear-gradient(135deg, rgba(242,107,58,0.06), rgba(255,255,255,0.03), rgba(242,107,58,0.04))",
-            border: "1px solid rgba(247,168,106,0.1)", borderRadius: 20, padding: 32,
-            backdropFilter: "blur(40px)", boxShadow: "0 25px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(247,168,106,0.08)",
-            position: "relative", overflow: "hidden",
-          }}>
-            {/* Decorative flight path in card */}
-            <FlightPath style={{ top: 8, right: 8, width: 140, height: 30 }} />
-            <div style={{ display: "flex", marginBottom: 28, background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: 3 }}>
-              {["Sign In", "Register"].map((tab, i) => (
-                <button key={tab} onClick={() => setIsRegistering(i === 1)} style={{
-                  flex: 1, padding: "10px 0", border: "none", borderRadius: 10, cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: "Space Grotesk",
-                  background: (i === 0 ? !isRegistering : isRegistering) ? "rgba(242,107,58,0.2)" : "transparent",
-                  color: (i === 0 ? !isRegistering : isRegistering) ? "#F7A86A" : "rgba(255,255,255,0.35)", transition: "all 0.3s",
-                }}>{tab}</button>
-              ))}
+          <div style={{ display: "flex", gap: 36, flexWrap: "wrap" }}>
+            {[
+              { title: "Product", items: [{ label: "Features", id: "landing" }, { label: "Premium", id: "landing" }] },
+              { title: "Company", items: [{ label: "About Us", id: "about" }, { label: "Partners", id: "partners" }] },
+              { title: "Community", items: [{ label: "Blogs", id: "blogs" }, { label: "Forums", id: "forums" }, { label: "Airline Reviews", id: "airline-reviews" }, { label: "Hotel Reviews", id: "hotel-reviews" }] },
+            ].map(col => (
+              <div key={col.title}>
+                <h4 style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Space Grotesk", marginBottom: 10 }}>{col.title}</h4>
+                {col.items.map(link => (
+                  <button key={link.label} onClick={() => goTo(link.id)} style={{ display: "block", background: "none", border: "none", color: "rgba(255,255,255,0.3)", fontSize: 11, fontFamily: "Space Grotesk", cursor: "pointer", padding: "2px 0" }}>{link.label}</button>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{ textAlign: "center", marginTop: 24, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+          <p style={{ fontSize: 10, color: "rgba(255,255,255,0.18)", fontFamily: "Space Grotesk" }}>© 2026 Continuum. All rights reserved.</p>
+        </div>
+      </footer>
+    );
+
+    // --- Shared page shell (bermuda bg for landing, dark bg for content pages) ---
+    const Shell = ({ children, showBg }) => (
+      <div style={{ minHeight: "100vh", background: "#0F0F0F", fontFamily: "'Plus Jakarta Sans', 'Space Grotesk', system-ui, sans-serif", color: "#fff", position: "relative" }}>
+        {showBg && (<>
+          <img src="/bermuda-bg.webp" alt="" style={{ position: "fixed", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 40%", zIndex: 0 }} />
+          <div style={{ position: "fixed", inset: 0, zIndex: 0, background: "linear-gradient(180deg, rgba(15,15,15,0.5) 0%, rgba(15,15,15,0.65) 35%, rgba(15,15,15,0.88) 65%, #0F0F0F 100%)" }} />
+        </>)}
+        <TravelAtmosphere />
+        {fontLink}
+        <TopNav />
+        <div style={{ position: "relative", zIndex: 1 }}>{children}</div>
+        <Footer />
+      </div>
+    );
+
+    // --- Content page wrapper ---
+    const PageSection = ({ icon, title, subtitle, children }) => (
+      <div style={{ maxWidth: 920, margin: "0 auto", padding: "44px 28px 0" }}>
+        <div style={{ marginBottom: 32 }}>
+          <span style={{ fontSize: 30 }}>{icon}</span>
+          <h1 style={{ fontSize: 30, fontWeight: 800, color: "#fff", fontFamily: "Plus Jakarta Sans", margin: "8px 0 0" }}>{title}</h1>
+          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", fontFamily: "Space Grotesk", marginTop: 6 }}>{subtitle}</p>
+          <div style={{ width: 50, height: 3, borderRadius: 2, background: "linear-gradient(90deg, #E05A2B, #F5944E)", marginTop: 14 }} />
+        </div>
+        {children}
+      </div>
+    );
+
+    // Card helper
+    const Card = ({ icon, title, desc, color, children, onClick, style: sx }) => (
+      <div onClick={onClick} style={{
+        background: `linear-gradient(135deg, ${color || "rgba(242,107,58)"}08, rgba(255,255,255,0.02))`,
+        border: `1px solid ${color || "rgba(255,255,255)"}15`, borderRadius: 16, padding: 22,
+        cursor: onClick ? "pointer" : "default", transition: "border-color 0.2s", ...sx,
+      }}>
+        {icon && <span style={{ fontSize: 22, display: "block", marginBottom: 8 }}>{icon}</span>}
+        {title && <h3 style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: "Plus Jakarta Sans", margin: "0 0 5px" }}>{title}</h3>}
+        {desc && <p style={{ fontSize: 12, color: "rgba(255,255,255,0.38)", fontFamily: "Space Grotesk", lineHeight: 1.6, margin: 0 }}>{desc}</p>}
+        {children}
+      </div>
+    );
+
+    // ==================== LANDING PAGE ====================
+    if (publicPage === "landing") return (
+      <Shell showBg>
+        <div style={{ maxWidth: 1060, margin: "0 auto", padding: "0 28px" }}>
+          {/* Hero */}
+          <div style={{ textAlign: "center", padding: "90px 0 70px" }}>
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}><LogoMark size={68} /></div>
+            <h1 style={{ fontSize: 48, fontWeight: 800, color: "#fff", fontFamily: "Plus Jakarta Sans", margin: 0, letterSpacing: -1, lineHeight: 1.1 }}>
+              Track Every Mile.<br />
+              <span style={{ background: "linear-gradient(135deg, #F5944E, #F26B3A, #E05A2B)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Maximize Every Status.</span>
+            </h1>
+            <p style={{ fontSize: 16, color: "rgba(255,255,255,0.5)", fontFamily: "Space Grotesk", marginTop: 18, maxWidth: 500, marginLeft: "auto", marginRight: "auto", lineHeight: 1.7 }}>
+              All your airline, hotel, and credit card loyalty programs in one intelligent dashboard — never miss an upgrade, a tier, or a reward.
+            </p>
+            <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 32 }}>
+              <button onClick={() => goTo("login")} style={{
+                padding: "13px 34px", borderRadius: 12, border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "Plus Jakarta Sans",
+                background: "linear-gradient(135deg, #E05A2B, #F26B3A, #F5944E)", color: "#fff", boxShadow: "0 6px 28px rgba(229,90,43,0.35)",
+              }}>Get Started Free</button>
+              <button onClick={() => goTo("about")} style={{
+                padding: "13px 34px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.12)", cursor: "pointer", fontSize: 14, fontWeight: 600, fontFamily: "Space Grotesk",
+                background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.65)", backdropFilter: "blur(10px)",
+              }}>Learn More</button>
             </div>
+          </div>
 
-            {!isRegistering ? (
-              <div>
-                <label style={{ display: "block", marginBottom: 16 }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Space Grotesk" }}>Email</span>
-                  <input type="email" value={loginForm.email} onChange={e => setLoginForm(p => ({ ...p, email: e.target.value }))} placeholder="alex@example.com"
-                    style={{ display: "block", width: "100%", marginTop: 6, padding: "12px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 14, fontFamily: "Space Grotesk", outline: "none", boxSizing: "border-box" }} />
-                </label>
-                <label style={{ display: "block", marginBottom: 24 }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Space Grotesk" }}>Password</span>
-                  <input type="password" value={loginForm.password} onChange={e => setLoginForm(p => ({ ...p, password: e.target.value }))} placeholder="••••••••"
-                    style={{ display: "block", width: "100%", marginTop: 6, padding: "12px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 14, fontFamily: "Space Grotesk", outline: "none", boxSizing: "border-box" }} />
-                </label>
-                <button onClick={handleLogin} style={{
-                  width: "100%", padding: "13px 0", border: "none", borderRadius: 12, cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "Plus Jakarta Sans",
-                  background: "linear-gradient(135deg, #E05A2B, #F26B3A, #F5944E)", color: "#fff", boxShadow: "0 4px 20px rgba(229,90,43,0.3)", transition: "all 0.3s",
-                }}>Sign In</button>
-                <button onClick={() => { setLoginForm({ email: "alex@example.com", password: "demo" }); setTimeout(handleLogin, 100); }} style={{
-                  width: "100%", padding: "11px 0", border: "1px solid rgba(242,107,58,0.2)", borderRadius: 12, cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: "Space Grotesk",
-                  background: "transparent", color: "#F7A86A", marginTop: 10, transition: "all 0.3s",
-                }}>Try Demo Account →</button>
+          {/* Stats */}
+          <div style={{
+            display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 52,
+            padding: "24px 28px", borderRadius: 18, background: "rgba(15,15,15,0.55)", backdropFilter: "blur(20px)",
+            border: "1px solid rgba(255,255,255,0.06)",
+          }}>
+            {[{ v: "70+", l: "Loyalty Programs" }, { v: "18", l: "Airlines" }, { v: "12", l: "Hotel Chains" }, { v: "21", l: "Credit Cards" }].map((s, i) => (
+              <div key={i} style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 26, fontWeight: 800, color: "#F7A86A", fontFamily: "Plus Jakarta Sans" }}>{s.v}</div>
+                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontFamily: "Space Grotesk", marginTop: 2 }}>{s.l}</div>
               </div>
-            ) : (
-              <div>
-                <label style={{ display: "block", marginBottom: 14 }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Space Grotesk" }}>Full Name</span>
-                  <input value={registerForm.name} onChange={e => setRegisterForm(p => ({ ...p, name: e.target.value }))} placeholder="Your name"
-                    style={{ display: "block", width: "100%", marginTop: 6, padding: "12px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 14, fontFamily: "Space Grotesk", outline: "none", boxSizing: "border-box" }} />
-                </label>
-                <label style={{ display: "block", marginBottom: 14 }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Space Grotesk" }}>Email</span>
-                  <input type="email" value={registerForm.email} onChange={e => setRegisterForm(p => ({ ...p, email: e.target.value }))} placeholder="you@email.com"
-                    style={{ display: "block", width: "100%", marginTop: 6, padding: "12px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 14, fontFamily: "Space Grotesk", outline: "none", boxSizing: "border-box" }} />
-                </label>
-                <label style={{ display: "block", marginBottom: 24 }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Space Grotesk" }}>Password</span>
-                  <input type="password" value={registerForm.password} onChange={e => setRegisterForm(p => ({ ...p, password: e.target.value }))} placeholder="••••••••"
-                    style={{ display: "block", width: "100%", marginTop: 6, padding: "12px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 14, fontFamily: "Space Grotesk", outline: "none", boxSizing: "border-box" }} />
-                </label>
-                <button onClick={handleRegister} style={{
-                  width: "100%", padding: "13px 0", border: "none", borderRadius: 12, cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "Plus Jakarta Sans",
-                  background: "linear-gradient(135deg, #E05A2B, #F26B3A, #F5944E)", color: "#fff", boxShadow: "0 4px 20px rgba(229,90,43,0.3)",
-                }}>Create Account</button>
-              </div>
-            )}
+            ))}
+          </div>
 
-            <div style={{ textAlign: "center", marginTop: 20, padding: "14px 0 0", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-              <p style={{ color: "rgba(255,255,255,0.25)", fontSize: 11, fontFamily: "Space Grotesk", margin: 0 }}>By signing in, you agree to our Terms of Service</p>
+          {/* Features */}
+          <h2 style={{ fontSize: 22, fontWeight: 800, color: "#fff", fontFamily: "Plus Jakarta Sans", textAlign: "center", marginBottom: 24 }}>Everything You Need to Travel Smarter</h2>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14, marginBottom: 52 }}>
+            {[
+              { icon: "📊", title: "Unified Dashboard", desc: "See all airline, hotel, and rental car elite status in one place with real-time projections." },
+              { icon: "🧠", title: "Status Optimizer", desc: "AI-powered recommendations to reach the next tier with the fewest trips and lowest spend." },
+              { icon: "🧾", title: "Expense Tracking", desc: "Log travel expenses, upload receipts, and generate professional reports." },
+              { icon: "🔗", title: "Direct Account Links", desc: "Connect to 70+ loyalty program websites to view your live points and status." },
+              { icon: "💳", title: "Credit Card Intel", desc: "Match the best travel credit cards to your spending patterns and loyalty goals." },
+              { icon: "📈", title: "Status Projections", desc: "See exactly where you'll land at year-end with planned trips factored in." },
+            ].map((f, i) => <Card key={i} {...f} />)}
+          </div>
+
+          {/* CTA */}
+          <div style={{
+            textAlign: "center", padding: "40px 28px", borderRadius: 22,
+            background: "linear-gradient(135deg, rgba(242,107,58,0.1), rgba(245,148,78,0.04))",
+            border: "1px solid rgba(242,107,58,0.12)",
+          }}>
+            <h2 style={{ fontSize: 22, fontWeight: 800, color: "#fff", fontFamily: "Plus Jakarta Sans", margin: "0 0 6px" }}>Ready to take control?</h2>
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", fontFamily: "Space Grotesk", marginBottom: 20 }}>Join thousands of travelers who never miss an upgrade.</p>
+            <button onClick={() => goTo("login")} style={{
+              padding: "13px 36px", borderRadius: 12, border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "Plus Jakarta Sans",
+              background: "linear-gradient(135deg, #E05A2B, #F26B3A, #F5944E)", color: "#fff", boxShadow: "0 6px 28px rgba(229,90,43,0.35)",
+            }}>Sign Up Free →</button>
+          </div>
+        </div>
+      </Shell>
+    );
+
+    // ==================== ABOUT US ====================
+    if (publicPage === "about") return (
+      <Shell>
+        <PageSection icon="🏢" title="About Us" subtitle="The team behind Continuum and our mission to transform travel loyalty.">
+          <div style={{ display: "grid", gap: 16 }}>
+            <Card icon="🎯" title="Our Mission" desc="We believe every traveler deserves to maximize the value of their loyalty. Continuum eliminates the complexity of tracking elite status across dozens of programs, so you can focus on the journey." />
+            <Card icon="🌍" title="Our Story" desc="Founded by frequent travelers frustrated with spreadsheets and fragmented dashboards, Continuum launched in 2026 with a simple goal: one platform for all your miles, points, and nights." />
+            <Card icon="👥" title="Our Team" desc="Our team brings together expertise from the airline industry, fintech, and travel technology. We're passionate about making premium travel accessible to everyone." />
+            <Card icon="📍" title="Based in Bermuda" desc="Headquartered in beautiful Bermuda, we bring an international perspective to travel loyalty — understanding the needs of global travelers from day one." />
+          </div>
+        </PageSection>
+      </Shell>
+    );
+
+    // ==================== OUR PARTNERS ====================
+    if (publicPage === "partners") return (
+      <Shell>
+        <PageSection icon="🤝" title="Our Partners" subtitle="We work with the world's leading airlines, hotels, and financial institutions.">
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 12, marginBottom: 28 }}>
+            {[...LOYALTY_PROGRAMS.airlines.slice(0, 8), ...LOYALTY_PROGRAMS.hotels.slice(0, 6)].map((p, i) => (
+              <div key={i} style={{
+                background: `linear-gradient(135deg, ${p.color}10, rgba(255,255,255,0.02))`, border: `1px solid ${p.color}20`,
+                borderRadius: 14, padding: "16px 14px", display: "flex", alignItems: "center", gap: 10,
+              }}>
+                <span style={{ fontSize: 20 }}>{p.logo}</span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: "#fff", fontFamily: "Space Grotesk" }}>{p.name}</span>
+              </div>
+            ))}
+          </div>
+          <Card icon="🤝" title="Become a Partner" desc="Interested in integrating with Continuum? We're always looking to expand our network. Reach out to partnerships@continuum.travel to learn more." />
+        </PageSection>
+      </Shell>
+    );
+
+    // ==================== BLOGS ====================
+    if (publicPage === "blogs") return (
+      <Shell>
+        <PageSection icon="📝" title="Blog" subtitle="Expert insights on travel loyalty, elite status strategies, and industry news.">
+          <div style={{ display: "grid", gap: 14 }}>
+            {[
+              { title: "How to Earn Airline Elite Status in 2026", date: "Feb 20, 2026", tag: "Strategy", desc: "A comprehensive guide to earning top-tier status across the major US airlines this year." },
+              { title: "The Best Credit Cards for Hotel Elite Status", date: "Feb 14, 2026", tag: "Credit Cards", desc: "Which credit cards give you automatic hotel elite status? We break down every option." },
+              { title: "Marriott vs Hilton vs Hyatt: 2026 Showdown", date: "Feb 8, 2026", tag: "Hotels", desc: "We compare the three biggest hotel loyalty programs head to head." },
+              { title: "5 Mistakes Costing You Elite Status", date: "Jan 30, 2026", tag: "Tips", desc: "Common errors that frequent travelers make when chasing status — and how to fix them." },
+              { title: "The Rise of Credit Card Travel Lounges", date: "Jan 22, 2026", tag: "Lounges", desc: "Chase, Amex, and Capital One are all building lounge empires. What it means for you." },
+            ].map((post, i) => (
+              <div key={i} style={{
+                background: "linear-gradient(135deg, rgba(242,107,58,0.03), rgba(255,255,255,0.02))",
+                border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: 22, cursor: "pointer",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: "#F7A86A", background: "rgba(242,107,58,0.15)", padding: "2px 8px", borderRadius: 5, fontFamily: "Space Grotesk" }}>{post.tag}</span>
+                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: "Space Grotesk" }}>{post.date}</span>
+                </div>
+                <h3 style={{ fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: "Plus Jakarta Sans", margin: "0 0 4px" }}>{post.title}</h3>
+                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.38)", fontFamily: "Space Grotesk", lineHeight: 1.6, margin: 0 }}>{post.desc}</p>
+              </div>
+            ))}
+          </div>
+        </PageSection>
+      </Shell>
+    );
+
+    // ==================== AIRLINE REVIEWS ====================
+    if (publicPage === "airline-reviews") return (
+      <Shell>
+        <PageSection icon="✈️" title="Airline Reviews" subtitle="In-depth reviews of airline loyalty programs, cabins, and traveler experiences.">
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(270px, 1fr))", gap: 14 }}>
+            {LOYALTY_PROGRAMS.airlines.slice(0, 12).map((a, i) => (
+              <div key={i} style={{
+                background: `linear-gradient(135deg, ${a.color}10, rgba(255,255,255,0.02))`, border: `1px solid ${a.color}20`,
+                borderRadius: 16, padding: 20, position: "relative", overflow: "hidden",
+              }}>
+                <FlightPath color={a.color} style={{ top: 4, right: 4, width: 90, height: 18 }} />
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                  <span style={{ fontSize: 26 }}>{a.logo}</span>
+                  <div>
+                    <h3 style={{ fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: "Plus Jakarta Sans", margin: 0 }}>{a.name}</h3>
+                    <p style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", fontFamily: "Space Grotesk", margin: "2px 0 0" }}>{a.tiers?.length || 0} tiers · {a.unit}</p>
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 3, flexWrap: "wrap", marginBottom: 8 }}>
+                  {(a.tiers || []).map((t, ti) => (
+                    <span key={ti} style={{ fontSize: 9, fontWeight: 600, padding: "1px 6px", borderRadius: 4, background: `${a.color}12`, color: a.color, fontFamily: "Space Grotesk", border: `1px solid ${a.color}22` }}>{t.name}</span>
+                  ))}
+                </div>
+                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.28)", fontFamily: "Space Grotesk", lineHeight: 1.5, margin: 0 }}>Detailed review covering earning rates, redemption value, and elite benefits.</p>
+              </div>
+            ))}
+          </div>
+        </PageSection>
+      </Shell>
+    );
+
+    // ==================== HOTEL REVIEWS ====================
+    if (publicPage === "hotel-reviews") return (
+      <Shell>
+        <PageSection icon="🏨" title="Hotel Reviews" subtitle="Comprehensive reviews of hotel loyalty programs, properties, and elite perks.">
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(270px, 1fr))", gap: 14 }}>
+            {LOYALTY_PROGRAMS.hotels.map((h, i) => (
+              <div key={i} style={{
+                background: `linear-gradient(135deg, ${h.color}10, rgba(255,255,255,0.02))`, border: `1px solid ${h.color}20`,
+                borderRadius: 16, padding: 20,
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                  <span style={{ fontSize: 26 }}>{h.logo}</span>
+                  <div>
+                    <h3 style={{ fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: "Plus Jakarta Sans", margin: 0 }}>{h.name}</h3>
+                    <p style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", fontFamily: "Space Grotesk", margin: "2px 0 0" }}>{h.tiers?.length || 0} tiers · {h.unit}</p>
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 3, flexWrap: "wrap", marginBottom: 8 }}>
+                  {(h.tiers || []).map((t, ti) => (
+                    <span key={ti} style={{ fontSize: 9, fontWeight: 600, padding: "1px 6px", borderRadius: 4, background: `${h.color}12`, color: h.color, fontFamily: "Space Grotesk", border: `1px solid ${h.color}22` }}>{t.name}</span>
+                  ))}
+                </div>
+                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.28)", fontFamily: "Space Grotesk", lineHeight: 1.5, margin: 0 }}>Full review covering point valuations, free nights, and best redemption strategies.</p>
+              </div>
+            ))}
+          </div>
+        </PageSection>
+      </Shell>
+    );
+
+    // ==================== FORUMS ====================
+    if (publicPage === "forums") return (
+      <Shell>
+        <PageSection icon="💬" title="Forums" subtitle="Connect with fellow travelers. Share tips, ask questions, and learn from the community.">
+          <div style={{ display: "grid", gap: 12 }}>
+            {[
+              { title: "General Discussion", icon: "🗣️", threads: 1240, desc: "Chat about anything travel and loyalty related." },
+              { title: "Airline Status Talk", icon: "✈️", threads: 856, desc: "Strategies and experiences earning airline elite status." },
+              { title: "Hotel Loyalty", icon: "🏨", threads: 634, desc: "Discuss hotel programs, suite upgrades, and point valuations." },
+              { title: "Credit Card Strategies", icon: "💳", threads: 1102, desc: "Which cards to get, sign-up bonuses, and churning strategies." },
+              { title: "Trip Reports", icon: "📸", threads: 478, desc: "Share your travel experiences, reviews, and photos." },
+              { title: "Deals & Offers", icon: "🔥", threads: 921, desc: "The latest travel deals, mistake fares, and bonus promotions." },
+            ].map((f, i) => (
+              <div key={i} style={{
+                background: "linear-gradient(135deg, rgba(242,107,58,0.03), rgba(255,255,255,0.02))",
+                border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "16px 20px",
+                display: "flex", alignItems: "center", gap: 14, cursor: "pointer",
+              }}>
+                <span style={{ fontSize: 26, width: 40, textAlign: "center" }}>{f.icon}</span>
+                <div style={{ flex: 1 }}>
+                  <h3 style={{ fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: "Plus Jakarta Sans", margin: 0 }}>{f.title}</h3>
+                  <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: "Space Grotesk", margin: "2px 0 0" }}>{f.desc}</p>
+                </div>
+                <div style={{ textAlign: "right", flexShrink: 0 }}>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: "#F7A86A", fontFamily: "Plus Jakarta Sans" }}>{f.threads.toLocaleString()}</div>
+                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", fontFamily: "Space Grotesk" }}>threads</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: 24, textAlign: "center" }}>
+            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.38)", fontFamily: "Space Grotesk", marginBottom: 12 }}>Sign up to start posting and engage with the community.</p>
+            <button onClick={() => goTo("login")} style={{
+              padding: "11px 28px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Plus Jakarta Sans",
+              background: "linear-gradient(135deg, #E05A2B, #F26B3A)", color: "#fff",
+            }}>Sign Up to Join →</button>
+          </div>
+        </PageSection>
+      </Shell>
+    );
+
+    // ==================== LOGIN PAGE ====================
+    return (
+      <Shell showBg>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "calc(100vh - 200px)", padding: "36px 20px" }}>
+          <div style={{
+            width: "100%", maxWidth: 440, opacity: animateIn ? 1 : 0, transform: animateIn ? "translateY(0)" : "translateY(20px)", transition: "all 0.8s cubic-bezier(0.16,1,0.3,1)",
+          }}>
+            <div style={{ textAlign: "center", marginBottom: 32 }}>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}><LogoMark size={52} /></div>
+              <h1 style={{ fontSize: 26, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: -0.5, fontFamily: "Plus Jakarta Sans" }}>Welcome Back</h1>
+              <p style={{ color: "rgba(247,168,106,0.6)", fontSize: 13, marginTop: 6, fontFamily: "Space Grotesk" }}>Sign in to your Continuum account</p>
+            </div>
+            <div style={{
+              background: "linear-gradient(135deg, rgba(242,107,58,0.06), rgba(255,255,255,0.03), rgba(242,107,58,0.04))",
+              border: "1px solid rgba(247,168,106,0.1)", borderRadius: 20, padding: 30,
+              backdropFilter: "blur(40px)", boxShadow: "0 25px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(247,168,106,0.08)",
+              position: "relative", overflow: "hidden",
+            }}>
+              <FlightPath style={{ top: 8, right: 8, width: 130, height: 28 }} />
+              <div style={{ display: "flex", marginBottom: 24, background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: 3 }}>
+                {["Sign In", "Register"].map((tab, i) => (
+                  <button key={tab} onClick={() => setIsRegistering(i === 1)} style={{
+                    flex: 1, padding: "9px 0", border: "none", borderRadius: 10, cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: "Space Grotesk",
+                    background: (i === 0 ? !isRegistering : isRegistering) ? "rgba(242,107,58,0.2)" : "transparent",
+                    color: (i === 0 ? !isRegistering : isRegistering) ? "#F7A86A" : "rgba(255,255,255,0.35)", transition: "all 0.3s",
+                  }}>{tab}</button>
+                ))}
+              </div>
+
+              {!isRegistering ? (
+                <div>
+                  <label style={{ display: "block", marginBottom: 14 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Space Grotesk" }}>Email</span>
+                    <input type="email" value={loginForm.email} onChange={e => setLoginForm(p => ({ ...p, email: e.target.value }))} placeholder="alex@example.com"
+                      style={{ display: "block", width: "100%", marginTop: 6, padding: "11px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 14, fontFamily: "Space Grotesk", outline: "none", boxSizing: "border-box" }} />
+                  </label>
+                  <label style={{ display: "block", marginBottom: 22 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Space Grotesk" }}>Password</span>
+                    <input type="password" value={loginForm.password} onChange={e => setLoginForm(p => ({ ...p, password: e.target.value }))} placeholder="••••••••"
+                      style={{ display: "block", width: "100%", marginTop: 6, padding: "11px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 14, fontFamily: "Space Grotesk", outline: "none", boxSizing: "border-box" }} />
+                  </label>
+                  <button onClick={handleLogin} style={{
+                    width: "100%", padding: "12px 0", border: "none", borderRadius: 12, cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "Plus Jakarta Sans",
+                    background: "linear-gradient(135deg, #E05A2B, #F26B3A, #F5944E)", color: "#fff", boxShadow: "0 4px 20px rgba(229,90,43,0.3)",
+                  }}>Sign In</button>
+                  <button onClick={() => { setLoginForm({ email: "alex@example.com", password: "demo" }); setTimeout(handleLogin, 100); }} style={{
+                    width: "100%", padding: "10px 0", border: "1px solid rgba(242,107,58,0.2)", borderRadius: 12, cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: "Space Grotesk",
+                    background: "transparent", color: "#F7A86A", marginTop: 10,
+                  }}>Try Demo Account →</button>
+                </div>
+              ) : (
+                <div>
+                  <label style={{ display: "block", marginBottom: 12 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Space Grotesk" }}>Full Name</span>
+                    <input value={registerForm.name} onChange={e => setRegisterForm(p => ({ ...p, name: e.target.value }))} placeholder="Your name"
+                      style={{ display: "block", width: "100%", marginTop: 6, padding: "11px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 14, fontFamily: "Space Grotesk", outline: "none", boxSizing: "border-box" }} />
+                  </label>
+                  <label style={{ display: "block", marginBottom: 12 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Space Grotesk" }}>Email</span>
+                    <input type="email" value={registerForm.email} onChange={e => setRegisterForm(p => ({ ...p, email: e.target.value }))} placeholder="you@email.com"
+                      style={{ display: "block", width: "100%", marginTop: 6, padding: "11px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 14, fontFamily: "Space Grotesk", outline: "none", boxSizing: "border-box" }} />
+                  </label>
+                  <label style={{ display: "block", marginBottom: 22 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Space Grotesk" }}>Password</span>
+                    <input type="password" value={registerForm.password} onChange={e => setRegisterForm(p => ({ ...p, password: e.target.value }))} placeholder="••••••••"
+                      style={{ display: "block", width: "100%", marginTop: 6, padding: "11px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#fff", fontSize: 14, fontFamily: "Space Grotesk", outline: "none", boxSizing: "border-box" }} />
+                  </label>
+                  <button onClick={handleRegister} style={{
+                    width: "100%", padding: "12px 0", border: "none", borderRadius: 12, cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "Plus Jakarta Sans",
+                    background: "linear-gradient(135deg, #E05A2B, #F26B3A, #F5944E)", color: "#fff", boxShadow: "0 4px 20px rgba(229,90,43,0.3)",
+                  }}>Create Account</button>
+                </div>
+              )}
+
+              <div style={{ textAlign: "center", marginTop: 18, padding: "12px 0 0", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                <p style={{ color: "rgba(255,255,255,0.25)", fontSize: 11, fontFamily: "Space Grotesk", margin: 0 }}>By signing in, you agree to our Terms of Service</p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </Shell>
     );
   }
 
