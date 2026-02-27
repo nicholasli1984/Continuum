@@ -954,14 +954,12 @@ Start by introducing yourself briefly in-character and giving an engaging overvi
       </Shell>
     );
 
-    // ==================== AI CONCIERGE MODAL ====================
-    const ConciergeModal = () => {
-      if (!conciergeProgram) return null;
+    // ==================== AI CONCIERGE MODAL (inline JSX) ====================
+    const conciergeModalJSX = conciergeProgram ? (() => {
       const p = conciergeProgram;
       const isHotel = p.type === "hotel";
       const avatarEmoji = isHotel ? "🛎️" : "👨‍✈️";
       const avatarLabel = isHotel ? "Concierge" : "Crew Member";
-      const messagesEndRef = useCallback(node => { if (node) node.scrollIntoView({ behavior: "smooth" }); }, [conciergeMessages.length]);
       return (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000, padding: 16 }}
           onClick={() => { setConciergeProgram(null); setConciergeMessages([]); }}>
@@ -1035,7 +1033,7 @@ Start by introducing yourself briefly in-character and giving an engaging overvi
                   </div>
                 </div>
               )}
-              <div ref={messagesEndRef} />
+              <div ref={node => { if (node) node.scrollIntoView({ behavior: "smooth" }); }} />
             </div>
 
             {/* Input */}
@@ -1048,6 +1046,7 @@ Start by introducing yourself briefly in-character and giving an engaging overvi
                 onChange={e => setConciergeInput(e.target.value)}
                 onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendConciergeMessage(); } }}
                 placeholder={`Ask about ${p.name}...`}
+                autoFocus
                 style={{
                   flex: 1, padding: "10px 14px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
                   borderRadius: 12, color: "#fff", fontSize: 13, fontFamily: "Space Grotesk", outline: "none",
@@ -1063,7 +1062,7 @@ Start by introducing yourself briefly in-character and giving an engaging overvi
           </div>
         </div>
       );
-    };
+    })() : null;
 
     // ==================== AIRLINE REVIEWS ====================
     if (publicPage === "airline-reviews") return (
@@ -1097,7 +1096,7 @@ Start by introducing yourself briefly in-character and giving an engaging overvi
             ))}
           </div>
         </PageSection>
-        <ConciergeModal />
+        {conciergeModalJSX}
       </Shell>
     );
 
@@ -1131,7 +1130,7 @@ Start by introducing yourself briefly in-character and giving an engaging overvi
             ))}
           </div>
         </PageSection>
-        <ConciergeModal />
+        {conciergeModalJSX}
       </Shell>
     );
 
