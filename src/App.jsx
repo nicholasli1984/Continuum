@@ -143,86 +143,7 @@ const FlightPath = ({ color = "#F7A86A", style = {} }) => (
 );
 
 // Per-page hero banner with travel photography
-const PAGE_HEROES = {
-  dashboard: {
-    img: "https://images.unsplash.com/photo-1569154941061-e231b4725ef1?w=1400&q=80&auto=format&fit=crop",
-    alt: "Airplane wing above clouds at golden hour",
-    accent: "#F5944E",
-  },
-  programs: {
-    img: "https://images.unsplash.com/photo-1556388158-158ea5ccacbd?w=1400&q=80&auto=format&fit=crop",
-    alt: "Airport departure board and terminal",
-    accent: "#F26B3A",
-  },
-  trips: {
-    img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1400&q=80&auto=format&fit=crop",
-    alt: "Tropical beach with turquoise water",
-    accent: "#34d399",
-  },
-  expenses: {
-    img: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1400&q=80&auto=format&fit=crop",
-    alt: "Luxury resort pool at dusk",
-    accent: "#f59e0b",
-  },
-  optimizer: {
-    img: "https://images.unsplash.com/photo-1540339832862-474599807836?w=1400&q=80&auto=format&fit=crop",
-    alt: "Business class airplane cabin",
-    accent: "#8b5cf6",
-  },
-  reports: {
-    img: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1400&q=80&auto=format&fit=crop",
-    alt: "Lake surrounded by mountains from above",
-    accent: "#F26B3A",
-  },
-  premium: {
-    img: "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=1400&q=80&auto=format&fit=crop",
-    alt: "Infinity pool overlooking ocean at sunset",
-    accent: "#f59e0b",
-  },
-};
-
-const PageHeroBanner = ({ view, title, subtitle }) => {
-  const hero = PAGE_HEROES[view];
-  if (!hero) return null;
-  return (
-    <div style={{
-      position: "relative", width: "100%", height: 180, borderRadius: 20, overflow: "hidden", marginBottom: 24,
-      boxShadow: `0 8px 40px rgba(0,0,0,0.4), 0 0 80px ${hero.accent}08`,
-    }}>
-      <img src={hero.img} alt={hero.alt} loading="eager" style={{
-        position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 40%",
-        animation: "hero-fade-in 1.2s ease-out forwards",
-      }} />
-      {/* Dark gradient overlay */}
-      <div style={{
-        position: "absolute", inset: 0,
-        background: `linear-gradient(135deg, rgba(4,11,24,0.82) 0%, rgba(4,11,24,0.45) 40%, rgba(4,11,24,0.25) 60%, ${hero.accent}08 100%)`,
-      }} />
-      {/* Bottom fade to page bg */}
-      <div style={{
-        position: "absolute", bottom: 0, left: 0, right: 0, height: 80,
-        background: "linear-gradient(to top, rgba(4,11,24,0.95), transparent)",
-      }} />
-      {/* Subtle scan lines texture */}
-      <div style={{
-        position: "absolute", inset: 0, opacity: 0.03,
-        backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.1) 2px, rgba(255,255,255,0.1) 3px)",
-      }} />
-      {/* Accent glow line at bottom */}
-      <div style={{
-        position: "absolute", bottom: 0, left: "10%", right: "10%", height: 1,
-        background: `linear-gradient(90deg, transparent, ${hero.accent}30, transparent)`,
-      }} />
-      {/* Title overlay */}
-      {title && (
-        <div style={{ position: "absolute", bottom: 20, left: 28, right: 28, zIndex: 2 }}>
-          <h1 style={{ fontSize: 24, fontWeight: 800, color: "#fff", margin: 0, fontFamily: "Plus Jakarta Sans", textShadow: "0 2px 20px rgba(0,0,0,0.5)" }}>{title}</h1>
-          {subtitle && <p style={{ fontSize: 12, color: `${hero.accent}cc`, fontFamily: "Space Grotesk", marginTop: 4, textShadow: "0 1px 10px rgba(0,0,0,0.5)" }}>{subtitle}</p>}
-        </div>
-      )}
-    </div>
-  );
-};
+// Hero banners removed — clean cosmic dashboard
 
 // ============================================================
 // DATA & CONSTANTS
@@ -2476,19 +2397,22 @@ Start by introducing yourself briefly in-character with personality, and give an
           </div>
         </div>
 
-        {/* Hero Banner */}
-        <PageHeroBanner view={activeView}
-          title={activeView === "dashboard" ? `Welcome back, ${user?.name?.split(" ")[0]}` : navItems.find(n => n.id === activeView)?.label}
-          subtitle={
-            activeView === "dashboard" ? `${new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })} · ${Object.keys(linkedAccounts).length} programs tracked` :
+        {/* Page Header — clean text, no hero image */}
+        <div style={{ marginBottom: 20, padding: "4px 0" }}>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: "#fff", margin: 0, fontFamily: "Plus Jakarta Sans" }}>
+            {activeView === "dashboard" ? `Welcome back, ${user?.name?.split(" ")[0]}` : navItems.find(n => n.id === activeView)?.label}
+          </h1>
+          <p style={{ fontSize: 12, color: "rgba(247,168,106,0.6)", fontFamily: "Space Grotesk", marginTop: 4 }}>
+            {activeView === "dashboard" ? `${new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })} · ${Object.keys(linkedAccounts).length} programs tracked` :
             activeView === "programs" ? "Link and manage all your loyalty accounts" :
             activeView === "trips" ? "Plan, track, and optimize your upcoming travel" :
             activeView === "expenses" ? "Track spending and receipts across every trip" :
             activeView === "optimizer" ? "AI-powered recommendations to maximize your status" :
             activeView === "reports" ? "Insights and analytics across all programs" :
-            activeView === "premium" ? "Unlock the full power of Continuum" : ""
-          }
-        />
+            activeView === "premium" ? "Unlock the full power of Continuum" : ""}
+          </p>
+          <div style={{ width: 50, height: 2, borderRadius: 1, background: "linear-gradient(90deg, #E05A2B, #F5944E)", marginTop: 10 }} />
+        </div>
 
         {/* View Content */}
         {viewRenderers[activeView]?.()}
