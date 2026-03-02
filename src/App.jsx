@@ -68,7 +68,7 @@ const WorldMapPaintReveal = () => {
 
   React.useEffect(() => {
     const img = new Image();
-    img.src = "/worldmap4.webp";
+    img.src = "/hero-hk.jpg";
     img.onload = () => { setLoaded(true); initCover(); };
     const initCover = () => {
       const cover = coverRef.current;
@@ -167,8 +167,8 @@ const WorldMapPaintReveal = () => {
       {/* World map image — parallax shift on mouse move */}
       {loaded && (
         <div style={{
-          position: "absolute", inset: -30, backgroundImage: "url(/worldmap4.webp)",
-          backgroundSize: "cover", backgroundPosition: "center",
+          position: "absolute", inset: -60, backgroundImage: "url(/hero-hk.jpg)",
+          backgroundSize: "cover", backgroundPosition: "center 40%",
           transform: `translate(${imgOffset.x}px, ${imgOffset.y}px)`,
           transition: "transform 0.3s cubic-bezier(0.175,0.885,0.32,1)",
         }} />
