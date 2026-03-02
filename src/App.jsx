@@ -21,8 +21,8 @@ const LogoMark = ({ size = 40 }) => (
 
 // hle.io-inspired atmosphere — ultra clean dark, minimal structure
 const TravelAtmosphere = () => (
-  <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0, overflow: "hidden", background: "#ffffff" }}>
-    <div style={{ position: "absolute", top: "50%", left: 0, right: 0, height: 1, background: "rgba(0,0,0,0.02)" }} />
+  <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0, overflow: "hidden", background: "#08090a" }}>
+    <div style={{ position: "absolute", top: "50%", left: 0, right: 0, height: 1, background: "rgba(255,255,255,0.03)" }} />
   </div>
 );
 // Decorative speed line for cards
@@ -44,10 +44,10 @@ const LiveClock = () => {
   const pad = (n) => String(n).padStart(2, "0");
   return (
     <div style={{ display: "flex", alignItems: "baseline", gap: 2, fontFamily: "Space Mono, monospace" }}>
-      <span style={{ fontSize: "clamp(1.2rem, 3vw, 2rem)", color: "rgba(0,0,0,0.3)", letterSpacing: -1, fontWeight: 400 }}>
+      <span style={{ fontSize: "clamp(1.2rem, 3vw, 2rem)", color: "#8a8f98", letterSpacing: -1, fontWeight: 400 }}>
         {pad(h)}:{pad(m)}
       </span>
-      <span style={{ fontSize: "clamp(0.6rem, 1vw, 0.8rem)", color: "rgba(0,0,0,0.15)", marginLeft: 4 }}>{ampm}</span>
+      <span style={{ fontSize: "clamp(0.6rem, 1vw, 0.8rem)", color: "#62666d", marginLeft: 4 }}>{ampm}</span>
     </div>
   );
 };
@@ -57,16 +57,19 @@ const LiveClock = () => {
 // Dark charcoal cover with medium paintbrush eraser
 const WorldMapPaintReveal = () => {
   const coverRef = React.useRef(null);
-  const imgRef = React.useRef(null);
+  const containerRef = React.useRef(null);
   const painting = React.useRef(false);
   const lastPos = React.useRef(null);
   const [loaded, setLoaded] = React.useState(false);
   const [revealPct, setRevealPct] = React.useState(0);
+  const [imgOffset, setImgOffset] = React.useState({ x: 0, y: 0 });
+  const [cursorPos, setCursorPos] = React.useState({ x: -100, y: -100 });
+  const [showCursor, setShowCursor] = React.useState(false);
 
   React.useEffect(() => {
     const img = new Image();
-    img.src = "/worldmap2.webp";
-    img.onload = () => { imgRef.current = img; setLoaded(true); initCover(); };
+    img.src = "/worldmap3.webp";
+    img.onload = () => { setLoaded(true); initCover(); };
     const initCover = () => {
       const cover = coverRef.current;
       if (!cover) return;
@@ -74,33 +77,22 @@ const WorldMapPaintReveal = () => {
       cover.width = r.width;
       cover.height = r.height;
       const ctx = cover.getContext("2d");
-      // Dark charcoal fill
       ctx.fillStyle = "#1a1a1a";
       ctx.fillRect(0, 0, cover.width, cover.height);
-      // Subtle noise texture on charcoal
-      for (let i = 0; i < 12000; i++) {
-        const a = Math.random() * 0.04;
-        ctx.fillStyle = `rgba(255,255,255,${a})`;
+      for (let i = 0; i < 15000; i++) {
+        ctx.fillStyle = `rgba(255,255,255,${Math.random() * 0.035})`;
         ctx.fillRect(Math.random() * cover.width, Math.random() * cover.height, 1, 1);
       }
-      // Centered text hint
       ctx.font = "500 13px 'Space Mono', monospace";
       ctx.textAlign = "center";
-      ctx.fillStyle = "rgba(255,255,255,0.2)";
+      ctx.fillStyle = "rgba(255,255,255,0.18)";
       ctx.fillText("DRAG TO PAINT & REVEAL THE WORLD", cover.width / 2, cover.height / 2 - 8);
       ctx.font = "500 11px 'Space Mono', monospace";
-      ctx.fillStyle = "rgba(255,255,255,0.1)";
-      ctx.fillText("↓  ↓  ↓", cover.width / 2, cover.height / 2 + 14);
-      // Crosshair at center
-      const cx = cover.width / 2, cy = cover.height / 2 + 40;
-      ctx.strokeStyle = "rgba(14,165,160,0.2)";
-      ctx.lineWidth = 0.8;
-      ctx.beginPath(); ctx.moveTo(cx - 12, cy); ctx.lineTo(cx + 12, cy); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(cx, cy - 12); ctx.lineTo(cx, cy + 12); ctx.stroke();
+      ctx.fillStyle = "rgba(255,255,255,0.08)";
+      ctx.fillText("↓  ↓  ↓", cover.width / 2, cover.height / 2 + 16);
     };
-    const onResize = () => { initCover(); };
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+    window.addEventListener("resize", initCover);
+    return () => window.removeEventListener("resize", initCover);
   }, []);
 
   const erase = (x, y) => {
@@ -108,26 +100,22 @@ const WorldMapPaintReveal = () => {
     if (!cover) return;
     const ctx = cover.getContext("2d");
     ctx.globalCompositeOperation = "destination-out";
-    // Medium paintbrush — balanced feel
     const baseR = 48;
-    const r = baseR + Math.random() * 12;
-    // Main brush stroke
+    const r = baseR + Math.random() * 14;
     const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
     grad.addColorStop(0, "rgba(0,0,0,1)");
-    grad.addColorStop(0.4, "rgba(0,0,0,0.9)");
+    grad.addColorStop(0.35, "rgba(0,0,0,0.9)");
     grad.addColorStop(0.7, "rgba(0,0,0,0.4)");
     grad.addColorStop(1, "rgba(0,0,0,0)");
     ctx.fillStyle = grad;
     ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
-    // Add paint splatter feel — small random dots nearby
     for (let i = 0; i < 5; i++) {
-      const sx = x + (Math.random() - 0.5) * r * 1.5;
-      const sy = y + (Math.random() - 0.5) * r * 1.5;
+      const sx = x + (Math.random() - 0.5) * r * 1.6;
+      const sy = y + (Math.random() - 0.5) * r * 1.6;
       const sr = 4 + Math.random() * 8;
       ctx.fillStyle = "rgba(0,0,0,0.6)";
       ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.fill();
     }
-    // Interpolate for smooth strokes
     if (lastPos.current) {
       const lx = lastPos.current.x, ly = lastPos.current.y;
       const dist = Math.sqrt((x - lx) ** 2 + (y - ly) ** 2);
@@ -135,25 +123,18 @@ const WorldMapPaintReveal = () => {
       for (let i = 0; i < steps; i++) {
         const t = i / steps;
         const mx = lx + (x - lx) * t, my = ly + (y - ly) * t;
-        const mr = baseR - 4 + Math.random() * 8;
+        const mr = baseR - 6 + Math.random() * 10;
         const mg = ctx.createRadialGradient(mx, my, 0, mx, my, mr);
-        mg.addColorStop(0, "rgba(0,0,0,1)");
-        mg.addColorStop(0.6, "rgba(0,0,0,0.5)");
-        mg.addColorStop(1, "rgba(0,0,0,0)");
+        mg.addColorStop(0, "rgba(0,0,0,1)"); mg.addColorStop(0.6, "rgba(0,0,0,0.5)"); mg.addColorStop(1, "rgba(0,0,0,0)");
         ctx.fillStyle = mg;
         ctx.beginPath(); ctx.arc(mx, my, mr, 0, Math.PI * 2); ctx.fill();
       }
     }
     lastPos.current = { x, y };
     ctx.globalCompositeOperation = "source-over";
-    // Calculate approximate reveal percentage
     const data = ctx.getImageData(0, 0, cover.width, cover.height).data;
-    let clear = 0;
-    const sample = 4000;
-    for (let i = 0; i < sample; i++) {
-      const idx = Math.floor(Math.random() * (data.length / 4)) * 4 + 3;
-      if (data[idx] < 10) clear++;
-    }
+    let clear = 0; const sample = 4000;
+    for (let i = 0; i < sample; i++) { if (data[Math.floor(Math.random() * (data.length / 4)) * 4 + 3] < 10) clear++; }
     setRevealPct(Math.round((clear / sample) * 100));
   };
 
@@ -164,29 +145,64 @@ const WorldMapPaintReveal = () => {
     return { x: clientX - rect.left, y: clientY - rect.top };
   };
 
+  // Parallax + cursor tracking on any mouse move (not just painting)
+  const handleMouseMove = (e) => {
+    const container = containerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) / rect.width - 0.5;
+    const my = (e.clientY - rect.top) / rect.height - 0.5;
+    setImgOffset({ x: mx * -20, y: my * -15 });
+    setCursorPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+    if (painting.current) {
+      e.preventDefault();
+      const p = getPos(e);
+      erase(p.x, p.y);
+    }
+  };
+
   const onDown = (e) => { painting.current = true; const p = getPos(e); erase(p.x, p.y); };
-  const onMove = (e) => { if (!painting.current) return; e.preventDefault(); const p = getPos(e); erase(p.x, p.y); };
   const onUp = () => { painting.current = false; lastPos.current = null; };
+  const onTouchMove = (e) => { if (!painting.current) return; e.preventDefault(); const p = getPos(e); erase(p.x, p.y); };
 
   return (
-    <div style={{ position: "relative", width: "100%", height: "100%", cursor: "crosshair", background: "#1a1a1a" }}>
-      {/* World map image — the revealed layer */}
+    <div ref={containerRef} style={{ position: "relative", width: "100%", height: "100%", cursor: "none", background: "#1a1a1a", overflow: "hidden" }}
+      onMouseMove={handleMouseMove} onMouseDown={onDown} onMouseUp={onUp} onMouseLeave={() => { onUp(); setShowCursor(false); }}
+      onMouseEnter={() => setShowCursor(true)}
+      onTouchStart={onDown} onTouchMove={onTouchMove} onTouchEnd={onUp}
+    >
+      {/* World map image — parallax shift on mouse move */}
       {loaded && (
         <div style={{
-          position: "absolute", inset: 0, backgroundImage: "url(/worldmap2.webp)",
+          position: "absolute", inset: -30, backgroundImage: "url(/worldmap3.webp)",
           backgroundSize: "cover", backgroundPosition: "center",
+          transform: `translate(${imgOffset.x}px, ${imgOffset.y}px)`,
+          transition: "transform 0.3s cubic-bezier(0.175,0.885,0.32,1)",
         }} />
       )}
-      {/* Dark charcoal cover — gets erased by painting */}
-      <canvas ref={coverRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
-        onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onUp}
-        onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp}
-      />
-      {/* Reveal percentage counter */}
+      {/* Dark charcoal cover canvas */}
+      <canvas ref={coverRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} />
+      {/* Concorde airplane cursor */}
+      {showCursor && (
+        <div style={{
+          position: "absolute", left: cursorPos.x, top: cursorPos.y,
+          transform: "translate(-50%, -50%) rotate(-30deg)",
+          pointerEvents: "none", zIndex: 20, transition: "left 0.05s linear, top 0.05s linear",
+        }}>
+          <svg width="32" height="32" viewBox="0 0 64 64" fill="none">
+            {/* Concorde silhouette — sleek delta-wing shape */}
+            <path d="M32 4 L36 18 L58 28 L58 32 L36 26 L34 48 L42 54 L42 58 L32 52 L22 58 L22 54 L30 48 L28 26 L6 32 L6 28 L28 18 Z" fill="white" opacity="0.9" />
+            <path d="M32 4 L36 18 L58 28 L58 32 L36 26 L34 48 L42 54 L42 58 L32 52 L22 58 L22 54 L30 48 L28 26 L6 32 L6 28 L28 18 Z" stroke="rgba(0,0,0,0.3)" strokeWidth="0.5" fill="none" />
+            {/* Engine glow */}
+            <circle cx="32" cy="52" r="3" fill="#0EA5A0" opacity="0.6" />
+          </svg>
+        </div>
+      )}
+      {/* Reveal percentage */}
       <div style={{
         position: "absolute", bottom: 12, right: 16, zIndex: 10, pointerEvents: "none",
-        fontSize: 10, fontFamily: "Space Mono, monospace", color: revealPct > 30 ? "rgba(0,0,0,0.3)" : "rgba(255,255,255,0.3)",
-        letterSpacing: 1,
+        fontSize: 10, fontFamily: "Space Mono, monospace",
+        color: revealPct > 30 ? "rgba(0,0,0,0.3)" : "rgba(255,255,255,0.3)", letterSpacing: 1,
       }}>
         {revealPct}% revealed
       </div>
@@ -484,8 +500,8 @@ const ProgressRing = ({ progress, size = 80, stroke = 6, color = "#0EA5A0", labe
           strokeDasharray={circumference} strokeDashoffset={offset} style={{ transition: "stroke-dashoffset 1s ease" }} />
       </svg>
       <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-        <span style={{ fontSize: size * 0.2, fontWeight: 700, color: "#000" }}>{label}</span>
-        {sublabel && <span style={{ fontSize: size * 0.12, color: "rgba(0,0,0,0.4)", marginTop: 1 }}>{sublabel}</span>}
+        <span style={{ fontSize: size * 0.2, fontWeight: 700, color: "#f7f8f8" }}>{label}</span>
+        {sublabel && <span style={{ fontSize: size * 0.12, color: "#8a8f98", marginTop: 1 }}>{sublabel}</span>}
       </div>
     </div>
   );
@@ -493,20 +509,20 @@ const ProgressRing = ({ progress, size = 80, stroke = 6, color = "#0EA5A0", labe
 
 const Badge = ({ children, color = "#0EA5A0", small }) => (
   <span style={{
-    display: "inline-block", padding: small ? "1px 6px" : "2px 10px", borderRadius: 3, fontSize: small ? 10 : 11,
+    display: "inline-block", padding: small ? "1px 6px" : "2px 10px", borderRadius: 8, fontSize: small ? 10 : 11,
     fontWeight: 600, background: `${color}22`, color: color, border: `1px solid ${color}33`, letterSpacing: 0.3,
   }}>{children}</span>
 );
 
 const MiniBar = ({ value, max, color, height = 6 }) => (
-  <div style={{ width: "100%", height, borderRadius: height, background: "rgba(0,0,0,0.03)", overflow: "hidden" }}>
+  <div style={{ width: "100%", height, borderRadius: height, background: "#23252a", overflow: "hidden" }}>
     <div style={{ width: `${Math.min((value / max) * 100, 100)}%`, height: "100%", borderRadius: height, background: `linear-gradient(90deg, ${color}, ${color}99)`, transition: "width 1s ease" }} />
   </div>
 );
 
 const IconBtn = ({ icon, label, active, onClick, badge }) => (
   <button onClick={onClick} title={label} style={{
-    position: "relative", width: 44, height: 44, borderRadius: 3, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18,
+    position: "relative", width: 44, height: 44, borderRadius: 8, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18,
     background: active ? "rgba(14,165,160,0.15)" : "transparent", color: active ? "#0EA5A0" : "rgba(0,0,0,0.35)", transition: "all 0.2s",
   }}>
     {icon}
@@ -822,32 +838,32 @@ Start by introducing yourself briefly in-character with personality, and give an
       { id: "pricing", label: "Pricing" },
     ];
     const goTo = (page) => { setPublicPage(page); window.scrollTo(0, 0); };
-    const fontLink = <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />;
+    const fontLink = <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />;
 
     // --- Top nav: Logo + Features + Pricing + Login ---
     const TopNav = () => (
       <nav style={{
         position: "sticky", top: 0, zIndex: 100, padding: "0 32px", height: 56,
         background: "rgba(255,255,255,0.97)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
-        borderBottom: "1px solid rgba(0,0,0,0.04)",
+        borderBottom: "1px solid #23252a",
         display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
         <button onClick={() => { goTo("landing"); }} style={{ display: "flex", alignItems: "center", gap: 10, background: "none", border: "none", cursor: "pointer", flexShrink: 0 }}>
           <LogoMark size={26} />
-          <span style={{ fontSize: 16, fontWeight: 800, color: "#000", fontFamily: "Instrument Serif", letterSpacing: -0.5 }}>CONTINUUM</span>
+          <span style={{ fontSize: 16, fontWeight: 800, color: "#f7f8f8", fontFamily: "Instrument Serif, Georgia, serif", letterSpacing: -0.5 }}>CONTINUUM</span>
         </button>
         <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
           {navLinks.map(n => (
             <button key={n.id} onClick={() => { if (publicPage === "landing") scrollTo(n.id); else { goTo("landing"); setTimeout(() => scrollTo(n.id), 100); }}} style={{
-              padding: "18px 14px", border: "none", cursor: "pointer", background: "transparent",
+              padding: "18px 14px", border: "none", cursor: "pointer", background: "rgba(255,255,255,0.03)",
               fontSize: 10.5, fontWeight: 600, fontFamily: "Space Mono, monospace", letterSpacing: 1.5, textTransform: "uppercase",
-              color: "rgba(0,0,0,0.3)", transition: "all 0.25s cubic-bezier(0.175,0.885,0.32,1)",
+              color: "#8a8f98", transition: "all 0.25s cubic-bezier(0.175,0.885,0.32,1)",
             }}>{n.label}</button>
           ))}
           <button onClick={() => goTo("login")} style={{
-            padding: "8px 22px", border: "2px solid #000", cursor: "pointer", marginLeft: 16,
+            padding: "8px 22px", border: "1px solid #34343a", cursor: "pointer", marginLeft: 16,
             fontSize: 10.5, fontWeight: 700, fontFamily: "Space Mono, monospace", letterSpacing: 1.5, textTransform: "uppercase",
-            background: "transparent", color: "#000", transition: "all 0.25s cubic-bezier(0.175,0.885,0.32,1)",
+            background: "#141516", color: "#f7f8f8", border: "1px solid #23252a", transition: "all 0.25s cubic-bezier(0.175,0.885,0.32,1)",
           }}>Log In</button>
         </div>
       </nav>
@@ -855,49 +871,49 @@ Start by introducing yourself briefly in-character with personality, and give an
 
     // --- Footer ---
     const Footer = () => (
-      <footer style={{ position: "relative", zIndex: 1, padding: "64px 32px 32px", borderTop: "1px solid rgba(0,0,0,0.06)", background: "#fff", marginTop: 0 }}>
+      <footer style={{ position: "relative", zIndex: 1, padding: "64px 32px 32px", borderTop: "1px solid #23252a", background: "#08090a", marginTop: 0 }}>
         <div style={{ maxWidth: 1060, margin: "0 auto", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 48 }}>
           <div style={{ maxWidth: 320 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
               <LogoMark size={22} />
-              <span style={{ fontSize: 14, fontWeight: 800, fontFamily: "Instrument Serif", color: "#000", letterSpacing: 1 }}>CONTINUUM</span>
+              <span style={{ fontSize: 14, fontWeight: 800, fontFamily: "Inter, sans-serif", color: "#f7f8f8", letterSpacing: 1 }}>CONTINUUM</span>
             </div>
-            <p style={{ fontSize: 13, color: "rgba(0,0,0,0.35)", fontFamily: "DM Sans", lineHeight: 1.7, fontWeight: 400 }}>
+            <p style={{ fontSize: 13, color: "#8a8f98", fontFamily: "DM Sans, sans-serif", lineHeight: 1.7, fontWeight: 400 }}>
               Built by frequent flyers who got tired of spreadsheets. We track your status so you can focus on the journey.
             </p>
-            <p style={{ fontSize: 11, color: "rgba(0,0,0,0.2)", fontFamily: "Space Mono, monospace", marginTop: 12 }}>Hamilton, Bermuda</p>
+            <p style={{ fontSize: 11, color: "#62666d", fontFamily: "Space Mono, monospace", marginTop: 12 }}>Hamilton, Bermuda</p>
           </div>
           <div style={{ display: "flex", gap: 56, flexWrap: "wrap" }}>
             <div>
               <h4 style={{ fontSize: 9, fontWeight: 700, color: "#0EA5A0", textTransform: "uppercase", letterSpacing: 2, fontFamily: "Space Mono, monospace", marginBottom: 14 }}>Product</h4>
               {["Features", "Pricing", "How It Works"].map(l => (
-                <button key={l} onClick={() => scrollTo(l.toLowerCase().replace(/ /g, "-"))} style={{ display: "block", background: "none", border: "none", color: "rgba(0,0,0,0.25)", fontSize: 12, fontFamily: "DM Sans", cursor: "pointer", padding: "4px 0", fontWeight: 400 }}>{l}</button>
+                <button key={l} onClick={() => scrollTo(l.toLowerCase().replace(/ /g, "-"))} style={{ display: "block", background: "none", border: "none", color: "#62666d", fontSize: 12, fontFamily: "DM Sans, sans-serif", cursor: "pointer", padding: "4px 0", fontWeight: 400 }}>{l}</button>
               ))}
             </div>
             <div>
               <h4 style={{ fontSize: 9, fontWeight: 700, color: "#0EA5A0", textTransform: "uppercase", letterSpacing: 2, fontFamily: "Space Mono, monospace", marginBottom: 14 }}>Company</h4>
               {["About", "Contact", "Privacy"].map(l => (
-                <button key={l} onClick={() => scrollTo("about")} style={{ display: "block", background: "none", border: "none", color: "rgba(0,0,0,0.25)", fontSize: 12, fontFamily: "DM Sans", cursor: "pointer", padding: "4px 0", fontWeight: 400 }}>{l}</button>
+                <button key={l} onClick={() => scrollTo("about")} style={{ display: "block", background: "none", border: "none", color: "#62666d", fontSize: 12, fontFamily: "DM Sans, sans-serif", cursor: "pointer", padding: "4px 0", fontWeight: 400 }}>{l}</button>
               ))}
             </div>
             <div>
               <h4 style={{ fontSize: 9, fontWeight: 700, color: "#0EA5A0", textTransform: "uppercase", letterSpacing: 2, fontFamily: "Space Mono, monospace", marginBottom: 14 }}>Connect</h4>
               {["Twitter / X", "LinkedIn", "Email Us"].map(l => (
-                <span key={l} style={{ display: "block", color: "rgba(0,0,0,0.25)", fontSize: 12, fontFamily: "DM Sans", padding: "4px 0", fontWeight: 400, cursor: "pointer" }}>{l}</span>
+                <span key={l} style={{ display: "block", color: "#62666d", fontSize: 12, fontFamily: "Inter, sans-serif", padding: "4px 0", fontWeight: 400, cursor: "pointer" }}>{l}</span>
               ))}
             </div>
           </div>
         </div>
-        <div style={{ maxWidth: 1060, margin: "40px auto 0", paddingTop: 20, borderTop: "1px solid rgba(0,0,0,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <p style={{ fontSize: 10, color: "rgba(0,0,0,0.15)", fontFamily: "Space Mono, monospace", letterSpacing: 1 }}>© 2026 CONTINUUM. ALL RIGHTS RESERVED.</p>
-          <p style={{ fontSize: 10, color: "rgba(0,0,0,0.1)", fontFamily: "Space Mono, monospace" }}>BUILT IN BERMUDA 🇧🇲</p>
+        <div style={{ maxWidth: 1060, margin: "40px auto 0", paddingTop: 20, borderTop: "1px solid #23252a", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <p style={{ fontSize: 10, color: "#62666d", fontFamily: "Space Mono, monospace", letterSpacing: 1 }}>© 2026 CONTINUUM. ALL RIGHTS RESERVED.</p>
+          <p style={{ fontSize: 10, color: "#62666d", fontFamily: "Space Mono, monospace" }}>BUILT IN BERMUDA 🇧🇲</p>
         </div>
       </footer>
     );
 
     // --- Shell ---
     const Shell = ({ children, showBg }) => (
-      <div style={{ minHeight: "100vh", background: "#fff", fontFamily: "'Instrument Serif', 'DM Sans', 'Space Mono', system-ui, sans-serif", color: "#000", position: "relative" }}>
+      <div style={{ minHeight: "100vh", background: "#08090a", fontFamily: "Instrument Serif, DM Sans, Space Mono, Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", color: "#f7f8f8", position: "relative" }}>
         <TravelAtmosphere />
         {fontLink}
         <TopNav />
@@ -910,7 +926,7 @@ Start by introducing yourself briefly in-character with personality, and give an
     const SectionLabel = ({ label }) => (
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 32 }}>
         <div style={{ width: 24, height: 2, background: "#0EA5A0" }} />
-        <span style={{ fontSize: 9, fontFamily: "Space Mono, monospace", color: "rgba(0,0,0,0.3)", letterSpacing: 2, textTransform: "uppercase", fontWeight: 700 }}>( {label} )</span>
+        <span style={{ fontSize: 9, fontFamily: "Space Mono, monospace", color: "#8a8f98", letterSpacing: 2, textTransform: "uppercase", fontWeight: 700 }}>( {label} )</span>
       </div>
     );
 
@@ -930,18 +946,18 @@ Start by introducing yourself briefly in-character with personality, and give an
           {/* ═══════ HEADLINE ═══════ */}
           <div style={{ padding: "56px 32px 20px", maxWidth: 820, margin: "0 auto" }}>
             <h1 style={{
-              fontSize: "clamp(2rem, 5vw, 3.4rem)", fontFamily: "Instrument Serif", fontWeight: 400, fontStyle: "italic",
-              color: "#000", lineHeight: 1.25, margin: 0, letterSpacing: "-0.02em", textAlign: "center",
+              fontSize: "clamp(2rem, 5vw, 3.4rem)", fontFamily: "Instrument Serif, Georgia, serif", fontWeight: 400, fontStyle: "italic",
+              color: "#f7f8f8", lineHeight: 1.25, margin: 0, letterSpacing: "-0.02em", textAlign: "center",
             }}>
               Your airline miles, hotel nights, and credit card points —{" "}
               <span style={{ color: "#0EA5A0" }}>finally in one place</span>.
             </h1>
-            <p style={{ textAlign: "center", fontSize: 15, fontFamily: "DM Sans", color: "rgba(0,0,0,0.4)", marginTop: 20, lineHeight: 1.7, maxWidth: 560, margin: "20px auto 0" }}>
+            <p style={{ textAlign: "center", fontSize: 15, fontFamily: "DM Sans, sans-serif", color: "#8a8f98", marginTop: 20, lineHeight: 1.7, maxWidth: 560, margin: "20px auto 0" }}>
               Continuum tracks 70+ loyalty programs so you always know exactly how close you are to your next elite status — and what to do to get there faster.
             </p>
             <div style={{ textAlign: "center", marginTop: 32 }}>
               <button onClick={() => goTo("login")} style={{
-                padding: "14px 40px", border: "2px solid #000", background: "#000", color: "#fff", cursor: "pointer",
+                padding: "14px 40px", border: "1px solid #34343a", background: "#0EA5A0", color: "#ffffff", cursor: "pointer",
                 fontSize: 11, fontFamily: "Space Mono, monospace", fontWeight: 700, letterSpacing: 2, textTransform: "uppercase",
                 transition: "all 0.25s cubic-bezier(0.175,0.885,0.32,1)",
               }}>Start Tracking Free →</button>
@@ -949,11 +965,11 @@ Start by introducing yourself briefly in-character with personality, and give an
           </div>
 
           {/* ═══════ STATS STRIP ═══════ */}
-          <div style={{ display: "flex", gap: 0, maxWidth: 700, margin: "48px auto 0", borderTop: "1px solid rgba(0,0,0,0.06)", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+          <div style={{ display: "flex", gap: 0, maxWidth: 700, margin: "48px auto 0", borderTop: "1px solid #23252a", borderBottom: "1px solid #23252a" }}>
             {[{ v: "70+", l: "Programs" }, { v: "18", l: "Airlines" }, { v: "12", l: "Hotels" }, { v: "21", l: "Cards" }].map((s, i) => (
               <div key={i} style={{ flex: 1, textAlign: "center", padding: "20px 0", borderRight: i < 3 ? "1px solid rgba(0,0,0,0.06)" : "none" }}>
                 <div style={{ fontSize: 22, fontFamily: "Space Mono, monospace", color: "#0EA5A0", fontWeight: 700 }}>{s.v}</div>
-                <div style={{ fontSize: 9, fontFamily: "Space Mono, monospace", color: "rgba(0,0,0,0.2)", marginTop: 2, letterSpacing: 2, textTransform: "uppercase" }}>{s.l}</div>
+                <div style={{ fontSize: 9, fontFamily: "Space Mono, monospace", color: "#62666d", marginTop: 2, letterSpacing: 2, textTransform: "uppercase" }}>{s.l}</div>
               </div>
             ))}
           </div>
@@ -961,17 +977,17 @@ Start by introducing yourself briefly in-character with personality, and give an
           {/* ═══════ HOW IT WORKS — 4 STEPS ═══════ */}
           <div id="how-it-works" style={{ maxWidth: 900, margin: "0 auto", padding: "80px 32px 0" }}>
             <SectionLabel label="How It Works" />
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 2, background: "rgba(0,0,0,0.03)" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 2, background: "#23252a" }}>
               {[
                 { step: "01", title: "Sign Up", desc: "Create your free account in under 30 seconds. No credit card needed." },
                 { step: "02", title: "Import Data", desc: "Connect your airline, hotel, and credit card loyalty accounts — or enter your status manually." },
                 { step: "03", title: "Get AI Recs", desc: "Our engine analyzes your travel patterns and tells you exactly how to hit your next tier." },
                 { step: "04", title: "Hit Status", desc: "Follow your personalized roadmap. We track every qualifying mile, night, and dollar in real time." },
               ].map((s, i) => (
-                <div key={i} style={{ background: "#fff", padding: "28px 20px" }}>
+                <div key={i} style={{ background: "#0f1011", padding: "28px 20px" }}>
                   <div style={{ fontSize: 28, fontFamily: "Space Mono, monospace", color: "#0EA5A0", fontWeight: 700, marginBottom: 12 }}>{s.step}</div>
-                  <h3 style={{ fontSize: 15, fontFamily: "Instrument Serif", fontWeight: 700, color: "#000", margin: "0 0 8px" }}>{s.title}</h3>
-                  <p style={{ fontSize: 12, fontFamily: "DM Sans", color: "rgba(0,0,0,0.35)", lineHeight: 1.65, margin: 0 }}>{s.desc}</p>
+                  <h3 style={{ fontSize: 15, fontFamily: "Instrument Serif, Georgia, serif", fontWeight: 700, color: "#f7f8f8", margin: "0 0 8px" }}>{s.title}</h3>
+                  <p style={{ fontSize: 12, fontFamily: "DM Sans, sans-serif", color: "#8a8f98", lineHeight: 1.65, margin: 0 }}>{s.desc}</p>
                 </div>
               ))}
             </div>
@@ -980,10 +996,10 @@ Start by introducing yourself briefly in-character with personality, and give an
           {/* ═══════ FEATURES ═══════ */}
           <div id="features" style={{ maxWidth: 900, margin: "0 auto", padding: "80px 32px 0" }}>
             <SectionLabel label="Features" />
-            <h2 style={{ fontSize: "clamp(1.4rem, 3vw, 2.2rem)", fontFamily: "Instrument Serif", fontStyle: "italic", fontWeight: 400, color: "#000", margin: "0 0 40px", letterSpacing: "-0.01em" }}>
+            <h2 style={{ fontSize: "clamp(1.4rem, 3vw, 2.2rem)", fontFamily: "Inter, sans-serif", fontStyle: "italic", fontWeight: 400, color: "#f7f8f8", margin: "0 0 40px", letterSpacing: "-0.01em" }}>
               Everything you need to stay on top of your status game.
             </h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 2, background: "rgba(0,0,0,0.03)" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 2, background: "#23252a" }}>
               {[
                 { icon: "📊", title: "Unified Dashboard", desc: "Every airline, hotel, and rental car program in one live view. No more logging into 12 different sites." },
                 { icon: "🧠", title: "AI Status Optimizer", desc: "We crunch your travel history and tell you the fastest, cheapest path to the next tier. Mileage runs included." },
@@ -992,10 +1008,10 @@ Start by introducing yourself briefly in-character with personality, and give an
                 { icon: "🔔", title: "Status Alerts", desc: "Get notified when you're close to a tier, when a promo drops, or when a mileage run deal appears." },
                 { icon: "🧾", title: "Expense Tracking", desc: "Log travel expenses, snap receipt photos, and export clean reports. Your accountant will thank you." },
               ].map((f, i) => (
-                <div key={i} style={{ background: "#fff", padding: "28px 22px", borderLeft: "2px solid #0EA5A0" }}>
+                <div key={i} style={{ background: "#0f1011", padding: "28px 22px", borderLeft: "2px solid #0EA5A0" }}>
                   <span style={{ fontSize: 22, display: "block", marginBottom: 10 }}>{f.icon}</span>
-                  <h3 style={{ fontSize: 14, fontWeight: 700, color: "#000", fontFamily: "Instrument Serif", margin: "0 0 6px" }}>{f.title}</h3>
-                  <p style={{ fontSize: 12, color: "rgba(0,0,0,0.35)", fontFamily: "DM Sans", lineHeight: 1.65, margin: 0 }}>{f.desc}</p>
+                  <h3 style={{ fontSize: 14, fontWeight: 700, color: "#f7f8f8", fontFamily: "Instrument Serif, Georgia, serif", margin: "0 0 6px" }}>{f.title}</h3>
+                  <p style={{ fontSize: 12, color: "#8a8f98", fontFamily: "Inter, sans-serif", lineHeight: 1.65, margin: 0 }}>{f.desc}</p>
                 </div>
               ))}
             </div>
@@ -1010,11 +1026,11 @@ Start by introducing yourself briefly in-character with personality, and give an
                 { quote: "Tracking Marriott, Hilton, AND Hyatt status in one place? I used to keep a spreadsheet with 14 tabs. This replaced all of it.", who: "Titanium Elite · 200+ nights/yr", },
                 { quote: "The AI told me to shift one trip from Delta to United and I'd make 1K. That one recommendation was worth the entire year.", who: "1M+ miles · United 1K", },
               ].map((t, i) => (
-                <div key={i} style={{ padding: "28px 24px", border: "1px solid rgba(0,0,0,0.06)", background: "#fff" }}>
-                  <p style={{ fontSize: 13, fontFamily: "DM Sans", color: "rgba(0,0,0,0.6)", lineHeight: 1.7, margin: "0 0 16px", fontStyle: "italic" }}>"{t.quote}"</p>
+                <div key={i} style={{ padding: "28px 24px", border: "1px solid #23252a", background: "#0f1011" }}>
+                  <p style={{ fontSize: 13, fontFamily: "DM Sans, sans-serif", color: "#d0d6e0", lineHeight: 1.7, margin: "0 0 16px", fontStyle: "italic" }}>"{t.quote}"</p>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#0EA5A0" }} />
-                    <span style={{ fontSize: 10, fontFamily: "Space Mono, monospace", color: "rgba(0,0,0,0.25)", letterSpacing: 1, textTransform: "uppercase" }}>{t.who}</span>
+                    <span style={{ fontSize: 10, fontFamily: "Space Mono, monospace", color: "#62666d", letterSpacing: 1, textTransform: "uppercase" }}>{t.who}</span>
                   </div>
                 </div>
               ))}
@@ -1024,10 +1040,10 @@ Start by introducing yourself briefly in-character with personality, and give an
           {/* ═══════ PRICING — 3 TIERS ═══════ */}
           <div id="pricing" style={{ maxWidth: 900, margin: "0 auto", padding: "80px 32px 0" }}>
             <SectionLabel label="Pricing" />
-            <h2 style={{ fontSize: "clamp(1.4rem, 3vw, 2.2rem)", fontFamily: "Instrument Serif", fontStyle: "italic", fontWeight: 400, color: "#000", margin: "0 0 40px" }}>
+            <h2 style={{ fontSize: "clamp(1.4rem, 3vw, 2.2rem)", fontFamily: "Inter, sans-serif", fontStyle: "italic", fontWeight: 400, color: "#f7f8f8", margin: "0 0 40px" }}>
               Start free. Upgrade when you're ready to go all in.
             </h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 2, background: "rgba(0,0,0,0.03)" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 2, background: "#23252a" }}>
               {[
                 { name: "Free", price: "$0", period: "forever", features: ["Track up to 5 programs", "Manual data entry", "Basic status dashboard", "Year-end projections"], cta: "Get Started", highlight: false },
                 { name: "Pro", price: "$9.99", period: "/month", features: ["Unlimited programs", "Auto-import from accounts", "AI status optimizer", "Credit card matching", "Status alerts & notifications", "Expense tracking"], cta: "Start Pro Trial", highlight: true },
@@ -1040,14 +1056,14 @@ Start by introducing yourself briefly in-character with personality, and give an
                   {tier.highlight && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "#0EA5A0" }} />}
                   <p style={{ fontSize: 9, fontFamily: "Space Mono, monospace", letterSpacing: 2, textTransform: "uppercase", color: tier.highlight ? "#0EA5A0" : "rgba(0,0,0,0.3)", marginBottom: 8 }}>{tier.name}</p>
                   <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 4 }}>
-                    <span style={{ fontSize: 32, fontFamily: "Instrument Serif", fontWeight: 700 }}>{tier.price}</span>
-                    <span style={{ fontSize: 12, fontFamily: "DM Sans", color: tier.highlight ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.25)" }}>{tier.period}</span>
+                    <span style={{ fontSize: 32, fontFamily: "Instrument Serif, Georgia, serif", fontWeight: 700 }}>{tier.price}</span>
+                    <span style={{ fontSize: 12, fontFamily: "DM Sans, sans-serif", color: tier.highlight ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.25)" }}>{tier.period}</span>
                   </div>
                   <div style={{ margin: "20px 0", borderTop: `1px solid ${tier.highlight ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.06)"}`, paddingTop: 20 }}>
                     {tier.features.map((f, j) => (
                       <div key={j} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                         <span style={{ color: "#0EA5A0", fontSize: 12, fontWeight: 700 }}>✓</span>
-                        <span style={{ fontSize: 12, fontFamily: "DM Sans", color: tier.highlight ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.4)" }}>{f}</span>
+                        <span style={{ fontSize: 12, fontFamily: "DM Sans, sans-serif", color: tier.highlight ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.4)" }}>{f}</span>
                       </div>
                     ))}
                   </div>
@@ -1065,20 +1081,20 @@ Start by introducing yourself briefly in-character with personality, and give an
           {/* ═══════ ABOUT / MISSION ═══════ */}
           <div id="about" style={{ maxWidth: 700, margin: "0 auto", padding: "80px 32px 0", textAlign: "center" }}>
             <SectionLabel label="About Continuum" />
-            <h2 style={{ fontSize: "clamp(1.4rem, 3vw, 2rem)", fontFamily: "Instrument Serif", fontStyle: "italic", fontWeight: 400, color: "#000", margin: "0 0 20px" }}>
+            <h2 style={{ fontSize: "clamp(1.4rem, 3vw, 2rem)", fontFamily: "Inter, sans-serif", fontStyle: "italic", fontWeight: 400, color: "#f7f8f8", margin: "0 0 20px" }}>
               We believe your loyalty should work as hard as you do.
             </h2>
-            <p style={{ fontSize: 14, fontFamily: "DM Sans", color: "rgba(0,0,0,0.45)", lineHeight: 1.8, maxWidth: 600, margin: "0 auto 20px" }}>
+            <p style={{ fontSize: 14, fontFamily: "DM Sans, sans-serif", color: "#8a8f98", lineHeight: 1.8, maxWidth: 600, margin: "0 auto 20px" }}>
               Continuum was born out of a simple frustration: tracking elite status across a dozen programs shouldn't require a PhD in spreadsheets. We built the platform we wished existed — one intelligent dashboard that connects all your miles, points, and nights, then tells you exactly what to do next.
             </p>
-            <p style={{ fontSize: 14, fontFamily: "DM Sans", color: "rgba(0,0,0,0.45)", lineHeight: 1.8, maxWidth: 600, margin: "0 auto 20px" }}>
+            <p style={{ fontSize: 14, fontFamily: "DM Sans, sans-serif", color: "#8a8f98", lineHeight: 1.8, maxWidth: 600, margin: "0 auto 20px" }}>
               Based in Bermuda and built by a team of frequent flyers, reinsurance professionals, and travel obsessives, we understand what it takes to stay on top of the status game — because we play it every day.
             </p>
             <div style={{ display: "flex", justifyContent: "center", gap: 32, marginTop: 32 }}>
               {[{ v: "6", l: "Team Members" }, { v: "12M+", l: "Miles Tracked" }, { v: "2026", l: "Founded" }].map((s, i) => (
                 <div key={i} style={{ textAlign: "center" }}>
                   <div style={{ fontSize: 24, fontFamily: "Space Mono, monospace", color: "#0EA5A0", fontWeight: 700 }}>{s.v}</div>
-                  <div style={{ fontSize: 9, fontFamily: "Space Mono, monospace", color: "rgba(0,0,0,0.2)", letterSpacing: 1.5, textTransform: "uppercase", marginTop: 2 }}>{s.l}</div>
+                  <div style={{ fontSize: 9, fontFamily: "Space Mono, monospace", color: "#62666d", letterSpacing: 1.5, textTransform: "uppercase", marginTop: 2 }}>{s.l}</div>
                 </div>
               ))}
             </div>
@@ -1086,14 +1102,14 @@ Start by introducing yourself briefly in-character with personality, and give an
 
           {/* ═══════ FINAL CTA ═══════ */}
           <div style={{ maxWidth: 700, margin: "0 auto", padding: "80px 32px 60px", textAlign: "center" }}>
-            <h2 style={{ fontSize: "clamp(1.6rem, 4vw, 2.4rem)", fontFamily: "Instrument Serif", fontStyle: "italic", fontWeight: 400, color: "#000", margin: "0 0 16px" }}>
+            <h2 style={{ fontSize: "clamp(1.6rem, 4vw, 2.4rem)", fontFamily: "Inter, sans-serif", fontStyle: "italic", fontWeight: 400, color: "#f7f8f8", margin: "0 0 16px" }}>
               Stop guessing. Start tracking.
             </h2>
-            <p style={{ fontSize: 14, fontFamily: "DM Sans", color: "rgba(0,0,0,0.35)", marginBottom: 28 }}>
+            <p style={{ fontSize: 14, fontFamily: "DM Sans, sans-serif", color: "#8a8f98", marginBottom: 28 }}>
               Join thousands of travelers who never miss another status milestone.
             </p>
             <button onClick={() => goTo("login")} style={{
-              padding: "16px 48px", border: "none", background: "#000", color: "#fff", cursor: "pointer",
+              padding: "16px 48px", border: "none", background: "#0EA5A0", color: "#ffffff", cursor: "pointer",
               fontSize: 12, fontFamily: "Space Mono, monospace", fontWeight: 700, letterSpacing: 2, textTransform: "uppercase",
             }}>Create Free Account →</button>
           </div>
@@ -1111,20 +1127,20 @@ Start by introducing yourself briefly in-character with personality, and give an
           }}>
             <div style={{ textAlign: "center", marginBottom: 32 }}>
               <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}><LogoMark size={52} /></div>
-              <h1 style={{ fontSize: 26, fontWeight: 800, color: "#000", margin: 0, letterSpacing: -0.5, fontFamily: "Instrument Serif" }}>Welcome Back</h1>
-              <p style={{ color: "rgba(14,165,160,0.6)", fontSize: 13, marginTop: 6, fontFamily: "DM Sans" }}>Sign in to your Continuum account</p>
+              <h1 style={{ fontSize: 26, fontWeight: 800, color: "#f7f8f8", margin: 0, letterSpacing: -0.5, fontFamily: "Inter, sans-serif" }}>Welcome Back</h1>
+              <p style={{ color: "rgba(14,165,160,0.6)", fontSize: 13, marginTop: 6, fontFamily: "Inter, sans-serif" }}>Sign in to your Continuum account</p>
             </div>
             <div style={{
               background: "linear-gradient(135deg, rgba(14,165,160,0.06), rgba(0,0,0,0.02), rgba(14,165,160,0.04))",
-              border: "1px solid rgba(14,165,160,0.1)", borderRadius: 3, padding: 30,
+              border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, padding: 30,
               backdropFilter: "blur(40px)", boxShadow: "0 25px 60px rgba(44,36,24,0.2), inset 0 1px 0 rgba(14,165,160,0.08)",
               position: "relative", overflow: "hidden",
             }}>
               <FlightPath style={{ top: 8, right: 8, width: 130, height: 28 }} />
-              <div style={{ display: "flex", marginBottom: 24, background: "rgba(0,0,0,0.02)", borderRadius: 3, padding: 3 }}>
+              <div style={{ display: "flex", marginBottom: 24, background: "rgba(255,255,255,0.03)", borderRadius: 8, padding: 3 }}>
                 {["Sign In", "Register"].map((tab, i) => (
                   <button key={tab} onClick={() => setIsRegistering(i === 1)} style={{
-                    flex: 1, padding: "9px 0", border: "none", borderRadius: 2, cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: "DM Sans",
+                    flex: 1, padding: "9px 0", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: "Inter, sans-serif",
                     background: (i === 0 ? !isRegistering : isRegistering) ? "rgba(14,165,160,0.2)" : "transparent",
                     color: (i === 0 ? !isRegistering : isRegistering) ? "#0EA5A0" : "rgba(0,0,0,0.25)", transition: "all 0.3s",
                   }}>{tab}</button>
@@ -1134,50 +1150,50 @@ Start by introducing yourself briefly in-character with personality, and give an
               {!isRegistering ? (
                 <div>
                   <label style={{ display: "block", marginBottom: 14 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans" }}>Email</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Email</span>
                     <input type="email" value={loginForm.email} onChange={e => setLoginForm(p => ({ ...p, email: e.target.value }))} placeholder="alex@example.com"
-                      style={{ display: "block", width: "100%", marginTop: 6, padding: "11px 14px", background: "rgba(0,0,0,0.02)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 2, color: "#000", fontSize: 14, fontFamily: "DM Sans", outline: "none", boxSizing: "border-box" }} />
+                      style={{ display: "block", width: "100%", marginTop: 6, padding: "11px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, color: "#f7f8f8", fontSize: 14, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
                   </label>
                   <label style={{ display: "block", marginBottom: 22 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans" }}>Password</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Password</span>
                     <input type="password" value={loginForm.password} onChange={e => setLoginForm(p => ({ ...p, password: e.target.value }))} placeholder="••••••••"
-                      style={{ display: "block", width: "100%", marginTop: 6, padding: "11px 14px", background: "rgba(0,0,0,0.02)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 2, color: "#000", fontSize: 14, fontFamily: "DM Sans", outline: "none", boxSizing: "border-box" }} />
+                      style={{ display: "block", width: "100%", marginTop: 6, padding: "11px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, color: "#f7f8f8", fontSize: 14, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
                   </label>
                   <button onClick={handleLogin} style={{
-                    width: "100%", padding: "12px 0", border: "none", borderRadius: 3, cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "Instrument Serif",
-                    background: "linear-gradient(135deg, #0EA5A0, #0EA5A0)", color: "#000", boxShadow: "0 4px 20px rgba(14,165,160,0.3)",
+                    width: "100%", padding: "12px 0", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "Inter, sans-serif",
+                    background: "linear-gradient(135deg, #0EA5A0, #0EA5A0)", color: "#f7f8f8", boxShadow: "0 4px 20px rgba(14,165,160,0.3)",
                   }}>Sign In</button>
                   <button onClick={() => { setLoginForm({ email: "alex@example.com", password: "demo" }); setTimeout(handleLogin, 100); }} style={{
-                    width: "100%", padding: "10px 0", border: "1px solid rgba(14,165,160,0.2)", borderRadius: 3, cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: "DM Sans",
-                    background: "transparent", color: "#0EA5A0", marginTop: 10,
+                    width: "100%", padding: "10px 0", border: "1px solid rgba(14,165,160,0.2)", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: "Inter, sans-serif",
+                    background: "rgba(255,255,255,0.03)", color: "#0EA5A0", marginTop: 10,
                   }}>Try Demo Account →</button>
                 </div>
               ) : (
                 <div>
                   <label style={{ display: "block", marginBottom: 12 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans" }}>Full Name</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Full Name</span>
                     <input value={registerForm.name} onChange={e => setRegisterForm(p => ({ ...p, name: e.target.value }))} placeholder="Your name"
-                      style={{ display: "block", width: "100%", marginTop: 6, padding: "11px 14px", background: "rgba(0,0,0,0.02)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 2, color: "#000", fontSize: 14, fontFamily: "DM Sans", outline: "none", boxSizing: "border-box" }} />
+                      style={{ display: "block", width: "100%", marginTop: 6, padding: "11px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, color: "#f7f8f8", fontSize: 14, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
                   </label>
                   <label style={{ display: "block", marginBottom: 12 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans" }}>Email</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Email</span>
                     <input type="email" value={registerForm.email} onChange={e => setRegisterForm(p => ({ ...p, email: e.target.value }))} placeholder="you@email.com"
-                      style={{ display: "block", width: "100%", marginTop: 6, padding: "11px 14px", background: "rgba(0,0,0,0.02)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 2, color: "#000", fontSize: 14, fontFamily: "DM Sans", outline: "none", boxSizing: "border-box" }} />
+                      style={{ display: "block", width: "100%", marginTop: 6, padding: "11px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, color: "#f7f8f8", fontSize: 14, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
                   </label>
                   <label style={{ display: "block", marginBottom: 22 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans" }}>Password</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Password</span>
                     <input type="password" value={registerForm.password} onChange={e => setRegisterForm(p => ({ ...p, password: e.target.value }))} placeholder="••••••••"
-                      style={{ display: "block", width: "100%", marginTop: 6, padding: "11px 14px", background: "rgba(0,0,0,0.02)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 2, color: "#000", fontSize: 14, fontFamily: "DM Sans", outline: "none", boxSizing: "border-box" }} />
+                      style={{ display: "block", width: "100%", marginTop: 6, padding: "11px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, color: "#f7f8f8", fontSize: 14, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
                   </label>
                   <button onClick={handleRegister} style={{
-                    width: "100%", padding: "12px 0", border: "none", borderRadius: 3, cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "Instrument Serif",
-                    background: "linear-gradient(135deg, #0EA5A0, #0EA5A0)", color: "#000", boxShadow: "0 4px 20px rgba(14,165,160,0.3)",
+                    width: "100%", padding: "12px 0", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "Inter, sans-serif",
+                    background: "linear-gradient(135deg, #0EA5A0, #0EA5A0)", color: "#f7f8f8", boxShadow: "0 4px 20px rgba(14,165,160,0.3)",
                   }}>Create Account</button>
                 </div>
               )}
 
               <div style={{ textAlign: "center", marginTop: 18, padding: "12px 0 0", borderTop: "1px solid rgba(0,0,0,0.02)" }}>
-                <p style={{ color: "rgba(0,0,0,0.15)", fontSize: 11, fontFamily: "DM Sans", margin: 0 }}>By signing in, you agree to our Terms of Service</p>
+                <p style={{ color: "#62666d", fontSize: 11, fontFamily: "Inter, sans-serif", margin: 0 }}>By signing in, you agree to our Terms of Service</p>
               </div>
             </div>
           </div>
@@ -1214,15 +1230,15 @@ Start by introducing yourself briefly in-character with personality, and give an
           ].map((stat, i) => (
             <div key={i} style={{
               background: `linear-gradient(135deg, ${stat.color}08, rgba(0,0,0,0.02))`,
-              border: `1px solid ${stat.color}15`, borderRadius: 2, padding: "18px 20px",
+              border: `1px solid ${stat.color}15`, borderRadius: 8, padding: "18px 20px",
               display: "flex", alignItems: "center", gap: 14, position: "relative", overflow: "hidden",
               boxShadow: `0 4px 20px ${stat.color}08`,
             }}>
               <FlightPath color={stat.color} style={{ bottom: 4, left: 20, width: 120, height: 24 }} />
               <div style={{ fontSize: 28, position: "relative" }}>{stat.icon}</div>
               <div>
-                <div style={{ fontSize: 24, fontWeight: 800, color: "#000", fontFamily: "Instrument Serif" }}>{stat.value}</div>
-                <div style={{ fontSize: 11, color: "rgba(0,0,0,0.3)", fontWeight: 500, fontFamily: "DM Sans" }}>{stat.label}</div>
+                <div style={{ fontSize: 24, fontWeight: 800, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{stat.value}</div>
+                <div style={{ fontSize: 11, color: "#8a8f98", fontWeight: 500, fontFamily: "Inter, sans-serif" }}>{stat.label}</div>
               </div>
             </div>
           ))}
@@ -1231,7 +1247,7 @@ Start by introducing yourself briefly in-character with personality, and give an
         {/* Airline Status Cards */}
         {airlineStatuses.length > 0 && (
           <div style={{ marginBottom: 28 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: "rgba(0,0,0,0.6)", marginBottom: 14, fontFamily: "Instrument Serif" }}>✈️ Airline Elite Status</h3>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: "#d0d6e0", marginBottom: 14, fontFamily: "Inter, sans-serif" }}>✈️ Airline Elite Status</h3>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 14 }}>
               {airlineStatuses.map(p => {
                 const s = p.status;
@@ -1239,14 +1255,14 @@ Start by introducing yourself briefly in-character with personality, and give an
                 return (
                   <div key={p.id} onClick={() => { setSelectedProgram(p.id); setActiveView("programs"); }} style={{
                     background: `linear-gradient(135deg, ${p.color}15, ${p.accent}10)`, border: `1px solid ${p.color}30`,
-                    borderRadius: 2, padding: 22, cursor: "pointer", transition: "all 0.3s",
+                    borderRadius: 8, padding: 22, cursor: "pointer", transition: "all 0.3s",
                     boxShadow: `0 4px 25px ${p.color}10`, position: "relative", overflow: "hidden",
                   }}>
                     <FlightPath color={p.color} style={{ top: 6, right: 6, width: 100, height: 20 }} />
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
                       <div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: "#000", fontFamily: "Instrument Serif" }}>{p.name}</div>
-                        <div style={{ fontSize: 11, color: "rgba(0,0,0,0.3)", fontFamily: "DM Sans", marginTop: 2 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{p.name}</div>
+                        <div style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif", marginTop: 2 }}>
                           {s.currentTier ? s.currentTier.name : "Member"} → {s.nextTier?.name || "Top Tier"}
                         </div>
                       </div>
@@ -1255,13 +1271,13 @@ Start by introducing yourself briefly in-character with personality, and give an
                     <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                       <ProgressRing progress={Math.min(progress, 100)} size={70} color={p.color} label={`${Math.round(progress)}%`} sublabel={p.unit} />
                       <div style={{ flex: 1 }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "rgba(0,0,0,0.3)", marginBottom: 4, fontFamily: "DM Sans" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#8a8f98", marginBottom: 4, fontFamily: "Inter, sans-serif" }}>
                           <span>{s.projected.toLocaleString()} {p.unit}</span>
                           <span>{s.nextTier?.threshold.toLocaleString()}</span>
                         </div>
                         <MiniBar value={s.projected} max={s.nextTier?.threshold || s.projected} color={p.color} height={8} />
                         {s.tripBoosts > 0 && (
-                          <div style={{ fontSize: 10, color: "#34d399", marginTop: 6, fontFamily: "DM Sans" }}>+{s.tripBoosts.toLocaleString()} from upcoming trips</div>
+                          <div style={{ fontSize: 10, color: "#34d399", marginTop: 6, fontFamily: "Inter, sans-serif" }}>+{s.tripBoosts.toLocaleString()} from upcoming trips</div>
                         )}
                       </div>
                     </div>
@@ -1275,7 +1291,7 @@ Start by introducing yourself briefly in-character with personality, and give an
         {/* Hotel Status Cards */}
         {hotelStatuses.length > 0 && (
           <div style={{ marginBottom: 28 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: "rgba(0,0,0,0.6)", marginBottom: 14, fontFamily: "Instrument Serif" }}>🏨 Hotel Elite Status</h3>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: "#d0d6e0", marginBottom: 14, fontFamily: "Inter, sans-serif" }}>🏨 Hotel Elite Status</h3>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 14 }}>
               {hotelStatuses.map(p => {
                 const s = p.status;
@@ -1283,20 +1299,20 @@ Start by introducing yourself briefly in-character with personality, and give an
                 return (
                   <div key={p.id} onClick={() => { setSelectedProgram(p.id); setActiveView("programs"); }} style={{
                     background: `linear-gradient(135deg, ${p.color}15, ${p.accent}10)`, border: `1px solid ${p.color}30`,
-                    borderRadius: 2, padding: 22, cursor: "pointer", transition: "all 0.3s",
+                    borderRadius: 8, padding: 22, cursor: "pointer", transition: "all 0.3s",
                     boxShadow: `0 4px 25px ${p.color}10`,
                   }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
                       <div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: "#000", fontFamily: "Instrument Serif" }}>{p.name}</div>
-                        <div style={{ fontSize: 11, color: "rgba(0,0,0,0.3)", fontFamily: "DM Sans", marginTop: 2 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{p.name}</div>
+                        <div style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif", marginTop: 2 }}>
                           {s.currentTier ? s.currentTier.name : "Member"} • {s.current} nights YTD
                         </div>
                       </div>
                       {s.willAdvance && <Badge color="#34d399" small>↑ Tier Up!</Badge>}
                     </div>
                     <MiniBar value={s.projected} max={s.nextTier?.threshold || s.projected} color={p.color} height={8} />
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "rgba(0,0,0,0.25)", marginTop: 6, fontFamily: "DM Sans" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#62666d", marginTop: 6, fontFamily: "Inter, sans-serif" }}>
                       <span>{s.projected} / {s.nextTier?.threshold || "MAX"} nights</span>
                       {s.tripBoosts > 0 && <span style={{ color: "#34d399" }}>+{s.tripBoosts} planned</span>}
                     </div>
@@ -1310,9 +1326,9 @@ Start by introducing yourself briefly in-character with personality, and give an
         {/* Upcoming Trips Timeline */}
         <div style={{ marginBottom: 28 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: "rgba(0,0,0,0.6)", margin: 0, fontFamily: "Instrument Serif" }}>📅 Upcoming Trips</h3>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: "#d0d6e0", margin: 0, fontFamily: "Inter, sans-serif" }}>📅 Upcoming Trips</h3>
             <button onClick={() => setActiveView("trips")} style={{
-              background: "none", border: "none", color: "#0EA5A0", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "DM Sans",
+              background: "none", border: "none", color: "#0EA5A0", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif",
             }}>View All →</button>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -1320,14 +1336,14 @@ Start by introducing yourself briefly in-character with personality, and give an
               const prog = allPrograms.find(p => p.id === trip.program);
               return (
                 <div key={trip.id} style={{
-                  background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", border: "1px solid rgba(0,0,0,0.03)", borderRadius: 3, padding: "14px 18px",
+                  background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8, padding: "14px 18px",
                   display: "flex", justifyContent: "space-between", alignItems: "center",
                 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <span style={{ fontSize: 22 }}>{trip.type === "flight" ? "✈️" : trip.type === "hotel" ? "🏨" : "🚗"}</span>
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#000", fontFamily: "DM Sans" }}>{trip.route || trip.property || trip.location}</div>
-                      <div style={{ fontSize: 11, color: "rgba(0,0,0,0.25)", fontFamily: "DM Sans" }}>{trip.date} • {prog?.name}</div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{trip.route || trip.property || trip.location}</div>
+                      <div style={{ fontSize: 11, color: "#62666d", fontFamily: "Inter, sans-serif" }}>{trip.date} • {prog?.name}</div>
                     </div>
                   </div>
                   <Badge color={trip.status === "confirmed" ? "#34d399" : trip.status === "planned" ? "#fbbf24" : "#0EA5A0"} small>
@@ -1337,7 +1353,7 @@ Start by introducing yourself briefly in-character with personality, and give an
               );
             })}
             {trips.length === 0 && (
-              <div style={{ textAlign: "center", padding: 40, color: "rgba(0,0,0,0.15)", fontSize: 13, fontFamily: "DM Sans" }}>
+              <div style={{ textAlign: "center", padding: 40, color: "#62666d", fontSize: 13, fontFamily: "Inter, sans-serif" }}>
                 No trips yet. Add your first trip to start tracking! ✈️
               </div>
             )}
@@ -1347,24 +1363,24 @@ Start by introducing yourself briefly in-character with personality, and give an
         {/* Credit Card Recommendations - Monetization */}
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: "rgba(0,0,0,0.6)", margin: 0, fontFamily: "Instrument Serif" }}>💳 Recommended Cards</h3>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: "#d0d6e0", margin: 0, fontFamily: "Inter, sans-serif" }}>💳 Recommended Cards</h3>
             <Badge color="#fbbf24" small>SPONSORED</Badge>
           </div>
           <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 8 }}>
             {CREDIT_CARD_OFFERS.slice(0, 3).map((card, i) => (
               <div key={i} style={{
                 minWidth: 220, background: `linear-gradient(135deg, ${card.color}20, ${card.color}08)`, border: `1px solid ${card.color}30`,
-                borderRadius: 2, padding: 18, flex: "0 0 auto",
+                borderRadius: 8, padding: 18, flex: "0 0 auto",
               }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#000", fontFamily: "Instrument Serif", marginBottom: 6 }}>{card.name}</div>
-                <div style={{ fontSize: 20, fontWeight: 800, color: "#fbbf24", fontFamily: "Instrument Serif", marginBottom: 4 }}>{card.bonus}</div>
-                <div style={{ fontSize: 10, color: "rgba(0,0,0,0.3)", fontFamily: "DM Sans", marginBottom: 10 }}>Spend {card.spend} • {card.fee}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif", marginBottom: 6 }}>{card.name}</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: "#fbbf24", fontFamily: "Inter, sans-serif", marginBottom: 4 }}>{card.bonus}</div>
+                <div style={{ fontSize: 10, color: "#8a8f98", fontFamily: "Inter, sans-serif", marginBottom: 10 }}>Spend {card.spend} • {card.fee}</div>
                 <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                   {card.tags.map((tag, j) => <Badge key={j} color={card.color || "#0EA5A0"} small>{tag}</Badge>)}
                 </div>
                 <button style={{
-                  width: "100%", marginTop: 12, padding: "8px 0", borderRadius: 2, border: `1px solid ${card.color}40`, background: "transparent",
-                  color: "#000", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "DM Sans",
+                  width: "100%", marginTop: 12, padding: "8px 0", borderRadius: 8, border: `1px solid ${card.color}40`, background: "rgba(255,255,255,0.03)",
+                  color: "#f7f8f8", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif",
                 }}>Apply Now →</button>
               </div>
             ))}
@@ -1392,18 +1408,18 @@ Start by introducing yourself briefly in-character with personality, and give an
       <div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
           <div>
-            <h2 style={{ fontSize: 20, fontWeight: 800, color: "#000", margin: 0, fontFamily: "Instrument Serif" }}>Loyalty Programs</h2>
-            <p style={{ color: "rgba(0,0,0,0.3)", fontSize: 12, margin: "4px 0 0", fontFamily: "DM Sans" }}>Link and manage all your accounts</p>
+            <h2 style={{ fontSize: 20, fontWeight: 800, color: "#f7f8f8", margin: 0, fontFamily: "Inter, sans-serif" }}>Loyalty Programs</h2>
+            <p style={{ color: "#8a8f98", fontSize: 12, margin: "4px 0 0", fontFamily: "Inter, sans-serif" }}>Link and manage all your accounts</p>
           </div>
           <button onClick={() => setShowAddProgram(true)} style={{
-            padding: "10px 20px", borderRadius: 2, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Instrument Serif",
-            background: "linear-gradient(135deg, #0EA5A0, #0EA5A0)", color: "#000", boxShadow: "0 4px 15px rgba(14,165,160,0.3)",
+            padding: "10px 20px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Inter, sans-serif",
+            background: "linear-gradient(135deg, #0EA5A0, #0EA5A0)", color: "#f7f8f8", boxShadow: "0 4px 15px rgba(14,165,160,0.3)",
           }}>+ Add Program</button>
         </div>
 
         {categories.map((cat, ci) => (
           <div key={ci} style={{ marginBottom: 28 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: "rgba(0,0,0,0.5)", marginBottom: 12, fontFamily: "Instrument Serif" }}>{cat.icon} {cat.label}</h3>
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: "#d0d6e0", marginBottom: 12, fontFamily: "Inter, sans-serif" }}>{cat.icon} {cat.label}</h3>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 14 }}>
               {cat.programs.map(prog => {
                 const isLinked = !!linkedAccounts[prog.id];
@@ -1414,17 +1430,17 @@ Start by introducing yourself briefly in-character with personality, and give an
                   <div key={prog.id} style={{
                     background: isLinked ? `linear-gradient(135deg, ${prog.color}12, ${prog.accent || prog.color}08)` : "rgba(0,0,0,0.02)",
                     border: `1px solid ${isLinked ? prog.color + "30" : "rgba(0,0,0,0.03)"}`,
-                    borderRadius: 2, padding: 22, transition: "all 0.3s",
+                    borderRadius: 8, padding: 22, transition: "all 0.3s",
                   }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                         <span style={{ fontSize: 26 }}>{prog.logo}</span>
                         <div>
-                          <div style={{ fontSize: 14, fontWeight: 700, color: "#000", fontFamily: "Instrument Serif" }}>{prog.name}</div>
-                          {isLinked && !isCard && <div style={{ fontSize: 11, color: "rgba(0,0,0,0.25)", fontFamily: "DM Sans" }}>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{prog.name}</div>
+                          {isLinked && !isCard && <div style={{ fontSize: 11, color: "#62666d", fontFamily: "Inter, sans-serif" }}>
                             ID: {linkedAccounts[prog.id].memberId}
                           </div>}
-                          {isCard && <div style={{ fontSize: 11, color: "rgba(0,0,0,0.25)", fontFamily: "DM Sans" }}>{prog.annualFee ? `$${prog.annualFee}/yr` : ""}</div>}
+                          {isCard && <div style={{ fontSize: 11, color: "#62666d", fontFamily: "Inter, sans-serif" }}>{prog.annualFee ? `$${prog.annualFee}/yr` : ""}</div>}
                         </div>
                       </div>
                       {isLinked ? <Badge color="#34d399" small>Linked</Badge> : <Badge color="rgba(0,0,0,0.2)" small>Not Linked</Badge>}
@@ -1432,12 +1448,12 @@ Start by introducing yourself briefly in-character with personality, and give an
 
                     {isLinked && status && !isCard && (
                       <div style={{ marginBottom: 14 }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "rgba(0,0,0,0.3)", marginBottom: 6, fontFamily: "DM Sans" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#8a8f98", marginBottom: 6, fontFamily: "Inter, sans-serif" }}>
                           <span>Current: {status.currentTier?.name || "Member"}</span>
                           <span>Next: {status.nextTier?.name}</span>
                         </div>
                         <MiniBar value={status.projected} max={status.nextTier?.threshold || status.projected} color={prog.color} height={8} />
-                        <div style={{ fontSize: 10, color: "rgba(0,0,0,0.2)", marginTop: 4, fontFamily: "DM Sans" }}>
+                        <div style={{ fontSize: 10, color: "#62666d", marginTop: 4, fontFamily: "Inter, sans-serif" }}>
                           {status.projected.toLocaleString()} / {(status.nextTier?.threshold || status.projected).toLocaleString()} {prog.unit}
                           {status.willAdvance && <span style={{ color: "#34d399", marginLeft: 8 }}>🎉 On track to advance!</span>}
                         </div>
@@ -1446,10 +1462,10 @@ Start by introducing yourself briefly in-character with personality, and give an
 
                     {isCard && isLinked && (
                       <div style={{ marginBottom: 14 }}>
-                        <div style={{ fontSize: 18, fontWeight: 800, color: "#000", fontFamily: "Instrument Serif" }}>
+                        <div style={{ fontSize: 18, fontWeight: 800, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>
                           {(linkedAccounts[prog.id]?.pointsBalance || 0).toLocaleString()} pts
                         </div>
-                        <div style={{ fontSize: 11, color: "rgba(0,0,0,0.25)", fontFamily: "DM Sans", marginTop: 2 }}>{prog.perks}</div>
+                        <div style={{ fontSize: 11, color: "#62666d", fontFamily: "Inter, sans-serif", marginTop: 2 }}>{prog.perks}</div>
                       </div>
                     )}
 
@@ -1466,23 +1482,23 @@ Start by introducing yourself briefly in-character with personality, and give an
                     {isLinked ? (
                       <div style={{ display: "flex", gap: 6 }}>
                         <span style={{
-                          flex: 1, padding: "9px 0", borderRadius: 2, border: "1px solid rgba(14,165,160,0.1)",
-                          background: "rgba(0,0,0,0.02)", color: "rgba(0,0,0,0.3)",
-                          fontSize: 12, fontWeight: 600, fontFamily: "DM Sans", textAlign: "center",
+                          flex: 1, padding: "9px 0", borderRadius: 8, border: "1px solid rgba(14,165,160,0.1)",
+                          background: "rgba(255,255,255,0.03)", color: "#8a8f98",
+                          fontSize: 12, fontWeight: 600, fontFamily: "Inter, sans-serif", textAlign: "center",
                         }}>✓ Connected</span>
                         {prog.loginUrl && (
                           <a href={prog.loginUrl} target="_blank" rel="noopener noreferrer" style={{
-                            padding: "9px 14px", borderRadius: 2, border: `1px solid ${prog.color}40`,
-                            background: `${prog.color}15`, color: "#000", textDecoration: "none",
-                            fontSize: 12, fontWeight: 600, fontFamily: "DM Sans", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 4,
+                            padding: "9px 14px", borderRadius: 8, border: `1px solid ${prog.color}40`,
+                            background: `${prog.color}15`, color: "#f7f8f8", textDecoration: "none",
+                            fontSize: 12, fontWeight: 600, fontFamily: "Inter, sans-serif", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 4,
                           }}>View ↗</a>
                         )}
                       </div>
                     ) : (
                       <button onClick={() => (setShowLinkModal(prog.id), setLinkForm({ memberId: "" }))} style={{
-                        width: "100%", padding: "9px 0", borderRadius: 2, border: `1px solid ${prog.color + "40"}`,
-                        background: `${prog.color}15`, color: "#000",
-                        fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "DM Sans", transition: "all 0.3s",
+                        width: "100%", padding: "9px 0", borderRadius: 8, border: `1px solid ${prog.color + "40"}`,
+                        background: `${prog.color}15`, color: "#f7f8f8",
+                        fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif", transition: "all 0.3s",
                       }}>Link Account</button>
                     )}
                   </div>
@@ -1499,12 +1515,12 @@ Start by introducing yourself briefly in-character with personality, and give an
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
         <div>
-          <h2 style={{ fontSize: 20, fontWeight: 800, color: "#000", margin: 0, fontFamily: "Instrument Serif" }}>Annual Travel Plan</h2>
-          <p style={{ color: "rgba(0,0,0,0.3)", fontSize: 12, margin: "4px 0 0", fontFamily: "DM Sans" }}>{trips.length} trips planned for 2026</p>
+          <h2 style={{ fontSize: 20, fontWeight: 800, color: "#f7f8f8", margin: 0, fontFamily: "Inter, sans-serif" }}>Annual Travel Plan</h2>
+          <p style={{ color: "#8a8f98", fontSize: 12, margin: "4px 0 0", fontFamily: "Inter, sans-serif" }}>{trips.length} trips planned for 2026</p>
         </div>
         <button onClick={() => setShowAddTrip(true)} style={{
-          padding: "10px 20px", borderRadius: 2, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Instrument Serif",
-          background: "linear-gradient(135deg, #0EA5A0, #0EA5A0)", color: "#000", boxShadow: "0 4px 15px rgba(14,165,160,0.3)",
+          padding: "10px 20px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Inter, sans-serif",
+          background: "linear-gradient(135deg, #0EA5A0, #0EA5A0)", color: "#f7f8f8", boxShadow: "0 4px 15px rgba(14,165,160,0.3)",
         }}>+ Add Trip</button>
       </div>
 
@@ -1512,12 +1528,12 @@ Start by introducing yourself briefly in-character with personality, and give an
       <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
         <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search trips..."
           style={{
-            padding: "8px 14px", background: "rgba(0,0,0,0.02)", border: "1px solid rgba(14,165,160,0.1)",
-            borderRadius: 2, color: "#000", fontSize: 12, fontFamily: "DM Sans", outline: "none", flex: 1, minWidth: 160,
+            padding: "8px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(14,165,160,0.1)",
+            borderRadius: 8, color: "#f7f8f8", fontSize: 12, fontFamily: "Inter, sans-serif", outline: "none", flex: 1, minWidth: 160,
           }} />
         {["all", "confirmed", "planned", "wishlist"].map(s => (
           <button key={s} onClick={() => setFilterStatus(s)} style={{
-            padding: "8px 14px", borderRadius: 2, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600, fontFamily: "DM Sans",
+            padding: "8px 14px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600, fontFamily: "Inter, sans-serif",
             background: filterStatus === s ? "rgba(14,165,160,0.2)" : "rgba(0,0,0,0.02)",
             color: filterStatus === s ? "#0EA5A0" : "rgba(0,0,0,0.3)", textTransform: "capitalize",
           }}>{s}</button>
@@ -1530,18 +1546,18 @@ Start by introducing yourself briefly in-character with personality, and give an
           const prog = allPrograms.find(p => p.id === trip.program);
           return (
             <div key={trip.id} style={{
-              background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", border: "1px solid rgba(0,0,0,0.03)", borderRadius: 2, padding: "16px 20px",
+              background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8, padding: "16px 20px",
               display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12,
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                 <div style={{
-                  width: 44, height: 44, borderRadius: 3, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22,
+                  width: 44, height: 44, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22,
                   background: prog ? `${prog.color}15` : "rgba(0,0,0,0.02)",
                 }}>{trip.type === "flight" ? "✈️" : trip.type === "hotel" ? "🏨" : "🚗"}</div>
                 <div>
-                  {trip.tripName && <div style={{ fontSize: 13, fontWeight: 700, color: "#0EA5A0", fontFamily: "Instrument Serif", marginBottom: 2 }}>{trip.tripName}</div>}
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "#000", fontFamily: "Instrument Serif" }}>{trip.route || trip.property || trip.location}</div>
-                  <div style={{ fontSize: 11, color: "rgba(0,0,0,0.25)", fontFamily: "DM Sans", marginTop: 2 }}>
+                  {trip.tripName && <div style={{ fontSize: 13, fontWeight: 700, color: "#0EA5A0", fontFamily: "Inter, sans-serif", marginBottom: 2 }}>{trip.tripName}</div>}
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{trip.route || trip.property || trip.location}</div>
+                  <div style={{ fontSize: 11, color: "#62666d", fontFamily: "Inter, sans-serif", marginTop: 2 }}>
                     {trip.date} • {prog?.name || "Unknown"} {trip.nights ? `• ${trip.nights} nights` : ""}
                   </div>
                 </div>
@@ -1549,19 +1565,19 @@ Start by introducing yourself briefly in-character with personality, and give an
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 {trip.estimatedPoints > 0 && (
                   <div style={{ textAlign: "right" }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: "#fbbf24", fontFamily: "Instrument Serif" }}>+{trip.estimatedPoints.toLocaleString()}</div>
-                    <div style={{ fontSize: 10, color: "rgba(0,0,0,0.2)", fontFamily: "DM Sans" }}>points</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "#fbbf24", fontFamily: "Inter, sans-serif" }}>+{trip.estimatedPoints.toLocaleString()}</div>
+                    <div style={{ fontSize: 10, color: "#62666d", fontFamily: "Inter, sans-serif" }}>points</div>
                   </div>
                 )}
                 {trip.estimatedNights > 0 && (
                   <div style={{ textAlign: "right" }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: "#34d399", fontFamily: "Instrument Serif" }}>+{trip.estimatedNights}</div>
-                    <div style={{ fontSize: 10, color: "rgba(0,0,0,0.2)", fontFamily: "DM Sans" }}>nights</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "#34d399", fontFamily: "Inter, sans-serif" }}>+{trip.estimatedNights}</div>
+                    <div style={{ fontSize: 10, color: "#62666d", fontFamily: "Inter, sans-serif" }}>nights</div>
                   </div>
                 )}
                 <Badge color={trip.status === "confirmed" ? "#34d399" : trip.status === "planned" ? "#fbbf24" : "#0EA5A0"} small>{trip.status}</Badge>
                 <button onClick={() => removeTrip(trip.id)} style={{
-                  width: 28, height: 28, borderRadius: 2, border: "none", background: "rgba(239,68,68,0.1)", color: "#ef4444",
+                  width: 28, height: 28, borderRadius: 8, border: "none", background: "rgba(239,68,68,0.1)", color: "#ef4444",
                   fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
                 }}>×</button>
               </div>
@@ -1569,7 +1585,7 @@ Start by introducing yourself briefly in-character with personality, and give an
           );
         })}
         {filteredTrips.length === 0 && (
-          <div style={{ textAlign: "center", padding: 50, color: "rgba(0,0,0,0.15)", fontSize: 13, fontFamily: "DM Sans" }}>
+          <div style={{ textAlign: "center", padding: 50, color: "#62666d", fontSize: 13, fontFamily: "Inter, sans-serif" }}>
             No trips match your filters
           </div>
         )}
@@ -1599,57 +1615,57 @@ Start by introducing yourself briefly in-character with personality, and give an
       return (
         <div>
           <button onClick={() => setExpenseViewTrip(null)} style={{
-            background: "none", border: "none", color: "#0EA5A0", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "DM Sans", marginBottom: 16, padding: 0,
+            background: "none", border: "none", color: "#0EA5A0", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif", marginBottom: 16, padding: 0,
           }}>← Back to All Trips</button>
 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
             <div>
-              <h2 style={{ fontSize: 20, fontWeight: 800, color: "#000", margin: 0, fontFamily: "Instrument Serif" }}>
+              <h2 style={{ fontSize: 20, fontWeight: 800, color: "#f7f8f8", margin: 0, fontFamily: "Inter, sans-serif" }}>
                 {trip.type === "flight" ? "✈️" : trip.type === "hotel" ? "🏨" : "🚗"} {getTripName(trip)}
               </h2>
-              <p style={{ color: "rgba(0,0,0,0.3)", fontSize: 12, margin: "4px 0 0", fontFamily: "DM Sans" }}>
+              <p style={{ color: "#8a8f98", fontSize: 12, margin: "4px 0 0", fontFamily: "Inter, sans-serif" }}>
                 {trip.date} • {prog?.name} • {tripExps.length} expenses
               </p>
             </div>
             <div style={{ display: "flex", gap: 8 }}>
               <button onClick={() => setShowExpenseReport(trip.id)} style={{
-                padding: "9px 18px", borderRadius: 2, border: "1px solid rgba(14,165,160,0.3)", background: "rgba(14,165,160,0.08)",
-                color: "#0EA5A0", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "DM Sans",
+                padding: "9px 18px", borderRadius: 8, border: "1px solid rgba(14,165,160,0.3)", background: "rgba(14,165,160,0.08)",
+                color: "#0EA5A0", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif",
               }}>📄 Generate Report</button>
               <button onClick={() => setShowAddExpense(trip.id)} style={{
-                padding: "9px 18px", borderRadius: 2, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "Instrument Serif",
-                background: "linear-gradient(135deg, #0EA5A0, #0EA5A0)", color: "#000",
+                padding: "9px 18px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "Inter, sans-serif",
+                background: "linear-gradient(135deg, #0EA5A0, #0EA5A0)", color: "#f7f8f8",
               }}>+ Add Expense</button>
             </div>
           </div>
 
           {/* Trip expense summary */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginBottom: 24 }}>
-            <div style={{ background: "rgba(14,165,160,0.08)", border: "1px solid rgba(14,165,160,0.2)", borderRadius: 2, padding: 18 }}>
-              <div style={{ fontSize: 22, fontWeight: 800, color: "#000", fontFamily: "Instrument Serif" }}>${tripTotal.toLocaleString()}</div>
-              <div style={{ fontSize: 11, color: "rgba(0,0,0,0.3)", fontFamily: "DM Sans" }}>Total Spend</div>
+            <div style={{ background: "rgba(14,165,160,0.08)", border: "1px solid rgba(14,165,160,0.2)", borderRadius: 8, padding: 18 }}>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>${tripTotal.toLocaleString()}</div>
+              <div style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>Total Spend</div>
             </div>
-            <div style={{ background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", border: "1px solid rgba(0,0,0,0.03)", borderRadius: 2, padding: 18 }}>
-              <div style={{ fontSize: 22, fontWeight: 800, color: "#000", fontFamily: "Instrument Serif" }}>{tripExps.length}</div>
-              <div style={{ fontSize: 11, color: "rgba(0,0,0,0.3)", fontFamily: "DM Sans" }}>Expenses</div>
+            <div style={{ background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8, padding: 18 }}>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{tripExps.length}</div>
+              <div style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>Expenses</div>
             </div>
-            <div style={{ background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", border: "1px solid rgba(0,0,0,0.03)", borderRadius: 2, padding: 18 }}>
-              <div style={{ fontSize: 22, fontWeight: 800, color: "#000", fontFamily: "Instrument Serif" }}>{tripExps.filter(e => e.receipt).length}</div>
-              <div style={{ fontSize: 11, color: "rgba(0,0,0,0.3)", fontFamily: "DM Sans" }}>With Receipts</div>
+            <div style={{ background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8, padding: 18 }}>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{tripExps.filter(e => e.receipt).length}</div>
+              <div style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>With Receipts</div>
             </div>
           </div>
 
           {/* Category breakdown bar */}
           {tripTotal > 0 && (
             <div style={{ marginBottom: 24 }}>
-              <div style={{ display: "flex", height: 10, borderRadius: 2, overflow: "hidden", marginBottom: 10 }}>
+              <div style={{ display: "flex", height: 10, borderRadius: 8, overflow: "hidden", marginBottom: 10 }}>
                 {catBreakdown.map((cat, i) => (
                   <div key={i} style={{ width: `${(cat.total / tripTotal) * 100}%`, background: cat.color, transition: "width 0.5s ease" }} title={`${cat.label}: $${cat.total}`} />
                 ))}
               </div>
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                 {catBreakdown.map((cat, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "rgba(0,0,0,0.4)", fontFamily: "DM Sans" }}>
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>
                     <span style={{ width: 8, height: 8, borderRadius: "50%", background: cat.color, flexShrink: 0 }} />
                     {cat.label}: ${cat.total.toLocaleString()} ({Math.round((cat.total / tripTotal) * 100)}%)
                   </div>
@@ -1664,27 +1680,27 @@ Start by introducing yourself briefly in-character with personality, and give an
               const cat = EXPENSE_CATEGORIES.find(c => c.id === exp.category);
               return (
                 <div key={exp.id} style={{
-                  background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", border: "1px solid rgba(0,0,0,0.03)", borderRadius: 3, padding: "14px 18px",
+                  background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8, padding: "14px 18px",
                   display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12,
                 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
                     <div style={{
-                      width: 38, height: 38, borderRadius: 2, display: "flex", alignItems: "center", justifyContent: "center",
+                      width: 38, height: 38, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
                       fontSize: 18, background: `${cat?.color || "#666"}15`, flexShrink: 0,
                     }}>{cat?.icon || "📎"}</div>
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#000", fontFamily: "DM Sans", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.description}</div>
-                      <div style={{ fontSize: 11, color: "rgba(0,0,0,0.25)", fontFamily: "DM Sans" }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#f7f8f8", fontFamily: "Inter, sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.description}</div>
+                      <div style={{ fontSize: 11, color: "#62666d", fontFamily: "Inter, sans-serif" }}>
                         {exp.date} • {exp.paymentMethod || "—"} {exp.receipt ? "• 🧾" : ""} {exp.notes ? `• ${exp.notes}` : ""}
                       </div>
                       {exp.receiptImage?.data && exp.receiptImage.type?.startsWith("image/") && (
-                        <img src={exp.receiptImage.data} alt="Receipt" style={{ width: 32, height: 32, objectFit: "cover", borderRadius: 2, marginTop: 4, border: "1px solid rgba(0,0,0,0.03)", cursor: "pointer" }}
+                        <img src={exp.receiptImage.data} alt="Receipt" style={{ width: 32, height: 32, objectFit: "cover", borderRadius: 8, marginTop: 4, border: "1px solid rgba(255,255,255,0.05)", cursor: "pointer" }}
                           onClick={(e) => { e.stopPropagation(); window.open(exp.receiptImage.data, "_blank"); }} title="Click to view full receipt" />
                       )}
                     </div>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: exp.amount === 0 ? "#34d399" : "#FFFFFF", fontFamily: "Instrument Serif" }}>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: exp.amount === 0 ? "#34d399" : "#FFFFFF", fontFamily: "Inter, sans-serif" }}>
                       {exp.amount === 0 ? "Free" : `$${exp.amount.toLocaleString()}`}
                     </div>
                     <button onClick={() => removeExpense(exp.id)} style={{
@@ -1696,7 +1712,7 @@ Start by introducing yourself briefly in-character with personality, and give an
               );
             })}
             {tripExps.length === 0 && (
-              <div style={{ textAlign: "center", padding: 40, color: "rgba(0,0,0,0.15)", fontSize: 13, fontFamily: "DM Sans" }}>
+              <div style={{ textAlign: "center", padding: 40, color: "#62666d", fontSize: 13, fontFamily: "Inter, sans-serif" }}>
                 No expenses yet for this trip. Click "+ Add Expense" to start tracking.
               </div>
             )}
@@ -1710,37 +1726,37 @@ Start by introducing yourself briefly in-character with personality, and give an
       <div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
           <div>
-            <h2 style={{ fontSize: 20, fontWeight: 800, color: "#000", margin: 0, fontFamily: "Instrument Serif" }}>Trip Expenses</h2>
-            <p style={{ color: "rgba(0,0,0,0.3)", fontSize: 12, margin: "4px 0 0", fontFamily: "DM Sans" }}>Track spending across all your trips</p>
+            <h2 style={{ fontSize: 20, fontWeight: 800, color: "#f7f8f8", margin: 0, fontFamily: "Inter, sans-serif" }}>Trip Expenses</h2>
+            <p style={{ color: "#8a8f98", fontSize: 12, margin: "4px 0 0", fontFamily: "Inter, sans-serif" }}>Track spending across all your trips</p>
           </div>
         </div>
 
         {/* Grand total stats */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14, marginBottom: 28 }}>
-          <div style={{ background: "rgba(14,165,160,0.08)", border: "1px solid rgba(14,165,160,0.2)", borderRadius: 2, padding: 18 }}>
-            <div style={{ fontSize: 26, fontWeight: 800, color: "#000", fontFamily: "Instrument Serif" }}>${grandTotal.toLocaleString()}</div>
-            <div style={{ fontSize: 11, color: "rgba(0,0,0,0.3)", fontFamily: "DM Sans" }}>Total Across All Trips</div>
+          <div style={{ background: "rgba(14,165,160,0.08)", border: "1px solid rgba(14,165,160,0.2)", borderRadius: 8, padding: 18 }}>
+            <div style={{ fontSize: 26, fontWeight: 800, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>${grandTotal.toLocaleString()}</div>
+            <div style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>Total Across All Trips</div>
           </div>
-          <div style={{ background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", border: "1px solid rgba(0,0,0,0.03)", borderRadius: 2, padding: 18 }}>
-            <div style={{ fontSize: 26, fontWeight: 800, color: "#000", fontFamily: "Instrument Serif" }}>{expenses.length}</div>
-            <div style={{ fontSize: 11, color: "rgba(0,0,0,0.3)", fontFamily: "DM Sans" }}>Total Expenses</div>
+          <div style={{ background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8, padding: 18 }}>
+            <div style={{ fontSize: 26, fontWeight: 800, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{expenses.length}</div>
+            <div style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>Total Expenses</div>
           </div>
-          <div style={{ background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", border: "1px solid rgba(0,0,0,0.03)", borderRadius: 2, padding: 18 }}>
-            <div style={{ fontSize: 26, fontWeight: 800, color: "#000", fontFamily: "Instrument Serif" }}>{tripsWithExpenses.filter(t => t.total > 0).length}</div>
-            <div style={{ fontSize: 11, color: "rgba(0,0,0,0.3)", fontFamily: "DM Sans" }}>Trips With Expenses</div>
+          <div style={{ background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8, padding: 18 }}>
+            <div style={{ fontSize: 26, fontWeight: 800, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{tripsWithExpenses.filter(t => t.total > 0).length}</div>
+            <div style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>Trips With Expenses</div>
           </div>
         </div>
 
         {/* Spending by category */}
         {totalByCategory.length > 0 && (
           <div style={{ marginBottom: 28 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: "rgba(0,0,0,0.5)", marginBottom: 12, fontFamily: "Instrument Serif" }}>Spending by Category</h3>
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: "#d0d6e0", marginBottom: 12, fontFamily: "Inter, sans-serif" }}>Spending by Category</h3>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 10 }}>
               {totalByCategory.map((cat, i) => (
-                <div key={i} style={{ background: `${cat.color}10`, border: `1px solid ${cat.color}25`, borderRadius: 3, padding: 14, textAlign: "center" }}>
+                <div key={i} style={{ background: `${cat.color}10`, border: `1px solid ${cat.color}25`, borderRadius: 8, padding: 14, textAlign: "center" }}>
                   <div style={{ fontSize: 22, marginBottom: 4 }}>{cat.icon}</div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: "#000", fontFamily: "Instrument Serif" }}>${cat.total.toLocaleString()}</div>
-                  <div style={{ fontSize: 10, color: "rgba(0,0,0,0.3)", fontFamily: "DM Sans" }}>{cat.label}</div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>${cat.total.toLocaleString()}</div>
+                  <div style={{ fontSize: 10, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>{cat.label}</div>
                 </div>
               ))}
             </div>
@@ -1748,7 +1764,7 @@ Start by introducing yourself briefly in-character with personality, and give an
         )}
 
         {/* Trip-by-trip list */}
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: "rgba(0,0,0,0.5)", marginBottom: 12, fontFamily: "Instrument Serif" }}>Expenses by Trip</h3>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#d0d6e0", marginBottom: 12, fontFamily: "Inter, sans-serif" }}>Expenses by Trip</h3>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {trips.map(trip => {
             const tripExps = getTripExpenses(trip.id);
@@ -1756,30 +1772,30 @@ Start by introducing yourself briefly in-character with personality, and give an
             const prog = allPrograms.find(p => p.id === trip.program);
             return (
               <div key={trip.id} style={{
-                background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", border: "1px solid rgba(0,0,0,0.03)", borderRadius: 2, padding: "16px 20px",
+                background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8, padding: "16px 20px",
                 cursor: "pointer", transition: "all 0.2s",
               }} onClick={() => setExpenseViewTrip(trip.id)}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1 }}>
                     <div style={{
-                      width: 42, height: 42, borderRadius: 3, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20,
+                      width: 42, height: 42, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20,
                       background: prog ? `${prog.color}15` : "rgba(0,0,0,0.02)",
                     }}>{trip.type === "flight" ? "✈️" : trip.type === "hotel" ? "🏨" : "🚗"}</div>
                     <div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: "#000", fontFamily: "Instrument Serif" }}>{getTripName(trip)}</div>
-                      <div style={{ fontSize: 11, color: "rgba(0,0,0,0.25)", fontFamily: "DM Sans" }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{getTripName(trip)}</div>
+                      <div style={{ fontSize: 11, color: "#62666d", fontFamily: "Inter, sans-serif" }}>
                         {trip.date} • {tripExps.length} expense{tripExps.length !== 1 ? "s" : ""}
                       </div>
                     </div>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <div style={{ textAlign: "right" }}>
-                      <div style={{ fontSize: 16, fontWeight: 700, color: tripTotal > 0 ? "#fff" : "rgba(0,0,0,0.15)", fontFamily: "Instrument Serif" }}>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: tripTotal > 0 ? "#fff" : "rgba(0,0,0,0.15)", fontFamily: "Inter, sans-serif" }}>
                         {tripTotal > 0 ? `$${tripTotal.toLocaleString()}` : "—"}
                       </div>
                     </div>
                     <button onClick={(e) => { e.stopPropagation(); setShowAddExpense(trip.id); }} style={{
-                      width: 32, height: 32, borderRadius: 2, border: "1px solid rgba(14,165,160,0.2)", background: "rgba(14,165,160,0.06)",
+                      width: 32, height: 32, borderRadius: 8, border: "1px solid rgba(14,165,160,0.2)", background: "rgba(14,165,160,0.06)",
                       color: "#0EA5A0", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
                     }}>+</button>
                     <span style={{ color: "rgba(0,0,0,0.08)", fontSize: 14 }}>→</span>
@@ -1789,7 +1805,7 @@ Start by introducing yourself briefly in-character with personality, and give an
             );
           })}
           {trips.length === 0 && (
-            <div style={{ textAlign: "center", padding: 40, color: "rgba(0,0,0,0.15)", fontSize: 13, fontFamily: "DM Sans" }}>
+            <div style={{ textAlign: "center", padding: 40, color: "#62666d", fontSize: 13, fontFamily: "Inter, sans-serif" }}>
               Add trips first, then track expenses for each one.
             </div>
           )}
@@ -1804,8 +1820,8 @@ Start by introducing yourself briefly in-character with personality, and give an
       <div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
           <div>
-            <h2 style={{ fontSize: 20, fontWeight: 800, color: "#000", margin: 0, fontFamily: "Instrument Serif" }}>Trip Optimizer</h2>
-            <p style={{ color: "rgba(0,0,0,0.3)", fontSize: 12, margin: "4px 0 0", fontFamily: "DM Sans" }}>See how crediting flights differently affects your status</p>
+            <h2 style={{ fontSize: 20, fontWeight: 800, color: "#f7f8f8", margin: 0, fontFamily: "Inter, sans-serif" }}>Trip Optimizer</h2>
+            <p style={{ color: "#8a8f98", fontSize: 12, margin: "4px 0 0", fontFamily: "Inter, sans-serif" }}>See how crediting flights differently affects your status</p>
           </div>
           <Badge color="#f59e0b">★ PREMIUM</Badge>
         </div>
@@ -1813,25 +1829,25 @@ Start by introducing yourself briefly in-character with personality, and give an
         {user?.tier !== "premium" ? (
           <div style={{
             background: "linear-gradient(135deg, rgba(245,158,11,0.08), rgba(14,165,160,0.08))", border: "1px solid rgba(245,158,11,0.2)",
-            borderRadius: 3, padding: 40, textAlign: "center",
+            borderRadius: 8, padding: 40, textAlign: "center",
           }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
-            <h3 style={{ fontSize: 20, fontWeight: 800, color: "#000", fontFamily: "Instrument Serif", margin: "0 0 8px" }}>Unlock Trip Optimizer</h3>
-            <p style={{ color: "rgba(0,0,0,0.4)", fontSize: 13, fontFamily: "DM Sans", maxWidth: 400, margin: "0 auto 24px" }}>
+            <h3 style={{ fontSize: 20, fontWeight: 800, color: "#f7f8f8", fontFamily: "Inter, sans-serif", margin: "0 0 8px" }}>Unlock Trip Optimizer</h3>
+            <p style={{ color: "#8a8f98", fontSize: 13, fontFamily: "Inter, sans-serif", maxWidth: 400, margin: "0 auto 24px" }}>
               See the optimal way to credit each flight across your airline programs. Find hidden status shortcuts and maximize every trip.
             </p>
             <button onClick={() => setShowUpgrade(true)} style={{
-              padding: "12px 32px", borderRadius: 3, border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "Instrument Serif",
-              background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#000", boxShadow: "0 4px 20px rgba(245,158,11,0.3)",
+              padding: "12px 32px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "Inter, sans-serif",
+              background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#f7f8f8", boxShadow: "0 4px 20px rgba(245,158,11,0.3)",
             }}>Upgrade to Premium — $9.99/mo</button>
           </div>
         ) : (
           <div>
             <div style={{
-              background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", border: "1px solid rgba(0,0,0,0.03)", borderRadius: 2, padding: 22, marginBottom: 20,
+              background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8, padding: 22, marginBottom: 20,
             }}>
-              <h4 style={{ fontSize: 14, fontWeight: 700, color: "#000", fontFamily: "Instrument Serif", marginBottom: 14 }}>Optimal Credit Strategy for 2026</h4>
-              <div style={{ fontSize: 12, color: "rgba(0,0,0,0.4)", fontFamily: "DM Sans", marginBottom: 16 }}>
+              <h4 style={{ fontSize: 14, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif", marginBottom: 14 }}>Optimal Credit Strategy for 2026</h4>
+              <div style={{ fontSize: 12, color: "#8a8f98", fontFamily: "Inter, sans-serif", marginBottom: 16 }}>
                 Based on your {scenarioTrips.length} planned flights, here's the best way to allocate credits:
               </div>
               {LOYALTY_PROGRAMS.airlines.map(airline => {
@@ -1840,18 +1856,18 @@ Start by introducing yourself briefly in-character with personality, and give an
                 const status = getProjectedStatus(airline.id);
                 return (
                   <div key={airline.id} style={{
-                    background: `${airline.color}10`, border: `1px solid ${airline.color}20`, borderRadius: 3, padding: 16, marginBottom: 10,
+                    background: `${airline.color}10`, border: `1px solid ${airline.color}20`, borderRadius: 8, padding: 16, marginBottom: 10,
                   }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: "#000", fontFamily: "Instrument Serif" }}>{airline.name}</div>
-                        <div style={{ fontSize: 11, color: "rgba(0,0,0,0.3)", fontFamily: "DM Sans" }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{airline.name}</div>
+                        <div style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>
                           {airlineTrips.length} flights • +{totalPts.toLocaleString()} pts projected
                         </div>
                       </div>
                       {status?.willAdvance && <Badge color="#34d399">Will advance to {status.projectedTier.name}!</Badge>}
                       {status && !status.willAdvance && status.nextTier && (
-                        <div style={{ fontSize: 11, color: "#fbbf24", fontFamily: "DM Sans" }}>
+                        <div style={{ fontSize: 11, color: "#fbbf24", fontFamily: "Inter, sans-serif" }}>
                           Need {(status.nextTier.threshold - status.projected).toLocaleString()} more for {status.nextTier.name}
                         </div>
                       )}
@@ -1863,9 +1879,9 @@ Start by introducing yourself briefly in-character with personality, and give an
 
             <div style={{
               background: "linear-gradient(135deg, rgba(52,211,153,0.08), rgba(16,185,129,0.04))", border: "1px solid rgba(52,211,153,0.2)",
-              borderRadius: 2, padding: 22,
+              borderRadius: 8, padding: 22,
             }}>
-              <h4 style={{ fontSize: 14, fontWeight: 700, color: "#34d399", fontFamily: "Instrument Serif", marginBottom: 10 }}>💡 Optimizer Recommendations</h4>
+              <h4 style={{ fontSize: 14, fontWeight: 700, color: "#34d399", fontFamily: "Inter, sans-serif", marginBottom: 10 }}>💡 Optimizer Recommendations</h4>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {[
                   "Consider crediting your LAX→ATL flight to AA instead of Delta to push closer to Platinum Pro",
@@ -1874,8 +1890,8 @@ Start by introducing yourself briefly in-character with personality, and give an
                   "Your Amex Platinum earns 5x on flights — ensure all bookings use this card",
                 ].map((tip, i) => (
                   <div key={i} style={{
-                    background: "rgba(0,0,0,0.02)", borderRadius: 2, padding: "10px 14px", fontSize: 12,
-                    color: "rgba(0,0,0,0.5)", fontFamily: "DM Sans", display: "flex", gap: 8,
+                    background: "rgba(255,255,255,0.03)", borderRadius: 8, padding: "10px 14px", fontSize: 12,
+                    color: "#d0d6e0", fontFamily: "Inter, sans-serif", display: "flex", gap: 8,
                   }}>
                     <span style={{ color: "#34d399", fontWeight: 700, flexShrink: 0 }}>→</span> {tip}
                   </div>
@@ -1907,22 +1923,22 @@ Start by introducing yourself briefly in-character with personality, and give an
       <div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
           <div>
-            <h2 style={{ fontSize: 20, fontWeight: 800, color: "#000", margin: 0, fontFamily: "Instrument Serif" }}>Annual Reports</h2>
-            <p style={{ color: "rgba(0,0,0,0.3)", fontSize: 12, margin: "4px 0 0", fontFamily: "DM Sans" }}>Your 2026 travel year at a glance</p>
+            <h2 style={{ fontSize: 20, fontWeight: 800, color: "#f7f8f8", margin: 0, fontFamily: "Inter, sans-serif" }}>Annual Reports</h2>
+            <p style={{ color: "#8a8f98", fontSize: 12, margin: "4px 0 0", fontFamily: "Inter, sans-serif" }}>Your 2026 travel year at a glance</p>
           </div>
           <button onClick={() => setShowUpgrade(true)} style={{
-            padding: "8px 16px", borderRadius: 2, border: "1px solid rgba(245,158,11,0.3)", background: "rgba(245,158,11,0.08)",
-            color: "#f59e0b", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "DM Sans",
+            padding: "8px 16px", borderRadius: 8, border: "1px solid rgba(245,158,11,0.3)", background: "rgba(245,158,11,0.08)",
+            color: "#f59e0b", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif",
           }}>★ Export PDF — Premium</button>
         </div>
 
         {/* Bar Chart */}
-        <div style={{ background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", border: "1px solid rgba(0,0,0,0.03)", borderRadius: 2, padding: 22, marginBottom: 20 }}>
-          <h4 style={{ fontSize: 14, fontWeight: 700, color: "#000", fontFamily: "Instrument Serif", marginBottom: 18 }}>Points Earned by Month</h4>
+        <div style={{ background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8, padding: 22, marginBottom: 20 }}>
+          <h4 style={{ fontSize: 14, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif", marginBottom: 18 }}>Points Earned by Month</h4>
           <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 140 }}>
             {monthlyData.map((d, i) => (
               <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                <div style={{ fontSize: 9, color: "#fbbf24", fontWeight: 600, fontFamily: "DM Sans" }}>
+                <div style={{ fontSize: 9, color: "#fbbf24", fontWeight: 600, fontFamily: "Inter, sans-serif" }}>
                   {d.points > 0 ? `${(d.points / 1000).toFixed(1)}k` : ""}
                 </div>
                 <div style={{
@@ -1930,7 +1946,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                   borderRadius: "4px 4px 0 0", background: d.points > 0 ? "linear-gradient(180deg, #0EA5A0, #0EA5A0)" : "rgba(0,0,0,0.02)",
                   transition: "height 1s ease",
                 }} />
-                <span style={{ fontSize: 9, color: "rgba(0,0,0,0.2)", fontFamily: "DM Sans" }}>{d.month}</span>
+                <span style={{ fontSize: 9, color: "#62666d", fontFamily: "Inter, sans-serif" }}>{d.month}</span>
               </div>
             ))}
           </div>
@@ -1945,31 +1961,31 @@ Start by introducing yourself briefly in-character with personality, and give an
             { label: "Est. Travel Spend", value: "$" + (trips.length * 850).toLocaleString(), icon: "💰", color: "#f472b6" },
           ].map((stat, i) => (
             <div key={i} style={{
-              background: `${stat.color}08`, border: `1px solid ${stat.color}20`, borderRadius: 2, padding: 20,
+              background: `${stat.color}08`, border: `1px solid ${stat.color}20`, borderRadius: 8, padding: 20,
             }}>
               <div style={{ fontSize: 24, marginBottom: 6 }}>{stat.icon}</div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: "#000", fontFamily: "Instrument Serif" }}>{stat.value}</div>
-              <div style={{ fontSize: 11, color: "rgba(0,0,0,0.3)", fontFamily: "DM Sans", marginTop: 2 }}>{stat.label}</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{stat.value}</div>
+              <div style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif", marginTop: 2 }}>{stat.label}</div>
             </div>
           ))}
         </div>
 
         {/* Status Forecast */}
-        <div style={{ background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", border: "1px solid rgba(0,0,0,0.03)", borderRadius: 2, padding: 22 }}>
-          <h4 style={{ fontSize: 14, fontWeight: 700, color: "#000", fontFamily: "Instrument Serif", marginBottom: 14 }}>Year-End Status Forecast</h4>
+        <div style={{ background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8, padding: 22 }}>
+          <h4 style={{ fontSize: 14, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif", marginBottom: 14 }}>Year-End Status Forecast</h4>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: 10 }}>
             {allPrograms.filter(p => linkedAccounts[p.id] && p.tiers).map(prog => {
               const status = getProjectedStatus(prog.id);
               if (!status) return null;
               return (
                 <div key={prog.id} style={{
-                  display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderRadius: 2,
+                  display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderRadius: 8,
                   background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", border: "1px solid rgba(0,0,0,0.02)",
                 }}>
                   <span style={{ fontSize: 20 }}>{prog.logo}</span>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: "#000", fontFamily: "DM Sans" }}>{prog.name}</div>
-                    <div style={{ fontSize: 10, color: "rgba(0,0,0,0.25)", fontFamily: "DM Sans" }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{prog.name}</div>
+                    <div style={{ fontSize: 10, color: "#62666d", fontFamily: "Inter, sans-serif" }}>
                       {status.projectedTier?.name || "Member"} {status.willAdvance ? "🎉" : ""}
                     </div>
                   </div>
@@ -1987,8 +2003,8 @@ Start by introducing yourself briefly in-character with personality, and give an
     <div>
       <div style={{ textAlign: "center", marginBottom: 40 }}>
         <div style={{ fontSize: 48, marginBottom: 12, display: "flex", justifyContent: "center" }}><LogoMark size={64} /></div>
-        <h2 style={{ fontSize: 26, fontWeight: 800, color: "#000", margin: 0, fontFamily: "Instrument Serif" }}>Continuum Premium</h2>
-        <p style={{ color: "rgba(0,0,0,0.3)", fontSize: 14, fontFamily: "DM Sans", marginTop: 6 }}>Maximize every mile, every night, every point.</p>
+        <h2 style={{ fontSize: 26, fontWeight: 800, color: "#f7f8f8", margin: 0, fontFamily: "Inter, sans-serif" }}>Continuum Premium</h2>
+        <p style={{ color: "#8a8f98", fontSize: 14, fontFamily: "Inter, sans-serif", marginTop: 6 }}>Maximize every mile, every night, every point.</p>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20, marginBottom: 36 }}>
@@ -2000,30 +2016,30 @@ Start by introducing yourself briefly in-character with personality, and give an
           <div key={i} style={{
             background: plan.popular ? `linear-gradient(135deg, ${plan.color}15, ${plan.color}08)` : "rgba(0,0,0,0.02)",
             border: `1px solid ${plan.popular ? plan.color + "40" : "rgba(0,0,0,0.03)"}`,
-            borderRadius: 3, padding: 28, position: "relative", overflow: "hidden",
+            borderRadius: 8, padding: 28, position: "relative", overflow: "hidden",
           }}>
             {plan.popular && (
               <div style={{
-                position: "absolute", top: 14, right: -28, background: plan.color, color: "#000", fontSize: 10, fontWeight: 700,
-                padding: "4px 36px", transform: "rotate(45deg)", fontFamily: "DM Sans",
+                position: "absolute", top: 14, right: -28, background: plan.color, color: "#f7f8f8", fontSize: 10, fontWeight: 700,
+                padding: "4px 36px", transform: "rotate(45deg)", fontFamily: "Inter, sans-serif",
               }}>POPULAR</div>
             )}
-            <div style={{ fontSize: 16, fontWeight: 700, color: plan.popular ? "#0EA5A0" : "#FFFFFF", fontFamily: "Instrument Serif", marginBottom: 6 }}>{plan.name}</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: plan.popular ? "#0EA5A0" : "#FFFFFF", fontFamily: "Inter, sans-serif", marginBottom: 6 }}>{plan.name}</div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 18 }}>
-              <span style={{ fontSize: 36, fontWeight: 800, color: "#000", fontFamily: "Instrument Serif" }}>{plan.price}</span>
-              <span style={{ fontSize: 13, color: "rgba(0,0,0,0.3)", fontFamily: "DM Sans" }}>{plan.period}</span>
+              <span style={{ fontSize: 36, fontWeight: 800, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{plan.price}</span>
+              <span style={{ fontSize: 13, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>{plan.period}</span>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 22 }}>
               {plan.features.map((f, fi) => (
-                <div key={fi} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "rgba(0,0,0,0.5)", fontFamily: "DM Sans" }}>
+                <div key={fi} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#d0d6e0", fontFamily: "Inter, sans-serif" }}>
                   <span style={{ color: plan.popular ? "#0EA5A0" : "#34d399", fontSize: 13 }}>✓</span> {f}
                 </div>
               ))}
             </div>
             <button style={{
-              width: "100%", padding: "12px 0", borderRadius: 3, border: plan.popular ? "none" : "1px solid rgba(0,0,0,0.03)",
+              width: "100%", padding: "12px 0", borderRadius: 8, border: plan.popular ? "none" : "1px solid rgba(0,0,0,0.03)",
               background: plan.popular ? `linear-gradient(135deg, #0EA5A0, #0EA5A0)` : "rgba(0,0,0,0.02)",
-              color: "#000", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "Instrument Serif",
+              color: "#f7f8f8", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "Inter, sans-serif",
               boxShadow: plan.popular ? "0 4px 20px rgba(14,165,160,0.3)" : "none",
             }}>{plan.price === "$0" ? "Current Plan" : "Upgrade Now"}</button>
           </div>
@@ -2032,9 +2048,9 @@ Start by introducing yourself briefly in-character with personality, and give an
 
       {/* Feature Highlights */}
       <div style={{
-        background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", border: "1px solid rgba(0,0,0,0.03)", borderRadius: 2, padding: 24,
+        background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8, padding: 24,
       }}>
-        <h3 style={{ fontSize: 16, fontWeight: 700, color: "#000", fontFamily: "Instrument Serif", marginBottom: 16 }}>Why Go Premium?</h3>
+        <h3 style={{ fontSize: 16, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif", marginBottom: 16 }}>Why Go Premium?</h3>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
           {[
             { icon: "🧠", title: "AI Trip Optimizer", desc: "Know exactly where to credit every flight for maximum status acceleration" },
@@ -2045,11 +2061,11 @@ Start by introducing yourself briefly in-character with personality, and give an
             { icon: "👨‍👩‍👧‍👦", title: "Family Accounts", desc: "Track status for your whole family and optimize household loyalty strategy" },
           ].map((f, i) => (
             <div key={i} style={{
-              background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", borderRadius: 3, padding: 16,
+              background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", borderRadius: 8, padding: 16,
             }}>
               <div style={{ fontSize: 24, marginBottom: 8 }}>{f.icon}</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#000", fontFamily: "Instrument Serif", marginBottom: 4 }}>{f.title}</div>
-              <div style={{ fontSize: 11, color: "rgba(0,0,0,0.3)", fontFamily: "DM Sans", lineHeight: 1.5 }}>{f.desc}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif", marginBottom: 4 }}>{f.title}</div>
+              <div style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif", lineHeight: 1.5 }}>{f.desc}</div>
             </div>
           ))}
         </div>
@@ -2077,37 +2093,37 @@ Start by introducing yourself briefly in-character with personality, and give an
   // ============================================================
   return (
     <div style={{
-      minHeight: "100vh", background: "linear-gradient(160deg, #ffffff 0%, #FFFFFF 25%, #f8f8f8 50%, #ffffff 75%, #ffffff 100%)",
-      fontFamily: "'Instrument Serif', 'DM Sans', 'Space Mono', system-ui, sans-serif", color: "#000", display: "flex", position: "relative",
+      minHeight: "100vh", background: "#08090a",
+      fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", color: "#f7f8f8", display: "flex", position: "relative",
     }}>
       <TravelAtmosphere />
-      <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
 
       {/* Sidebar */}
       <aside style={{
         width: 220, minHeight: "100vh",
-        background: "linear-gradient(180deg, rgba(14,165,160,0.06) 0%, rgba(0,0,0,0.4) 30%, rgba(0,0,0,0.35) 100%)",
-        borderRight: "2px solid rgba(14,165,160,0.15)",
+        background: "#0f1011",
+        borderRight: "1px solid #23252a",
         padding: "20px 12px", display: "flex", flexDirection: "column", flexShrink: 0,
         position: "sticky", top: 0, height: "100vh", overflowY: "auto", boxSizing: "border-box",
         backdropFilter: "blur(20px)", zIndex: 10,
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 8px", marginBottom: 28 }}>
           <LogoMark size={28} />
-          <span style={{ fontSize: 17, fontWeight: 800, fontFamily: "Instrument Serif", letterSpacing: -0.3 }}>Continuum</span>
+          <span style={{ fontSize: 17, fontWeight: 800, fontFamily: "Inter, sans-serif", letterSpacing: -0.3 }}>Continuum</span>
         </div>
 
         <nav style={{ display: "flex", flexDirection: "column", gap: 3, flex: 1 }}>
           {navItems.map(item => (
             <button key={item.id} onClick={() => setActiveView(item.id)} style={{
-              display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 2, border: "none", cursor: "pointer",
+              display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 8, border: "none", cursor: "pointer",
               background: activeView === item.id ? "rgba(14,165,160,0.12)" : "transparent",
               color: activeView === item.id ? "#0EA5A0" : "rgba(0,0,0,0.3)",
-              fontSize: 13, fontWeight: activeView === item.id ? 600 : 500, fontFamily: "DM Sans", textAlign: "left", transition: "all 0.2s", width: "100%",
+              fontSize: 13, fontWeight: activeView === item.id ? 600 : 500, fontFamily: "Inter, sans-serif", textAlign: "left", transition: "all 0.2s", width: "100%",
             }}>
               <span style={{ fontSize: 16, width: 22, textAlign: "center" }}>{item.icon}</span>
               {item.label}
-              {item.id === "premium" && <span style={{ marginLeft: "auto", fontSize: 9, background: "rgba(245,158,11,0.15)", color: "#f59e0b", padding: "1px 6px", borderRadius: 6, fontWeight: 700 }}>PRO</span>}
+              {item.id === "premium" && <span style={{ marginLeft: "auto", fontSize: 9, background: "rgba(245,158,11,0.15)", color: "#f59e0b", padding: "1px 6px", borderRadius: 8, fontWeight: 700 }}>PRO</span>}
             </button>
           ))}
         </nav>
@@ -2115,21 +2131,21 @@ Start by introducing yourself briefly in-character with personality, and give an
         {/* User Card */}
         <div style={{
           background: "linear-gradient(135deg, rgba(14,165,160,0.08), rgba(0,0,0,0.02))",
-          border: "1px solid rgba(14,165,160,0.08)", borderRadius: 3, padding: 14, marginTop: 12,
+          border: "1px solid rgba(14,165,160,0.08)", borderRadius: 8, padding: 14, marginTop: 12,
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
             <div style={{
-              width: 36, height: 36, borderRadius: 2, background: "linear-gradient(135deg, #0EA5A0, #0EA5A0)",
+              width: 36, height: 36, borderRadius: 8, background: "linear-gradient(135deg, #0EA5A0, #0EA5A0)",
               display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700,
             }}>{user?.avatar || "U"}</div>
             <div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "#000", fontFamily: "DM Sans" }}>{user?.name}</div>
-              <div style={{ fontSize: 10, color: "rgba(0,0,0,0.2)", fontFamily: "DM Sans" }}>{user?.tier === "premium" ? "Premium" : "Free Plan"}</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{user?.name}</div>
+              <div style={{ fontSize: 10, color: "#62666d", fontFamily: "Inter, sans-serif" }}>{user?.tier === "premium" ? "Premium" : "Free Plan"}</div>
             </div>
           </div>
           <button onClick={handleLogout} style={{
-            width: "100%", padding: "7px 0", borderRadius: 2, border: "1px solid rgba(0,0,0,0.03)", background: "transparent",
-            color: "rgba(0,0,0,0.25)", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "DM Sans",
+            width: "100%", padding: "7px 0", borderRadius: 8, border: "1px solid rgba(255,255,255,0.05)", background: "rgba(255,255,255,0.03)",
+            color: "#62666d", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif",
           }}>Sign Out</button>
         </div>
       </aside>
@@ -2146,10 +2162,10 @@ Start by introducing yourself briefly in-character with personality, and give an
 
         {/* Page Header — clean text, no hero image */}
         <div style={{ marginBottom: 20, padding: "4px 0" }}>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: "#000", margin: 0, fontFamily: "Instrument Serif" }}>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: "#f7f8f8", margin: 0, fontFamily: "Inter, sans-serif" }}>
             {activeView === "dashboard" ? `Welcome back, ${user?.name?.split(" ")[0]}` : navItems.find(n => n.id === activeView)?.label}
           </h1>
-          <p style={{ fontSize: 12, color: "rgba(14,165,160,0.6)", fontFamily: "DM Sans", marginTop: 4 }}>
+          <p style={{ fontSize: 12, color: "rgba(14,165,160,0.6)", fontFamily: "Inter, sans-serif", marginTop: 4 }}>
             {activeView === "dashboard" ? `${new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })} · ${Object.keys(linkedAccounts).length} programs tracked` :
             activeView === "programs" ? "Link and manage all your loyalty accounts" :
             activeView === "trips" ? "Plan, track, and optimize your upcoming travel" :
@@ -2172,28 +2188,28 @@ Start by introducing yourself briefly in-character with personality, and give an
       {/* Add Trip Modal */}
       {showAddTrip && (
         <div style={{
-          position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
         }} onClick={() => setShowAddTrip(false)}>
           <div onClick={e => e.stopPropagation()} style={{
-            background: "linear-gradient(135deg, #f8f8f8, #f0f0f0)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 3, padding: 28, width: "100%", maxWidth: 440,
+            background: "linear-gradient(135deg, #141516, #191a1b)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, padding: 28, width: "100%", maxWidth: 440,
           }}>
-            <h3 style={{ fontSize: 18, fontWeight: 800, color: "#000", margin: "0 0 20px", fontFamily: "Instrument Serif" }}>Add Trip</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: "#f7f8f8", margin: "0 0 20px", fontFamily: "Inter, sans-serif" }}>Add Trip</h3>
 
             {/* Trip Name */}
             <label style={{ display: "block", marginBottom: 16 }}>
-              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans" }}>Trip Name</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Trip Name</span>
               <input value={newTrip.tripName} onChange={e => setNewTrip(p => ({ ...p, tripName: e.target.value }))}
                 placeholder="e.g. London Spring Getaway, Tokyo Anniversary"
                 style={{
-                  display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(0,0,0,0.02)",
-                  border: "1px solid rgba(14,165,160,0.1)", borderRadius: 2, color: "#000", fontSize: 13, fontFamily: "DM Sans", outline: "none", boxSizing: "border-box",
+                  display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)",
+                  border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box",
                 }} />
             </label>
 
             <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
               {["flight", "hotel", "rental"].map(type => (
                 <button key={type} onClick={() => setNewTrip(p => ({ ...p, type, program: type === "flight" ? "aa" : type === "hotel" ? "marriott" : "hertz" }))} style={{
-                  flex: 1, padding: "10px 0", borderRadius: 2, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "DM Sans",
+                  flex: 1, padding: "10px 0", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "Inter, sans-serif",
                   background: newTrip.type === type ? "rgba(14,165,160,0.2)" : "rgba(0,0,0,0.02)",
                   color: newTrip.type === type ? "#0EA5A0" : "rgba(0,0,0,0.3)", textTransform: "capitalize",
                 }}>{type === "flight" ? "✈️" : type === "hotel" ? "🏨" : "🚗"} {type}</button>
@@ -2201,81 +2217,81 @@ Start by introducing yourself briefly in-character with personality, and give an
             </div>
 
             <label style={{ display: "block", marginBottom: 14 }}>
-              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans" }}>Program</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Program</span>
               <select value={newTrip.program} onChange={e => setNewTrip(p => ({ ...p, program: e.target.value }))} style={{
-                display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(0,0,0,0.02)", border: "1px solid rgba(14,165,160,0.1)",
-                borderRadius: 2, color: "#000", fontSize: 13, fontFamily: "DM Sans", outline: "none", boxSizing: "border-box",
+                display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(14,165,160,0.1)",
+                borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box",
               }}>
                 {(newTrip.type === "flight" ? [...LOYALTY_PROGRAMS.airlines, ...customPrograms.filter(p => p.category === "airline")] : newTrip.type === "hotel" ? [...LOYALTY_PROGRAMS.hotels, ...customPrograms.filter(p => p.category === "hotel")] : [...LOYALTY_PROGRAMS.rentals, ...customPrograms.filter(p => p.category === "rental")]).map(p => (
-                  <option key={p.id} value={p.id} style={{ background: "linear-gradient(135deg, #f8f8f8, #f0f0f0)" }}>{p.name}</option>
+                  <option key={p.id} value={p.id} style={{ background: "linear-gradient(135deg, #141516, #191a1b)" }}>{p.name}</option>
                 ))}
               </select>
             </label>
 
             <label style={{ display: "block", marginBottom: 14 }}>
-              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans" }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>
                 {newTrip.type === "flight" ? "Route" : newTrip.type === "hotel" ? "Property" : "Location"}
               </span>
               <input value={newTrip.route} onChange={e => setNewTrip(p => ({ ...p, route: e.target.value, property: e.target.value, location: e.target.value }))}
                 placeholder={newTrip.type === "flight" ? "JFK → LAX" : newTrip.type === "hotel" ? "Hotel name" : "City"}
                 style={{
-                  display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(0,0,0,0.02)",
-                  border: "1px solid rgba(14,165,160,0.1)", borderRadius: 2, color: "#000", fontSize: 13, fontFamily: "DM Sans", outline: "none", boxSizing: "border-box",
+                  display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)",
+                  border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box",
                 }} />
             </label>
 
             <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
               <label style={{ flex: 1 }}>
-                <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans" }}>Date</span>
+                <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Date</span>
                 <input type="date" value={newTrip.date} onChange={e => setNewTrip(p => ({ ...p, date: e.target.value }))} style={{
-                  display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(0,0,0,0.02)",
-                  border: "1px solid rgba(14,165,160,0.1)", borderRadius: 2, color: "#000", fontSize: 13, fontFamily: "DM Sans", outline: "none", boxSizing: "border-box",
+                  display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)",
+                  border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box",
                 }} />
               </label>
               {newTrip.type === "flight" && (
                 <label style={{ flex: 1 }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans" }}>Class</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Class</span>
                   <select value={newTrip.class} onChange={e => setNewTrip(p => ({ ...p, class: e.target.value }))} style={{
-                    display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(0,0,0,0.02)",
-                    border: "1px solid rgba(14,165,160,0.1)", borderRadius: 2, color: "#000", fontSize: 13, fontFamily: "DM Sans", outline: "none", boxSizing: "border-box",
+                    display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)",
+                    border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box",
                   }}>
-                    <option value="domestic" style={{ background: "linear-gradient(135deg, #f8f8f8, #f0f0f0)" }}>Domestic Economy</option>
-                    <option value="international" style={{ background: "linear-gradient(135deg, #f8f8f8, #f0f0f0)" }}>International</option>
-                    <option value="premium" style={{ background: "linear-gradient(135deg, #f8f8f8, #f0f0f0)" }}>Premium / Business</option>
+                    <option value="domestic" style={{ background: "linear-gradient(135deg, #141516, #191a1b)" }}>Domestic Economy</option>
+                    <option value="international" style={{ background: "linear-gradient(135deg, #141516, #191a1b)" }}>International</option>
+                    <option value="premium" style={{ background: "linear-gradient(135deg, #141516, #191a1b)" }}>Premium / Business</option>
                   </select>
                 </label>
               )}
               {newTrip.type === "hotel" && (
                 <label style={{ flex: 1 }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans" }}>Nights</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Nights</span>
                   <input type="number" min={1} value={newTrip.nights} onChange={e => setNewTrip(p => ({ ...p, nights: parseInt(e.target.value) || 1 }))} style={{
-                    display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(0,0,0,0.02)",
-                    border: "1px solid rgba(14,165,160,0.1)", borderRadius: 2, color: "#000", fontSize: 13, fontFamily: "DM Sans", outline: "none", boxSizing: "border-box",
+                    display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)",
+                    border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box",
                   }} />
                 </label>
               )}
             </div>
 
             <label style={{ display: "block", marginBottom: 20 }}>
-              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans" }}>Status</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Status</span>
               <select value={newTrip.status} onChange={e => setNewTrip(p => ({ ...p, status: e.target.value }))} style={{
-                display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(0,0,0,0.02)",
-                border: "1px solid rgba(14,165,160,0.1)", borderRadius: 2, color: "#000", fontSize: 13, fontFamily: "DM Sans", outline: "none", boxSizing: "border-box",
+                display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box",
               }}>
-                <option value="confirmed" style={{ background: "linear-gradient(135deg, #f8f8f8, #f0f0f0)" }}>Confirmed</option>
-                <option value="planned" style={{ background: "linear-gradient(135deg, #f8f8f8, #f0f0f0)" }}>Planned</option>
-                <option value="wishlist" style={{ background: "linear-gradient(135deg, #f8f8f8, #f0f0f0)" }}>Wishlist</option>
+                <option value="confirmed" style={{ background: "linear-gradient(135deg, #141516, #191a1b)" }}>Confirmed</option>
+                <option value="planned" style={{ background: "linear-gradient(135deg, #141516, #191a1b)" }}>Planned</option>
+                <option value="wishlist" style={{ background: "linear-gradient(135deg, #141516, #191a1b)" }}>Wishlist</option>
               </select>
             </label>
 
             <div style={{ display: "flex", gap: 10 }}>
               <button onClick={() => setShowAddTrip(false)} style={{
-                flex: 1, padding: "11px 0", borderRadius: 2, border: "1px solid rgba(14,165,160,0.1)", background: "transparent",
-                color: "rgba(0,0,0,0.4)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "DM Sans",
+                flex: 1, padding: "11px 0", borderRadius: 8, border: "1px solid rgba(14,165,160,0.1)", background: "rgba(255,255,255,0.03)",
+                color: "#8a8f98", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif",
               }}>Cancel</button>
               <button onClick={handleAddTrip} style={{
-                flex: 1, padding: "11px 0", borderRadius: 2, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Instrument Serif",
-                background: "linear-gradient(135deg, #0EA5A0, #0EA5A0)", color: "#000",
+                flex: 1, padding: "11px 0", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Inter, sans-serif",
+                background: "linear-gradient(135deg, #0EA5A0, #0EA5A0)", color: "#f7f8f8",
               }}>Add Trip</button>
             </div>
           </div>
@@ -2285,36 +2301,36 @@ Start by introducing yourself briefly in-character with personality, and give an
       {/* Link Account Modal */}
       {showLinkModal && (
         <div style={{
-          position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
         }} onClick={() => setShowLinkModal(null)}>
           <div onClick={e => e.stopPropagation()} style={{
-            background: "linear-gradient(135deg, #f8f8f8, #f0f0f0)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 3, padding: 28, width: "100%", maxWidth: 400,
+            background: "linear-gradient(135deg, #141516, #191a1b)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, padding: 28, width: "100%", maxWidth: 400,
           }}>
-            <h3 style={{ fontSize: 18, fontWeight: 800, color: "#000", margin: "0 0 6px", fontFamily: "Instrument Serif" }}>Link Account</h3>
-            <p style={{ color: "rgba(0,0,0,0.3)", fontSize: 12, margin: "0 0 20px", fontFamily: "DM Sans" }}>
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: "#f7f8f8", margin: "0 0 6px", fontFamily: "Inter, sans-serif" }}>Link Account</h3>
+            <p style={{ color: "#8a8f98", fontSize: 12, margin: "0 0 20px", fontFamily: "Inter, sans-serif" }}>
               Connect your {allPrograms.find(p => p.id === showLinkModal)?.name || "loyalty"} account
             </p>
 
             <label style={{ display: "block", marginBottom: 18 }}>
-              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans" }}>Member ID</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Member ID</span>
               <input value={linkForm.memberId} onChange={e => setLinkForm(p => ({ ...p, memberId: e.target.value }))} placeholder="Enter your member number"
                 style={{
-                  display: "block", width: "100%", marginTop: 6, padding: "12px 14px", background: "rgba(0,0,0,0.02)",
-                  border: "1px solid rgba(14,165,160,0.1)", borderRadius: 2, color: "#000", fontSize: 14, fontFamily: "DM Sans", outline: "none", boxSizing: "border-box",
+                  display: "block", width: "100%", marginTop: 6, padding: "12px 14px", background: "rgba(255,255,255,0.03)",
+                  border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, color: "#f7f8f8", fontSize: 14, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box",
                 }} />
             </label>
-            <p style={{ fontSize: 10, color: "rgba(0,0,0,0.15)", fontFamily: "DM Sans", marginBottom: 20 }}>
+            <p style={{ fontSize: 10, color: "#62666d", fontFamily: "Inter, sans-serif", marginBottom: 20 }}>
               In production, this would use OAuth to securely connect to the loyalty program's API. Demo mode uses sample data.
             </p>
 
             <div style={{ display: "flex", gap: 10 }}>
               <button onClick={() => setShowLinkModal(null)} style={{
-                flex: 1, padding: "11px 0", borderRadius: 2, border: "1px solid rgba(14,165,160,0.1)", background: "transparent",
-                color: "rgba(0,0,0,0.4)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "DM Sans",
+                flex: 1, padding: "11px 0", borderRadius: 8, border: "1px solid rgba(14,165,160,0.1)", background: "rgba(255,255,255,0.03)",
+                color: "#8a8f98", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif",
               }}>Cancel</button>
               <button onClick={() => handleLinkAccount(showLinkModal)} style={{
-                flex: 1, padding: "11px 0", borderRadius: 2, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Instrument Serif",
-                background: "linear-gradient(135deg, #0EA5A0, #0EA5A0)", color: "#000",
+                flex: 1, padding: "11px 0", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Inter, sans-serif",
+                background: "linear-gradient(135deg, #0EA5A0, #0EA5A0)", color: "#f7f8f8",
               }}>Link Account</button>
             </div>
           </div>
@@ -2331,13 +2347,13 @@ Start by introducing yourself briefly in-character with personality, and give an
         const alreadyLinked = Object.keys(linkedAccounts);
         return (
         <div style={{
-          position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
         }} onClick={() => setShowAddProgram(false)}>
           <div onClick={e => e.stopPropagation()} style={{
-            background: "linear-gradient(135deg, #f8f8f8, #f0f0f0)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 3, padding: 28, width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto",
+            background: "linear-gradient(135deg, #141516, #191a1b)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, padding: 28, width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto",
           }}>
-            <h3 style={{ fontSize: 18, fontWeight: 800, color: "#000", margin: "0 0 6px", fontFamily: "Instrument Serif" }}>Add Loyalty Program</h3>
-            <p style={{ color: "rgba(0,0,0,0.3)", fontSize: 12, margin: "0 0 20px", fontFamily: "DM Sans" }}>Choose from {PROGRAM_DIRECTORY.airlines.length + PROGRAM_DIRECTORY.hotels.length + PROGRAM_DIRECTORY.rentals.length + PROGRAM_DIRECTORY.creditCards.length}+ programs or add a custom one</p>
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: "#f7f8f8", margin: "0 0 6px", fontFamily: "Inter, sans-serif" }}>Add Loyalty Program</h3>
+            <p style={{ color: "#8a8f98", fontSize: 12, margin: "0 0 20px", fontFamily: "Inter, sans-serif" }}>Choose from {PROGRAM_DIRECTORY.airlines.length + PROGRAM_DIRECTORY.hotels.length + PROGRAM_DIRECTORY.rentals.length + PROGRAM_DIRECTORY.creditCards.length}+ programs or add a custom one</p>
 
             {/* Category Tabs */}
             <div style={{ marginBottom: 16 }}>
@@ -2349,7 +2365,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                   { id: "card", label: "Cards", icon: "💳", count: PROGRAM_DIRECTORY.creditCards.length },
                 ].map(cat => (
                   <button key={cat.id} onClick={() => setNewProgram(p => ({ ...p, category: cat.id, selectedId: "", search: "" }))} style={{
-                    flex: 1, padding: "8px 0", borderRadius: 2, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600, fontFamily: "DM Sans",
+                    flex: 1, padding: "8px 0", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600, fontFamily: "Inter, sans-serif",
                     background: newProgram.category === cat.id ? "rgba(14,165,160,0.2)" : "rgba(0,0,0,0.02)",
                     color: newProgram.category === cat.id ? "#0EA5A0" : "rgba(0,0,0,0.3)", transition: "all 0.2s",
                   }}>{cat.icon} {cat.label} ({cat.count})</button>
@@ -2363,20 +2379,20 @@ Start by introducing yourself briefly in-character with personality, and give an
                 value={newProgram.search || ""}
                 onChange={e => setNewProgram(p => ({ ...p, search: e.target.value, selectedId: "" }))}
                 placeholder={`Search ${newProgram.category === "card" ? "credit cards" : newProgram.category + "s"}...`}
-                style={{ display: "block", width: "100%", padding: "10px 12px 10px 36px", background: "rgba(0,0,0,0.02)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 2, color: "#000", fontSize: 13, fontFamily: "DM Sans", outline: "none", boxSizing: "border-box" }}
+                style={{ display: "block", width: "100%", padding: "10px 12px 10px 36px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }}
               />
               <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", opacity: 0.3 }}>🔍</span>
             </div>
 
             {/* Program List */}
             {!selectedProg && (
-              <div style={{ maxHeight: 240, overflowY: "auto", marginBottom: 14, borderRadius: 3, border: "1px solid rgba(0,0,0,0.03)" }}>
+              <div style={{ maxHeight: 240, overflowY: "auto", marginBottom: 14, borderRadius: 8, border: "1px solid rgba(255,255,255,0.05)" }}>
                 {filtered.map(prog => {
                   const isLinked = alreadyLinked.includes(prog.id);
                   return (
                     <button key={prog.id} onClick={() => !isLinked && setNewProgram(p => ({ ...p, selectedId: prog.id, search: "" }))}
                       style={{
-                        display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 14px", background: "transparent",
+                        display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 14px", background: "rgba(255,255,255,0.03)",
                         border: "none", borderBottom: "1px solid rgba(0,0,0,0.02)", cursor: isLinked ? "default" : "pointer",
                         opacity: isLinked ? 0.4 : 1, transition: "background 0.15s", textAlign: "left",
                       }}
@@ -2385,13 +2401,13 @@ Start by introducing yourself briefly in-character with personality, and give an
                     >
                       <span style={{ fontSize: 20, width: 28, textAlign: "center" }}>{prog.logo}</span>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: "#000", fontFamily: "DM Sans", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{prog.name}</div>
-                        <div style={{ fontSize: 10, color: "rgba(0,0,0,0.25)", fontFamily: "DM Sans" }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: "#f7f8f8", fontFamily: "Inter, sans-serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{prog.name}</div>
+                        <div style={{ fontSize: 10, color: "#62666d", fontFamily: "Inter, sans-serif" }}>
                           {prog.tiers ? `${prog.tiers.length} tiers · ${prog.unit}` : prog.perks ? prog.perks.substring(0, 50) + "..." : prog.unit}
                         </div>
                       </div>
                       {isLinked ? (
-                        <span style={{ fontSize: 10, color: "#0EA5A0", fontWeight: 600, fontFamily: "DM Sans" }}>Linked ✓</span>
+                        <span style={{ fontSize: 10, color: "#0EA5A0", fontWeight: 600, fontFamily: "Inter, sans-serif" }}>Linked ✓</span>
                       ) : (
                         <span style={{ width: 8, height: 8, borderRadius: "50%", background: prog.color, flexShrink: 0 }} />
                       )}
@@ -2399,7 +2415,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                   );
                 })}
                 {filtered.length === 0 && (
-                  <div style={{ padding: 20, textAlign: "center", color: "rgba(0,0,0,0.2)", fontSize: 13, fontFamily: "DM Sans" }}>
+                  <div style={{ padding: 20, textAlign: "center", color: "#62666d", fontSize: 13, fontFamily: "Inter, sans-serif" }}>
                     No programs match your search
                   </div>
                 )}
@@ -2412,18 +2428,18 @@ Start by introducing yourself briefly in-character with personality, and give an
                 {/* Program Card */}
                 <div style={{
                   background: `linear-gradient(135deg, ${selectedProg.color}18, ${(selectedProg.accent || selectedProg.color)}10)`,
-                  border: `1px solid ${selectedProg.color}30`, borderRadius: 2, padding: 16, marginBottom: 14,
+                  border: `1px solid ${selectedProg.color}30`, borderRadius: 8, padding: 16, marginBottom: 14,
                 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
                     <span style={{ fontSize: 28 }}>{selectedProg.logo}</span>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 15, fontWeight: 700, color: "#000", fontFamily: "Instrument Serif" }}>{selectedProg.name}</div>
-                      <div style={{ fontSize: 11, color: "rgba(0,0,0,0.3)", fontFamily: "DM Sans" }}>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{selectedProg.name}</div>
+                      <div style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>
                         {selectedProg.tiers ? `${selectedProg.tiers.length} elite tiers · ${selectedProg.unit}` : `${selectedProg.unit} · $${selectedProg.annualFee}/yr`}
                       </div>
                     </div>
                     <button onClick={() => setNewProgram(p => ({ ...p, selectedId: "" }))} style={{
-                      background: "rgba(0,0,0,0.03)", border: "none", borderRadius: 2, width: 28, height: 28, color: "rgba(0,0,0,0.3)", cursor: "pointer", fontSize: 14,
+                      background: "#23252a", border: "none", borderRadius: 8, width: 28, height: 28, color: "#8a8f98", cursor: "pointer", fontSize: 14,
                     }}>✕</button>
                   </div>
                   {/* Tier badges */}
@@ -2431,38 +2447,38 @@ Start by introducing yourself briefly in-character with personality, and give an
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
                       {selectedProg.tiers.map((t, i) => (
                         <span key={i} style={{
-                          padding: "3px 8px", borderRadius: 6, fontSize: 10, fontWeight: 600, fontFamily: "DM Sans",
+                          padding: "3px 8px", borderRadius: 8, fontSize: 10, fontWeight: 600, fontFamily: "Inter, sans-serif",
                           background: `${selectedProg.color}20`, color: selectedProg.color, border: `1px solid ${selectedProg.color}30`,
                         }}>{t.name}</span>
                       ))}
                     </div>
                   )}
                   {selectedProg.perks && (
-                    <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", fontFamily: "DM Sans", lineHeight: 1.5 }}>{selectedProg.perks}</div>
+                    <div style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif", lineHeight: 1.5 }}>{selectedProg.perks}</div>
                   )}
                 </div>
 
                 {/* Connect Account CTA */}
                 {selectedProg.loginUrl && (
                   <a href={selectedProg.loginUrl} target="_blank" rel="noopener noreferrer" style={{
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px 16px", borderRadius: 3,
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px 16px", borderRadius: 8,
                     background: `linear-gradient(135deg, ${selectedProg.color}, ${selectedProg.accent || selectedProg.color})`,
-                    color: "#000", textDecoration: "none", fontWeight: 700, fontSize: 13, fontFamily: "Instrument Serif", marginBottom: 14,
+                    color: "#f7f8f8", textDecoration: "none", fontWeight: 700, fontSize: 13, fontFamily: "Inter, sans-serif", marginBottom: 14,
                     boxShadow: `0 4px 15px ${selectedProg.color}40`, transition: "all 0.2s",
                   }}>
                     🔗 Connect to {selectedProg.name.split(" ")[0]} Account
                     <span style={{ fontSize: 11, opacity: 0.7 }}>↗</span>
                   </a>
                 )}
-                <p style={{ fontSize: 10, color: "rgba(0,0,0,0.2)", fontFamily: "DM Sans", textAlign: "center", margin: "0 0 12px" }}>
+                <p style={{ fontSize: 10, color: "#62666d", fontFamily: "Inter, sans-serif", textAlign: "center", margin: "0 0 12px" }}>
                   Opens {selectedProg.name.split(" ")[0]}'s website — log in to view your live status & points balance
                 </p>
 
                 {/* Member ID input */}
                 <label style={{ display: "block", marginBottom: 12 }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans" }}>Member / Account Number</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Member / Account Number</span>
                   <input value={newProgram.memberId} onChange={e => setNewProgram(p => ({ ...p, memberId: e.target.value }))} placeholder="Enter your member number to link"
-                    style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(0,0,0,0.02)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 2, color: "#000", fontSize: 13, fontFamily: "DM Sans", outline: "none", boxSizing: "border-box" }} />
+                    style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
                 </label>
               </div>
             )}
@@ -2470,8 +2486,8 @@ Start by introducing yourself briefly in-character with personality, and give an
             {/* Action buttons */}
             <div style={{ display: "flex", gap: 10 }}>
               <button onClick={() => { setShowAddProgram(false); setNewProgram({ name: "", category: "airline", logo: "✈️", color: "#0EA5A0", memberId: "", unit: "Points", tiers: "", selectedId: "", search: "" }); }} style={{
-                flex: 1, padding: "11px 0", borderRadius: 2, border: "1px solid rgba(14,165,160,0.1)", background: "transparent",
-                color: "rgba(0,0,0,0.4)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "DM Sans",
+                flex: 1, padding: "11px 0", borderRadius: 8, border: "1px solid rgba(14,165,160,0.1)", background: "rgba(255,255,255,0.03)",
+                color: "#8a8f98", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif",
               }}>Cancel</button>
               {selectedProg ? (
                 <button onClick={() => {
@@ -2482,8 +2498,8 @@ Start by introducing yourself briefly in-character with personality, and give an
                   setShowAddProgram(false);
                   setNewProgram({ name: "", category: "airline", logo: "✈️", color: "#0EA5A0", memberId: "", unit: "Points", tiers: "", selectedId: "", search: "" });
                 }} style={{
-                  flex: 1, padding: "11px 0", borderRadius: 2, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Instrument Serif",
-                  background: `linear-gradient(135deg, #0EA5A0, #0EA5A0)`, color: "#000",
+                  flex: 1, padding: "11px 0", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Inter, sans-serif",
+                  background: `linear-gradient(135deg, #0EA5A0, #0EA5A0)`, color: "#f7f8f8",
                 }}>Link {selectedProg.name.split(" ")[0]}</button>
               ) : (
                 <button onClick={() => {
@@ -2500,8 +2516,8 @@ Start by introducing yourself briefly in-character with personality, and give an
                   setShowAddProgram(false);
                   setNewProgram({ name: "", category: "airline", logo: "✈️", color: "#0EA5A0", memberId: "", unit: "Points", tiers: "", selectedId: "", search: "" });
                 }} style={{
-                  flex: 1, padding: "11px 0", borderRadius: 2, border: "1px solid rgba(14,165,160,0.1)", background: "rgba(0,0,0,0.02)",
-                  color: "rgba(0,0,0,0.3)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "DM Sans",
+                  flex: 1, padding: "11px 0", borderRadius: 8, border: "1px solid rgba(14,165,160,0.1)", background: "rgba(255,255,255,0.03)",
+                  color: "#8a8f98", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif",
                 }}>+ Add Custom</button>
               )}
             </div>
@@ -2513,25 +2529,25 @@ Start by introducing yourself briefly in-character with personality, and give an
       {/* Upgrade Modal */}
       {showUpgrade && (
         <div style={{
-          position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
         }} onClick={() => setShowUpgrade(false)}>
           <div onClick={e => e.stopPropagation()} style={{
-            background: "linear-gradient(135deg, #f8f8f8, #f0f0f0)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 3, padding: 32, width: "100%", maxWidth: 400, textAlign: "center",
+            background: "linear-gradient(135deg, #141516, #191a1b)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 8, padding: 32, width: "100%", maxWidth: 400, textAlign: "center",
           }}>
             <div style={{ fontSize: 42, marginBottom: 12, display: "flex", justifyContent: "center" }}><LogoMark size={56} /></div>
-            <h3 style={{ fontSize: 20, fontWeight: 800, color: "#000", margin: "0 0 8px", fontFamily: "Instrument Serif" }}>Upgrade to Premium</h3>
-            <p style={{ color: "rgba(0,0,0,0.3)", fontSize: 13, fontFamily: "DM Sans", marginBottom: 24 }}>
+            <h3 style={{ fontSize: 20, fontWeight: 800, color: "#f7f8f8", margin: "0 0 8px", fontFamily: "Inter, sans-serif" }}>Upgrade to Premium</h3>
+            <p style={{ color: "#8a8f98", fontSize: 13, fontFamily: "Inter, sans-serif", marginBottom: 24 }}>
               Unlock the Trip Optimizer, status match alerts, PDF exports, and more.
             </p>
-            <div style={{ fontSize: 36, fontWeight: 800, color: "#000", fontFamily: "Instrument Serif", marginBottom: 4 }}>$9.99<span style={{ fontSize: 14, color: "rgba(0,0,0,0.3)" }}>/mo</span></div>
-            <p style={{ fontSize: 11, color: "rgba(0,0,0,0.2)", fontFamily: "DM Sans", marginBottom: 24 }}>Cancel anytime. 7-day free trial.</p>
+            <div style={{ fontSize: 36, fontWeight: 800, color: "#f7f8f8", fontFamily: "Inter, sans-serif", marginBottom: 4 }}>$9.99<span style={{ fontSize: 14, color: "#8a8f98" }}>/mo</span></div>
+            <p style={{ fontSize: 11, color: "#62666d", fontFamily: "Inter, sans-serif", marginBottom: 24 }}>Cancel anytime. 7-day free trial.</p>
             <button onClick={() => { setUser(prev => ({ ...prev, tier: "premium" })); setShowUpgrade(false); }} style={{
-              width: "100%", padding: "13px 0", borderRadius: 3, border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "Instrument Serif",
-              background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#000", boxShadow: "0 4px 20px rgba(245,158,11,0.3)", marginBottom: 10,
+              width: "100%", padding: "13px 0", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "Inter, sans-serif",
+              background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#f7f8f8", boxShadow: "0 4px 20px rgba(245,158,11,0.3)", marginBottom: 10,
             }}>Start Free Trial</button>
             <button onClick={() => setShowUpgrade(false)} style={{
-              width: "100%", padding: "11px 0", borderRadius: 3, border: "1px solid rgba(14,165,160,0.1)", background: "transparent",
-              color: "rgba(0,0,0,0.3)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "DM Sans",
+              width: "100%", padding: "11px 0", borderRadius: 8, border: "1px solid rgba(14,165,160,0.1)", background: "rgba(255,255,255,0.03)",
+              color: "#8a8f98", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif",
             }}>Maybe Later</button>
           </div>
         </div>
@@ -2540,23 +2556,23 @@ Start by introducing yourself briefly in-character with personality, and give an
       {/* Add Expense Modal */}
       {showAddExpense && (
         <div style={{
-          position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
         }} onClick={() => setShowAddExpense(null)}>
           <div onClick={e => e.stopPropagation()} style={{
-            background: "linear-gradient(135deg, #f8f8f8, #f0f0f0)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 3, padding: 28, width: "100%", maxWidth: 480,
+            background: "linear-gradient(135deg, #141516, #191a1b)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, padding: 28, width: "100%", maxWidth: 480,
           }}>
-            <h3 style={{ fontSize: 18, fontWeight: 800, color: "#000", margin: "0 0 6px", fontFamily: "Instrument Serif" }}>Add Expense</h3>
-            <p style={{ color: "rgba(0,0,0,0.3)", fontSize: 12, margin: "0 0 20px", fontFamily: "DM Sans" }}>
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: "#f7f8f8", margin: "0 0 6px", fontFamily: "Inter, sans-serif" }}>Add Expense</h3>
+            <p style={{ color: "#8a8f98", fontSize: 12, margin: "0 0 20px", fontFamily: "Inter, sans-serif" }}>
               {(() => { const t = trips.find(t => t.id === showAddExpense); return t ? `${t.type === "flight" ? "✈️" : t.type === "hotel" ? "🏨" : "🚗"} ${getTripName(t)}` : ""; })()}
             </p>
 
             {/* Category selector */}
             <div style={{ marginBottom: 16 }}>
-              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans", display: "block", marginBottom: 8 }}>Category</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif", display: "block", marginBottom: 8 }}>Category</span>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 {EXPENSE_CATEGORIES.map(cat => (
                   <button key={cat.id} onClick={() => setNewExpense(p => ({ ...p, category: cat.id }))} style={{
-                    padding: "6px 12px", borderRadius: 2, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600, fontFamily: "DM Sans",
+                    padding: "6px 12px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600, fontFamily: "Inter, sans-serif",
                     background: newExpense.category === cat.id ? `${cat.color}25` : "rgba(0,0,0,0.02)",
                     color: newExpense.category === cat.id ? cat.color : "rgba(0,0,0,0.3)", transition: "all 0.2s",
                   }}>{cat.icon} {cat.label}</button>
@@ -2566,58 +2582,58 @@ Start by introducing yourself briefly in-character with personality, and give an
 
             <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
               <label style={{ flex: 2 }}>
-                <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans" }}>Description</span>
+                <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Description</span>
                 <input value={newExpense.description} onChange={e => setNewExpense(p => ({ ...p, description: e.target.value }))} placeholder="e.g. Marriott 3 nights"
-                  style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(0,0,0,0.02)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 2, color: "#000", fontSize: 13, fontFamily: "DM Sans", outline: "none", boxSizing: "border-box" }} />
+                  style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
               </label>
               <label style={{ flex: 1 }}>
-                <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans" }}>Amount ($)</span>
+                <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Amount ($)</span>
                 <input type="number" min="0" step="0.01" value={newExpense.amount} onChange={e => setNewExpense(p => ({ ...p, amount: e.target.value }))} placeholder="0.00"
-                  style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(0,0,0,0.02)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 2, color: "#000", fontSize: 13, fontFamily: "DM Sans", outline: "none", boxSizing: "border-box" }} />
+                  style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
               </label>
             </div>
 
             <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
               <label style={{ flex: 1 }}>
-                <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans" }}>Date</span>
+                <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Date</span>
                 <input type="date" value={newExpense.date} onChange={e => setNewExpense(p => ({ ...p, date: e.target.value }))}
-                  style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(0,0,0,0.02)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 2, color: "#000", fontSize: 13, fontFamily: "DM Sans", outline: "none", boxSizing: "border-box" }} />
+                  style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
               </label>
               <label style={{ flex: 1 }}>
-                <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans" }}>Payment Method</span>
+                <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Payment Method</span>
                 <select value={newExpense.paymentMethod} onChange={e => setNewExpense(p => ({ ...p, paymentMethod: e.target.value }))}
-                  style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(0,0,0,0.02)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 2, color: "#000", fontSize: 13, fontFamily: "DM Sans", outline: "none", boxSizing: "border-box" }}>
-                  <option value="" style={{ background: "linear-gradient(135deg, #f8f8f8, #f0f0f0)" }}>Select...</option>
-                  <option value="Amex Platinum" style={{ background: "linear-gradient(135deg, #f8f8f8, #f0f0f0)" }}>Amex Platinum</option>
-                  <option value="Chase Sapphire" style={{ background: "linear-gradient(135deg, #f8f8f8, #f0f0f0)" }}>Chase Sapphire Reserve</option>
-                  <option value="Cash" style={{ background: "linear-gradient(135deg, #f8f8f8, #f0f0f0)" }}>Cash</option>
-                  <option value="Debit Card" style={{ background: "linear-gradient(135deg, #f8f8f8, #f0f0f0)" }}>Debit Card</option>
-                  <option value="Other" style={{ background: "linear-gradient(135deg, #f8f8f8, #f0f0f0)" }}>Other</option>
+                  style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }}>
+                  <option value="" style={{ background: "linear-gradient(135deg, #141516, #191a1b)" }}>Select...</option>
+                  <option value="Amex Platinum" style={{ background: "linear-gradient(135deg, #141516, #191a1b)" }}>Amex Platinum</option>
+                  <option value="Chase Sapphire" style={{ background: "linear-gradient(135deg, #141516, #191a1b)" }}>Chase Sapphire Reserve</option>
+                  <option value="Cash" style={{ background: "linear-gradient(135deg, #141516, #191a1b)" }}>Cash</option>
+                  <option value="Debit Card" style={{ background: "linear-gradient(135deg, #141516, #191a1b)" }}>Debit Card</option>
+                  <option value="Other" style={{ background: "linear-gradient(135deg, #141516, #191a1b)" }}>Other</option>
                 </select>
               </label>
             </div>
 
             <label style={{ display: "block", marginBottom: 14 }}>
-              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans" }}>Notes (optional)</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Notes (optional)</span>
               <input value={newExpense.notes} onChange={e => setNewExpense(p => ({ ...p, notes: e.target.value }))} placeholder="Business meal, personal, etc."
-                style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(0,0,0,0.02)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 2, color: "#000", fontSize: 13, fontFamily: "DM Sans", outline: "none", boxSizing: "border-box" }} />
+                style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
             </label>
 
             {/* Receipt Upload / Camera */}
             <div style={{ marginBottom: 20 }}>
-              <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", letterSpacing: 1, fontFamily: "DM Sans", display: "block", marginBottom: 8 }}>Receipt</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif", display: "block", marginBottom: 8 }}>Receipt</span>
               
               {!newExpense.receiptImage ? (
                 <div style={{ display: "flex", gap: 10 }}>
                   {/* Upload file button */}
                   <label style={{
                     flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
-                    padding: "18px 12px", borderRadius: 3, border: "2px dashed rgba(14,165,160,0.25)", background: "rgba(14,165,160,0.04)",
+                    padding: "18px 12px", borderRadius: 8, border: "2px dashed rgba(14,165,160,0.25)", background: "rgba(14,165,160,0.04)",
                     cursor: "pointer", transition: "all 0.2s",
                   }}>
                     <span style={{ fontSize: 22 }}>📄</span>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: "#0EA5A0", fontFamily: "DM Sans" }}>Upload File</span>
-                    <span style={{ fontSize: 9, color: "rgba(0,0,0,0.2)", fontFamily: "DM Sans" }}>JPG, PNG, PDF</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "#0EA5A0", fontFamily: "Inter, sans-serif" }}>Upload File</span>
+                    <span style={{ fontSize: 9, color: "#62666d", fontFamily: "Inter, sans-serif" }}>JPG, PNG, PDF</span>
                     <input type="file" accept="image/*,.pdf" style={{ display: "none" }} onChange={e => {
                       const file = e.target.files?.[0];
                       if (file) {
@@ -2631,12 +2647,12 @@ Start by introducing yourself briefly in-character with personality, and give an
                   {/* Take photo button */}
                   <label style={{
                     flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
-                    padding: "18px 12px", borderRadius: 3, border: "2px dashed rgba(14,165,160,0.25)", background: "rgba(14,165,160,0.04)",
+                    padding: "18px 12px", borderRadius: 8, border: "2px dashed rgba(14,165,160,0.25)", background: "rgba(14,165,160,0.04)",
                     cursor: "pointer", transition: "all 0.2s",
                   }}>
                     <span style={{ fontSize: 22 }}>📸</span>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: "#0EA5A0", fontFamily: "DM Sans" }}>Take Photo</span>
-                    <span style={{ fontSize: 9, color: "rgba(0,0,0,0.2)", fontFamily: "DM Sans" }}>Use camera</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "#0EA5A0", fontFamily: "Inter, sans-serif" }}>Take Photo</span>
+                    <span style={{ fontSize: 9, color: "#62666d", fontFamily: "Inter, sans-serif" }}>Use camera</span>
                     <input type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={e => {
                       const file = e.target.files?.[0];
                       if (file) {
@@ -2650,33 +2666,33 @@ Start by introducing yourself briefly in-character with personality, and give an
                   {/* No receipt option */}
                   <button onClick={() => setNewExpense(p => ({ ...p, receipt: false, receiptImage: null }))} style={{
                     flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
-                    padding: "18px 12px", borderRadius: 3, border: `2px dashed ${!newExpense.receipt ? "rgba(0,0,0,0.04)" : "rgba(0,0,0,0.03)"}`,
+                    padding: "18px 12px", borderRadius: 8, border: `2px dashed ${!newExpense.receipt ? "rgba(0,0,0,0.04)" : "rgba(0,0,0,0.03)"}`,
                     background: !newExpense.receipt ? "rgba(0,0,0,0.02)" : "transparent", cursor: "pointer",
                   }}>
                     <span style={{ fontSize: 22 }}>⊘</span>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(0,0,0,0.3)", fontFamily: "DM Sans" }}>No Receipt</span>
-                    <span style={{ fontSize: 9, color: "rgba(0,0,0,0.2)", fontFamily: "DM Sans" }}>&nbsp;</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>No Receipt</span>
+                    <span style={{ fontSize: 9, color: "#62666d", fontFamily: "Inter, sans-serif" }}>&nbsp;</span>
                   </button>
                 </div>
               ) : (
                 /* Receipt preview */
                 <div style={{
-                  borderRadius: 3, border: "1px solid rgba(52,211,153,0.3)", background: "rgba(52,211,153,0.06)", padding: 14,
+                  borderRadius: 8, border: "1px solid rgba(52,211,153,0.3)", background: "rgba(52,211,153,0.06)", padding: 14,
                   display: "flex", alignItems: "center", gap: 12,
                 }}>
                   {newExpense.receiptImage.type?.startsWith("image/") ? (
-                    <img src={newExpense.receiptImage.data} alt="Receipt" style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 2, border: "1px solid rgba(0,0,0,0.03)" }} />
+                    <img src={newExpense.receiptImage.data} alt="Receipt" style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 8, border: "1px solid rgba(255,255,255,0.05)" }} />
                   ) : (
-                    <div style={{ width: 56, height: 56, borderRadius: 2, background: "rgba(0,0,0,0.02)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>📄</div>
+                    <div style={{ width: 56, height: 56, borderRadius: 8, background: "rgba(255,255,255,0.03)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>📄</div>
                   )}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: "#34d399", fontFamily: "DM Sans" }}>✓ Receipt attached</div>
-                    <div style={{ fontSize: 11, color: "rgba(0,0,0,0.25)", fontFamily: "DM Sans", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: "#34d399", fontFamily: "Inter, sans-serif" }}>✓ Receipt attached</div>
+                    <div style={{ fontSize: 11, color: "#62666d", fontFamily: "Inter, sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {newExpense.receiptImage.name} • {(newExpense.receiptImage.size / 1024).toFixed(0)} KB
                     </div>
                   </div>
                   <button onClick={() => setNewExpense(p => ({ ...p, receipt: false, receiptImage: null }))} style={{
-                    width: 30, height: 30, borderRadius: 2, border: "none", background: "rgba(239,68,68,0.1)", color: "#ef4444",
+                    width: 30, height: 30, borderRadius: 8, border: "none", background: "rgba(239,68,68,0.1)", color: "#ef4444",
                     fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
                   }}>×</button>
                 </div>
@@ -2685,12 +2701,12 @@ Start by introducing yourself briefly in-character with personality, and give an
 
             <div style={{ display: "flex", gap: 10 }}>
               <button onClick={() => setShowAddExpense(null)} style={{
-                flex: 1, padding: "11px 0", borderRadius: 2, border: "1px solid rgba(14,165,160,0.1)", background: "transparent",
-                color: "rgba(0,0,0,0.4)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "DM Sans",
+                flex: 1, padding: "11px 0", borderRadius: 8, border: "1px solid rgba(14,165,160,0.1)", background: "rgba(255,255,255,0.03)",
+                color: "#8a8f98", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif",
               }}>Cancel</button>
               <button onClick={handleAddExpense} style={{
-                flex: 1, padding: "11px 0", borderRadius: 2, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Instrument Serif",
-                background: "linear-gradient(135deg, #0EA5A0, #0EA5A0)", color: "#000",
+                flex: 1, padding: "11px 0", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Inter, sans-serif",
+                background: "linear-gradient(135deg, #0EA5A0, #0EA5A0)", color: "#f7f8f8",
               }}>Add Expense</button>
             </div>
           </div>
@@ -2715,7 +2731,7 @@ Start by introducing yourself briefly in-character with personality, and give an
             position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
           }} onClick={() => setShowExpenseReport(null)}>
             <div onClick={e => e.stopPropagation()} style={{
-              background: "linear-gradient(135deg, #f8f8f8, #f0f0f0)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 3, padding: 32, width: "100%", maxWidth: 600,
+              background: "linear-gradient(135deg, #141516, #191a1b)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, padding: 32, width: "100%", maxWidth: 600,
               maxHeight: "85vh", overflowY: "auto",
             }}>
               {/* Report Header */}
@@ -2723,58 +2739,58 @@ Start by introducing yourself briefly in-character with personality, and give an
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                     <LogoMark size={24} />
-                    <span style={{ fontSize: 13, fontWeight: 700, color: "#0EA5A0", fontFamily: "Instrument Serif" }}>Continuum</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "#0EA5A0", fontFamily: "Inter, sans-serif" }}>Continuum</span>
                   </div>
-                  <h3 style={{ fontSize: 20, fontWeight: 800, color: "#000", margin: 0, fontFamily: "Instrument Serif" }}>Expense Report</h3>
+                  <h3 style={{ fontSize: 20, fontWeight: 800, color: "#f7f8f8", margin: 0, fontFamily: "Inter, sans-serif" }}>Expense Report</h3>
                 </div>
                 <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: 11, color: "rgba(0,0,0,0.3)", fontFamily: "DM Sans" }}>Generated {new Date().toLocaleDateString()}</div>
-                  <div style={{ fontSize: 11, color: "rgba(0,0,0,0.2)", fontFamily: "DM Sans" }}>Report #{trip.id}-{Date.now().toString(36).slice(-4)}</div>
+                  <div style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>Generated {new Date().toLocaleDateString()}</div>
+                  <div style={{ fontSize: 11, color: "#62666d", fontFamily: "Inter, sans-serif" }}>Report #{trip.id}-{Date.now().toString(36).slice(-4)}</div>
                 </div>
               </div>
 
               {/* Trip Info */}
               <div style={{
-                background: "rgba(14,165,160,0.06)", border: "1px solid rgba(14,165,160,0.15)", borderRadius: 2, padding: 18, marginBottom: 20,
+                background: "rgba(14,165,160,0.06)", border: "1px solid rgba(14,165,160,0.15)", borderRadius: 8, padding: 18, marginBottom: 20,
               }}>
-                <div style={{ fontSize: 16, fontWeight: 700, color: "#000", fontFamily: "Instrument Serif", marginBottom: 4 }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif", marginBottom: 4 }}>
                   {trip.type === "flight" ? "✈️" : trip.type === "hotel" ? "🏨" : "🚗"} {getTripName(trip)}
                 </div>
-                <div style={{ fontSize: 12, color: "rgba(0,0,0,0.3)", fontFamily: "DM Sans" }}>
+                <div style={{ fontSize: 12, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>
                   {trip.date} • {prog?.name || "Unknown"} • {trip.status}
                 </div>
               </div>
 
               {/* Summary Stats */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 20 }}>
-                <div style={{ background: "rgba(0,0,0,0.02)", borderRadius: 2, padding: 14, textAlign: "center" }}>
-                  <div style={{ fontSize: 20, fontWeight: 800, color: "#0EA5A0", fontFamily: "Instrument Serif" }}>${tripTotal.toLocaleString()}</div>
-                  <div style={{ fontSize: 10, color: "rgba(0,0,0,0.3)", fontFamily: "DM Sans" }}>Total</div>
+                <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 8, padding: 14, textAlign: "center" }}>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: "#0EA5A0", fontFamily: "Inter, sans-serif" }}>${tripTotal.toLocaleString()}</div>
+                  <div style={{ fontSize: 10, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>Total</div>
                 </div>
-                <div style={{ background: "rgba(0,0,0,0.02)", borderRadius: 2, padding: 14, textAlign: "center" }}>
-                  <div style={{ fontSize: 20, fontWeight: 800, color: "#000", fontFamily: "Instrument Serif" }}>{tripExps.length}</div>
-                  <div style={{ fontSize: 10, color: "rgba(0,0,0,0.3)", fontFamily: "DM Sans" }}>Items</div>
+                <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 8, padding: 14, textAlign: "center" }}>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{tripExps.length}</div>
+                  <div style={{ fontSize: 10, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>Items</div>
                 </div>
-                <div style={{ background: "rgba(0,0,0,0.02)", borderRadius: 2, padding: 14, textAlign: "center" }}>
-                  <div style={{ fontSize: 20, fontWeight: 800, color: "#34d399", fontFamily: "Instrument Serif" }}>{receiptCount}/{tripExps.length}</div>
-                  <div style={{ fontSize: 10, color: "rgba(0,0,0,0.3)", fontFamily: "DM Sans" }}>Receipts</div>
+                <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 8, padding: 14, textAlign: "center" }}>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: "#34d399", fontFamily: "Inter, sans-serif" }}>{receiptCount}/{tripExps.length}</div>
+                  <div style={{ fontSize: 10, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>Receipts</div>
                 </div>
               </div>
 
               {/* Category Summary */}
               <div style={{ marginBottom: 20 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(0,0,0,0.4)", fontFamily: "Instrument Serif", marginBottom: 10 }}>BREAKDOWN BY CATEGORY</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#8a8f98", fontFamily: "Inter, sans-serif", marginBottom: 10 }}>BREAKDOWN BY CATEGORY</div>
                 {catSummary.map((cat, i) => (
                   <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid rgba(0,0,0,0.02)" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       <span style={{ fontSize: 14 }}>{cat.icon}</span>
-                      <span style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", fontFamily: "DM Sans" }}>{cat.label} ({cat.count})</span>
+                      <span style={{ fontSize: 12, color: "#d0d6e0", fontFamily: "Inter, sans-serif" }}>{cat.label} ({cat.count})</span>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <div style={{ width: 80, height: 5, borderRadius: 3, background: "rgba(0,0,0,0.03)", overflow: "hidden" }}>
-                        <div style={{ width: `${(cat.total / tripTotal) * 100}%`, height: "100%", background: cat.color, borderRadius: 3 }} />
+                      <div style={{ width: 80, height: 5, borderRadius: 8, background: "#23252a", overflow: "hidden" }}>
+                        <div style={{ width: `${(cat.total / tripTotal) * 100}%`, height: "100%", background: cat.color, borderRadius: 8 }} />
                       </div>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: "#000", fontFamily: "Instrument Serif", minWidth: 70, textAlign: "right" }}>${cat.total.toLocaleString()}</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif", minWidth: 70, textAlign: "right" }}>${cat.total.toLocaleString()}</span>
                     </div>
                   </div>
                 ))}
@@ -2782,15 +2798,15 @@ Start by introducing yourself briefly in-character with personality, and give an
 
               {/* Line Items */}
               <div style={{ marginBottom: 24 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(0,0,0,0.4)", fontFamily: "Instrument Serif", marginBottom: 10 }}>LINE ITEMS</div>
-                <div style={{ background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", borderRadius: 2, overflow: "hidden" }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#8a8f98", fontFamily: "Inter, sans-serif", marginBottom: 10 }}>LINE ITEMS</div>
+                <div style={{ background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", borderRadius: 8, overflow: "hidden" }}>
                   {/* Header */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 80px 90px 70px 28px", gap: 8, padding: "10px 14px", background: "rgba(0,0,0,0.02)", borderBottom: "1px solid rgba(0,0,0,0.03)" }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(0,0,0,0.3)", fontFamily: "DM Sans", textTransform: "uppercase" }}>Description</span>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(0,0,0,0.3)", fontFamily: "DM Sans", textTransform: "uppercase" }}>Date</span>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(0,0,0,0.3)", fontFamily: "DM Sans", textTransform: "uppercase" }}>Payment</span>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(0,0,0,0.3)", fontFamily: "DM Sans", textTransform: "uppercase", textAlign: "right" }}>Amount</span>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(0,0,0,0.3)", fontFamily: "DM Sans", textAlign: "center" }}>🧾</span>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 80px 90px 70px 28px", gap: 8, padding: "10px 14px", background: "rgba(255,255,255,0.03)", borderBottom: "1px solid rgba(0,0,0,0.03)" }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: "#8a8f98", fontFamily: "Inter, sans-serif", textTransform: "uppercase" }}>Description</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: "#8a8f98", fontFamily: "Inter, sans-serif", textTransform: "uppercase" }}>Date</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: "#8a8f98", fontFamily: "Inter, sans-serif", textTransform: "uppercase" }}>Payment</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: "#8a8f98", fontFamily: "Inter, sans-serif", textTransform: "uppercase", textAlign: "right" }}>Amount</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: "#8a8f98", fontFamily: "Inter, sans-serif", textAlign: "center" }}>🧾</span>
                   </div>
                   {/* Rows */}
                   {tripExps.map((exp, i) => {
@@ -2798,12 +2814,12 @@ Start by introducing yourself briefly in-character with personality, and give an
                     return (
                       <div key={exp.id} style={{ display: "grid", gridTemplateColumns: "1fr 80px 90px 70px 28px", gap: 8, padding: "10px 14px", borderBottom: i < tripExps.length - 1 ? "1px solid rgba(0,0,0,0.02)" : "none", alignItems: "center" }}>
                         <div>
-                          <span style={{ fontSize: 12, color: "#000", fontFamily: "DM Sans" }}>{cat?.icon} {exp.description}</span>
-                          {exp.notes && <div style={{ fontSize: 10, color: "rgba(0,0,0,0.2)", marginTop: 1 }}>{exp.notes}</div>}
+                          <span style={{ fontSize: 12, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{cat?.icon} {exp.description}</span>
+                          {exp.notes && <div style={{ fontSize: 10, color: "#62666d", marginTop: 1 }}>{exp.notes}</div>}
                         </div>
-                        <span style={{ fontSize: 11, color: "rgba(0,0,0,0.3)", fontFamily: "DM Sans" }}>{exp.date?.slice(5)}</span>
-                        <span style={{ fontSize: 11, color: "rgba(0,0,0,0.3)", fontFamily: "DM Sans", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.paymentMethod || "—"}</span>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: exp.amount === 0 ? "#34d399" : "#FFFFFF", fontFamily: "Instrument Serif", textAlign: "right" }}>
+                        <span style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>{exp.date?.slice(5)}</span>
+                        <span style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.paymentMethod || "—"}</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: exp.amount === 0 ? "#34d399" : "#FFFFFF", fontFamily: "Inter, sans-serif", textAlign: "right" }}>
                           {exp.amount === 0 ? "Free" : `$${exp.amount.toLocaleString()}`}
                         </span>
                         <span style={{ fontSize: 12, textAlign: "center" }}>{exp.receipt ? "✓" : "—"}</span>
@@ -2812,20 +2828,20 @@ Start by introducing yourself briefly in-character with personality, and give an
                   })}
                   {/* Total */}
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 70px", gap: 8, padding: "12px 14px", background: "rgba(14,165,160,0.06)", borderTop: "2px solid rgba(14,165,160,0.2)" }}>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: "#0EA5A0", fontFamily: "Instrument Serif" }}>TOTAL</span>
-                    <span style={{ fontSize: 14, fontWeight: 800, color: "#0EA5A0", fontFamily: "Instrument Serif", textAlign: "right" }}>${tripTotal.toLocaleString()}</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "#0EA5A0", fontFamily: "Inter, sans-serif" }}>TOTAL</span>
+                    <span style={{ fontSize: 14, fontWeight: 800, color: "#0EA5A0", fontFamily: "Inter, sans-serif", textAlign: "right" }}>${tripTotal.toLocaleString()}</span>
                   </div>
                 </div>
               </div>
 
               <div style={{ display: "flex", gap: 10 }}>
                 <button onClick={() => setShowExpenseReport(null)} style={{
-                  flex: 1, padding: "11px 0", borderRadius: 2, border: "1px solid rgba(14,165,160,0.1)", background: "transparent",
-                  color: "rgba(0,0,0,0.4)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "DM Sans",
+                  flex: 1, padding: "11px 0", borderRadius: 8, border: "1px solid rgba(14,165,160,0.1)", background: "rgba(255,255,255,0.03)",
+                  color: "#8a8f98", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif",
                 }}>Close</button>
                 <button onClick={() => window.print()} style={{
-                  flex: 1, padding: "11px 0", borderRadius: 2, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Instrument Serif",
-                  background: "linear-gradient(135deg, #0EA5A0, #0EA5A0)", color: "#000",
+                  flex: 1, padding: "11px 0", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Inter, sans-serif",
+                  background: "linear-gradient(135deg, #0EA5A0, #0EA5A0)", color: "#f7f8f8",
                 }}>🖨️ Print / Save PDF</button>
               </div>
             </div>
