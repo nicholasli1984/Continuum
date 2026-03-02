@@ -65,7 +65,7 @@ const WorldMapPaintReveal = () => {
 
   React.useEffect(() => {
     const img = new Image();
-    img.src = "/worldPicture.jpg";
+    img.src = "/worldmap2.webp";
     img.onload = () => { imgRef.current = img; setLoaded(true); initCover(); };
     const initCover = () => {
       const cover = coverRef.current;
@@ -109,7 +109,7 @@ const WorldMapPaintReveal = () => {
     const ctx = cover.getContext("2d");
     ctx.globalCompositeOperation = "destination-out";
     // Medium paintbrush — balanced feel
-    const baseR = 28;
+    const baseR = 48;
     const r = baseR + Math.random() * 12;
     // Main brush stroke
     const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
@@ -120,10 +120,10 @@ const WorldMapPaintReveal = () => {
     ctx.fillStyle = grad;
     ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
     // Add paint splatter feel — small random dots nearby
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 5; i++) {
       const sx = x + (Math.random() - 0.5) * r * 1.5;
       const sy = y + (Math.random() - 0.5) * r * 1.5;
-      const sr = 2 + Math.random() * 5;
+      const sr = 4 + Math.random() * 8;
       ctx.fillStyle = "rgba(0,0,0,0.6)";
       ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.fill();
     }
@@ -131,7 +131,7 @@ const WorldMapPaintReveal = () => {
     if (lastPos.current) {
       const lx = lastPos.current.x, ly = lastPos.current.y;
       const dist = Math.sqrt((x - lx) ** 2 + (y - ly) ** 2);
-      const steps = Math.ceil(dist / 6);
+      const steps = Math.ceil(dist / 10);
       for (let i = 0; i < steps; i++) {
         const t = i / steps;
         const mx = lx + (x - lx) * t, my = ly + (y - ly) * t;
@@ -173,7 +173,7 @@ const WorldMapPaintReveal = () => {
       {/* World map image — the revealed layer */}
       {loaded && (
         <div style={{
-          position: "absolute", inset: 0, backgroundImage: "url(/worldPicture.jpg)",
+          position: "absolute", inset: 0, backgroundImage: "url(/worldmap2.webp)",
           backgroundSize: "cover", backgroundPosition: "center",
         }} />
       )}
@@ -815,19 +815,16 @@ Start by introducing yourself briefly in-character with personality, and give an
   // PUBLIC SITE — Landing, Content Pages, Login
   // ============================================================
   if (!isLoggedIn) {
+    // Scroll-to-section helper
+    const scrollTo = (id) => { const el = document.getElementById(id); if (el) el.scrollIntoView({ behavior: "smooth" }); };
     const navLinks = [
-      { id: "landing", label: "Home" },
-      { id: "about", label: "About Us" },
-      { id: "partners", label: "Our Partners" },
-      { id: "blogs", label: "Blogs" },
-      { id: "airline-reviews", label: "Airline Reviews" },
-      { id: "hotel-reviews", label: "Hotel Reviews" },
-      { id: "forums", label: "Forums" },
+      { id: "features", label: "Features" },
+      { id: "pricing", label: "Pricing" },
     ];
     const goTo = (page) => { setPublicPage(page); window.scrollTo(0, 0); };
     const fontLink = <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />;
 
-    // --- Shared top nav bar ---
+    // --- Top nav: Logo + Features + Pricing + Login ---
     const TopNav = () => (
       <nav style={{
         position: "sticky", top: 0, zIndex: 100, padding: "0 32px", height: 56,
@@ -835,69 +832,72 @@ Start by introducing yourself briefly in-character with personality, and give an
         borderBottom: "1px solid rgba(0,0,0,0.04)",
         display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
-        <button onClick={() => goTo("landing")} style={{ display: "flex", alignItems: "center", gap: 10, background: "none", border: "none", cursor: "pointer", flexShrink: 0 }}>
+        <button onClick={() => { goTo("landing"); }} style={{ display: "flex", alignItems: "center", gap: 10, background: "none", border: "none", cursor: "pointer", flexShrink: 0 }}>
           <LogoMark size={26} />
           <span style={{ fontSize: 16, fontWeight: 800, color: "#000", fontFamily: "Instrument Serif", letterSpacing: -0.5 }}>CONTINUUM</span>
         </button>
         <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
           {navLinks.map(n => (
-            <button key={n.id} onClick={() => goTo(n.id)} style={{
+            <button key={n.id} onClick={() => { if (publicPage === "landing") scrollTo(n.id); else { goTo("landing"); setTimeout(() => scrollTo(n.id), 100); }}} style={{
               padding: "18px 14px", border: "none", cursor: "pointer", background: "transparent",
-              fontSize: 10.5, fontWeight: 600, fontFamily: "DM Sans", letterSpacing: 1.5, textTransform: "uppercase",
-              color: publicPage === n.id ? "#0EA5A0" : "rgba(0,0,0,0.25)",
-              borderBottom: publicPage === n.id ? "2px solid #0EA5A0" : "2px solid transparent",
-              transition: "all 0.2s",
+              fontSize: 10.5, fontWeight: 600, fontFamily: "Space Mono, monospace", letterSpacing: 1.5, textTransform: "uppercase",
+              color: "rgba(0,0,0,0.3)", transition: "all 0.25s cubic-bezier(0.175,0.885,0.32,1)",
             }}>{n.label}</button>
           ))}
           <button onClick={() => goTo("login")} style={{
-            padding: "8px 22px", border: "none", cursor: "pointer", marginLeft: 16,
-            fontSize: 10.5, fontWeight: 700, fontFamily: "Instrument Serif", letterSpacing: 1.5, textTransform: "uppercase",
-            background: "#0EA5A0", color: "#000",
+            padding: "8px 22px", border: "2px solid #000", cursor: "pointer", marginLeft: 16,
+            fontSize: 10.5, fontWeight: 700, fontFamily: "Space Mono, monospace", letterSpacing: 1.5, textTransform: "uppercase",
+            background: "transparent", color: "#000", transition: "all 0.25s cubic-bezier(0.175,0.885,0.32,1)",
           }}>Log In</button>
         </div>
       </nav>
     );
 
-    // --- Shared footer ---
+    // --- Footer ---
     const Footer = () => (
-      <footer style={{ position: "relative", zIndex: 1, padding: "48px 32px 24px", borderTop: "1px solid rgba(0,0,0,0.04)", background: "#ffffff", marginTop: 80 }}>
-        <div style={{ maxWidth: 1060, margin: "0 auto", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 40 }}>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+      <footer style={{ position: "relative", zIndex: 1, padding: "64px 32px 32px", borderTop: "1px solid rgba(0,0,0,0.06)", background: "#fff", marginTop: 0 }}>
+        <div style={{ maxWidth: 1060, margin: "0 auto", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 48 }}>
+          <div style={{ maxWidth: 320 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
               <LogoMark size={22} />
               <span style={{ fontSize: 14, fontWeight: 800, fontFamily: "Instrument Serif", color: "#000", letterSpacing: 1 }}>CONTINUUM</span>
             </div>
-            <p style={{ fontSize: 12, color: "rgba(0,0,0,0.3)", fontFamily: "DM Sans", maxWidth: 280, lineHeight: 1.7, fontWeight: 300 }}>The elite status intelligence platform. Track, optimize, and maximize every mile, point, and night.</p>
+            <p style={{ fontSize: 13, color: "rgba(0,0,0,0.35)", fontFamily: "DM Sans", lineHeight: 1.7, fontWeight: 400 }}>
+              Built by frequent flyers who got tired of spreadsheets. We track your status so you can focus on the journey.
+            </p>
+            <p style={{ fontSize: 11, color: "rgba(0,0,0,0.2)", fontFamily: "Space Mono, monospace", marginTop: 12 }}>Hamilton, Bermuda</p>
           </div>
-          <div style={{ display: "flex", gap: 48, flexWrap: "wrap" }}>
-            {[
-              { title: "Product", items: [{ label: "Features", id: "landing" }, { label: "Premium", id: "landing" }] },
-              { title: "Company", items: [{ label: "About Us", id: "about" }, { label: "Partners", id: "partners" }] },
-              { title: "Community", items: [{ label: "Blogs", id: "blogs" }, { label: "Forums", id: "forums" }, { label: "Airlines", id: "airline-reviews" }, { label: "Hotels", id: "hotel-reviews" }] },
-            ].map(col => (
-              <div key={col.title}>
-                <h4 style={{ fontSize: 9, fontWeight: 700, color: "#0EA5A0", textTransform: "uppercase", letterSpacing: 2, fontFamily: "DM Sans", marginBottom: 14 }}>{col.title}</h4>
-                {col.items.map(link => (
-                  <button key={link.label} onClick={() => goTo(link.id)} style={{ display: "block", background: "none", border: "none", color: "rgba(0,0,0,0.2)", fontSize: 12, fontFamily: "DM Sans", cursor: "pointer", padding: "3px 0", fontWeight: 400, transition: "color 0.2s" }}>{link.label}</button>
-                ))}
-              </div>
-            ))}
+          <div style={{ display: "flex", gap: 56, flexWrap: "wrap" }}>
+            <div>
+              <h4 style={{ fontSize: 9, fontWeight: 700, color: "#0EA5A0", textTransform: "uppercase", letterSpacing: 2, fontFamily: "Space Mono, monospace", marginBottom: 14 }}>Product</h4>
+              {["Features", "Pricing", "How It Works"].map(l => (
+                <button key={l} onClick={() => scrollTo(l.toLowerCase().replace(/ /g, "-"))} style={{ display: "block", background: "none", border: "none", color: "rgba(0,0,0,0.25)", fontSize: 12, fontFamily: "DM Sans", cursor: "pointer", padding: "4px 0", fontWeight: 400 }}>{l}</button>
+              ))}
+            </div>
+            <div>
+              <h4 style={{ fontSize: 9, fontWeight: 700, color: "#0EA5A0", textTransform: "uppercase", letterSpacing: 2, fontFamily: "Space Mono, monospace", marginBottom: 14 }}>Company</h4>
+              {["About", "Contact", "Privacy"].map(l => (
+                <button key={l} onClick={() => scrollTo("about")} style={{ display: "block", background: "none", border: "none", color: "rgba(0,0,0,0.25)", fontSize: 12, fontFamily: "DM Sans", cursor: "pointer", padding: "4px 0", fontWeight: 400 }}>{l}</button>
+              ))}
+            </div>
+            <div>
+              <h4 style={{ fontSize: 9, fontWeight: 700, color: "#0EA5A0", textTransform: "uppercase", letterSpacing: 2, fontFamily: "Space Mono, monospace", marginBottom: 14 }}>Connect</h4>
+              {["Twitter / X", "LinkedIn", "Email Us"].map(l => (
+                <span key={l} style={{ display: "block", color: "rgba(0,0,0,0.25)", fontSize: 12, fontFamily: "DM Sans", padding: "4px 0", fontWeight: 400, cursor: "pointer" }}>{l}</span>
+              ))}
+            </div>
           </div>
         </div>
-        <div style={{ maxWidth: 1060, margin: "32px auto 0", paddingTop: 16, borderTop: "1px solid rgba(0,0,0,0.03)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <p style={{ fontSize: 10, color: "rgba(0,0,0,0.15)", fontFamily: "DM Sans", letterSpacing: 1 }}>© 2026 CONTINUUM</p>
-          <div style={{ width: 20, height: 2, background: "#0EA5A0", opacity: 0.4 }} />
+        <div style={{ maxWidth: 1060, margin: "40px auto 0", paddingTop: 20, borderTop: "1px solid rgba(0,0,0,0.04)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <p style={{ fontSize: 10, color: "rgba(0,0,0,0.15)", fontFamily: "Space Mono, monospace", letterSpacing: 1 }}>© 2026 CONTINUUM. ALL RIGHTS RESERVED.</p>
+          <p style={{ fontSize: 10, color: "rgba(0,0,0,0.1)", fontFamily: "Space Mono, monospace" }}>BUILT IN BERMUDA 🇧🇲</p>
         </div>
       </footer>
     );
 
-    // --- Shared page shell (bermuda bg for landing, dark bg for content pages) ---
+    // --- Shell ---
     const Shell = ({ children, showBg }) => (
-      <div style={{ minHeight: "100vh", background: "#ffffff", fontFamily: "'Instrument Serif', 'DM Sans', 'Space Mono', system-ui, sans-serif", color: "#000", position: "relative" }}>
-        {showBg && (<>
-          <img src="/bermuda-bg.webp" alt="" style={{ position: "fixed", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 40%", zIndex: 0 }} />
-          <div style={{ position: "fixed", inset: 0, zIndex: 0, background: "linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.97) 35%, rgba(255,255,255,0.97) 65%, #ffffff 100%)" }} />
-        </>)}
+      <div style={{ minHeight: "100vh", background: "#fff", fontFamily: "'Instrument Serif', 'DM Sans', 'Space Mono', system-ui, sans-serif", color: "#000", position: "relative" }}>
         <TravelAtmosphere />
         {fontLink}
         <TopNav />
@@ -906,496 +906,199 @@ Start by introducing yourself briefly in-character with personality, and give an
       </div>
     );
 
-    // --- Content page wrapper ---
-    const PageSection = ({ icon, title, subtitle, children }) => (
-      <div style={{ maxWidth: 1060, margin: "0 auto", padding: "56px 32px 0" }}>
-        <div style={{ marginBottom: 40, position: "relative", paddingLeft: 20, borderLeft: "2px solid #0EA5A0" }}>
-          <span style={{ fontSize: 26 }}>{icon}</span>
-          <h1 style={{ fontSize: 32, fontWeight: 800, color: "#000", fontFamily: "Instrument Serif", margin: "6px 0 0", letterSpacing: -1 }}>{title}</h1>
-          <p style={{ fontSize: 13, color: "rgba(0,0,0,0.2)", fontFamily: "DM Sans", marginTop: 6, fontWeight: 300, letterSpacing: 0.3 }}>{subtitle}</p>
-          <div style={{ width: 30, height: 2, borderRadius: 0, background: "#0EA5A0", marginTop: 14 }} />
-        </div>
-        {children}
+    // Section label helper
+    const SectionLabel = ({ label }) => (
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 32 }}>
+        <div style={{ width: 24, height: 2, background: "#0EA5A0" }} />
+        <span style={{ fontSize: 9, fontFamily: "Space Mono, monospace", color: "rgba(0,0,0,0.3)", letterSpacing: 2, textTransform: "uppercase", fontWeight: 700 }}>( {label} )</span>
       </div>
     );
 
-    // Card helper
-    const Card = ({ icon, title, desc, color, children, onClick, style: sx }) => (
-      <div onClick={onClick} style={{
-        background: "#f8f8f8", borderLeft: `2px solid ${color || "#0EA5A0"}`,
-        padding: "24px 22px", cursor: onClick ? "pointer" : "default",
-        transition: "all 0.2s", position: "relative", overflow: "hidden", ...sx,
-      }}>
-        {/* Diagonal accent in top-right */}
-        <div style={{ position: "absolute", top: -20, right: -20, width: 60, height: 60, background: `${color || "#0EA5A0"}08`, transform: "rotate(45deg)" }} />
-        {icon && <span style={{ fontSize: 20, display: "block", marginBottom: 10 }}>{icon}</span>}
-        {title && <h3 style={{ fontSize: 14, fontWeight: 700, color: "#000", fontFamily: "Instrument Serif", margin: "0 0 6px", letterSpacing: -0.3 }}>{title}</h3>}
-        {desc && <p style={{ fontSize: 12, color: "rgba(0,0,0,0.25)", fontFamily: "DM Sans", lineHeight: 1.65, margin: 0, fontWeight: 300 }}>{desc}</p>}
-        {children}
-      </div>
-    );
-
-    // ==================== LANDING PAGE ====================
+    // ==================== SINGLE-PAGE LANDING ====================
     if (publicPage === "landing") return (
-      <Shell showBg>
-        <div style={{ position: "relative", minHeight: "calc(100vh - 56px)" }}>
+      <Shell>
+        <div>
 
-          {/* === PAINT-REVEAL WORLD MAP CANVAS === */}
-          <div style={{ position: "relative", width: "100%", height: "70vh", minHeight: 400, overflow: "hidden" }}>
+          {/* ═══════ HERO — PAINT-REVEAL WORLD MAP ═══════ */}
+          <div style={{ position: "relative", width: "100%", height: "70vh", minHeight: 420, overflow: "hidden" }}>
             <WorldMapPaintReveal />
-            <div style={{ position: "absolute", bottom: 32, left: 32, zIndex: 10, pointerEvents: "none" }}>
-              <p style={{ fontSize: 10, fontFamily: "Space Mono, monospace", color: "rgba(255,255,255,0.25)", letterSpacing: 2, textTransform: "uppercase", marginBottom: 8 }}>
-                ↑ Paint to reveal the world
-              </p>
-            </div>
-            <div style={{ position: "absolute", top: 32, right: 32, zIndex: 10, pointerEvents: "none" }}>
-              <p style={{ fontSize: 10, fontFamily: "Space Mono, monospace", color: "rgba(255,255,255,0.2)", letterSpacing: 2, textTransform: "uppercase" }}>
-                [interactive canvas]
-              </p>
+            <div style={{ position: "absolute", bottom: 24, left: 32, zIndex: 10, pointerEvents: "none" }}>
+              <p style={{ fontSize: 10, fontFamily: "Space Mono, monospace", color: "rgba(255,255,255,0.25)", letterSpacing: 2, textTransform: "uppercase" }}>↑ paint to reveal</p>
             </div>
           </div>
 
-          {/* === HEADLINE SECTION === */}
-          <div style={{ padding: "48px 32px 24px", maxWidth: 800 }}>
+          {/* ═══════ HEADLINE ═══════ */}
+          <div style={{ padding: "56px 32px 20px", maxWidth: 820, margin: "0 auto" }}>
             <h1 style={{
-              fontSize: "clamp(2rem, 5vw, 3.6rem)", fontFamily: "Instrument Serif", fontWeight: 400, fontStyle: "italic",
-              color: "#000", lineHeight: 1.25, margin: 0, letterSpacing: "-0.02em",
+              fontSize: "clamp(2rem, 5vw, 3.4rem)", fontFamily: "Instrument Serif", fontWeight: 400, fontStyle: "italic",
+              color: "#000", lineHeight: 1.25, margin: 0, letterSpacing: "-0.02em", textAlign: "center",
             }}>
-              Track every mile.{" "}
-              <span style={{ color: "#0EA5A0" }}>Maximize</span>{" "}
-              every status. All your loyalty programs,{" "}
-              <span style={{ color: "#0EA5A0", textDecoration: "underline", textDecorationColor: "rgba(14,165,160,0.3)", textUnderlineOffset: 4, cursor: "pointer" }} onClick={() => goTo("login")}>
-                one dashboard
-              </span>.
+              Your airline miles, hotel nights, and credit card points —{" "}
+              <span style={{ color: "#0EA5A0" }}>finally in one place</span>.
             </h1>
+            <p style={{ textAlign: "center", fontSize: 15, fontFamily: "DM Sans", color: "rgba(0,0,0,0.4)", marginTop: 20, lineHeight: 1.7, maxWidth: 560, margin: "20px auto 0" }}>
+              Continuum tracks 70+ loyalty programs so you always know exactly how close you are to your next elite status — and what to do to get there faster.
+            </p>
+            <div style={{ textAlign: "center", marginTop: 32 }}>
+              <button onClick={() => goTo("login")} style={{
+                padding: "14px 40px", border: "2px solid #000", background: "#000", color: "#fff", cursor: "pointer",
+                fontSize: 11, fontFamily: "Space Mono, monospace", fontWeight: 700, letterSpacing: 2, textTransform: "uppercase",
+                transition: "all 0.25s cubic-bezier(0.175,0.885,0.32,1)",
+              }}>Start Tracking Free →</button>
+            </div>
           </div>
 
-          {/* === STATS STRIP === */}
-          <div style={{ display: "flex", gap: 0, margin: "0 32px", borderTop: "1px solid rgba(0,0,0,0.06)", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
-            {[{ v: "070+", l: "Programs" }, { v: "018", l: "Airlines" }, { v: "012", l: "Hotels" }, { v: "021", l: "Cards" }].map((s, i) => (
+          {/* ═══════ STATS STRIP ═══════ */}
+          <div style={{ display: "flex", gap: 0, maxWidth: 700, margin: "48px auto 0", borderTop: "1px solid rgba(0,0,0,0.06)", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+            {[{ v: "70+", l: "Programs" }, { v: "18", l: "Airlines" }, { v: "12", l: "Hotels" }, { v: "21", l: "Cards" }].map((s, i) => (
               <div key={i} style={{ flex: 1, textAlign: "center", padding: "20px 0", borderRight: i < 3 ? "1px solid rgba(0,0,0,0.06)" : "none" }}>
-                <div style={{ fontSize: 20, fontFamily: "Space Mono, monospace", color: "#0EA5A0", fontWeight: 700 }}>{s.v}</div>
-                <div style={{ fontSize: 9, fontFamily: "Space Mono, monospace", color: "rgba(0,0,0,0.25)", marginTop: 2, letterSpacing: 2, textTransform: "uppercase" }}>{s.l}</div>
+                <div style={{ fontSize: 22, fontFamily: "Space Mono, monospace", color: "#0EA5A0", fontWeight: 700 }}>{s.v}</div>
+                <div style={{ fontSize: 9, fontFamily: "Space Mono, monospace", color: "rgba(0,0,0,0.2)", marginTop: 2, letterSpacing: 2, textTransform: "uppercase" }}>{s.l}</div>
               </div>
             ))}
           </div>
 
-          {/* === FEATURES === */}
-          <div style={{ padding: "40px 32px 0" }}>
-            <p style={{ fontSize: 9, fontFamily: "Space Mono, monospace", color: "rgba(0,0,0,0.25)", letterSpacing: 2, textTransform: "uppercase", marginBottom: 20 }}>( Why Continuum )</p>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 1, background: "rgba(0,0,0,0.04)" }}>
+          {/* ═══════ HOW IT WORKS — 4 STEPS ═══════ */}
+          <div id="how-it-works" style={{ maxWidth: 900, margin: "0 auto", padding: "80px 32px 0" }}>
+            <SectionLabel label="How It Works" />
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 2, background: "rgba(0,0,0,0.03)" }}>
               {[
-                { icon: "📊", title: "Unified Dashboard", desc: "See all airline, hotel, and rental car elite status in one place." },
-                { icon: "🧠", title: "Status Optimizer", desc: "AI-powered recommendations to reach the next tier efficiently." },
-                { icon: "🔗", title: "70+ Programs", desc: "Connect to loyalty programs and view your live points and status." },
-                { icon: "📈", title: "Projections", desc: "See where you'll land at year-end with planned trips factored in." },
-              ].map((f, i) => <Card key={i} {...f} />)}
-            </div>
-          </div>
-
-          {/* === BOTTOM NAV === */}
-          <div style={{ padding: "48px 32px", display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 24 }}>
-            <div>
-              <p style={{ fontSize: 13, fontFamily: "DM Sans", color: "#000", margin: 0 }}>
-                Hamilton, Bermuda →{" "}
-                <span onClick={() => goTo("about")} style={{ color: "#0EA5A0", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}>About</span>
-              </p>
-              <p style={{ fontSize: 11, fontFamily: "Space Mono, monospace", color: "rgba(0,0,0,0.2)", marginTop: 4 }}>The Elite Status Intelligence Platform</p>
-            </div>
-            <button onClick={() => goTo("login")} style={{
-              padding: "12px 32px", border: "2px solid #000", background: "transparent", cursor: "pointer",
-              fontSize: 11, fontFamily: "Space Mono, monospace", fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "#000",
-            }}>Get Started →</button>
-          </div>
-
-        </div>
-      </Shell>
-    );
-    // ==================== ABOUT US ====================
-    if (publicPage === "about") return (
-      <Shell>
-        <PageSection icon="🏢" title="About Us" subtitle="The team behind Continuum and our mission to transform travel loyalty.">
-          <div style={{ display: "grid", gap: 16 }}>
-            <Card icon="🎯" title="Our Mission" desc="We believe every traveler deserves to maximize the value of their loyalty. Continuum eliminates the complexity of tracking elite status across dozens of programs, so you can focus on the journey." />
-            <Card icon="🌍" title="Our Story" desc="Founded by frequent travelers frustrated with spreadsheets and fragmented dashboards, Continuum launched in 2026 with a simple goal: one platform for all your miles, points, and nights." />
-            <Card icon="👥" title="Our Team" desc="Our team brings together expertise from the airline industry, fintech, and travel technology. We're passionate about making premium travel accessible to everyone." />
-            <Card icon="📍" title="Based in Bermuda" desc="Headquartered in beautiful Bermuda, we bring an international perspective to travel loyalty — understanding the needs of global travelers from day one." />
-          </div>
-        </PageSection>
-      </Shell>
-    );
-
-    // ==================== OUR PARTNERS ====================
-    if (publicPage === "partners") return (
-      <Shell>
-        <PageSection icon="🤝" title="Our Partners" subtitle="We work with the world's leading airlines, hotels, and financial institutions.">
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 12, marginBottom: 28 }}>
-            {[...LOYALTY_PROGRAMS.airlines.slice(0, 8), ...LOYALTY_PROGRAMS.hotels.slice(0, 6)].map((p, i) => (
-              <div key={i} style={{
-                background: `linear-gradient(135deg, ${p.color}10, rgba(0,0,0,0.02))`, border: `1px solid ${p.color}20`,
-                borderRadius: 2, padding: "16px 14px", display: "flex", alignItems: "center", gap: 10,
-              }}>
-                <span style={{ fontSize: 20 }}>{p.logo}</span>
-                <span style={{ fontSize: 12, fontWeight: 600, color: "#000", fontFamily: "DM Sans" }}>{p.name}</span>
-              </div>
-            ))}
-          </div>
-          <Card icon="🤝" title="Become a Partner" desc="Interested in integrating with Continuum? We're always looking to expand our network. Reach out to partnerships@continuum.travel to learn more." />
-        </PageSection>
-      </Shell>
-    );
-
-    // ==================== BLOGS ====================
-    if (publicPage === "blogs") return (
-      <Shell>
-        <PageSection icon="📝" title="Blog" subtitle="Expert insights on travel loyalty, elite status strategies, and industry news.">
-          <div style={{ display: "grid", gap: 14 }}>
-            {[
-              { title: "How to Earn Airline Elite Status in 2026", date: "Feb 20, 2026", tag: "Strategy", desc: "A comprehensive guide to earning top-tier status across the major US airlines this year." },
-              { title: "The Best Credit Cards for Hotel Elite Status", date: "Feb 14, 2026", tag: "Credit Cards", desc: "Which credit cards give you automatic hotel elite status? We break down every option." },
-              { title: "Marriott vs Hilton vs Hyatt: 2026 Showdown", date: "Feb 8, 2026", tag: "Hotels", desc: "We compare the three biggest hotel loyalty programs head to head." },
-              { title: "5 Mistakes Costing You Elite Status", date: "Jan 30, 2026", tag: "Tips", desc: "Common errors that frequent travelers make when chasing status — and how to fix them." },
-              { title: "The Rise of Credit Card Travel Lounges", date: "Jan 22, 2026", tag: "Lounges", desc: "Chase, Amex, and Capital One are all building lounge empires. What it means for you." },
-            ].map((post, i) => (
-              <div key={i} style={{
-                background: "linear-gradient(135deg, rgba(14,165,160,0.03), rgba(0,0,0,0.02))",
-                border: "1px solid rgba(0,0,0,0.03)", borderRadius: 2, padding: 22, cursor: "pointer",
-              }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: "#0EA5A0", background: "rgba(14,165,160,0.15)", padding: "2px 8px", borderRadius: 1, fontFamily: "DM Sans" }}>{post.tag}</span>
-                  <span style={{ fontSize: 11, color: "rgba(0,0,0,0.2)", fontFamily: "DM Sans" }}>{post.date}</span>
+                { step: "01", title: "Sign Up", desc: "Create your free account in under 30 seconds. No credit card needed." },
+                { step: "02", title: "Import Data", desc: "Connect your airline, hotel, and credit card loyalty accounts — or enter your status manually." },
+                { step: "03", title: "Get AI Recs", desc: "Our engine analyzes your travel patterns and tells you exactly how to hit your next tier." },
+                { step: "04", title: "Hit Status", desc: "Follow your personalized roadmap. We track every qualifying mile, night, and dollar in real time." },
+              ].map((s, i) => (
+                <div key={i} style={{ background: "#fff", padding: "28px 20px" }}>
+                  <div style={{ fontSize: 28, fontFamily: "Space Mono, monospace", color: "#0EA5A0", fontWeight: 700, marginBottom: 12 }}>{s.step}</div>
+                  <h3 style={{ fontSize: 15, fontFamily: "Instrument Serif", fontWeight: 700, color: "#000", margin: "0 0 8px" }}>{s.title}</h3>
+                  <p style={{ fontSize: 12, fontFamily: "DM Sans", color: "rgba(0,0,0,0.35)", lineHeight: 1.65, margin: 0 }}>{s.desc}</p>
                 </div>
-                <h3 style={{ fontSize: 15, fontWeight: 700, color: "#000", fontFamily: "Instrument Serif", margin: "0 0 4px" }}>{post.title}</h3>
-                <p style={{ fontSize: 12, color: "rgba(0,0,0,0.3)", fontFamily: "DM Sans", lineHeight: 1.6, margin: 0 }}>{post.desc}</p>
-              </div>
-            ))}
-          </div>
-        </PageSection>
-      </Shell>
-    );
-
-    // ==================== AI CONCIERGE MODAL (avatar-centric) ====================
-    const conciergeModalJSX = conciergeProgram ? (() => {
-      const p = conciergeProgram;
-      const isHotel = p.type === "hotel";
-      const characters = isHotel
-        ? [{ emoji: "🛎️", title: "Front Desk Concierge", hat: "#8B0000", uniform: "#1a1a2e", skin: "#D4A574" },
-           { emoji: "🧳", title: "Bell Captain", hat: "#4a0e0e", uniform: "#2d1b3d", skin: "#C68B59" }]
-        : [{ emoji: "👨‍✈️", title: "Captain", hat: "#1a2744", uniform: "#0a1628", skin: "#D4A574" },
-           { emoji: "💁‍♀️", title: "Senior Flight Attendant", hat: p.color, uniform: "#1a1a2e", skin: "#C68B59" }];
-      const char = characters[Math.floor(p.name.length % characters.length)];
-      const lastAssistantMsg = [...conciergeMessages].reverse().find(m => m.role === "assistant");
-      const isTalking = conciergeSpeaking;
-      return (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000, padding: 16 }}
-          onClick={() => { window.speechSynthesis?.cancel(); setConciergeProgram(null); setConciergeMessages([]); setConciergeSpeaking(false); }}>
-          <div onClick={e => e.stopPropagation()} style={{
-            width: "100%", maxWidth: 600, maxHeight: "90vh", borderRadius: 2,
-            background: `linear-gradient(160deg, #ffffff, #FFFFFF, ${p.color}08)`,
-            border: `1px solid ${p.color}25`,
-            display: "flex", flexDirection: "column", overflow: "hidden",
-            boxShadow: `0 40px 100px rgba(0,0,0,0.7), 0 0 80px ${p.color}08`,
-          }}>
-            {/* Header bar */}
-            <div style={{ padding: "12px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: `1px solid ${p.color}15` }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 18 }}>{p.logo}</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: "#000", fontFamily: "Instrument Serif" }}>{p.name}</span>
-              </div>
-              <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                <span style={{ fontSize: 9, color: "rgba(0,0,0,0.25)", fontFamily: "DM Sans", background: "rgba(0,0,0,0.03)", padding: "2px 7px", borderRadius: 2 }}>
-                  🌍 {(VOICE_PROFILES[p.id] || { accent: "International" }).accent}
-                </span>
-                {isTalking && <span style={{ fontSize: 9, color: "#34d399", fontFamily: "DM Sans", fontWeight: 600 }}>🔊 Speaking...</span>}
-                {isTalking && (
-                  <button onClick={() => { window.speechSynthesis?.cancel(); setConciergeSpeaking(false); }} style={{
-                    width: 26, height: 26, borderRadius: 6, border: "none", background: "rgba(239,68,68,0.15)", color: "#ef4444",
-                    cursor: "pointer", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center",
-                  }} title="Stop speaking">🔇</button>
-                )}
-                <button onClick={() => { window.speechSynthesis?.cancel(); setConciergeProgram(null); setConciergeMessages([]); setConciergeSpeaking(false); }} style={{
-                  width: 30, height: 30, borderRadius: 2, border: "none", background: "rgba(0,0,0,0.03)", color: "rgba(0,0,0,0.3)",
-                  cursor: "pointer", fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center",
-                }}>✕</button>
-              </div>
+              ))}
             </div>
+          </div>
 
-            {/* Avatar + Speech area */}
-            <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column" }}>
-              {/* Character Stage */}
-              <div style={{
-                display: "flex", flexDirection: "column", alignItems: "center", padding: "28px 24px 16px",
-                background: `radial-gradient(ellipse at center bottom, ${p.color}10, transparent 70%)`,
-              }}>
-                {/* SVG Avatar Character */}
-                <svg width="140" height="160" viewBox="0 0 140 160" style={{
-                  animation: isTalking ? "none" : "avatar-breathe 3s ease-in-out infinite",
-                  filter: `drop-shadow(0 8px 24px ${p.color}30)`,
+          {/* ═══════ FEATURES ═══════ */}
+          <div id="features" style={{ maxWidth: 900, margin: "0 auto", padding: "80px 32px 0" }}>
+            <SectionLabel label="Features" />
+            <h2 style={{ fontSize: "clamp(1.4rem, 3vw, 2.2rem)", fontFamily: "Instrument Serif", fontStyle: "italic", fontWeight: 400, color: "#000", margin: "0 0 40px", letterSpacing: "-0.01em" }}>
+              Everything you need to stay on top of your status game.
+            </h2>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 2, background: "rgba(0,0,0,0.03)" }}>
+              {[
+                { icon: "📊", title: "Unified Dashboard", desc: "Every airline, hotel, and rental car program in one live view. No more logging into 12 different sites." },
+                { icon: "🧠", title: "AI Status Optimizer", desc: "We crunch your travel history and tell you the fastest, cheapest path to the next tier. Mileage runs included." },
+                { icon: "💳", title: "Credit Card Intel", desc: "Which card earns the most on your next trip? We match cards to your spending patterns and status goals." },
+                { icon: "📈", title: "Year-End Projections", desc: "See exactly where you'll land on Dec 31 — with planned trips, status accelerators, and promos factored in." },
+                { icon: "🔔", title: "Status Alerts", desc: "Get notified when you're close to a tier, when a promo drops, or when a mileage run deal appears." },
+                { icon: "🧾", title: "Expense Tracking", desc: "Log travel expenses, snap receipt photos, and export clean reports. Your accountant will thank you." },
+              ].map((f, i) => (
+                <div key={i} style={{ background: "#fff", padding: "28px 22px", borderLeft: "2px solid #0EA5A0" }}>
+                  <span style={{ fontSize: 22, display: "block", marginBottom: 10 }}>{f.icon}</span>
+                  <h3 style={{ fontSize: 14, fontWeight: 700, color: "#000", fontFamily: "Instrument Serif", margin: "0 0 6px" }}>{f.title}</h3>
+                  <p style={{ fontSize: 12, color: "rgba(0,0,0,0.35)", fontFamily: "DM Sans", lineHeight: 1.65, margin: 0 }}>{f.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ═══════ TESTIMONIALS ═══════ */}
+          <div style={{ maxWidth: 900, margin: "0 auto", padding: "80px 32px 0" }}>
+            <SectionLabel label="What Travelers Say" />
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 20 }}>
+              {[
+                { quote: "I was 3,000 miles short of Executive Platinum and had no idea. Continuum flagged it with enough time to book a mileage run. Saved my status.", who: "2.4M lifetime miles · AA EXP", },
+                { quote: "Tracking Marriott, Hilton, AND Hyatt status in one place? I used to keep a spreadsheet with 14 tabs. This replaced all of it.", who: "Titanium Elite · 200+ nights/yr", },
+                { quote: "The AI told me to shift one trip from Delta to United and I'd make 1K. That one recommendation was worth the entire year.", who: "1M+ miles · United 1K", },
+              ].map((t, i) => (
+                <div key={i} style={{ padding: "28px 24px", border: "1px solid rgba(0,0,0,0.06)", background: "#fff" }}>
+                  <p style={{ fontSize: 13, fontFamily: "DM Sans", color: "rgba(0,0,0,0.6)", lineHeight: 1.7, margin: "0 0 16px", fontStyle: "italic" }}>"{t.quote}"</p>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#0EA5A0" }} />
+                    <span style={{ fontSize: 10, fontFamily: "Space Mono, monospace", color: "rgba(0,0,0,0.25)", letterSpacing: 1, textTransform: "uppercase" }}>{t.who}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ═══════ PRICING — 3 TIERS ═══════ */}
+          <div id="pricing" style={{ maxWidth: 900, margin: "0 auto", padding: "80px 32px 0" }}>
+            <SectionLabel label="Pricing" />
+            <h2 style={{ fontSize: "clamp(1.4rem, 3vw, 2.2rem)", fontFamily: "Instrument Serif", fontStyle: "italic", fontWeight: 400, color: "#000", margin: "0 0 40px" }}>
+              Start free. Upgrade when you're ready to go all in.
+            </h2>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 2, background: "rgba(0,0,0,0.03)" }}>
+              {[
+                { name: "Free", price: "$0", period: "forever", features: ["Track up to 5 programs", "Manual data entry", "Basic status dashboard", "Year-end projections"], cta: "Get Started", highlight: false },
+                { name: "Pro", price: "$9.99", period: "/month", features: ["Unlimited programs", "Auto-import from accounts", "AI status optimizer", "Credit card matching", "Status alerts & notifications", "Expense tracking"], cta: "Start Pro Trial", highlight: true },
+                { name: "Enterprise", price: "Custom", period: "pricing", features: ["Everything in Pro", "Team dashboards", "Corporate travel policy", "SSO & admin controls", "Dedicated account manager", "API access"], cta: "Contact Sales", highlight: false },
+              ].map((tier, i) => (
+                <div key={i} style={{
+                  background: tier.highlight ? "#000" : "#fff", padding: "36px 24px", position: "relative",
+                  color: tier.highlight ? "#fff" : "#000",
                 }}>
-                  {/* Body / Uniform */}
-                  <ellipse cx="70" cy="145" rx="45" ry="20" fill={char.uniform} opacity="0.6" />
-                  <path d={isHotel ? "M35 100 Q35 70 70 65 Q105 70 105 100 L105 145 Q105 155 70 155 Q35 155 35 145 Z" : "M30 95 Q30 65 70 60 Q110 65 110 95 L108 145 Q108 158 70 158 Q32 158 32 145 Z"} fill={char.uniform} />
-                  {/* Uniform details */}
-                  <line x1="70" y1="70" x2="70" y2="145" stroke={p.color} strokeWidth="1.5" opacity="0.3" />
-                  {isHotel ? (
-                    <>{/* Lapels */}
-                      <path d="M55 75 L70 90 L70 75" fill="none" stroke={p.color} strokeWidth="1" opacity="0.4" />
-                      <path d="M85 75 L70 90 L70 75" fill="none" stroke={p.color} strokeWidth="1" opacity="0.4" />
-                      {/* Name badge */}
-                      <rect x="52" y="100" width="36" height="12" rx="3" fill={p.color} opacity="0.3" />
-                      <line x1="56" y1="106" x2="84" y2="106" stroke="#fff" strokeWidth="1" opacity="0.5" />
-                    </>
-                  ) : (
-                    <>{/* Pilot epaulettes */}
-                      <rect x="32" y="68" width="18" height="6" rx="2" fill={p.color} opacity="0.5" />
-                      <rect x="90" y="68" width="18" height="6" rx="2" fill={p.color} opacity="0.5" />
-                      {/* Wings badge */}
-                      <path d="M50 95 L70 90 L90 95 L70 100 Z" fill={p.color} opacity="0.25" />
-                      <circle cx="70" cy="95" r="4" fill={p.color} opacity="0.4" />
-                    </>
-                  )}
-                  {/* Neck */}
-                  <rect x="60" y="48" width="20" height="18" rx="6" fill={char.skin} />
-                  {/* Head */}
-                  <ellipse cx="70" cy="36" rx="24" ry="28" fill={char.skin} />
-                  {/* Eyes */}
-                  <ellipse cx="60" cy="33" rx="3.5" ry="4" fill="#1a1a2e" />
-                  <ellipse cx="80" cy="33" rx="3.5" ry="4" fill="#1a1a2e" />
-                  <circle cx="61.5" cy="32" r="1.2" fill="#fff" />
-                  <circle cx="81.5" cy="32" r="1.2" fill="#fff" />
-                  {/* Eyebrows */}
-                  <path d="M54 26 Q60 23 66 26" fill="none" stroke="#3d2b1f" strokeWidth="1.5" strokeLinecap="round" />
-                  <path d="M74 26 Q80 23 86 26" fill="none" stroke="#3d2b1f" strokeWidth="1.5" strokeLinecap="round" />
-                  {/* Smile / Mouth */}
-                  <ellipse cx="70" cy="44" rx={isTalking ? "5" : "7"} ry={isTalking ? "4" : "2"} fill="#c0504d"
-                    style={isTalking ? { animation: "avatar-talk 0.4s ease-in-out infinite" } : {}} />
-                  {/* Nose */}
-                  <ellipse cx="70" cy="38" rx="2.5" ry="2" fill={char.skin} style={{ filter: "brightness(0.92)" }} />
-                  {/* Hair / Hat */}
-                  {isHotel ? (
-                    <>{/* Concierge style short hair */}
-                      <path d="M46 30 Q46 8 70 8 Q94 8 94 30" fill="#2d1b1b" />
-                      <path d="M46 28 Q46 10 70 10 Q94 10 94 28 Q94 22 70 20 Q46 22 46 28" fill="#3d2b1f" />
-                    </>
-                  ) : (
-                    <>{/* Pilot cap */}
-                      <path d="M42 28 Q42 12 70 12 Q98 12 98 28 L98 24 Q98 18 70 15 Q42 18 42 24 Z" fill={char.hat} />
-                      <rect x="42" y="24" width="56" height="6" rx="2" fill={char.hat} style={{ filter: "brightness(0.8)" }} />
-                      <rect x="55" y="22" width="30" height="4" rx="1" fill={p.color} opacity="0.6" />
-                      {/* Cap badge */}
-                      <circle cx="70" cy="19" r="4" fill={p.color} opacity="0.5" />
-                    </>
-                  )}
-                  {/* Ears */}
-                  <ellipse cx="46" cy="36" rx="4" ry="6" fill={char.skin} style={{ filter: "brightness(0.95)" }} />
-                  <ellipse cx="94" cy="36" rx="4" ry="6" fill={char.skin} style={{ filter: "brightness(0.95)" }} />
-                </svg>
-
-                {/* Character name */}
-                <div style={{ marginTop: 10, textAlign: "center" }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "#000", fontFamily: "Instrument Serif" }}>{char.title}</div>
-                  <div style={{ fontSize: 11, color: `${p.color}`, fontFamily: "DM Sans", marginTop: 2 }}>{p.name} Expert</div>
-                </div>
-              </div>
-
-              {/* Speech Bubble — shows latest assistant message */}
-              <div style={{ padding: "0 24px 16px" }}>
-                {lastAssistantMsg && (
-                  <div style={{
-                    position: "relative", padding: "16px 20px", borderRadius: 3,
-                    background: `linear-gradient(135deg, ${p.color}10, rgba(0,0,0,0.02))`,
-                    border: `1px solid ${p.color}18`, animation: "speech-bubble-in 0.4s ease-out",
-                  }}>
-                    {/* Bubble arrow pointing up */}
-                    <div style={{
-                      position: "absolute", top: -8, left: "50%", transform: "translateX(-50%)",
-                      width: 0, height: 0, borderLeft: "8px solid transparent", borderRight: "8px solid transparent",
-                      borderBottom: `8px solid ${p.color}18`,
-                    }} />
-                    <p style={{ fontSize: 13, color: "rgba(0,0,0,0.75)", fontFamily: "DM Sans", lineHeight: 1.7, margin: 0 }}>{lastAssistantMsg.content}</p>
-                    {isTalking && (
-                      <div style={{ display: "flex", gap: 3, marginTop: 8, alignItems: "center" }}>
-                        {[0,1,2,3,4].map(i => (
-                          <div key={i} style={{
-                            width: 3, background: p.color, borderRadius: 2, opacity: 0.6,
-                            animation: `avatar-talk 0.5s ease-in-out ${i * 0.1}s infinite`,
-                            height: 8 + Math.sin(i) * 6,
-                          }} />
-                        ))}
-                        <span style={{ fontSize: 10, color: "rgba(0,0,0,0.25)", fontFamily: "DM Sans", marginLeft: 6 }}>Speaking aloud...</span>
+                  {tier.highlight && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "#0EA5A0" }} />}
+                  <p style={{ fontSize: 9, fontFamily: "Space Mono, monospace", letterSpacing: 2, textTransform: "uppercase", color: tier.highlight ? "#0EA5A0" : "rgba(0,0,0,0.3)", marginBottom: 8 }}>{tier.name}</p>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 4 }}>
+                    <span style={{ fontSize: 32, fontFamily: "Instrument Serif", fontWeight: 700 }}>{tier.price}</span>
+                    <span style={{ fontSize: 12, fontFamily: "DM Sans", color: tier.highlight ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.25)" }}>{tier.period}</span>
+                  </div>
+                  <div style={{ margin: "20px 0", borderTop: `1px solid ${tier.highlight ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.06)"}`, paddingTop: 20 }}>
+                    {tier.features.map((f, j) => (
+                      <div key={j} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                        <span style={{ color: "#0EA5A0", fontSize: 12, fontWeight: 700 }}>✓</span>
+                        <span style={{ fontSize: 12, fontFamily: "DM Sans", color: tier.highlight ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.4)" }}>{f}</span>
                       </div>
-                    )}
-                  </div>
-                )}
-                {conciergeLoading && !lastAssistantMsg && (
-                  <div style={{
-                    padding: "16px 20px", borderRadius: 3, textAlign: "center",
-                    background: `linear-gradient(135deg, ${p.color}08, rgba(0,0,0,0.02))`, border: `1px solid ${p.color}12`,
-                  }}>
-                    <div style={{ display: "flex", gap: 5, justifyContent: "center" }}>
-                      {[0,1,2].map(d => (
-                        <div key={d} style={{ width: 8, height: 8, borderRadius: "50%", background: p.color, opacity: 0.5, animation: `twinkle 1s ease-in-out ${d * 0.2}s infinite` }} />
-                      ))}
-                    </div>
-                    <p style={{ fontSize: 11, color: "rgba(0,0,0,0.2)", fontFamily: "DM Sans", marginTop: 8 }}>Preparing your briefing...</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Conversation history (collapsed, scrollable) */}
-              {conciergeMessages.length > 1 && (
-                <div style={{ padding: "0 24px 12px" }}>
-                  <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(0,0,0,0.15)", fontFamily: "DM Sans", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Conversation</div>
-                  <div style={{ maxHeight: 160, overflowY: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
-                    {conciergeMessages.slice(0, -1).map((msg, i) => (
-                      <div key={i} style={{
-                        padding: "6px 10px", borderRadius: 2, fontSize: 11, fontFamily: "DM Sans", lineHeight: 1.5,
-                        background: msg.role === "user" ? "rgba(14,165,160,0.12)" : "rgba(0,0,0,0.02)",
-                        color: msg.role === "user" ? "#0EA5A0" : "rgba(0,0,0,0.35)",
-                        borderLeft: msg.role === "user" ? "2px solid #0EA5A0" : `2px solid ${p.color}30`,
-                      }}>{msg.role === "user" ? "You: " : ""}{msg.content.slice(0, 120)}{msg.content.length > 120 ? "..." : ""}</div>
                     ))}
                   </div>
+                  <button onClick={() => goTo("login")} style={{
+                    width: "100%", padding: "12px", border: tier.highlight ? "2px solid #0EA5A0" : "2px solid #000", cursor: "pointer",
+                    background: tier.highlight ? "#0EA5A0" : "transparent", color: tier.highlight ? "#000" : "#000",
+                    fontSize: 10, fontFamily: "Space Mono, monospace", fontWeight: 700, letterSpacing: 2, textTransform: "uppercase",
+                    transition: "all 0.25s cubic-bezier(0.175,0.885,0.32,1)",
+                  }}>{tier.cta}</button>
                 </div>
-              )}
-            </div>
-
-            {/* Input bar */}
-            <div style={{
-              padding: "14px 18px", borderTop: "1px solid rgba(0,0,0,0.03)",
-              display: "flex", gap: 10, background: "rgba(0,0,0,0.04)",
-            }}>
-              <input
-                value={conciergeInput}
-                onChange={e => setConciergeInput(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendConciergeMessage(); } }}
-                placeholder={`Ask ${char.title.toLowerCase()} a question...`}
-                autoFocus
-                style={{
-                  flex: 1, padding: "10px 14px", background: "rgba(0,0,0,0.02)", border: "1px solid rgba(14,165,160,0.1)",
-                  borderRadius: 3, color: "#000", fontSize: 13, fontFamily: "DM Sans", outline: "none",
-                }}
-              />
-              <button onClick={sendConciergeMessage} disabled={conciergeLoading || !conciergeInput.trim()} style={{
-                padding: "10px 20px", borderRadius: 3, border: "none", cursor: conciergeLoading ? "not-allowed" : "pointer",
-                fontSize: 13, fontWeight: 700, fontFamily: "Instrument Serif",
-                background: conciergeLoading || !conciergeInput.trim() ? "rgba(0,0,0,0.03)" : `linear-gradient(135deg, #0EA5A0, #0EA5A0)`,
-                color: conciergeLoading || !conciergeInput.trim() ? "rgba(0,0,0,0.15)" : "#FFFFFF",
-              }}>Ask</button>
+              ))}
             </div>
           </div>
-        </div>
-      );
-    })() : null;
 
-    // ==================== AIRLINE REVIEWS ====================
-    if (publicPage === "airline-reviews") return (
-      <Shell>
-        <PageSection icon="✈️" title="Airline Reviews" subtitle="Click any program to chat with an AI crew member who'll explain everything about it.">
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(270px, 1fr))", gap: 14 }}>
-            {LOYALTY_PROGRAMS.airlines.slice(0, 12).map((a, i) => (
-              <div key={i} onClick={() => openConcierge(a, "airline")} style={{
-                background: `linear-gradient(135deg, ${a.color}10, rgba(0,0,0,0.02))`, border: `1px solid ${a.color}20`,
-                borderRadius: 2, padding: 20, position: "relative", overflow: "hidden", cursor: "pointer",
-                transition: "border-color 0.2s, transform 0.2s",
-              }}>
-                <FlightPath color={a.color} style={{ top: 4, right: 4, width: 90, height: 18 }} />
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                  <span style={{ fontSize: 26 }}>{a.logo}</span>
-                  <div>
-                    <h3 style={{ fontSize: 13, fontWeight: 700, color: "#000", fontFamily: "Instrument Serif", margin: 0 }}>{a.name}</h3>
-                    <p style={{ fontSize: 10, color: "rgba(0,0,0,0.25)", fontFamily: "DM Sans", margin: "2px 0 0" }}>{a.tiers?.length || 0} tiers · {a.unit}</p>
-                  </div>
+          {/* ═══════ ABOUT / MISSION ═══════ */}
+          <div id="about" style={{ maxWidth: 700, margin: "0 auto", padding: "80px 32px 0", textAlign: "center" }}>
+            <SectionLabel label="About Continuum" />
+            <h2 style={{ fontSize: "clamp(1.4rem, 3vw, 2rem)", fontFamily: "Instrument Serif", fontStyle: "italic", fontWeight: 400, color: "#000", margin: "0 0 20px" }}>
+              We believe your loyalty should work as hard as you do.
+            </h2>
+            <p style={{ fontSize: 14, fontFamily: "DM Sans", color: "rgba(0,0,0,0.45)", lineHeight: 1.8, maxWidth: 600, margin: "0 auto 20px" }}>
+              Continuum was born out of a simple frustration: tracking elite status across a dozen programs shouldn't require a PhD in spreadsheets. We built the platform we wished existed — one intelligent dashboard that connects all your miles, points, and nights, then tells you exactly what to do next.
+            </p>
+            <p style={{ fontSize: 14, fontFamily: "DM Sans", color: "rgba(0,0,0,0.45)", lineHeight: 1.8, maxWidth: 600, margin: "0 auto 20px" }}>
+              Based in Bermuda and built by a team of frequent flyers, reinsurance professionals, and travel obsessives, we understand what it takes to stay on top of the status game — because we play it every day.
+            </p>
+            <div style={{ display: "flex", justifyContent: "center", gap: 32, marginTop: 32 }}>
+              {[{ v: "6", l: "Team Members" }, { v: "12M+", l: "Miles Tracked" }, { v: "2026", l: "Founded" }].map((s, i) => (
+                <div key={i} style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 24, fontFamily: "Space Mono, monospace", color: "#0EA5A0", fontWeight: 700 }}>{s.v}</div>
+                  <div style={{ fontSize: 9, fontFamily: "Space Mono, monospace", color: "rgba(0,0,0,0.2)", letterSpacing: 1.5, textTransform: "uppercase", marginTop: 2 }}>{s.l}</div>
                 </div>
-                <div style={{ display: "flex", gap: 3, flexWrap: "wrap", marginBottom: 8 }}>
-                  {(a.tiers || []).map((t, ti) => (
-                    <span key={ti} style={{ fontSize: 9, fontWeight: 600, padding: "1px 6px", borderRadius: 2, background: `${a.color}12`, color: a.color, fontFamily: "DM Sans", border: `1px solid ${a.color}22` }}>{t.name}</span>
-                  ))}
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}>
-                  <span style={{ fontSize: 14 }}>👨‍✈️</span>
-                  <span style={{ fontSize: 11, color: "#0EA5A0", fontWeight: 600, fontFamily: "DM Sans" }}>Chat with AI Crew Member →</span>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </PageSection>
-        {conciergeModalJSX}
-      </Shell>
-    );
 
-    // ==================== HOTEL REVIEWS ====================
-    if (publicPage === "hotel-reviews") return (
-      <Shell>
-        <PageSection icon="🏨" title="Hotel Reviews" subtitle="Click any program to chat with an AI concierge who'll walk you through the details.">
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(270px, 1fr))", gap: 14 }}>
-            {LOYALTY_PROGRAMS.hotels.map((h, i) => (
-              <div key={i} onClick={() => openConcierge(h, "hotel")} style={{
-                background: `linear-gradient(135deg, ${h.color}10, rgba(0,0,0,0.02))`, border: `1px solid ${h.color}20`,
-                borderRadius: 2, padding: 20, cursor: "pointer", transition: "border-color 0.2s, transform 0.2s",
-              }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                  <span style={{ fontSize: 26 }}>{h.logo}</span>
-                  <div>
-                    <h3 style={{ fontSize: 13, fontWeight: 700, color: "#000", fontFamily: "Instrument Serif", margin: 0 }}>{h.name}</h3>
-                    <p style={{ fontSize: 10, color: "rgba(0,0,0,0.25)", fontFamily: "DM Sans", margin: "2px 0 0" }}>{h.tiers?.length || 0} tiers · {h.unit}</p>
-                  </div>
-                </div>
-                <div style={{ display: "flex", gap: 3, flexWrap: "wrap", marginBottom: 8 }}>
-                  {(h.tiers || []).map((t, ti) => (
-                    <span key={ti} style={{ fontSize: 9, fontWeight: 600, padding: "1px 6px", borderRadius: 2, background: `${h.color}12`, color: h.color, fontFamily: "DM Sans", border: `1px solid ${h.color}22` }}>{t.name}</span>
-                  ))}
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}>
-                  <span style={{ fontSize: 14 }}>🛎️</span>
-                  <span style={{ fontSize: 11, color: "#0EA5A0", fontWeight: 600, fontFamily: "DM Sans" }}>Chat with AI Concierge →</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </PageSection>
-        {conciergeModalJSX}
-      </Shell>
-    );
-
-    // ==================== FORUMS ====================
-    if (publicPage === "forums") return (
-      <Shell>
-        <PageSection icon="💬" title="Forums" subtitle="Connect with fellow travelers. Share tips, ask questions, and learn from the community.">
-          <div style={{ display: "grid", gap: 12 }}>
-            {[
-              { title: "General Discussion", icon: "🗣️", threads: 1240, desc: "Chat about anything travel and loyalty related." },
-              { title: "Airline Status Talk", icon: "✈️", threads: 856, desc: "Strategies and experiences earning airline elite status." },
-              { title: "Hotel Loyalty", icon: "🏨", threads: 634, desc: "Discuss hotel programs, suite upgrades, and point valuations." },
-              { title: "Credit Card Strategies", icon: "💳", threads: 1102, desc: "Which cards to get, sign-up bonuses, and churning strategies." },
-              { title: "Trip Reports", icon: "📸", threads: 478, desc: "Share your travel experiences, reviews, and photos." },
-              { title: "Deals & Offers", icon: "🔥", threads: 921, desc: "The latest travel deals, mistake fares, and bonus promotions." },
-            ].map((f, i) => (
-              <div key={i} style={{
-                background: "linear-gradient(135deg, rgba(14,165,160,0.03), rgba(0,0,0,0.02))",
-                border: "1px solid rgba(0,0,0,0.03)", borderRadius: 2, padding: "16px 20px",
-                display: "flex", alignItems: "center", gap: 14, cursor: "pointer",
-              }}>
-                <span style={{ fontSize: 26, width: 40, textAlign: "center" }}>{f.icon}</span>
-                <div style={{ flex: 1 }}>
-                  <h3 style={{ fontSize: 13, fontWeight: 700, color: "#000", fontFamily: "Instrument Serif", margin: 0 }}>{f.title}</h3>
-                  <p style={{ fontSize: 11, color: "rgba(0,0,0,0.25)", fontFamily: "DM Sans", margin: "2px 0 0" }}>{f.desc}</p>
-                </div>
-                <div style={{ textAlign: "right", flexShrink: 0 }}>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: "#0EA5A0", fontFamily: "Instrument Serif" }}>{f.threads.toLocaleString()}</div>
-                  <div style={{ fontSize: 9, color: "rgba(0,0,0,0.2)", fontFamily: "DM Sans" }}>threads</div>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div style={{ marginTop: 24, textAlign: "center" }}>
-            <p style={{ fontSize: 12, color: "rgba(0,0,0,0.3)", fontFamily: "DM Sans", marginBottom: 12 }}>Sign up to start posting and engage with the community.</p>
+          {/* ═══════ FINAL CTA ═══════ */}
+          <div style={{ maxWidth: 700, margin: "0 auto", padding: "80px 32px 60px", textAlign: "center" }}>
+            <h2 style={{ fontSize: "clamp(1.6rem, 4vw, 2.4rem)", fontFamily: "Instrument Serif", fontStyle: "italic", fontWeight: 400, color: "#000", margin: "0 0 16px" }}>
+              Stop guessing. Start tracking.
+            </h2>
+            <p style={{ fontSize: 14, fontFamily: "DM Sans", color: "rgba(0,0,0,0.35)", marginBottom: 28 }}>
+              Join thousands of travelers who never miss another status milestone.
+            </p>
             <button onClick={() => goTo("login")} style={{
-              padding: "11px 28px", borderRadius: 2, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Instrument Serif",
-              background: "linear-gradient(135deg, #0EA5A0, #0EA5A0)", color: "#000",
-            }}>Sign Up to Join →</button>
+              padding: "16px 48px", border: "none", background: "#000", color: "#fff", cursor: "pointer",
+              fontSize: 12, fontFamily: "Space Mono, monospace", fontWeight: 700, letterSpacing: 2, textTransform: "uppercase",
+            }}>Create Free Account →</button>
           </div>
-        </PageSection>
+
+        </div>
       </Shell>
     );
 
