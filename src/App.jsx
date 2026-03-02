@@ -926,578 +926,444 @@ Start by introducing yourself briefly in-character with personality, and give an
     // ==================== COCKPIT LANDING PAGE ====================
     // Immersive full-screen cockpit with clickable instrument hotspots
     // Inspired by basement.studio's interactive canvas approach
-    // ==================== INTERACTIVE COCKPIT LANDING ====================
+    // ==================== COCKPIT LANDING — IMMERSIVE FLIGHT ====================
     if (publicPage === "landing") {
       const [cockpitSection, setCockpitSection] = React.useState(null);
       const [hoveredZone, setHoveredZone] = React.useState(null);
       const [audioPlayed, setAudioPlayed] = React.useState(false);
       const [showChime, setShowChime] = React.useState(false);
       const [paText, setPaText] = React.useState("");
+      const [nearbyLandmark, setNearbyLandmark] = React.useState(null);
       const audioCtxRef = React.useRef(null);
-      const canvasRef = React.useRef(null);
+      const skyCanvasRef = React.useRef(null);
       const miniMapRef = React.useRef(null);
-      const flightState = React.useRef({ lon: -64.78, lat: 32.3, heading: 90, speed: 0.3, altitude: 38000 });
-      const keysDown = React.useRef({});
-      const animRef = React.useRef(null);
+      const yokeRef = React.useRef(null);
+      const throttleRef = React.useRef(null);
+      const fs = React.useRef({ lon: -64.78, lat: 32.3, heading: 90, speed: 0.25, alt: 38000, roll: 0 });
+      const mouse = React.useRef({ dragging: false, startX: 0, startY: 0 });
+      const keys = React.useRef({});
+      const animId = React.useRef(null);
+      const paPlayedGlobal = React.useRef(false);
 
-      // PA Announcement
-      const playPAAnnouncement = React.useCallback(() => {
-        if (audioPlayed) return;
+      // Landmarks with real coordinates and images
+      const landmarks = React.useRef([
+        { name: "Eiffel Tower", lon: 2.29, lat: 48.86, icon: "🗼", img: "eiffel+tower+paris" },
+        { name: "Mount Fuji", lon: 138.73, lat: 35.36, icon: "🗻", img: "mount+fuji+japan" },
+        { name: "CN Tower", lon: -79.39, lat: 43.64, icon: "🏙️", img: "cn+tower+toronto" },
+        { name: "Rocky Mountains", lon: -105.78, lat: 39.55, icon: "⛰️", img: "rocky+mountains+colorado" },
+        { name: "Kilimanjaro", lon: 37.35, lat: -3.07, icon: "🏔️", img: "mount+kilimanjaro" },
+        { name: "Taipei 101", lon: 121.56, lat: 25.03, icon: "🏗️", img: "taipei+101" },
+        { name: "Statue of Liberty", lon: -74.04, lat: 40.69, icon: "🗽", img: "statue+of+liberty" },
+        { name: "Colosseum", lon: 12.49, lat: 41.89, icon: "🏟️", img: "colosseum+rome" },
+        { name: "Sydney Opera House", lon: 151.21, lat: -33.86, icon: "🏛️", img: "sydney+opera+house" },
+        { name: "Taj Mahal", lon: 78.04, lat: 27.17, icon: "🕌", img: "taj+mahal+india" },
+        { name: "Great Wall", lon: 116.57, lat: 40.43, icon: "🏯", img: "great+wall+china" },
+        { name: "Big Ben", lon: -0.12, lat: 51.50, icon: "🏰", img: "big+ben+london" },
+        { name: "Pyramids of Giza", lon: 31.13, lat: 29.98, icon: "🔺", img: "pyramids+giza" },
+        { name: "Christ the Redeemer", lon: -43.21, lat: -22.95, icon: "✝️", img: "christ+redeemer+rio" },
+        { name: "Machu Picchu", lon: -72.55, lat: -13.16, icon: "🏔️", img: "machu+picchu+peru" },
+        { name: "Bermuda", lon: -64.78, lat: 32.30, icon: "🇧🇲", img: "bermuda+island" },
+        { name: "Dubai Burj Khalifa", lon: 55.27, lat: 25.20, icon: "🌆", img: "burj+khalifa+dubai" },
+        { name: "Hong Kong Skyline", lon: 114.17, lat: 22.28, icon: "🌃", img: "hong+kong+skyline" },
+        { name: "Golden Gate Bridge", lon: -122.48, lat: 37.82, icon: "🌉", img: "golden+gate+bridge" },
+        { name: "Santorini", lon: 25.43, lat: 36.39, icon: "🏖️", img: "santorini+greece" },
+        { name: "Petra", lon: 35.44, lat: 30.33, icon: "🏜️", img: "petra+jordan" },
+        { name: "Angkor Wat", lon: 103.87, lat: 13.41, icon: "⛩️", img: "angkor+wat+cambodia" },
+        { name: "Niagara Falls", lon: -79.07, lat: 43.08, icon: "💧", img: "niagara+falls" },
+        { name: "Northern Lights Iceland", lon: -22.0, lat: 64.15, icon: "🌌", img: "northern+lights+iceland" },
+        { name: "Table Mountain", lon: 18.40, lat: -33.96, icon: "🌊", img: "table+mountain+cape+town" },
+      ]).current;
+
+      // PA — plays ONCE ever per page load
+      const playPA = React.useCallback(() => {
+        if (paPlayedGlobal.current) return;
+        paPlayedGlobal.current = true;
         setAudioPlayed(true);
         try {
           const ctx = new (window.AudioContext || window.webkitAudioContext)();
           audioCtxRef.current = ctx;
-          const playChime = (time) => {
-            [880, 660].forEach((freq, i) => {
-              const osc = ctx.createOscillator();
-              const gain = ctx.createGain();
-              osc.type = "sine"; osc.frequency.value = freq;
-              gain.gain.setValueAtTime(0.35, time + i * 0.18);
-              gain.gain.exponentialRampToValueAtTime(0.001, time + i * 0.18 + 1.0);
-              osc.connect(gain); gain.connect(ctx.destination);
-              osc.start(time + i * 0.18); osc.stop(time + i * 0.18 + 1.0);
+          const chime = (t) => {
+            [880, 660].forEach((f, i) => {
+              const o = ctx.createOscillator(), g = ctx.createGain();
+              o.type = "sine"; o.frequency.value = f;
+              g.gain.setValueAtTime(0.3, t + i * 0.18);
+              g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.18 + 1);
+              o.connect(g); g.connect(ctx.destination);
+              o.start(t + i * 0.18); o.stop(t + i * 0.18 + 1);
             });
           };
-          playChime(ctx.currentTime);
-          setShowChime(true);
-          setTimeout(() => setShowChime(false), 2500);
-          const msg = "Good evening, ladies and gentlemen. This is your Captain speaking. Welcome aboard Continuum Flight CTM-2026, service from wherever you are to Elite Status. We're cruising at 38,000 feet. Use your mouse to look around and your keyboard to fly. Please keep your seatbelt fastened, your loyalty accounts linked, and enjoy the flight.";
+          chime(ctx.currentTime);
+          setShowChime(true); setTimeout(() => setShowChime(false), 2500);
+          const msg = "Good evening, ladies and gentlemen. This is your Captain speaking. Welcome aboard Continuum Flight CTM-2026. We're cruising at 38,000 feet. Grab the yoke to steer and adjust the throttle to change speed. Keep an eye out for world landmarks below. Sit back, enjoy the flight, and let's chase that elite status together.";
           let i = 0;
-          const typeTimer = setInterval(() => { if (i < msg.length) { setPaText(msg.slice(0, i + 1)); i++; } else clearInterval(typeTimer); }, 28);
+          const tt = setInterval(() => { if (i < msg.length) { setPaText(msg.slice(0, i + 1)); i++; } else { clearInterval(tt); setTimeout(() => setPaText(""), 5000); } }, 25);
           setTimeout(() => {
             try {
               if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
-                const utter = new SpeechSynthesisUtterance(msg);
-                utter.rate = 0.88; utter.pitch = 0.85; utter.volume = 0.9;
-                const pickVoice = () => {
-                  const voices = window.speechSynthesis.getVoices();
-                  const preferred = voices.find(v => /karen|australian|google au|au.*english/i.test(v.name) && /en/i.test(v.lang)) || voices.find(v => /en.au/i.test(v.lang));
-                  const english = voices.find(v => /en/i.test(v.lang));
-                  if (preferred) utter.voice = preferred; else if (english) utter.voice = english;
-                  window.speechSynthesis.speak(utter);
+                const u = new SpeechSynthesisUtterance(msg);
+                u.rate = 0.88; u.pitch = 0.82; u.volume = 0.85;
+                const pick = () => {
+                  const v = window.speechSynthesis.getVoices();
+                  const au = v.find(x => /karen|australian|google au/i.test(x.name) && /en/i.test(x.lang)) || v.find(x => /en.au/i.test(x.lang));
+                  if (au) u.voice = au; else { const en = v.find(x => /en/i.test(x.lang)); if (en) u.voice = en; }
+                  window.speechSynthesis.speak(u);
                 };
-                if (window.speechSynthesis.getVoices().length > 0) pickVoice();
-                else { window.speechSynthesis.onvoiceschanged = pickVoice; }
-                utter.onend = () => { try { playChime(ctx.currentTime); } catch(e2) {} };
+                if (window.speechSynthesis.getVoices().length > 0) pick(); else window.speechSynthesis.onvoiceschanged = pick;
+                u.onend = () => { try { chime(ctx.currentTime); } catch(e) {} };
               }
-            } catch(e2) {}
+            } catch(e) {}
           }, 1200);
         } catch(e) {}
-      }, [audioPlayed]);
+      }, []);
 
       React.useEffect(() => {
-        const handler = () => { playPAAnnouncement(); document.removeEventListener("click", handler); document.removeEventListener("touchstart", handler); };
-        document.addEventListener("click", handler); document.addEventListener("touchstart", handler);
-        return () => { document.removeEventListener("click", handler); document.removeEventListener("touchstart", handler); };
-      }, [playPAAnnouncement]);
+        const h = () => { playPA(); document.removeEventListener("click", h); document.removeEventListener("touchstart", h); };
+        document.addEventListener("click", h); document.addEventListener("touchstart", h);
+        return () => { document.removeEventListener("click", h); document.removeEventListener("touchstart", h); };
+      }, [playPA]);
 
-      // === Interactive Flight Canvas ===
+      // === FLIGHT CANVAS — renders sky/terrain visible through cockpit windows ===
       React.useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext("2d");
-        const miniCanvas = miniMapRef.current;
-        const miniCtx = miniCanvas ? miniCanvas.getContext("2d") : null;
-
-        // Load world map
-        const worldImg = new Image();
-        worldImg.crossOrigin = "anonymous";
-        worldImg.src = "/worldmap-tapestry.webp";
-
-        let mouseX = 0, mouseY = 0, isDragging = false;
+        const c = skyCanvasRef.current;
+        if (!c) return;
+        const ctx = c.getContext("2d");
+        const mc = miniMapRef.current;
+        const mctx = mc?.getContext("2d");
+        const worldImg = new Image(); worldImg.crossOrigin = "anonymous"; worldImg.src = "/worldmap-tapestry.webp";
 
         const resize = () => {
           const dpr = window.devicePixelRatio || 1;
-          const rect = canvas.parentElement.getBoundingClientRect();
-          canvas.width = rect.width * dpr; canvas.height = rect.height * dpr;
-          ctx.scale(dpr, dpr);
-          canvas.style.width = rect.width + "px"; canvas.style.height = rect.height + "px";
-          if (miniCanvas) { miniCanvas.width = 200; miniCanvas.height = 100; }
+          const rect = c.parentElement.getBoundingClientRect();
+          c.width = rect.width * dpr; c.height = rect.height * dpr;
+          ctx.scale(dpr, dpr); c.style.width = rect.width + "px"; c.style.height = rect.height + "px";
+          if (mc) { mc.width = 180; mc.height = 90; }
         };
-        resize();
-        window.addEventListener("resize", resize);
-
-        // Landmark data
-        const landmarks = [
-          { name: "New York", lon: -74, lat: 40.7, icon: "🗽" },
-          { name: "London", lon: -0.12, lat: 51.5, icon: "🏰" },
-          { name: "Paris", lon: 2.35, lat: 48.9, icon: "🗼" },
-          { name: "Tokyo", lon: 139.7, lat: 35.7, icon: "⛩️" },
-          { name: "Sydney", lon: 151.2, lat: -33.9, icon: "🏗️" },
-          { name: "Dubai", lon: 55.3, lat: 25.2, icon: "🕌" },
-          { name: "Rio", lon: -43.2, lat: -22.9, icon: "🏖️" },
-          { name: "Hong Kong", lon: 114.2, lat: 22.3, icon: "🌃" },
-          { name: "Cairo", lon: 31.2, lat: 30.0, icon: "🏛️" },
-          { name: "Singapore", lon: 103.8, lat: 1.3, icon: "🏙️" },
-          { name: "Bermuda", lon: -64.78, lat: 32.3, icon: "🇧🇲" },
-          { name: "Rome", lon: 12.5, lat: 41.9, icon: "🏟️" },
-          { name: "Osaka", lon: 135.5, lat: 34.7, icon: "🏯" },
-          { name: "Cape Town", lon: 18.4, lat: -34.0, icon: "🌊" },
-          { name: "Reykjavik", lon: -22.0, lat: 64.1, icon: "🌋" },
-        ];
-
-        // Mouse handlers
-        const onMouseDown = () => { isDragging = true; };
-        const onMouseUp = () => { isDragging = false; };
-        const onMouseMove = (e) => {
-          const rect = canvas.getBoundingClientRect();
-          mouseX = e.clientX - rect.left; mouseY = e.clientY - rect.top;
-          if (isDragging) {
-            flightState.current.heading += e.movementX * 0.15;
-            flightState.current.lat = Math.max(-80, Math.min(80, flightState.current.lat - e.movementY * 0.08));
-          }
-        };
-        canvas.addEventListener("mousedown", onMouseDown);
-        canvas.addEventListener("mouseup", onMouseUp);
-        canvas.addEventListener("mouseleave", onMouseUp);
-        canvas.addEventListener("mousemove", onMouseMove);
+        resize(); window.addEventListener("resize", resize);
 
         // Keyboard
-        const onKeyDown = (e) => { keysDown.current[e.key] = true; };
-        const onKeyUp = (e) => { keysDown.current[e.key] = false; };
-        window.addEventListener("keydown", onKeyDown);
-        window.addEventListener("keyup", onKeyUp);
+        const kd = (e) => { keys.current[e.key] = true; };
+        const ku = (e) => { keys.current[e.key] = false; };
+        window.addEventListener("keydown", kd); window.addEventListener("keyup", ku);
 
-        // Project lon/lat to screen position using equirectangular
-        const project = (lon, lat, viewLon, viewLat, w, h, fov) => {
-          let dLon = lon - viewLon;
-          while (dLon > 180) dLon -= 360;
-          while (dLon < -180) dLon += 360;
-          const dLat = lat - viewLat;
-          const x = w / 2 + (dLon / fov) * w;
-          const y = h / 2 - (dLat / (fov * 0.6)) * h;
-          return { x, y, visible: Math.abs(dLon) < fov / 2 + 5 && Math.abs(dLat) < fov * 0.35 };
+        // Distance helper
+        const dist = (lon1, lat1, lon2, lat2) => {
+          let dLon = lon2 - lon1; while (dLon > 180) dLon -= 360; while (dLon < -180) dLon += 360;
+          return Math.sqrt(dLon * dLon + (lat2 - lat1) * (lat2 - lat1));
         };
 
-        // Animation loop
+        // Project landmark to screen
+        const project = (lon, lat, vLon, vLat, w, h, fov) => {
+          let dLon = lon - vLon; while (dLon > 180) dLon -= 360; while (dLon < -180) dLon += 360;
+          const x = w / 2 + (dLon / fov) * w;
+          const y = h * 0.42 - ((lat - vLat) / (fov * 0.4)) * h * 0.2 + h * 0.12;
+          return { x, y, vis: Math.abs(dLon) < fov / 2 && Math.abs(lat - vLat) < fov * 0.3 };
+        };
+
         const draw = () => {
-          const fs = flightState.current;
-          const w = canvas.width / (window.devicePixelRatio || 1);
-          const h = canvas.height / (window.devicePixelRatio || 1);
-          const keys = keysDown.current;
+          const s = fs.current;
+          const w = c.width / (window.devicePixelRatio || 1);
+          const h = c.height / (window.devicePixelRatio || 1);
+          const k = keys.current;
 
-          // Update position
-          if (keys["ArrowLeft"] || keys["a"]) fs.heading -= 0.8;
-          if (keys["ArrowRight"] || keys["d"]) fs.heading += 0.8;
-          if (keys["ArrowUp"] || keys["w"]) fs.speed = Math.min(1.2, fs.speed + 0.02);
-          if (keys["ArrowDown"] || keys["s"]) fs.speed = Math.max(0.05, fs.speed - 0.02);
-          const rad = fs.heading * Math.PI / 180;
-          fs.lon += Math.sin(rad) * fs.speed * 0.08;
-          fs.lat += Math.cos(rad) * fs.speed * 0.04;
-          if (fs.lon > 180) fs.lon -= 360;
-          if (fs.lon < -180) fs.lon += 360;
-          fs.lat = Math.max(-80, Math.min(80, fs.lat));
+          // Controls
+          if (k["ArrowLeft"] || k["a"]) { s.heading -= 0.6; s.roll = Math.max(-20, s.roll - 0.5); }
+          else if (k["ArrowRight"] || k["d"]) { s.heading += 0.6; s.roll = Math.min(20, s.roll + 0.5); }
+          else { s.roll *= 0.92; }
+          if (k["ArrowUp"] || k["w"]) s.speed = Math.min(1.5, s.speed + 0.01);
+          if (k["ArrowDown"] || k["s"]) s.speed = Math.max(0.05, s.speed - 0.01);
+          const rad = s.heading * Math.PI / 180;
+          s.lon += Math.sin(rad) * s.speed * 0.06;
+          s.lat += Math.cos(rad) * s.speed * 0.03;
+          if (s.lon > 180) s.lon -= 360; if (s.lon < -180) s.lon += 360;
+          s.lat = Math.max(-75, Math.min(75, s.lat));
 
-          // Clear
+          // Update yoke rotation
+          if (yokeRef.current) yokeRef.current.style.transform = `rotate(${s.roll}deg)`;
+          // Update throttle position
+          if (throttleRef.current) throttleRef.current.style.height = `${20 + (s.speed / 1.5) * 60}%`;
+
+          // Clear and draw sky
           ctx.clearRect(0, 0, w, h);
-
-          // Sky gradient
-          const skyGrad = ctx.createLinearGradient(0, 0, 0, h * 0.5);
-          skyGrad.addColorStop(0, "#020408");
-          skyGrad.addColorStop(0.4, "#0a1530");
-          skyGrad.addColorStop(0.7, "#0d1f3d");
-          skyGrad.addColorStop(1, "#1a3050");
-          ctx.fillStyle = skyGrad;
-          ctx.fillRect(0, 0, w, h * 0.5);
+          const sky = ctx.createLinearGradient(0, 0, 0, h * 0.55);
+          sky.addColorStop(0, "#020510"); sky.addColorStop(0.3, "#081830");
+          sky.addColorStop(0.6, "#12284a"); sky.addColorStop(1, "#2a4060");
+          ctx.fillStyle = sky; ctx.fillRect(0, 0, w, h);
 
           // Stars
-          ctx.fillStyle = "rgba(255,255,255,0.6)";
-          for (let i = 0; i < 120; i++) {
-            const sx = ((i * 137.508 + fs.heading * 2) % w + w) % w;
-            const sy = ((i * 97.3) % (h * 0.4));
-            const sr = (i % 3 === 0) ? 1.5 : 0.8;
-            ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = "rgba(255,255,255,0.7)";
+          for (let i = 0; i < 100; i++) {
+            const sx = ((i * 137.5 + s.heading * 1.5) % w + w) % w;
+            const sy = (i * 73.7) % (h * 0.35);
+            ctx.beginPath(); ctx.arc(sx, sy, i % 4 === 0 ? 1.3 : 0.6, 0, Math.PI * 2); ctx.fill();
           }
 
-          // Draw world map
+          // World map
           if (worldImg.complete && worldImg.naturalWidth > 0) {
-            const imgW = worldImg.naturalWidth;
-            const imgH = worldImg.naturalHeight;
-            const fov = 120; // degrees of longitude visible
-            const viewH = h * 0.55;
-            const yOff = h * 0.38;
-
-            // Calculate source crop from lon/lat
-            const srcCenterX = ((fs.lon + 180) / 360) * imgW;
-            const srcCenterY = ((90 - fs.lat) / 180) * imgH;
+            const imgW = worldImg.naturalWidth, imgH = worldImg.naturalHeight;
+            const fov = 100;
+            const terrainY = h * 0.38, terrainH = h * 0.62;
+            const srcCX = ((s.lon + 180) / 360) * imgW;
+            const srcCY = ((90 - s.lat) / 180) * imgH;
             const srcW = (fov / 360) * imgW;
-            const srcH = (fov * 0.4 / 180) * imgH;
+            const srcH = (fov * 0.35 / 180) * imgH;
+            const sx = srcCX - srcW / 2;
+            const sy = Math.max(0, Math.min(imgH - srcH, srcCY - srcH / 2));
 
             // Draw with wrapping
-            const sx = srcCenterX - srcW / 2;
-            const sy = Math.max(0, Math.min(imgH - srcH, srcCenterY - srcH / 2));
-
-            // Handle world wrap
             if (sx < 0) {
-              ctx.drawImage(worldImg, imgW + sx, sy, -sx, srcH, 0, yOff, (-sx / srcW) * w, viewH);
-              ctx.drawImage(worldImg, 0, sy, srcW + sx, srcH, (-sx / srcW) * w, yOff, ((srcW + sx) / srcW) * w, viewH);
+              ctx.drawImage(worldImg, imgW + sx, sy, -sx, srcH, 0, terrainY, (-sx / srcW) * w, terrainH);
+              ctx.drawImage(worldImg, 0, sy, srcW + sx, srcH, (-sx / srcW) * w, terrainY, ((srcW + sx) / srcW) * w, terrainH);
             } else if (sx + srcW > imgW) {
-              const overW = (sx + srcW) - imgW;
-              ctx.drawImage(worldImg, sx, sy, srcW - overW, srcH, 0, yOff, ((srcW - overW) / srcW) * w, viewH);
-              ctx.drawImage(worldImg, 0, sy, overW, srcH, ((srcW - overW) / srcW) * w, yOff, (overW / srcW) * w, viewH);
+              const ov = (sx + srcW) - imgW;
+              ctx.drawImage(worldImg, sx, sy, srcW - ov, srcH, 0, terrainY, ((srcW - ov) / srcW) * w, terrainH);
+              ctx.drawImage(worldImg, 0, sy, ov, srcH, ((srcW - ov) / srcW) * w, terrainY, (ov / srcW) * w, terrainH);
             } else {
-              ctx.drawImage(worldImg, sx, sy, srcW, srcH, 0, yOff, w, viewH);
+              ctx.drawImage(worldImg, sx, sy, srcW, srcH, 0, terrainY, w, terrainH);
             }
 
-            // Horizon atmosphere glow
-            const hGrad = ctx.createLinearGradient(0, yOff - 20, 0, yOff + 40);
-            hGrad.addColorStop(0, "rgba(14,165,160,0.0)");
-            hGrad.addColorStop(0.5, "rgba(14,165,160,0.06)");
-            hGrad.addColorStop(1, "rgba(14,165,160,0.0)");
-            ctx.fillStyle = hGrad;
-            ctx.fillRect(0, yOff - 20, w, 60);
+            // Atmospheric haze at horizon
+            const haze = ctx.createLinearGradient(0, terrainY - 15, 0, terrainY + 50);
+            haze.addColorStop(0, "rgba(30,50,80,0.6)"); haze.addColorStop(0.5, "rgba(20,40,70,0.3)"); haze.addColorStop(1, "rgba(0,0,0,0)");
+            ctx.fillStyle = haze; ctx.fillRect(0, terrainY - 15, w, 65);
 
             // Landmarks
+            let closest = null, closestD = 999;
             landmarks.forEach(lm => {
-              const p = project(lm.lon, lm.lat, fs.lon, fs.lat, w, h, fov);
-              if (p.visible && p.y > yOff - 10 && p.y < yOff + viewH + 20) {
-                ctx.font = "16px sans-serif";
-                ctx.fillText(lm.icon, p.x - 8, p.y);
-                ctx.font = "600 9px 'Inter', sans-serif";
-                ctx.fillStyle = "rgba(255,255,255,0.7)";
+              const d = dist(s.lon, s.lat, lm.lon, lm.lat);
+              if (d < closestD) { closestD = d; closest = lm; }
+              const p = project(lm.lon, lm.lat, s.lon, s.lat, w, h, fov);
+              if (p.vis && p.y > terrainY - 20 && p.y < h) {
+                const scale = Math.max(0.5, 1 - d / 50);
+                // Glow
+                ctx.fillStyle = `rgba(14,165,160,${0.15 * scale})`;
+                ctx.beginPath(); ctx.arc(p.x, p.y, 20 * scale, 0, Math.PI * 2); ctx.fill();
+                // Icon
+                ctx.font = `${Math.round(20 * scale)}px sans-serif`;
                 ctx.textAlign = "center";
-                ctx.fillText(lm.name, p.x, p.y + 20);
-                ctx.fillStyle = "rgba(255,255,255,0.6)";
+                ctx.fillText(lm.icon, p.x, p.y + 5);
+                // Name label
+                ctx.font = `600 ${Math.round(10 * scale)}px Inter, sans-serif`;
+                ctx.fillStyle = `rgba(255,255,255,${0.8 * scale})`;
+                ctx.fillText(lm.name, p.x, p.y + 22 * scale);
+                // Distance
+                if (d < 15) {
+                  ctx.font = `500 ${Math.round(8 * scale)}px 'Space Mono', monospace`;
+                  ctx.fillStyle = `rgba(14,165,160,${0.7 * scale})`;
+                  ctx.fillText(`${Math.round(d * 60)} nm`, p.x, p.y + 32 * scale);
+                }
                 ctx.textAlign = "left";
               }
             });
-          }
-
-          // Cockpit frame overlay
-          // Bottom instrument panel
-          const panelTop = h * 0.82;
-          const panelGrad = ctx.createLinearGradient(0, panelTop - 30, 0, h);
-          panelGrad.addColorStop(0, "rgba(10,10,14,0)");
-          panelGrad.addColorStop(0.15, "rgba(14,14,18,0.95)");
-          panelGrad.addColorStop(1, "#0a0a0e");
-          ctx.fillStyle = panelGrad;
-          ctx.fillRect(0, panelTop - 30, w, h - panelTop + 30);
-
-          // Panel top edge line
-          ctx.strokeStyle = "rgba(14,165,160,0.15)";
-          ctx.lineWidth = 1;
-          ctx.beginPath(); ctx.moveTo(0, panelTop); ctx.lineTo(w, panelTop); ctx.stroke();
-
-          // Cockpit window frame
-          ctx.strokeStyle = "rgba(255,255,255,0.06)";
-          ctx.lineWidth = 20;
-          ctx.strokeRect(10, 10, w - 20, h * 0.8);
-          ctx.lineWidth = 1;
-
-          // Center post
-          ctx.fillStyle = "rgba(20,20,24,0.7)";
-          ctx.fillRect(w / 2 - 3, 0, 6, h * 0.25);
-
-          // Top frame
-          ctx.fillStyle = "rgba(12,12,15,0.85)";
-          ctx.fillRect(0, 0, w, 50);
-
-          // HUD — Heading indicator
-          ctx.font = "600 11px 'Space Mono', monospace";
-          ctx.fillStyle = "#0EA5A0";
-          ctx.textAlign = "center";
-          const headingNorm = ((fs.heading % 360) + 360) % 360;
-          ctx.fillText(`HDG ${Math.round(headingNorm).toString().padStart(3, "0")}°`, w / 2, 38);
-
-          // HUD — Speed
-          ctx.textAlign = "left";
-          ctx.fillStyle = "#8a8f98";
-          ctx.font = "500 10px 'Space Mono', monospace";
-          ctx.fillText(`SPD ${(fs.speed * 340).toFixed(0)} KTS`, 30, 38);
-
-          // HUD — Altitude
-          ctx.textAlign = "right";
-          ctx.fillText(`ALT ${fs.altitude.toLocaleString()} FT`, w - 30, 38);
-
-          // HUD — Position
-          ctx.textAlign = "left";
-          ctx.fillStyle = "#62666d";
-          ctx.font = "500 9px 'Space Mono', monospace";
-          const latDir = fs.lat >= 0 ? "N" : "S";
-          const lonDir = fs.lon >= 0 ? "E" : "W";
-          ctx.fillText(`${Math.abs(fs.lat).toFixed(1)}°${latDir}  ${Math.abs(fs.lon).toFixed(1)}°${lonDir}`, 30, 54);
-
-          // Crosshair
-          ctx.strokeStyle = "rgba(14,165,160,0.2)";
-          ctx.lineWidth = 1;
-          const cx = w / 2, cy = h * 0.45;
-          ctx.beginPath(); ctx.moveTo(cx - 20, cy); ctx.lineTo(cx - 6, cy); ctx.stroke();
-          ctx.beginPath(); ctx.moveTo(cx + 6, cy); ctx.lineTo(cx + 20, cy); ctx.stroke();
-          ctx.beginPath(); ctx.moveTo(cx, cy - 20); ctx.lineTo(cx, cy - 6); ctx.stroke();
-          ctx.beginPath(); ctx.moveTo(cx, cy + 6); ctx.lineTo(cx, cy + 20); ctx.stroke();
-
-          // Pitch ladder lines
-          ctx.strokeStyle = "rgba(255,255,255,0.05)";
-          for (let p = -2; p <= 2; p++) {
-            if (p === 0) continue;
-            const py = cy + p * 35;
-            ctx.beginPath(); ctx.moveTo(cx - 40, py); ctx.lineTo(cx - 10, py); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(cx + 10, py); ctx.lineTo(cx + 40, py); ctx.stroke();
+            if (closest && closestD < 8) setNearbyLandmark(closest);
+            else setNearbyLandmark(null);
           }
 
           // === MINI MAP ===
-          if (miniCtx) {
-            const mw = 200, mh = 100;
-            miniCtx.clearRect(0, 0, mw, mh);
-            // Dark background
-            miniCtx.fillStyle = "#0a0c10";
-            miniCtx.fillRect(0, 0, mw, mh);
-            // Draw world map thumbnail
-            if (worldImg.complete) {
-              miniCtx.globalAlpha = 0.35;
-              miniCtx.drawImage(worldImg, 0, 0, mw, mh);
-              miniCtx.globalAlpha = 1;
-            }
-            // Grid lines
-            miniCtx.strokeStyle = "rgba(14,165,160,0.1)";
-            miniCtx.lineWidth = 0.5;
-            for (let i = 0; i < 5; i++) { miniCtx.beginPath(); miniCtx.moveTo(i * 40, 0); miniCtx.lineTo(i * 40, mh); miniCtx.stroke(); }
-            for (let i = 0; i < 3; i++) { miniCtx.beginPath(); miniCtx.moveTo(0, i * 33); miniCtx.lineTo(mw, i * 33); miniCtx.stroke(); }
-            // Aircraft position
-            const px = ((fs.lon + 180) / 360) * mw;
-            const py = ((90 - fs.lat) / 180) * mh;
-            // Trail glow
-            miniCtx.fillStyle = "rgba(14,165,160,0.3)";
-            miniCtx.beginPath(); miniCtx.arc(px, py, 6, 0, Math.PI * 2); miniCtx.fill();
-            // Aircraft dot
-            miniCtx.fillStyle = "#0EA5A0";
-            miniCtx.beginPath(); miniCtx.arc(px, py, 2.5, 0, Math.PI * 2); miniCtx.fill();
-            // Heading line
-            const hRad = fs.heading * Math.PI / 180;
-            miniCtx.strokeStyle = "#0EA5A0";
-            miniCtx.lineWidth = 1;
-            miniCtx.beginPath();
-            miniCtx.moveTo(px, py);
-            miniCtx.lineTo(px + Math.sin(hRad) * 12, py - Math.cos(hRad) * 12);
-            miniCtx.stroke();
-            // Border
-            miniCtx.strokeStyle = "rgba(14,165,160,0.2)";
-            miniCtx.lineWidth = 1;
-            miniCtx.strokeRect(0, 0, mw, mh);
+          if (mctx) {
+            const mw = 180, mh = 90;
+            mctx.clearRect(0, 0, mw, mh);
+            mctx.fillStyle = "#080a0f"; mctx.fillRect(0, 0, mw, mh);
+            if (worldImg.complete) { mctx.globalAlpha = 0.3; mctx.drawImage(worldImg, 0, 0, mw, mh); mctx.globalAlpha = 1; }
+            // Grid
+            mctx.strokeStyle = "rgba(14,165,160,0.08)"; mctx.lineWidth = 0.5;
+            for (let i = 1; i < 5; i++) { mctx.beginPath(); mctx.moveTo(i * 36, 0); mctx.lineTo(i * 36, mh); mctx.stroke(); }
+            for (let i = 1; i < 3; i++) { mctx.beginPath(); mctx.moveTo(0, i * 30); mctx.lineTo(mw, i * 30); mctx.stroke(); }
+            // Landmark dots
+            landmarks.forEach(lm => {
+              const lx = ((lm.lon + 180) / 360) * mw, ly = ((90 - lm.lat) / 180) * mh;
+              mctx.fillStyle = "rgba(14,165,160,0.25)"; mctx.beginPath(); mctx.arc(lx, ly, 1.5, 0, Math.PI * 2); mctx.fill();
+            });
+            // Aircraft
+            const px = ((s.lon + 180) / 360) * mw, py = ((90 - s.lat) / 180) * mh;
+            mctx.fillStyle = "rgba(14,165,160,0.3)"; mctx.beginPath(); mctx.arc(px, py, 5, 0, Math.PI * 2); mctx.fill();
+            mctx.fillStyle = "#0EA5A0"; mctx.beginPath(); mctx.arc(px, py, 2, 0, Math.PI * 2); mctx.fill();
+            const hr = s.heading * Math.PI / 180;
+            mctx.strokeStyle = "#0EA5A0"; mctx.lineWidth = 1;
+            mctx.beginPath(); mctx.moveTo(px, py); mctx.lineTo(px + Math.sin(hr) * 10, py - Math.cos(hr) * 10); mctx.stroke();
+            mctx.strokeStyle = "rgba(14,165,160,0.2)"; mctx.strokeRect(0, 0, mw, mh);
           }
 
-          animRef.current = requestAnimationFrame(draw);
+          animId.current = requestAnimationFrame(draw);
         };
-        worldImg.onload = () => { draw(); };
-        if (worldImg.complete) draw();
-
-        return () => {
-          cancelAnimationFrame(animRef.current);
-          canvas.removeEventListener("mousedown", onMouseDown);
-          canvas.removeEventListener("mouseup", onMouseUp);
-          canvas.removeEventListener("mouseleave", onMouseUp);
-          canvas.removeEventListener("mousemove", onMouseMove);
-          window.removeEventListener("keydown", onKeyDown);
-          window.removeEventListener("keyup", onKeyUp);
-          window.removeEventListener("resize", resize);
-        };
+        worldImg.onload = draw; if (worldImg.complete) draw();
+        return () => { cancelAnimationFrame(animId.current); window.removeEventListener("keydown", kd); window.removeEventListener("keyup", ku); window.removeEventListener("resize", resize); };
       }, []);
 
-      // Cockpit hotspot zones
+      // Yoke mouse drag
+      const yokeDrag = React.useRef(false);
+      const onYokeDown = (e) => { yokeDrag.current = true; e.preventDefault(); };
+      const onYokeMove = (e) => { if (!yokeDrag.current) return; fs.current.heading += e.movementX * 0.3; fs.current.roll = Math.max(-25, Math.min(25, e.movementX * 2)); };
+      const onYokeUp = () => { yokeDrag.current = false; };
+      React.useEffect(() => {
+        window.addEventListener("mousemove", onYokeMove); window.addEventListener("mouseup", onYokeUp);
+        return () => { window.removeEventListener("mousemove", onYokeMove); window.removeEventListener("mouseup", onYokeUp); };
+      }, []);
+
+      // Throttle drag
+      const throttleDrag = React.useRef(false);
+      const onThrottleDown = (e) => { throttleDrag.current = true; e.preventDefault(); };
+      const onThrottleMove = (e) => { if (!throttleDrag.current) return; fs.current.speed = Math.max(0.05, Math.min(1.5, fs.current.speed - e.movementY * 0.005)); };
+      const onThrottleUp = () => { throttleDrag.current = false; };
+      React.useEffect(() => {
+        window.addEventListener("mousemove", onThrottleMove); window.addEventListener("mouseup", onThrottleUp);
+        return () => { window.removeEventListener("mousemove", onThrottleMove); window.removeEventListener("mouseup", onThrottleUp); };
+      }, []);
+
       const zones = [
-        { id: "features", label: "Features", sublabel: "Primary Flight Display", icon: "📊" },
-        { id: "how-it-works", label: "How It Works", sublabel: "Navigation Display", icon: "🧭" },
-        { id: "partners", label: "Our Partners", sublabel: "Communications Panel", icon: "📡" },
-        { id: "about", label: "About / Mission", sublabel: "Autopilot Controls", icon: "⚙️" },
-        { id: "login", label: "Dashboard", sublabel: "Log In", icon: "🛫" },
+        { id: "features", label: "Features", sub: "Flight Display", icon: "📊" },
+        { id: "how-it-works", label: "How It Works", sub: "Navigation", icon: "🧭" },
+        { id: "partners", label: "Partners", sub: "Comms Panel", icon: "📡" },
+        { id: "about", label: "About", sub: "Autopilot", icon: "⚙️" },
+        { id: "login", label: "Log In", sub: "Dashboard", icon: "🛫" },
       ];
 
-      // Section content renderers
       const renderSection = (id) => {
-        if (id === "features") return (
-          <div style={{ padding: "40px 0" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 2, background: "#23252a" }}>
-              {[
-                { icon: "📊", t: "Unified Dashboard", d: "Every airline, hotel, and rental car program in one live view. No more logging into 12 different sites." },
-                { icon: "🧠", t: "AI Status Optimizer", d: "We crunch your travel history and tell you the fastest, cheapest path to the next tier." },
-                { icon: "💳", t: "Credit Card Intel", d: "Which card earns the most on your next trip? We match cards to your spending patterns." },
-                { icon: "📈", t: "Year-End Projections", d: "See exactly where you'll land on Dec 31 with planned trips and promos factored in." },
-                { icon: "🔔", t: "Status Alerts", d: "Get notified when you're close to a tier, when a promo drops, or a mileage run deal appears." },
-                { icon: "🧾", t: "Expense Tracking", d: "Log travel expenses, snap receipt photos, and export clean reports." },
-              ].map((f, i) => (
-                <div key={i} style={{ background: "#0f1011", padding: "28px 24px", borderLeft: "2px solid rgba(14,165,160,0.3)" }}>
-                  <span style={{ fontSize: 24 }}>{f.icon}</span>
-                  <h3 style={{ fontSize: 15, fontWeight: 600, color: "#f7f8f8", margin: "12px 0 8px" }}>{f.t}</h3>
-                  <p style={{ fontSize: 13, color: "#8a8f98", lineHeight: 1.65 }}>{f.d}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-        if (id === "how-it-works") return (
-          <div style={{ padding: "40px 0" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 2, background: "#23252a" }}>
-              {[
-                { s: "01", t: "Sign Up", d: "Create your free account in under 30 seconds." },
-                { s: "02", t: "Import Data", d: "Connect your airline, hotel, and credit card loyalty accounts." },
-                { s: "03", t: "Get AI Recs", d: "Our engine analyzes your patterns and shows you how to hit the next tier." },
-                { s: "04", t: "Hit Status", d: "Follow your personalized roadmap. We track every qualifying mile and night." },
-              ].map((s, i) => (
-                <div key={i} style={{ background: "#0f1011", padding: "28px 20px" }}>
-                  <div style={{ fontSize: 32, fontFamily: "Space Mono, monospace", color: "#0EA5A0", fontWeight: 700, marginBottom: 12 }}>{s.s}</div>
-                  <h3 style={{ fontSize: 15, fontWeight: 600, color: "#f7f8f8", margin: "0 0 8px" }}>{s.t}</h3>
-                  <p style={{ fontSize: 13, color: "#8a8f98", lineHeight: 1.65 }}>{s.d}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-        if (id === "partners") return (
-          <div style={{ padding: "40px 0" }}>
-            {[
-              { cat: "Airlines", items: [
-                { n: "American Airlines", d: "aa.com" }, { n: "United Airlines", d: "united.com" }, { n: "Delta Air Lines", d: "delta.com" },
-                { n: "British Airways", d: "britishairways.com" }, { n: "Cathay Pacific", d: "cathaypacific.com" }, { n: "Japan Airlines", d: "jal.co.jp" },
-                { n: "Qantas", d: "qantas.com" }, { n: "Singapore Airlines", d: "singaporeair.com" }, { n: "Emirates", d: "emirates.com" },
-                { n: "Lufthansa", d: "lufthansa.com" }, { n: "Air France", d: "airfrance.com" }, { n: "Alaska Airlines", d: "alaskaair.com" },
-              ]},
-              { cat: "Hotels", items: [
-                { n: "Marriott Bonvoy", d: "marriott.com" }, { n: "Hilton Honors", d: "hilton.com" }, { n: "World of Hyatt", d: "hyatt.com" },
-                { n: "IHG One Rewards", d: "ihg.com" }, { n: "Accor Live Limitless", d: "accor.com" }, { n: "Wyndham Rewards", d: "wyndham.com" },
-                { n: "Radisson Rewards", d: "radissonhotels.com" }, { n: "Best Western", d: "bestwestern.com" },
-              ]},
-              { cat: "Credit Cards", items: [
-                { n: "Amex Platinum", d: "americanexpress.com" }, { n: "Chase Sapphire Reserve", d: "chase.com" },
-                { n: "Citi Premier", d: "citi.com" }, { n: "Capital One Venture X", d: "capitalone.com" },
-                { n: "US Bank Altitude Reserve", d: "usbank.com" }, { n: "Amex Gold", d: "americanexpress.com" }, { n: "Chase Ink Preferred", d: "chase.com" },
-              ]},
-            ].map(group => (
-              <div key={group.cat} style={{ marginBottom: 36 }}>
-                <h3 style={{ fontSize: 11, fontFamily: "Space Mono, monospace", color: "#0EA5A0", letterSpacing: 2, textTransform: "uppercase", marginBottom: 20 }}>{group.cat}</h3>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: 8 }}>
-                  {group.items.map(item => (
-                    <div key={item.n} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: "#141516", border: "1px solid #23252a", borderRadius: 8 }}>
-                      <img src={`https://logo.clearbit.com/${item.d}`} alt="" style={{ width: 24, height: 24, borderRadius: 4, background: "#fff" }} onError={e => { e.target.style.display = "none"; }} />
-                      <span style={{ fontSize: 12, color: "#d0d6e0" }}>{item.n}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        );
-        if (id === "about") return (
-          <div style={{ padding: "40px 0", maxWidth: 640 }}>
-            <p style={{ fontSize: 15, color: "#d0d6e0", lineHeight: 1.8, marginBottom: 20 }}>
-              Continuum was born out of a simple frustration: tracking elite status across a dozen programs shouldn't require a PhD in spreadsheets. We built the platform we wished existed.
-            </p>
-            <p style={{ fontSize: 15, color: "#d0d6e0", lineHeight: 1.8, marginBottom: 28 }}>
-              Based in Bermuda and built by frequent flyers, reinsurance professionals, and travel obsessives who play the status game every day.
-            </p>
-            <div style={{ display: "flex", gap: 40 }}>
-              {[{ v: "6", l: "Team" }, { v: "12M+", l: "Miles Tracked" }, { v: "2026", l: "Founded" }].map((s, i) => (
-                <div key={i}>
-                  <div style={{ fontSize: 24, fontFamily: "Space Mono, monospace", color: "#0EA5A0", fontWeight: 700 }}>{s.v}</div>
-                  <div style={{ fontSize: 10, fontFamily: "Space Mono, monospace", color: "#62666d", letterSpacing: 1.5, marginTop: 2, textTransform: "uppercase" }}>{s.l}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
+        if (id === "features") return (<div style={{ padding: "40px 0" }}><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 2, background: "#23252a" }}>{[{ icon: "📊", t: "Unified Dashboard", d: "Every airline, hotel, and rental car program in one live view." },{ icon: "🧠", t: "AI Status Optimizer", d: "The fastest, cheapest path to the next tier. Mileage runs included." },{ icon: "💳", t: "Credit Card Intel", d: "Match cards to spending patterns and status goals automatically." },{ icon: "📈", t: "Year-End Projections", d: "See where you'll land Dec 31 with trips and promos factored in." },{ icon: "🔔", t: "Status Alerts", d: "Notified when you're close to a tier or a mileage run deal appears." },{ icon: "🧾", t: "Expense Tracking", d: "Log expenses, snap receipts, export clean reports." }].map((f, i) => (<div key={i} style={{ background: "#0f1011", padding: "28px 24px", borderLeft: "2px solid rgba(14,165,160,0.3)" }}><span style={{ fontSize: 24 }}>{f.icon}</span><h3 style={{ fontSize: 15, fontWeight: 600, color: "#f7f8f8", margin: "12px 0 8px" }}>{f.t}</h3><p style={{ fontSize: 13, color: "#8a8f98", lineHeight: 1.65 }}>{f.d}</p></div>))}</div></div>);
+        if (id === "how-it-works") return (<div style={{ padding: "40px 0" }}><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 2, background: "#23252a" }}>{[{ s: "01", t: "Sign Up", d: "Free account in 30 seconds." },{ s: "02", t: "Import", d: "Connect loyalty accounts or enter manually." },{ s: "03", t: "AI Recs", d: "We analyze your patterns and show the path." },{ s: "04", t: "Hit Status", d: "Follow your roadmap. We track every mile." }].map((s, i) => (<div key={i} style={{ background: "#0f1011", padding: "28px 20px" }}><div style={{ fontSize: 32, fontFamily: "Space Mono, monospace", color: "#0EA5A0", fontWeight: 700, marginBottom: 12 }}>{s.s}</div><h3 style={{ fontSize: 15, fontWeight: 600, color: "#f7f8f8", margin: "0 0 8px" }}>{s.t}</h3><p style={{ fontSize: 13, color: "#8a8f98", lineHeight: 1.65 }}>{s.d}</p></div>))}</div></div>);
+        if (id === "partners") return (<div style={{ padding: "40px 0" }}>{[{ cat: "Airlines", items: [{ n: "American Airlines", d: "aa.com" },{ n: "United Airlines", d: "united.com" },{ n: "Delta Air Lines", d: "delta.com" },{ n: "British Airways", d: "britishairways.com" },{ n: "Cathay Pacific", d: "cathaypacific.com" },{ n: "Japan Airlines", d: "jal.co.jp" },{ n: "Qantas", d: "qantas.com" },{ n: "Singapore Airlines", d: "singaporeair.com" },{ n: "Emirates", d: "emirates.com" },{ n: "Lufthansa", d: "lufthansa.com" },{ n: "Air France", d: "airfrance.com" },{ n: "Alaska Airlines", d: "alaskaair.com" }]},{ cat: "Hotels", items: [{ n: "Marriott Bonvoy", d: "marriott.com" },{ n: "Hilton Honors", d: "hilton.com" },{ n: "World of Hyatt", d: "hyatt.com" },{ n: "IHG One Rewards", d: "ihg.com" },{ n: "Accor Live Limitless", d: "accor.com" },{ n: "Wyndham Rewards", d: "wyndham.com" }]},{ cat: "Credit Cards", items: [{ n: "Amex Platinum", d: "americanexpress.com" },{ n: "Chase Sapphire Reserve", d: "chase.com" },{ n: "Citi Premier", d: "citi.com" },{ n: "Capital One Venture X", d: "capitalone.com" }]}].map(g => (<div key={g.cat} style={{ marginBottom: 36 }}><h3 style={{ fontSize: 11, fontFamily: "Space Mono, monospace", color: "#0EA5A0", letterSpacing: 2, textTransform: "uppercase", marginBottom: 16 }}>{g.cat}</h3><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 8 }}>{g.items.map(item => (<div key={item.n} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: "#141516", border: "1px solid #23252a", borderRadius: 8 }}><img src={`https://logo.clearbit.com/${item.d}`} alt="" style={{ width: 22, height: 22, borderRadius: 4, background: "#fff" }} onError={e => { e.target.style.display = "none"; }} /><span style={{ fontSize: 12, color: "#d0d6e0" }}>{item.n}</span></div>))}</div></div>))}</div>);
+        if (id === "about") return (<div style={{ padding: "40px 0", maxWidth: 640 }}><p style={{ fontSize: 15, color: "#d0d6e0", lineHeight: 1.8, marginBottom: 20 }}>Continuum was born from frustration: tracking elite status across programs shouldn't require spreadsheets. We built the platform we wished existed.</p><p style={{ fontSize: 15, color: "#d0d6e0", lineHeight: 1.8, marginBottom: 28 }}>Based in Bermuda. Built by frequent flyers, reinsurance professionals, and travel obsessives.</p><div style={{ display: "flex", gap: 40 }}>{[{ v: "6", l: "Team" },{ v: "12M+", l: "Miles Tracked" },{ v: "2026", l: "Founded" }].map((s, i) => (<div key={i}><div style={{ fontSize: 24, fontFamily: "Space Mono, monospace", color: "#0EA5A0", fontWeight: 700 }}>{s.v}</div><div style={{ fontSize: 10, fontFamily: "Space Mono, monospace", color: "#62666d", letterSpacing: 1.5, marginTop: 2, textTransform: "uppercase" }}>{s.l}</div></div>))}</div></div>);
         if (id === "login") { goTo("login"); return null; }
         return null;
       };
 
       return (
-        <div style={{ minHeight: "100vh", background: "#000", color: "#f7f8f8", fontFamily: "Inter, -apple-system, sans-serif", overflow: "hidden", position: "relative" }}>
+        <div style={{ minHeight: "100vh", background: "#000", color: "#f7f8f8", fontFamily: "Inter, -apple-system, sans-serif", overflow: "hidden" }}>
           <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
-
-          {showChime && (
-            <div style={{ position: "fixed", top: 20, left: "50%", transform: "translateX(-50%)", zIndex: 200, background: "rgba(14,165,160,0.15)", border: "1px solid rgba(14,165,160,0.3)", borderRadius: 8, padding: "8px 20px", display: "flex", alignItems: "center", gap: 8, animation: "fade-in 0.3s ease" }}>
-              <span style={{ fontSize: 14 }}>🔔</span>
-              <span style={{ fontSize: 11, fontFamily: "Space Mono, monospace", color: "#0EA5A0", letterSpacing: 1 }}>FASTEN SEATBELT</span>
-            </div>
-          )}
+          {showChime && (<div style={{ position: "fixed", top: 20, left: "50%", transform: "translateX(-50%)", zIndex: 300, background: "rgba(14,165,160,0.15)", border: "1px solid rgba(14,165,160,0.3)", borderRadius: 8, padding: "8px 20px", display: "flex", alignItems: "center", gap: 8 }}><span>🔔</span><span style={{ fontSize: 11, fontFamily: "Space Mono, monospace", color: "#0EA5A0", letterSpacing: 1 }}>FASTEN SEATBELT</span></div>)}
 
           {!cockpitSection ? (
-            <div style={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden", background: "#000" }}>
-              {/* Interactive flight canvas */}
-              <canvas ref={canvasRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", cursor: "crosshair" }} />
+            <div style={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden" }}>
+              {/* Sky/terrain canvas — renders BEHIND the cockpit image */}
+              <canvas ref={skyCanvasRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: 1 }} />
 
-              {/* Mini map — bottom left */}
-              <div style={{ position: "absolute", bottom: 120, left: 20, zIndex: 10, borderRadius: 8, overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,0.5)" }}>
-                <canvas ref={miniMapRef} width={200} height={100} style={{ display: "block", width: 200, height: 100 }} />
-                <div style={{ position: "absolute", top: 4, left: 6, fontSize: 8, fontFamily: "Space Mono, monospace", color: "rgba(14,165,160,0.5)", letterSpacing: 1 }}>POSITION</div>
+              {/* Cockpit photo overlay — the window areas are transparent so sky shows through */}
+              <div style={{
+                position: "absolute", inset: 0, zIndex: 2,
+                backgroundImage: "url(/cockpit.jpg)", backgroundSize: "cover", backgroundPosition: "center",
+                pointerEvents: "none",
+                maskImage: "linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.1) 20%, rgba(0,0,0,0) 30%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.4) 55%, rgba(0,0,0,1) 65%, rgba(0,0,0,1) 100%)",
+                WebkitMaskImage: "linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.1) 20%, rgba(0,0,0,0) 30%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.4) 55%, rgba(0,0,0,1) 65%, rgba(0,0,0,1) 100%)",
+              }} />
+
+              {/* Cockpit bottom (instruments) — solid overlay so buttons are readable */}
+              <div style={{
+                position: "absolute", bottom: 0, left: 0, right: 0, height: "38%", zIndex: 3,
+                backgroundImage: "url(/cockpit.jpg)", backgroundSize: "cover", backgroundPosition: "center bottom",
+              }} />
+
+              {/* Dark overlay on instrument area for readability */}
+              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "38%", zIndex: 4, background: "rgba(0,0,0,0.55)" }} />
+
+              {/* === INTERACTIVE YOKE (center bottom) === */}
+              <div style={{ position: "absolute", bottom: "14%", left: "50%", transform: "translateX(-50%)", zIndex: 20, cursor: "grab" }}
+                onMouseDown={onYokeDown}>
+                <div ref={yokeRef} style={{ transition: "transform 0.1s ease-out" }}>
+                  <svg width="100" height="60" viewBox="0 0 100 60">
+                    {/* Yoke shape */}
+                    <ellipse cx="50" cy="50" rx="45" ry="12" fill="none" stroke="#8a8f98" strokeWidth="3" />
+                    <rect x="46" y="10" width="8" height="40" rx="3" fill="#34343a" stroke="#8a8f98" strokeWidth="1.5" />
+                    <circle cx="50" cy="12" r="6" fill="#23252a" stroke="#0EA5A0" strokeWidth="1" />
+                    <text x="50" y="15" textAnchor="middle" fill="#0EA5A0" fontSize="7" fontFamily="Space Mono">Y</text>
+                  </svg>
+                </div>
+                <div style={{ textAlign: "center", marginTop: 2, fontSize: 8, fontFamily: "Space Mono, monospace", color: "#62666d", letterSpacing: 1 }}>DRAG TO STEER</div>
+              </div>
+
+              {/* === THROTTLE (left of yoke) === */}
+              <div style={{ position: "absolute", bottom: "12%", left: "28%", zIndex: 20, cursor: "ns-resize" }}
+                onMouseDown={onThrottleDown}>
+                <div style={{ width: 28, height: 80, background: "#1a1a1e", border: "1px solid #34343a", borderRadius: 4, position: "relative", overflow: "hidden" }}>
+                  <div ref={throttleRef} style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "30%", background: "linear-gradient(180deg, #0EA5A0, #0a7a76)", borderRadius: "0 0 3px 3px", transition: "height 0.15s ease" }} />
+                  <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 16, height: 3, background: "#8a8f98", borderRadius: 2 }} />
+                </div>
+                <div style={{ textAlign: "center", marginTop: 4, fontSize: 7, fontFamily: "Space Mono, monospace", color: "#62666d", letterSpacing: 1 }}>THROTTLE</div>
+              </div>
+
+              {/* === HUD INFO (over cockpit) === */}
+              <div style={{ position: "absolute", top: 16, left: "50%", transform: "translateX(-50%)", zIndex: 20, display: "flex", gap: 32, background: "rgba(0,0,0,0.5)", borderRadius: 8, padding: "6px 20px", border: "1px solid rgba(14,165,160,0.15)" }}>
+                <span style={{ fontSize: 10, fontFamily: "Space Mono, monospace", color: "#8a8f98" }}>SPD {(fs.current.speed * 340).toFixed(0)}</span>
+                <span style={{ fontSize: 10, fontFamily: "Space Mono, monospace", color: "#0EA5A0" }}>HDG {(((fs.current.heading % 360) + 360) % 360).toFixed(0).padStart(3, "0")}°</span>
+                <span style={{ fontSize: 10, fontFamily: "Space Mono, monospace", color: "#8a8f98" }}>ALT 38000</span>
               </div>
 
               {/* Logo */}
-              <div style={{ position: "absolute", top: 60, left: 28, zIndex: 10, display: "flex", alignItems: "center", gap: 10 }}>
-                <LogoMark size={28} />
-                <span style={{ fontSize: 18, fontWeight: 800, fontFamily: "Instrument Serif, Georgia, serif", letterSpacing: -0.5 }}>CONTINUUM</span>
+              <div style={{ position: "absolute", top: 16, left: 20, zIndex: 20, display: "flex", alignItems: "center", gap: 8 }}>
+                <LogoMark size={24} />
+                <span style={{ fontSize: 15, fontWeight: 800, fontFamily: "Instrument Serif, serif" }}>CONTINUUM</span>
               </div>
 
-              {/* Flight info */}
-              <div style={{ position: "absolute", top: 60, right: 28, zIndex: 10, textAlign: "right" }}>
-                <div style={{ fontSize: 10, fontFamily: "Space Mono, monospace", color: "#0EA5A0", letterSpacing: 2 }}>CTM-2026</div>
+              {/* Flight code */}
+              <div style={{ position: "absolute", top: 16, right: 20, zIndex: 20 }}>
+                <span style={{ fontSize: 9, fontFamily: "Space Mono, monospace", color: "#0EA5A0", letterSpacing: 2 }}>CTM-2026</span>
               </div>
 
-              {/* Center tagline */}
-              <div style={{ position: "absolute", top: "15%", left: "50%", transform: "translateX(-50%)", zIndex: 10, textAlign: "center", pointerEvents: "none" }}>
-                <h1 style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.6rem)", fontFamily: "Instrument Serif, Georgia, serif", fontWeight: 400, fontStyle: "italic", letterSpacing: "-0.02em", margin: 0, lineHeight: 1.2, textShadow: "0 2px 20px rgba(0,0,0,0.5)" }}>
-                  Your status.<br /><span style={{ color: "#0EA5A0" }}>Your cockpit.</span>
+              {/* Mini map */}
+              <div style={{ position: "absolute", top: 48, right: 20, zIndex: 20, borderRadius: 6, overflow: "hidden", border: "1px solid rgba(14,165,160,0.15)", boxShadow: "0 4px 16px rgba(0,0,0,0.4)" }}>
+                <canvas ref={miniMapRef} width={180} height={90} style={{ display: "block", width: 180, height: 90 }} />
+                <div style={{ position: "absolute", top: 3, left: 5, fontSize: 7, fontFamily: "Space Mono, monospace", color: "rgba(14,165,160,0.5)", letterSpacing: 1 }}>POSITION</div>
+              </div>
+
+              {/* Landmark proximity alert */}
+              {nearbyLandmark && (
+                <div style={{ position: "absolute", top: 48, left: "50%", transform: "translateX(-50%)", zIndex: 20, background: "rgba(14,165,160,0.1)", border: "1px solid rgba(14,165,160,0.25)", borderRadius: 8, padding: "6px 16px", display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 16 }}>{nearbyLandmark.icon}</span>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: "#0EA5A0" }}>{nearbyLandmark.name}</div>
+                    <div style={{ fontSize: 8, fontFamily: "Space Mono, monospace", color: "#62666d" }}>APPROACHING</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Instructions */}
+              <div style={{ position: "absolute", top: "30%", left: "50%", transform: "translateX(-50%)", zIndex: 10, textAlign: "center", pointerEvents: "none" }}>
+                <h1 style={{ fontSize: "clamp(1.5rem, 3vw, 2.4rem)", fontFamily: "Instrument Serif, serif", fontWeight: 400, fontStyle: "italic", textShadow: "0 2px 20px rgba(0,0,0,0.7)", margin: 0 }}>
+                  Your status. <span style={{ color: "#0EA5A0" }}>Your cockpit.</span>
                 </h1>
-                <p style={{ fontSize: 12, color: "#8a8f98", marginTop: 10, textShadow: "0 1px 8px rgba(0,0,0,0.8)" }}>Drag to look around · Arrow keys or WASD to fly</p>
+                <p style={{ fontSize: 11, color: "#8a8f98", marginTop: 8, textShadow: "0 1px 8px rgba(0,0,0,0.8)" }}>
+                  Drag the yoke · Slide the throttle · Arrow keys / WASD to fly
+                </p>
               </div>
 
-              {/* Navigation buttons — instrument panel style */}
-              <div style={{ position: "absolute", bottom: 20, left: "50%", transform: "translateX(-50%)", zIndex: 10, display: "flex", gap: 6 }}>
-                {zones.map(zone => (
-                  <button key={zone.id}
-                    onClick={() => zone.id === "login" ? goTo("login") : setCockpitSection(zone.id)}
-                    onMouseEnter={() => setHoveredZone(zone.id)}
-                    onMouseLeave={() => setHoveredZone(null)}
+              {/* Nav buttons */}
+              <div style={{ position: "absolute", bottom: "2%", left: "50%", transform: "translateX(-50%)", zIndex: 20, display: "flex", gap: 4 }}>
+                {zones.map(z => (
+                  <button key={z.id} onClick={() => z.id === "login" ? goTo("login") : setCockpitSection(z.id)}
+                    onMouseEnter={() => setHoveredZone(z.id)} onMouseLeave={() => setHoveredZone(null)}
                     style={{
-                      background: hoveredZone === zone.id ? "rgba(14,165,160,0.15)" : "rgba(10,10,14,0.85)",
-                      border: hoveredZone === zone.id ? "1px solid rgba(14,165,160,0.4)" : "1px solid rgba(255,255,255,0.08)",
-                      borderRadius: 8, padding: "10px 16px", cursor: "pointer",
-                      display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
-                      transition: "all 0.25s ease", minWidth: 90,
-                      boxShadow: hoveredZone === zone.id ? "0 0 20px rgba(14,165,160,0.1)" : "0 2px 8px rgba(0,0,0,0.3)",
+                      background: hoveredZone === z.id ? "rgba(14,165,160,0.2)" : "rgba(8,8,12,0.9)",
+                      border: hoveredZone === z.id ? "1px solid rgba(14,165,160,0.4)" : "1px solid rgba(255,255,255,0.06)",
+                      borderRadius: 6, padding: "8px 12px", cursor: "pointer", minWidth: 75,
+                      display: "flex", flexDirection: "column", alignItems: "center", gap: 2, transition: "all 0.2s",
                     }}>
-                    <span style={{ fontSize: 18 }}>{zone.icon}</span>
-                    <span style={{ fontSize: 10, fontWeight: 600, color: hoveredZone === zone.id ? "#0EA5A0" : "#d0d6e0" }}>{zone.label}</span>
-                    <span style={{ fontSize: 7, fontFamily: "Space Mono, monospace", color: "#62666d", letterSpacing: 1, textTransform: "uppercase" }}>{zone.sublabel}</span>
+                    <span style={{ fontSize: 16 }}>{z.icon}</span>
+                    <span style={{ fontSize: 9, fontWeight: 600, color: hoveredZone === z.id ? "#0EA5A0" : "#d0d6e0" }}>{z.label}</span>
+                    <span style={{ fontSize: 6, fontFamily: "Space Mono, monospace", color: "#555", letterSpacing: 1, textTransform: "uppercase" }}>{z.sub}</span>
                   </button>
                 ))}
               </div>
 
               {/* PA text */}
               {paText && (
-                <div style={{ position: "absolute", bottom: 100, left: 240, right: 28, zIndex: 10, pointerEvents: "none" }}>
-                  <p style={{ fontSize: 11, fontFamily: "Space Mono, monospace", color: "rgba(14,165,160,0.45)", lineHeight: 1.6, maxWidth: 600 }}>
-                    🎙️ {paText}<span style={{ animation: "blink 1s infinite" }}>|</span>
-                  </p>
+                <div style={{ position: "absolute", bottom: "40%", left: 20, right: "50%", zIndex: 10, pointerEvents: "none" }}>
+                  <p style={{ fontSize: 10, fontFamily: "Space Mono, monospace", color: "rgba(14,165,160,0.4)", lineHeight: 1.5, maxWidth: 400 }}>🎙️ {paText}<span style={{ animation: "blink 1s infinite" }}>|</span></p>
                 </div>
               )}
 
               {!audioPlayed && (
-                <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 10, textAlign: "center", pointerEvents: "none" }}>
-                  <p style={{ fontSize: 11, fontFamily: "Space Mono, monospace", color: "#62666d", letterSpacing: 2, textTransform: "uppercase", animation: "float-precise 2s ease-in-out infinite" }}>Click to begin flight</p>
+                <div style={{ position: "absolute", top: "55%", left: "50%", transform: "translateX(-50%)", zIndex: 10, pointerEvents: "none" }}>
+                  <p style={{ fontSize: 10, fontFamily: "Space Mono, monospace", color: "#62666d", letterSpacing: 2, textTransform: "uppercase", animation: "float-precise 2s ease-in-out infinite" }}>Click to begin</p>
                 </div>
               )}
             </div>
           ) : (
             <div style={{ minHeight: "100vh", background: "#08090a" }}>
-              <div style={{ padding: "24px 32px", borderBottom: "1px solid #23252a", display: "flex", alignItems: "center", gap: 16 }}>
-                <button onClick={() => setCockpitSection(null)} style={{
-                  background: "#141516", border: "1px solid #23252a", borderRadius: 8, padding: "8px 16px", cursor: "pointer",
-                  fontSize: 12, fontFamily: "Space Mono, monospace", color: "#8a8f98", display: "flex", alignItems: "center", gap: 6,
-                }}>← Back to Cockpit</button>
-                <div>
-                  <h1 style={{ fontSize: 20, fontWeight: 700, color: "#f7f8f8", margin: 0 }}>{zones.find(z => z.id === cockpitSection)?.label}</h1>
-                  <p style={{ fontSize: 10, fontFamily: "Space Mono, monospace", color: "#62666d", letterSpacing: 1.5, textTransform: "uppercase", marginTop: 2 }}>{zones.find(z => z.id === cockpitSection)?.sublabel}</p>
-                </div>
-                <div style={{ marginLeft: "auto" }}>
-                  <button onClick={() => goTo("login")} style={{
-                    background: "#0EA5A0", border: "none", borderRadius: 8, padding: "8px 20px", cursor: "pointer",
-                    fontSize: 11, fontFamily: "Space Mono, monospace", fontWeight: 700, color: "#000", letterSpacing: 1, textTransform: "uppercase",
-                  }}>Log In →</button>
-                </div>
+              <div style={{ padding: "20px 32px", borderBottom: "1px solid #23252a", display: "flex", alignItems: "center", gap: 16 }}>
+                <button onClick={() => setCockpitSection(null)} style={{ background: "#141516", border: "1px solid #23252a", borderRadius: 8, padding: "8px 16px", cursor: "pointer", fontSize: 12, fontFamily: "Space Mono, monospace", color: "#8a8f98" }}>← Cockpit</button>
+                <div><h1 style={{ fontSize: 18, fontWeight: 700, color: "#f7f8f8", margin: 0 }}>{zones.find(z => z.id === cockpitSection)?.label}</h1></div>
+                <div style={{ marginLeft: "auto" }}><button onClick={() => goTo("login")} style={{ background: "#0EA5A0", border: "none", borderRadius: 8, padding: "8px 20px", cursor: "pointer", fontSize: 11, fontFamily: "Space Mono, monospace", fontWeight: 700, color: "#000", letterSpacing: 1, textTransform: "uppercase" }}>Log In →</button></div>
               </div>
-              <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 32px" }}>
-                {renderSection(cockpitSection)}
-              </div>
+              <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 32px" }}>{renderSection(cockpitSection)}</div>
               <Footer />
             </div>
           )}
