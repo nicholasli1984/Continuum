@@ -1085,9 +1085,9 @@ Start by introducing yourself briefly in-character with personality, and give an
 
           // Clear and draw sky
           ctx.clearRect(0, 0, w, h);
-          const sky = ctx.createLinearGradient(0, 0, 0, h * 0.55);
+          const sky = ctx.createLinearGradient(0, 0, 0, h * 0.7);
           sky.addColorStop(0, "#020510"); sky.addColorStop(0.3, "#081830");
-          sky.addColorStop(0.6, "#12284a"); sky.addColorStop(1, "#2a4060");
+          sky.addColorStop(0.6, "#12284a"); sky.addColorStop(0.85, "#1a3555"); sky.addColorStop(1, "#2a4060");
           ctx.fillStyle = sky; ctx.fillRect(0, 0, w, h);
 
           // Stars
@@ -1102,7 +1102,7 @@ Start by introducing yourself briefly in-character with personality, and give an
           if (worldImg.complete && worldImg.naturalWidth > 0) {
             const imgW = worldImg.naturalWidth, imgH = worldImg.naturalHeight;
             const fov = 100;
-            const terrainY = h * 0.38, terrainH = h * 0.62;
+            const terrainY = h * 0.52, terrainH = h * 0.14;
             const srcCX = ((s.lon + 180) / 360) * imgW;
             const srcCY = ((90 - s.lat) / 180) * imgH;
             const srcW = (fov / 360) * imgW;
@@ -1122,10 +1122,12 @@ Start by introducing yourself briefly in-character with personality, and give an
               ctx.drawImage(worldImg, sx, sy, srcW, srcH, 0, terrainY, w, terrainH);
             }
 
-            // Atmospheric haze at horizon
-            const haze = ctx.createLinearGradient(0, terrainY - 15, 0, terrainY + 50);
-            haze.addColorStop(0, "rgba(30,50,80,0.6)"); haze.addColorStop(0.5, "rgba(20,40,70,0.3)"); haze.addColorStop(1, "rgba(0,0,0,0)");
-            ctx.fillStyle = haze; ctx.fillRect(0, terrainY - 15, w, 65);
+            // Atmospheric haze at horizon — blend terrain into sky
+            ctx.globalAlpha = 0.6;
+            const haze = ctx.createLinearGradient(0, terrainY - 10, 0, terrainY + terrainH);
+            haze.addColorStop(0, "rgba(18,40,74,0.9)"); haze.addColorStop(0.3, "rgba(18,40,74,0.5)"); haze.addColorStop(0.7, "rgba(10,20,40,0.3)"); haze.addColorStop(1, "rgba(0,0,0,0.6)");
+            ctx.fillStyle = haze; ctx.fillRect(0, terrainY - 10, w, terrainH + 20);
+            ctx.globalAlpha = 1;
 
             // Landmarks
             let closest = null, closestD = 999;
