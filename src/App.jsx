@@ -923,193 +923,328 @@ Start by introducing yourself briefly in-character with personality, and give an
       </div>
     );
 
-    // ==================== SINGLE-PAGE LANDING ====================
-    if (publicPage === "landing") return (
-      <Shell>
-        <div>
+    // ==================== COCKPIT LANDING PAGE ====================
+    // Immersive full-screen cockpit with clickable instrument hotspots
+    // Inspired by basement.studio's interactive canvas approach
+    if (publicPage === "landing") {
+      // Active section state for cockpit navigation
+      const [cockpitSection, setCockpitSection] = React.useState(null);
+      const [hoveredZone, setHoveredZone] = React.useState(null);
+      const [audioPlayed, setAudioPlayed] = React.useState(false);
+      const [showChime, setShowChime] = React.useState(false);
+      const [paText, setPaText] = React.useState("");
+      const audioCtxRef = React.useRef(null);
 
-          {/* ═══════ HERO — PAINT-REVEAL WORLD MAP ═══════ */}
-          <div style={{ position: "relative", width: "100%", height: "70vh", minHeight: 420, overflow: "hidden" }}>
-            <WorldMapPaintReveal />
-            <div style={{ position: "absolute", bottom: 24, left: 32, zIndex: 10, pointerEvents: "none" }}>
-              <p style={{ fontSize: 10, fontFamily: "Space Mono, monospace", color: "rgba(255,255,255,0.25)", letterSpacing: 2, textTransform: "uppercase" }}>↑ paint to reveal</p>
+      // Pilot PA announcement via Web Audio API
+      const playPAAnnouncement = React.useCallback(() => {
+        if (audioPlayed) return;
+        setAudioPlayed(true);
+        try {
+          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+          audioCtxRef.current = ctx;
+          // Seatbelt chime — two-tone ding
+          const playChime = (time) => {
+            [880, 660].forEach((freq, i) => {
+              const osc = ctx.createOscillator();
+              const gain = ctx.createGain();
+              osc.type = "sine";
+              osc.frequency.value = freq;
+              gain.gain.setValueAtTime(0.3, time + i * 0.15);
+              gain.gain.exponentialRampToValueAtTime(0.001, time + i * 0.15 + 0.8);
+              osc.connect(gain); gain.connect(ctx.destination);
+              osc.start(time + i * 0.15);
+              osc.stop(time + i * 0.15 + 0.8);
+            });
+          };
+          playChime(ctx.currentTime);
+          setShowChime(true);
+          setTimeout(() => setShowChime(false), 2000);
+          // Type out the PA message
+          const msg = "Good evening, ladies and gentlemen. This is your Captain speaking. Welcome aboard Continuum Flight CTM-2026, service from wherever you are to Elite Status. We're currently cruising at an altitude of 38,000 feet. Our estimated time to your next tier upgrade is... well, that depends on you. Please keep your seatbelt fastened, your loyalty accounts linked, and enjoy the flight. We'll have you at the top in no time.";
+          let i = 0;
+          const typeTimer = setInterval(() => {
+            if (i < msg.length) { setPaText(msg.slice(0, i + 1)); i++; }
+            else clearInterval(typeTimer);
+          }, 28);
+          // Second chime after message
+          setTimeout(() => playChime(ctx.currentTime), msg.length * 28 + 500);
+        } catch(e) { console.log("Audio not available"); }
+      }, [audioPlayed]);
+
+      // Auto-play on first interaction (browsers require user gesture)
+      React.useEffect(() => {
+        const handler = () => { playPAAnnouncement(); document.removeEventListener("click", handler); document.removeEventListener("touchstart", handler); };
+        document.addEventListener("click", handler);
+        document.addEventListener("touchstart", handler);
+        return () => { document.removeEventListener("click", handler); document.removeEventListener("touchstart", handler); };
+      }, [playPAAnnouncement]);
+
+      // Cockpit zone definitions — each maps to a hotspot on the instrument panel
+      const zones = [
+        { id: "features", label: "Features", sublabel: "Primary Flight Display", x: "5%", y: "25%", w: "28%", h: "35%", icon: "📊" },
+        { id: "how-it-works", label: "How It Works", sublabel: "Navigation Display", x: "67%", y: "25%", w: "28%", h: "35%", icon: "🧭" },
+        { id: "partners", label: "Our Partners", sublabel: "Communications Panel", x: "36%", y: "62%", w: "28%", h: "22%", icon: "📡" },
+        { id: "about", label: "About / Mission", sublabel: "Autopilot Controls", x: "5%", y: "65%", w: "28%", h: "20%", icon: "⚙️" },
+        { id: "login", label: "Dashboard", sublabel: "Throttle Quadrant", x: "67%", y: "65%", w: "28%", h: "20%", icon: "🛫" },
+      ];
+
+      // Render cockpit section content
+      const renderSection = (id) => {
+        if (id === "features") return (
+          <div style={{ padding: "40px 0" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 2, background: "#23252a" }}>
+              {[
+                { icon: "📊", t: "Unified Dashboard", d: "Every airline, hotel, and rental car program in one live view. No more logging into 12 different sites." },
+                { icon: "🧠", t: "AI Status Optimizer", d: "We crunch your travel history and tell you the fastest, cheapest path to the next tier. Mileage runs included." },
+                { icon: "💳", t: "Credit Card Intel", d: "Which card earns the most on your next trip? We match cards to your spending patterns and status goals." },
+                { icon: "📈", t: "Year-End Projections", d: "See exactly where you'll land on Dec 31 — with planned trips, status accelerators, and promos factored in." },
+                { icon: "🔔", t: "Status Alerts", d: "Get notified when you're close to a tier, when a promo drops, or when a mileage run deal appears." },
+                { icon: "🧾", t: "Expense Tracking", d: "Log travel expenses, snap receipt photos, and export clean reports. Your accountant will thank you." },
+              ].map((f, i) => (
+                <div key={i} style={{ background: "#0f1011", padding: "28px 24px", borderLeft: "2px solid rgba(14,165,160,0.3)" }}>
+                  <span style={{ fontSize: 24 }}>{f.icon}</span>
+                  <h3 style={{ fontSize: 15, fontWeight: 600, color: "#f7f8f8", margin: "12px 0 8px", fontFamily: "Inter, sans-serif" }}>{f.t}</h3>
+                  <p style={{ fontSize: 13, color: "#8a8f98", lineHeight: 1.65 }}>{f.d}</p>
+                </div>
+              ))}
             </div>
           </div>
-
-          {/* ═══════ HEADLINE ═══════ */}
-          <div style={{ padding: "56px 32px 20px", maxWidth: 820, margin: "0 auto" }}>
-            <h1 style={{
-              fontSize: "clamp(2rem, 5vw, 3.4rem)", fontFamily: "Instrument Serif, Georgia, serif", fontWeight: 400, fontStyle: "italic",
-              color: "#f7f8f8", lineHeight: 1.25, margin: 0, letterSpacing: "-0.02em", textAlign: "center",
-            }}>
-              Your airline miles, hotel nights, and credit card points —{" "}
-              <span style={{ color: "#0EA5A0" }}>finally in one place</span>.
-            </h1>
-            <p style={{ textAlign: "center", fontSize: 15, fontFamily: "DM Sans, sans-serif", color: "#8a8f98", marginTop: 20, lineHeight: 1.7, maxWidth: 560, margin: "20px auto 0" }}>
-              Continuum tracks 70+ loyalty programs so you always know exactly how close you are to your next elite status — and what to do to get there faster.
-            </p>
-            <div style={{ textAlign: "center", marginTop: 32 }}>
-              <button onClick={() => goTo("login")} style={{
-                padding: "14px 40px", border: "1px solid #34343a", background: "#0EA5A0", color: "#ffffff", cursor: "pointer",
-                fontSize: 11, fontFamily: "Space Mono, monospace", fontWeight: 700, letterSpacing: 2, textTransform: "uppercase",
-                transition: "all 0.25s cubic-bezier(0.175,0.885,0.32,1)",
-              }}>Start Tracking Free →</button>
-            </div>
-          </div>
-
-          {/* ═══════ STATS STRIP ═══════ */}
-          <div style={{ display: "flex", gap: 0, maxWidth: 700, margin: "48px auto 0", borderTop: "1px solid #23252a", borderBottom: "1px solid #23252a" }}>
-            {[{ v: "70+", l: "Programs" }, { v: "18", l: "Airlines" }, { v: "12", l: "Hotels" }, { v: "21", l: "Cards" }].map((s, i) => (
-              <div key={i} style={{ flex: 1, textAlign: "center", padding: "20px 0", borderRight: i < 3 ? "1px solid rgba(0,0,0,0.06)" : "none" }}>
-                <div style={{ fontSize: 22, fontFamily: "Space Mono, monospace", color: "#0EA5A0", fontWeight: 700 }}>{s.v}</div>
-                <div style={{ fontSize: 9, fontFamily: "Space Mono, monospace", color: "#62666d", marginTop: 2, letterSpacing: 2, textTransform: "uppercase" }}>{s.l}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* ═══════ HOW IT WORKS — 4 STEPS ═══════ */}
-          <div id="how-it-works" style={{ maxWidth: 900, margin: "0 auto", padding: "80px 32px 0" }}>
-            <SectionLabel label="How It Works" />
+        );
+        if (id === "how-it-works") return (
+          <div style={{ padding: "40px 0" }}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 2, background: "#23252a" }}>
               {[
-                { step: "01", title: "Sign Up", desc: "Create your free account in under 30 seconds. No credit card needed." },
-                { step: "02", title: "Import Data", desc: "Connect your airline, hotel, and credit card loyalty accounts — or enter your status manually." },
-                { step: "03", title: "Get AI Recs", desc: "Our engine analyzes your travel patterns and tells you exactly how to hit your next tier." },
-                { step: "04", title: "Hit Status", desc: "Follow your personalized roadmap. We track every qualifying mile, night, and dollar in real time." },
+                { s: "01", t: "Sign Up", d: "Create your free account in under 30 seconds. No credit card needed." },
+                { s: "02", t: "Import Data", d: "Connect your airline, hotel, and credit card loyalty accounts — or enter your status manually." },
+                { s: "03", t: "Get AI Recs", d: "Our engine analyzes your travel patterns and tells you exactly how to hit your next tier." },
+                { s: "04", t: "Hit Status", d: "Follow your personalized roadmap. We track every qualifying mile, night, and dollar in real time." },
               ].map((s, i) => (
                 <div key={i} style={{ background: "#0f1011", padding: "28px 20px" }}>
-                  <div style={{ fontSize: 28, fontFamily: "Space Mono, monospace", color: "#0EA5A0", fontWeight: 700, marginBottom: 12 }}>{s.step}</div>
-                  <h3 style={{ fontSize: 15, fontFamily: "Instrument Serif, Georgia, serif", fontWeight: 700, color: "#f7f8f8", margin: "0 0 8px" }}>{s.title}</h3>
-                  <p style={{ fontSize: 12, fontFamily: "DM Sans, sans-serif", color: "#8a8f98", lineHeight: 1.65, margin: 0 }}>{s.desc}</p>
+                  <div style={{ fontSize: 32, fontFamily: "Space Mono, monospace", color: "#0EA5A0", fontWeight: 700, marginBottom: 12 }}>{s.s}</div>
+                  <h3 style={{ fontSize: 15, fontWeight: 600, color: "#f7f8f8", margin: "0 0 8px" }}>{s.t}</h3>
+                  <p style={{ fontSize: 13, color: "#8a8f98", lineHeight: 1.65 }}>{s.d}</p>
                 </div>
               ))}
             </div>
           </div>
-
-          {/* ═══════ FEATURES ═══════ */}
-          <div id="features" style={{ maxWidth: 900, margin: "0 auto", padding: "80px 32px 0" }}>
-            <SectionLabel label="Features" />
-            <h2 style={{ fontSize: "clamp(1.4rem, 3vw, 2.2rem)", fontFamily: "Inter, sans-serif", fontStyle: "italic", fontWeight: 400, color: "#f7f8f8", margin: "0 0 40px", letterSpacing: "-0.01em" }}>
-              Everything you need to stay on top of your status game.
-            </h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 2, background: "#23252a" }}>
-              {[
-                { icon: "📊", title: "Unified Dashboard", desc: "Every airline, hotel, and rental car program in one live view. No more logging into 12 different sites." },
-                { icon: "🧠", title: "AI Status Optimizer", desc: "We crunch your travel history and tell you the fastest, cheapest path to the next tier. Mileage runs included." },
-                { icon: "💳", title: "Credit Card Intel", desc: "Which card earns the most on your next trip? We match cards to your spending patterns and status goals." },
-                { icon: "📈", title: "Year-End Projections", desc: "See exactly where you'll land on Dec 31 — with planned trips, status accelerators, and promos factored in." },
-                { icon: "🔔", title: "Status Alerts", desc: "Get notified when you're close to a tier, when a promo drops, or when a mileage run deal appears." },
-                { icon: "🧾", title: "Expense Tracking", desc: "Log travel expenses, snap receipt photos, and export clean reports. Your accountant will thank you." },
-              ].map((f, i) => (
-                <div key={i} style={{ background: "#0f1011", padding: "28px 22px", borderLeft: "2px solid #0EA5A0" }}>
-                  <span style={{ fontSize: 22, display: "block", marginBottom: 10 }}>{f.icon}</span>
-                  <h3 style={{ fontSize: 14, fontWeight: 700, color: "#f7f8f8", fontFamily: "Instrument Serif, Georgia, serif", margin: "0 0 6px" }}>{f.title}</h3>
-                  <p style={{ fontSize: 12, color: "#8a8f98", fontFamily: "Inter, sans-serif", lineHeight: 1.65, margin: 0 }}>{f.desc}</p>
-                </div>
-              ))}
+        );
+        if (id === "partners") return (
+          <div style={{ padding: "40px 0" }}>
+            <div style={{ marginBottom: 28 }}>
+              <h3 style={{ fontSize: 11, fontFamily: "Space Mono, monospace", color: "#0EA5A0", letterSpacing: 2, textTransform: "uppercase", marginBottom: 20 }}>Airlines</h3>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {["American Airlines", "United Airlines", "Delta Air Lines", "British Airways", "Cathay Pacific", "Japan Airlines", "Qantas", "Singapore Airlines", "Emirates", "Lufthansa", "Air France", "Alaska Airlines"].map(a => (
+                  <span key={a} style={{ padding: "8px 16px", background: "#141516", border: "1px solid #23252a", borderRadius: 8, fontSize: 12, color: "#d0d6e0" }}>{a}</span>
+                ))}
+              </div>
+            </div>
+            <div style={{ marginBottom: 28 }}>
+              <h3 style={{ fontSize: 11, fontFamily: "Space Mono, monospace", color: "#0EA5A0", letterSpacing: 2, textTransform: "uppercase", marginBottom: 20 }}>Hotels</h3>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {["Marriott Bonvoy", "Hilton Honors", "World of Hyatt", "IHG One Rewards", "Accor Live Limitless", "Wyndham Rewards", "Radisson Rewards", "Best Western"].map(h => (
+                  <span key={h} style={{ padding: "8px 16px", background: "#141516", border: "1px solid #23252a", borderRadius: 8, fontSize: 12, color: "#d0d6e0" }}>{h}</span>
+                ))}
+              </div>
+            </div>
+            <div>
+              <h3 style={{ fontSize: 11, fontFamily: "Space Mono, monospace", color: "#0EA5A0", letterSpacing: 2, textTransform: "uppercase", marginBottom: 20 }}>Credit Cards</h3>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {["Amex Platinum", "Chase Sapphire Reserve", "Citi Premier", "Capital One Venture X", "US Bank Altitude Reserve", "Amex Gold", "Chase Ink Business Preferred"].map(c => (
+                  <span key={c} style={{ padding: "8px 16px", background: "#141516", border: "1px solid #23252a", borderRadius: 8, fontSize: 12, color: "#d0d6e0" }}>{c}</span>
+                ))}
+              </div>
             </div>
           </div>
-
-          {/* ═══════ TESTIMONIALS ═══════ */}
-          <div style={{ maxWidth: 900, margin: "0 auto", padding: "80px 32px 0" }}>
-            <SectionLabel label="What Travelers Say" />
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 20 }}>
-              {[
-                { quote: "I was 3,000 miles short of Executive Platinum and had no idea. Continuum flagged it with enough time to book a mileage run. Saved my status.", who: "2.4M lifetime miles · AA EXP", },
-                { quote: "Tracking Marriott, Hilton, AND Hyatt status in one place? I used to keep a spreadsheet with 14 tabs. This replaced all of it.", who: "Titanium Elite · 200+ nights/yr", },
-                { quote: "The AI told me to shift one trip from Delta to United and I'd make 1K. That one recommendation was worth the entire year.", who: "1M+ miles · United 1K", },
-              ].map((t, i) => (
-                <div key={i} style={{ padding: "28px 24px", border: "1px solid #23252a", background: "#0f1011" }}>
-                  <p style={{ fontSize: 13, fontFamily: "DM Sans, sans-serif", color: "#d0d6e0", lineHeight: 1.7, margin: "0 0 16px", fontStyle: "italic" }}>"{t.quote}"</p>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#0EA5A0" }} />
-                    <span style={{ fontSize: 10, fontFamily: "Space Mono, monospace", color: "#62666d", letterSpacing: 1, textTransform: "uppercase" }}>{t.who}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* ═══════ PRICING — 3 TIERS ═══════ */}
-          <div id="pricing" style={{ maxWidth: 900, margin: "0 auto", padding: "80px 32px 0" }}>
-            <SectionLabel label="Pricing" />
-            <h2 style={{ fontSize: "clamp(1.4rem, 3vw, 2.2rem)", fontFamily: "Inter, sans-serif", fontStyle: "italic", fontWeight: 400, color: "#f7f8f8", margin: "0 0 40px" }}>
-              Start free. Upgrade when you're ready to go all in.
-            </h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 2, background: "#23252a" }}>
-              {[
-                { name: "Free", price: "$0", period: "forever", features: ["Track up to 5 programs", "Manual data entry", "Basic status dashboard", "Year-end projections"], cta: "Get Started", highlight: false },
-                { name: "Pro", price: "$9.99", period: "/month", features: ["Unlimited programs", "Auto-import from accounts", "AI status optimizer", "Credit card matching", "Status alerts & notifications", "Expense tracking"], cta: "Start Pro Trial", highlight: true },
-                { name: "Enterprise", price: "Custom", period: "pricing", features: ["Everything in Pro", "Team dashboards", "Corporate travel policy", "SSO & admin controls", "Dedicated account manager", "API access"], cta: "Contact Sales", highlight: false },
-              ].map((tier, i) => (
-                <div key={i} style={{
-                  background: tier.highlight ? "#000" : "#fff", padding: "36px 24px", position: "relative",
-                  color: tier.highlight ? "#fff" : "#000",
-                }}>
-                  {tier.highlight && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "#0EA5A0" }} />}
-                  <p style={{ fontSize: 9, fontFamily: "Space Mono, monospace", letterSpacing: 2, textTransform: "uppercase", color: tier.highlight ? "#0EA5A0" : "rgba(0,0,0,0.3)", marginBottom: 8 }}>{tier.name}</p>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 4 }}>
-                    <span style={{ fontSize: 32, fontFamily: "Instrument Serif, Georgia, serif", fontWeight: 700 }}>{tier.price}</span>
-                    <span style={{ fontSize: 12, fontFamily: "DM Sans, sans-serif", color: tier.highlight ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.25)" }}>{tier.period}</span>
-                  </div>
-                  <div style={{ margin: "20px 0", borderTop: `1px solid ${tier.highlight ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.06)"}`, paddingTop: 20 }}>
-                    {tier.features.map((f, j) => (
-                      <div key={j} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                        <span style={{ color: "#0EA5A0", fontSize: 12, fontWeight: 700 }}>✓</span>
-                        <span style={{ fontSize: 12, fontFamily: "DM Sans, sans-serif", color: tier.highlight ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.4)" }}>{f}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <button onClick={() => goTo("login")} style={{
-                    width: "100%", padding: "12px", border: tier.highlight ? "2px solid #0EA5A0" : "2px solid #000", cursor: "pointer",
-                    background: tier.highlight ? "#0EA5A0" : "transparent", color: tier.highlight ? "#000" : "#000",
-                    fontSize: 10, fontFamily: "Space Mono, monospace", fontWeight: 700, letterSpacing: 2, textTransform: "uppercase",
-                    transition: "all 0.25s cubic-bezier(0.175,0.885,0.32,1)",
-                  }}>{tier.cta}</button>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* ═══════ ABOUT / MISSION ═══════ */}
-          <div id="about" style={{ maxWidth: 700, margin: "0 auto", padding: "80px 32px 0", textAlign: "center" }}>
-            <SectionLabel label="About Continuum" />
-            <h2 style={{ fontSize: "clamp(1.4rem, 3vw, 2rem)", fontFamily: "Inter, sans-serif", fontStyle: "italic", fontWeight: 400, color: "#f7f8f8", margin: "0 0 20px" }}>
-              We believe your loyalty should work as hard as you do.
-            </h2>
-            <p style={{ fontSize: 14, fontFamily: "DM Sans, sans-serif", color: "#8a8f98", lineHeight: 1.8, maxWidth: 600, margin: "0 auto 20px" }}>
+        );
+        if (id === "about") return (
+          <div style={{ padding: "40px 0", maxWidth: 640 }}>
+            <p style={{ fontSize: 15, color: "#d0d6e0", lineHeight: 1.8, marginBottom: 20 }}>
               Continuum was born out of a simple frustration: tracking elite status across a dozen programs shouldn't require a PhD in spreadsheets. We built the platform we wished existed — one intelligent dashboard that connects all your miles, points, and nights, then tells you exactly what to do next.
             </p>
-            <p style={{ fontSize: 14, fontFamily: "DM Sans, sans-serif", color: "#8a8f98", lineHeight: 1.8, maxWidth: 600, margin: "0 auto 20px" }}>
+            <p style={{ fontSize: 15, color: "#d0d6e0", lineHeight: 1.8, marginBottom: 28 }}>
               Based in Bermuda and built by a team of frequent flyers, reinsurance professionals, and travel obsessives, we understand what it takes to stay on top of the status game — because we play it every day.
             </p>
-            <div style={{ display: "flex", justifyContent: "center", gap: 32, marginTop: 32 }}>
-              {[{ v: "6", l: "Team Members" }, { v: "12M+", l: "Miles Tracked" }, { v: "2026", l: "Founded" }].map((s, i) => (
-                <div key={i} style={{ textAlign: "center" }}>
+            <div style={{ display: "flex", gap: 40 }}>
+              {[{ v: "6", l: "Team" }, { v: "12M+", l: "Miles Tracked" }, { v: "2026", l: "Founded" }].map((s, i) => (
+                <div key={i}>
                   <div style={{ fontSize: 24, fontFamily: "Space Mono, monospace", color: "#0EA5A0", fontWeight: 700 }}>{s.v}</div>
-                  <div style={{ fontSize: 9, fontFamily: "Space Mono, monospace", color: "#62666d", letterSpacing: 1.5, textTransform: "uppercase", marginTop: 2 }}>{s.l}</div>
+                  <div style={{ fontSize: 10, fontFamily: "Space Mono, monospace", color: "#62666d", letterSpacing: 1.5, marginTop: 2, textTransform: "uppercase" }}>{s.l}</div>
                 </div>
               ))}
             </div>
           </div>
+        );
+        if (id === "login") { goTo("login"); return null; }
+        return null;
+      };
 
-          {/* ═══════ FINAL CTA ═══════ */}
-          <div style={{ maxWidth: 700, margin: "0 auto", padding: "80px 32px 60px", textAlign: "center" }}>
-            <h2 style={{ fontSize: "clamp(1.6rem, 4vw, 2.4rem)", fontFamily: "Inter, sans-serif", fontStyle: "italic", fontWeight: 400, color: "#f7f8f8", margin: "0 0 16px" }}>
-              Stop guessing. Start tracking.
-            </h2>
-            <p style={{ fontSize: 14, fontFamily: "DM Sans, sans-serif", color: "#8a8f98", marginBottom: 28 }}>
-              Join thousands of travelers who never miss another status milestone.
-            </p>
-            <button onClick={() => goTo("login")} style={{
-              padding: "16px 48px", border: "none", background: "#0EA5A0", color: "#ffffff", cursor: "pointer",
-              fontSize: 12, fontFamily: "Space Mono, monospace", fontWeight: 700, letterSpacing: 2, textTransform: "uppercase",
-            }}>Create Free Account →</button>
-          </div>
+      return (
+        <div style={{ minHeight: "100vh", background: "#000", color: "#f7f8f8", fontFamily: "Inter, -apple-system, sans-serif", overflow: "hidden", position: "relative" }}>
+          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
 
+          {/* Seatbelt chime indicator */}
+          {showChime && (
+            <div style={{ position: "fixed", top: 20, left: "50%", transform: "translateX(-50%)", zIndex: 200, background: "rgba(14,165,160,0.15)", border: "1px solid rgba(14,165,160,0.3)", borderRadius: 8, padding: "8px 20px", display: "flex", alignItems: "center", gap: 8, animation: "fade-in 0.3s ease" }}>
+              <span style={{ fontSize: 14 }}>🔔</span>
+              <span style={{ fontSize: 11, fontFamily: "Space Mono, monospace", color: "#0EA5A0", letterSpacing: 1 }}>FASTEN SEATBELT</span>
+            </div>
+          )}
+
+          {/* === COCKPIT VIEW === */}
+          {!cockpitSection ? (
+            <div style={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden" }}>
+
+              {/* Windshield — gradient sky view through cockpit glass */}
+              <div style={{
+                position: "absolute", inset: 0,
+                background: "radial-gradient(ellipse 120% 80% at 50% 30%, #0a1628 0%, #050a12 40%, #000 80%)",
+              }}>
+                {/* Stars */}
+                {Array.from({ length: 60 }).map((_, i) => (
+                  <div key={i} style={{
+                    position: "absolute",
+                    left: `${Math.random() * 100}%`, top: `${Math.random() * 50}%`,
+                    width: Math.random() * 2 + 1, height: Math.random() * 2 + 1,
+                    borderRadius: "50%", background: "#fff",
+                    opacity: Math.random() * 0.5 + 0.1,
+                    animation: `twinkle ${2 + Math.random() * 4}s ease-in-out infinite`,
+                    animationDelay: `${Math.random() * 3}s`,
+                  }} />
+                ))}
+                {/* Horizon glow */}
+                <div style={{
+                  position: "absolute", bottom: "35%", left: 0, right: 0, height: 120,
+                  background: "linear-gradient(180deg, transparent 0%, rgba(14,165,160,0.04) 40%, rgba(14,165,160,0.08) 70%, rgba(255,140,50,0.06) 100%)",
+                }} />
+              </div>
+
+              {/* Cockpit frame overlay — instrument panel structure */}
+              <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
+                {/* Window frame pillars */}
+                <div style={{ position: "absolute", top: 0, left: 0, width: "3%", height: "100%", background: "linear-gradient(90deg, #0a0a0a, #1a1a1e 60%, transparent)" }} />
+                <div style={{ position: "absolute", top: 0, right: 0, width: "3%", height: "100%", background: "linear-gradient(-90deg, #0a0a0a, #1a1a1e 60%, transparent)" }} />
+                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "18%", background: "linear-gradient(180deg, #0c0c0e 0%, #111115 70%, transparent)" }} />
+                {/* Center post */}
+                <div style={{ position: "absolute", top: 0, left: "49.5%", width: "1%", height: "20%", background: "linear-gradient(180deg, #1a1a1e, transparent)" }} />
+              </div>
+
+              {/* === INSTRUMENT PANEL (lower 45%) === */}
+              <div style={{
+                position: "absolute", bottom: 0, left: 0, right: 0, height: "50%",
+                background: "linear-gradient(180deg, rgba(10,10,12,0.7) 0%, #0d0d10 15%, #111115 40%, #0a0a0c 100%)",
+                borderTop: "1px solid rgba(255,255,255,0.04)",
+              }}>
+                {/* Panel texture lines */}
+                {[20, 40, 60, 80].map(p => (
+                  <div key={p} style={{ position: "absolute", top: 0, left: `${p}%`, width: 1, height: "100%", background: "rgba(255,255,255,0.015)" }} />
+                ))}
+                {/* Horizontal seam */}
+                <div style={{ position: "absolute", top: "50%", left: 0, right: 0, height: 1, background: "rgba(255,255,255,0.02)" }} />
+
+                {/* Clickable hotspot zones */}
+                {zones.map(zone => (
+                  <div key={zone.id}
+                    onClick={() => zone.id === "login" ? goTo("login") : setCockpitSection(zone.id)}
+                    onMouseEnter={() => setHoveredZone(zone.id)}
+                    onMouseLeave={() => setHoveredZone(null)}
+                    style={{
+                      position: "absolute", left: zone.x, top: zone.y, width: zone.w, height: zone.h,
+                      cursor: "pointer", borderRadius: 8, transition: "all 0.3s ease",
+                      background: hoveredZone === zone.id ? "rgba(14,165,160,0.08)" : "rgba(255,255,255,0.01)",
+                      border: hoveredZone === zone.id ? "1px solid rgba(14,165,160,0.25)" : "1px solid rgba(255,255,255,0.04)",
+                      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
+                      boxShadow: hoveredZone === zone.id ? "0 0 30px rgba(14,165,160,0.08), inset 0 0 20px rgba(14,165,160,0.04)" : "none",
+                    }}
+                  >
+                    {/* Instrument screen glow */}
+                    <div style={{
+                      width: 42, height: 42, borderRadius: 8,
+                      background: hoveredZone === zone.id ? "rgba(14,165,160,0.15)" : "rgba(255,255,255,0.03)",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      border: `1px solid ${hoveredZone === zone.id ? "rgba(14,165,160,0.3)" : "rgba(255,255,255,0.05)"}`,
+                      transition: "all 0.3s ease", fontSize: 20,
+                    }}>
+                      {zone.icon}
+                    </div>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: hoveredZone === zone.id ? "#0EA5A0" : "#d0d6e0", transition: "color 0.3s" }}>{zone.label}</span>
+                    <span style={{ fontSize: 9, fontFamily: "Space Mono, monospace", color: "#62666d", letterSpacing: 1.5, textTransform: "uppercase" }}>{zone.sublabel}</span>
+                    {/* Corner brackets */}
+                    {hoveredZone === zone.id && <>
+                      <div style={{ position: "absolute", top: 4, left: 4, width: 12, height: 12, borderTop: "1px solid rgba(14,165,160,0.4)", borderLeft: "1px solid rgba(14,165,160,0.4)" }} />
+                      <div style={{ position: "absolute", top: 4, right: 4, width: 12, height: 12, borderTop: "1px solid rgba(14,165,160,0.4)", borderRight: "1px solid rgba(14,165,160,0.4)" }} />
+                      <div style={{ position: "absolute", bottom: 4, left: 4, width: 12, height: 12, borderBottom: "1px solid rgba(14,165,160,0.4)", borderLeft: "1px solid rgba(14,165,160,0.4)" }} />
+                      <div style={{ position: "absolute", bottom: 4, right: 4, width: 12, height: 12, borderBottom: "1px solid rgba(14,165,160,0.4)", borderRight: "1px solid rgba(14,165,160,0.4)" }} />
+                    </>}
+                  </div>
+                ))}
+              </div>
+
+              {/* === HUD OVERLAY === */}
+              {/* Top-left: Logo */}
+              <div style={{ position: "absolute", top: 24, left: 28, zIndex: 10, display: "flex", alignItems: "center", gap: 10 }}>
+                <LogoMark size={28} />
+                <span style={{ fontSize: 18, fontWeight: 800, fontFamily: "Instrument Serif, Georgia, serif", letterSpacing: -0.5 }}>CONTINUUM</span>
+              </div>
+
+              {/* Top-right: Flight info */}
+              <div style={{ position: "absolute", top: 24, right: 28, zIndex: 10, textAlign: "right" }}>
+                <div style={{ fontSize: 10, fontFamily: "Space Mono, monospace", color: "#0EA5A0", letterSpacing: 2 }}>CTM-2026</div>
+                <div style={{ fontSize: 10, fontFamily: "Space Mono, monospace", color: "#62666d", letterSpacing: 1, marginTop: 2 }}>FL380 · M0.82 · HDG 090</div>
+              </div>
+
+              {/* Center tagline */}
+              <div style={{ position: "absolute", top: "22%", left: "50%", transform: "translateX(-50%)", zIndex: 10, textAlign: "center", pointerEvents: "none" }}>
+                <h1 style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)", fontFamily: "Instrument Serif, Georgia, serif", fontWeight: 400, fontStyle: "italic", letterSpacing: "-0.02em", margin: 0, lineHeight: 1.2 }}>
+                  Your status.<br /><span style={{ color: "#0EA5A0" }}>Your cockpit.</span>
+                </h1>
+                <p style={{ fontSize: 13, color: "#62666d", marginTop: 12, fontFamily: "Inter, sans-serif" }}>Click an instrument to explore</p>
+              </div>
+
+              {/* PA announcement text at bottom */}
+              {paText && (
+                <div style={{ position: "absolute", bottom: 12, left: 28, right: 28, zIndex: 10, pointerEvents: "none" }}>
+                  <p style={{ fontSize: 11, fontFamily: "Space Mono, monospace", color: "rgba(14,165,160,0.5)", lineHeight: 1.6, maxWidth: 700 }}>
+                    🎙️ {paText}<span style={{ animation: "blink 1s infinite" }}>|</span>
+                  </p>
+                </div>
+              )}
+
+              {/* Bottom-center: Click hint */}
+              {!audioPlayed && (
+                <div style={{ position: "absolute", bottom: 16, left: "50%", transform: "translateX(-50%)", zIndex: 10 }}>
+                  <p style={{ fontSize: 10, fontFamily: "Space Mono, monospace", color: "#62666d", letterSpacing: 2, textTransform: "uppercase", animation: "float-precise 2s ease-in-out infinite" }}>Click anywhere to begin</p>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* === SECTION VIEW (expanded from cockpit) === */
+            <div style={{ minHeight: "100vh", background: "#08090a" }}>
+              {/* Section header with back button */}
+              <div style={{ padding: "24px 32px", borderBottom: "1px solid #23252a", display: "flex", alignItems: "center", gap: 16 }}>
+                <button onClick={() => setCockpitSection(null)} style={{
+                  background: "#141516", border: "1px solid #23252a", borderRadius: 8, padding: "8px 16px", cursor: "pointer",
+                  fontSize: 12, fontFamily: "Space Mono, monospace", color: "#8a8f98", display: "flex", alignItems: "center", gap: 6,
+                }}>← Back to Cockpit</button>
+                <div>
+                  <h1 style={{ fontSize: 20, fontWeight: 700, color: "#f7f8f8", margin: 0 }}>{zones.find(z => z.id === cockpitSection)?.label}</h1>
+                  <p style={{ fontSize: 10, fontFamily: "Space Mono, monospace", color: "#62666d", letterSpacing: 1.5, textTransform: "uppercase", marginTop: 2 }}>{zones.find(z => z.id === cockpitSection)?.sublabel}</p>
+                </div>
+                <div style={{ marginLeft: "auto" }}>
+                  <button onClick={() => goTo("login")} style={{
+                    background: "#0EA5A0", border: "none", borderRadius: 8, padding: "8px 20px", cursor: "pointer",
+                    fontSize: 11, fontFamily: "Space Mono, monospace", fontWeight: 700, color: "#000", letterSpacing: 1, textTransform: "uppercase",
+                  }}>Get Started →</button>
+                </div>
+              </div>
+              <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 32px" }}>
+                {renderSection(cockpitSection)}
+              </div>
+              <Footer />
+            </div>
+          )}
         </div>
-      </Shell>
-    );
+      );
+    }
 
     // ==================== LOGIN PAGE ====================
     return (
