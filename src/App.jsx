@@ -68,7 +68,7 @@ const WorldMapPaintReveal = () => {
 
   React.useEffect(() => {
     const img = new Image();
-    img.src = "/worldmap3.webp";
+    img.src = "/worldmap4.webp";
     img.onload = () => { setLoaded(true); initCover(); };
     const initCover = () => {
       const cover = coverRef.current;
@@ -83,13 +83,6 @@ const WorldMapPaintReveal = () => {
         ctx.fillStyle = `rgba(255,255,255,${Math.random() * 0.035})`;
         ctx.fillRect(Math.random() * cover.width, Math.random() * cover.height, 1, 1);
       }
-      ctx.font = "500 13px 'Space Mono', monospace";
-      ctx.textAlign = "center";
-      ctx.fillStyle = "rgba(255,255,255,0.18)";
-      ctx.fillText("DRAG TO PAINT & REVEAL THE WORLD", cover.width / 2, cover.height / 2 - 8);
-      ctx.font = "500 11px 'Space Mono', monospace";
-      ctx.fillStyle = "rgba(255,255,255,0.08)";
-      ctx.fillText("↓  ↓  ↓", cover.width / 2, cover.height / 2 + 16);
     };
     window.addEventListener("resize", initCover);
     return () => window.removeEventListener("resize", initCover);
@@ -174,7 +167,7 @@ const WorldMapPaintReveal = () => {
       {/* World map image — parallax shift on mouse move */}
       {loaded && (
         <div style={{
-          position: "absolute", inset: -30, backgroundImage: "url(/worldmap3.webp)",
+          position: "absolute", inset: -30, backgroundImage: "url(/worldmap4.webp)",
           backgroundSize: "cover", backgroundPosition: "center",
           transform: `translate(${imgOffset.x}px, ${imgOffset.y}px)`,
           transition: "transform 0.3s cubic-bezier(0.175,0.885,0.32,1)",
