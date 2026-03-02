@@ -942,13 +942,7 @@ Start by introducing yourself briefly in-character with personality, and give an
           sky.addColorStop(0.6, "#12284a"); sky.addColorStop(0.85, "#1a3555"); sky.addColorStop(1, "#2a4060");
           ctx.fillStyle = sky; ctx.fillRect(0, 0, w, h);
 
-          // Stars
-          ctx.fillStyle = "rgba(255,255,255,0.7)";
-          for (let i = 0; i < 100; i++) {
-            const sx = ((i * 137.5 + s.heading * 1.5) % w + w) % w;
-            const sy = (i * 73.7) % (h * 0.35);
-            ctx.beginPath(); ctx.arc(sx, sy, i % 4 === 0 ? 1.3 : 0.6, 0, Math.PI * 2); ctx.fill();
-          }
+          // Clear sky — no stars for clean cockpit window view
 
           // Procedural terrain at horizon
           const terrainY = h * 0.52, terrainH = h * 0.14;
