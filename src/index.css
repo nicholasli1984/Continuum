@@ -8,9 +8,9 @@
   --color-black: #000;
   --color-black-transparent: rgba(0,0,0,0.05);
   --color-gray: #666;
-  --color-pink: #e886b2;
-  --color-violet: #94a4f9;
-  --color-violet-rgba: rgba(148,164,249,0.3);
+  --color-pink: #0EA5A0;
+  --color-violet: #0EA5A0;
+  --color-violet-rgba: rgba(14,165,160,0.3);
   --duration-slow: 0.7s;
   --duration-normal: 0.5s;
   --duration-fast: 0.25s;
