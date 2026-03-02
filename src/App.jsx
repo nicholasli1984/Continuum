@@ -25,7 +25,6 @@ const TravelAtmosphere = () => (
     <div style={{ position: "absolute", top: "50%", left: 0, right: 0, height: 1, background: "rgba(255,255,255,0.02)" }} />
   </div>
 );
-);
 // Decorative speed line for cards
 const FlightPath = ({ color = "#32A4C3", style = {} }) => (
   <svg viewBox="0 0 200 40" style={{ position: "absolute", opacity: 0.1, ...style }} fill="none">
