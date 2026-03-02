@@ -934,6 +934,11 @@ Start by introducing yourself briefly in-character with personality, and give an
       const [showChime, setShowChime] = React.useState(false);
       const [paText, setPaText] = React.useState("");
       const audioCtxRef = React.useRef(null);
+      const starsRef = React.useRef(Array.from({ length: 60 }).map(() => ({
+        x: Math.random() * 100, y: Math.random() * 50,
+        s: Math.random() * 2 + 1, o: Math.random() * 0.5 + 0.15,
+        d: 2 + Math.random() * 4, delay: Math.random() * 3,
+      })));
 
       // Pilot PA announcement via Web Audio API
       const playPAAnnouncement = React.useCallback(() => {
@@ -949,25 +954,51 @@ Start by introducing yourself briefly in-character with personality, and give an
               const gain = ctx.createGain();
               osc.type = "sine";
               osc.frequency.value = freq;
-              gain.gain.setValueAtTime(0.3, time + i * 0.15);
-              gain.gain.exponentialRampToValueAtTime(0.001, time + i * 0.15 + 0.8);
+              gain.gain.setValueAtTime(0.35, time + i * 0.18);
+              gain.gain.exponentialRampToValueAtTime(0.001, time + i * 0.18 + 1.0);
               osc.connect(gain); gain.connect(ctx.destination);
-              osc.start(time + i * 0.15);
-              osc.stop(time + i * 0.15 + 0.8);
+              osc.start(time + i * 0.18);
+              osc.stop(time + i * 0.18 + 1.0);
             });
           };
           playChime(ctx.currentTime);
           setShowChime(true);
-          setTimeout(() => setShowChime(false), 2000);
-          // Type out the PA message
+          setTimeout(() => setShowChime(false), 2500);
+          // PA message
           const msg = "Good evening, ladies and gentlemen. This is your Captain speaking. Welcome aboard Continuum Flight CTM-2026, service from wherever you are to Elite Status. We're currently cruising at an altitude of 38,000 feet. Our estimated time to your next tier upgrade is... well, that depends on you. Please keep your seatbelt fastened, your loyalty accounts linked, and enjoy the flight. We'll have you at the top in no time.";
+          // Type out the PA message visually
           let i = 0;
           const typeTimer = setInterval(() => {
             if (i < msg.length) { setPaText(msg.slice(0, i + 1)); i++; }
             else clearInterval(typeTimer);
           }, 28);
-          // Second chime after message
-          setTimeout(() => playChime(ctx.currentTime), msg.length * 28 + 500);
+          // Speak the message aloud using Web Speech API
+          setTimeout(() => {
+            try {
+              if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utter = new SpeechSynthesisUtterance(msg);
+                utter.rate = 0.88;
+                utter.pitch = 0.85;
+                utter.volume = 0.9;
+                // Try to find a deep male voice
+                const pickVoice = () => {
+                  const voices = window.speechSynthesis.getVoices();
+                  const preferred = voices.find(v => /daniel|james|thomas|male|david|google uk/i.test(v.name) && /en/i.test(v.lang));
+                  const english = voices.find(v => /en/i.test(v.lang));
+                  if (preferred) utter.voice = preferred;
+                  else if (english) utter.voice = english;
+                  window.speechSynthesis.speak(utter);
+                };
+                if (window.speechSynthesis.getVoices().length > 0) pickVoice();
+                else { window.speechSynthesis.onvoiceschanged = pickVoice; }
+                // Second chime when speech ends
+                utter.onend = () => { try { playChime(ctx.currentTime); } catch(e2) {} };
+              }
+            } catch(e2) { console.log("Speech synthesis not available"); }
+          }, 1200);
+          // Fallback second chime if speech not available
+          setTimeout(() => { try { playChime(ctx.currentTime); } catch(e2) {} }, msg.length * 28 + 500);
         } catch(e) { console.log("Audio not available"); }
       }, [audioPlayed]);
 
@@ -1097,18 +1128,18 @@ Start by introducing yourself briefly in-character with personality, and give an
               {/* Windshield — gradient sky view through cockpit glass */}
               <div style={{
                 position: "absolute", inset: 0,
-                background: "radial-gradient(ellipse 120% 80% at 50% 30%, #0a1628 0%, #050a12 40%, #000 80%)",
+                background: "radial-gradient(ellipse 130% 90% at 50% 25%, #0d1f3d 0%, #080e1a 35%, #030508 70%, #000 100%)",
               }}>
                 {/* Stars */}
-                {Array.from({ length: 60 }).map((_, i) => (
+                {starsRef.current.map((star, i) => (
                   <div key={i} style={{
                     position: "absolute",
-                    left: `${Math.random() * 100}%`, top: `${Math.random() * 50}%`,
-                    width: Math.random() * 2 + 1, height: Math.random() * 2 + 1,
+                    left: `${star.x}%`, top: `${star.y}%`,
+                    width: star.s, height: star.s,
                     borderRadius: "50%", background: "#fff",
-                    opacity: Math.random() * 0.5 + 0.1,
-                    animation: `twinkle ${2 + Math.random() * 4}s ease-in-out infinite`,
-                    animationDelay: `${Math.random() * 3}s`,
+                    opacity: star.o,
+                    animation: `twinkle ${star.d}s ease-in-out infinite`,
+                    animationDelay: `${star.delay}s`,
                   }} />
                 ))}
                 {/* Horizon glow */}
@@ -1128,18 +1159,23 @@ Start by introducing yourself briefly in-character with personality, and give an
                 <div style={{ position: "absolute", top: 0, left: "49.5%", width: "1%", height: "20%", background: "linear-gradient(180deg, #1a1a1e, transparent)" }} />
               </div>
 
-              {/* === INSTRUMENT PANEL (lower 45%) === */}
+              {/* === INSTRUMENT PANEL (lower 50%) === */}
               <div style={{
                 position: "absolute", bottom: 0, left: 0, right: 0, height: "50%",
-                background: "linear-gradient(180deg, rgba(10,10,12,0.7) 0%, #0d0d10 15%, #111115 40%, #0a0a0c 100%)",
-                borderTop: "1px solid rgba(255,255,255,0.04)",
+                background: "linear-gradient(180deg, rgba(15,16,17,0.85) 0%, #111216 12%, #15161a 40%, #111214 100%)",
+                borderTop: "1px solid rgba(255,255,255,0.08)",
+                boxShadow: "0 -8px 40px rgba(0,0,0,0.5)",
               }}>
                 {/* Panel texture lines */}
                 {[20, 40, 60, 80].map(p => (
-                  <div key={p} style={{ position: "absolute", top: 0, left: `${p}%`, width: 1, height: "100%", background: "rgba(255,255,255,0.015)" }} />
+                  <div key={p} style={{ position: "absolute", top: 0, left: `${p}%`, width: 1, height: "100%", background: "rgba(255,255,255,0.03)" }} />
                 ))}
                 {/* Horizontal seam */}
-                <div style={{ position: "absolute", top: "50%", left: 0, right: 0, height: 1, background: "rgba(255,255,255,0.02)" }} />
+                <div style={{ position: "absolute", top: "50%", left: "5%", right: "5%", height: 1, background: "rgba(255,255,255,0.04)" }} />
+                {/* Rivet dots along top edge */}
+                {Array.from({ length: 20 }).map((_, i) => (
+                  <div key={i} style={{ position: "absolute", top: -1, left: `${5 + i * 4.7}%`, width: 3, height: 3, borderRadius: "50%", background: "rgba(255,255,255,0.06)" }} />
+                ))}
 
                 {/* Clickable hotspot zones */}
                 {zones.map(zone => (
@@ -1149,31 +1185,40 @@ Start by introducing yourself briefly in-character with personality, and give an
                     onMouseLeave={() => setHoveredZone(null)}
                     style={{
                       position: "absolute", left: zone.x, top: zone.y, width: zone.w, height: zone.h,
-                      cursor: "pointer", borderRadius: 8, transition: "all 0.3s ease",
-                      background: hoveredZone === zone.id ? "rgba(14,165,160,0.08)" : "rgba(255,255,255,0.01)",
-                      border: hoveredZone === zone.id ? "1px solid rgba(14,165,160,0.25)" : "1px solid rgba(255,255,255,0.04)",
-                      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
-                      boxShadow: hoveredZone === zone.id ? "0 0 30px rgba(14,165,160,0.08), inset 0 0 20px rgba(14,165,160,0.04)" : "none",
+                      cursor: "pointer", borderRadius: 8, transition: "all 0.35s cubic-bezier(0.175,0.885,0.32,1)",
+                      background: hoveredZone === zone.id
+                        ? "linear-gradient(135deg, rgba(14,165,160,0.12), rgba(14,165,160,0.06))"
+                        : "linear-gradient(135deg, rgba(255,255,255,0.035), rgba(255,255,255,0.015))",
+                      border: hoveredZone === zone.id ? "1px solid rgba(14,165,160,0.35)" : "1px solid rgba(255,255,255,0.07)",
+                      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8,
+                      boxShadow: hoveredZone === zone.id
+                        ? "0 0 40px rgba(14,165,160,0.12), inset 0 1px 0 rgba(14,165,160,0.15), 0 4px 20px rgba(0,0,0,0.3)"
+                        : "inset 0 1px 0 rgba(255,255,255,0.04), 0 2px 8px rgba(0,0,0,0.2)",
                     }}
                   >
                     {/* Instrument screen glow */}
                     <div style={{
-                      width: 42, height: 42, borderRadius: 8,
-                      background: hoveredZone === zone.id ? "rgba(14,165,160,0.15)" : "rgba(255,255,255,0.03)",
+                      width: 48, height: 48, borderRadius: 10,
+                      background: hoveredZone === zone.id
+                        ? "radial-gradient(circle, rgba(14,165,160,0.2) 0%, rgba(14,165,160,0.05) 70%)"
+                        : "radial-gradient(circle, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 70%)",
                       display: "flex", alignItems: "center", justifyContent: "center",
-                      border: `1px solid ${hoveredZone === zone.id ? "rgba(14,165,160,0.3)" : "rgba(255,255,255,0.05)"}`,
-                      transition: "all 0.3s ease", fontSize: 20,
+                      border: `1px solid ${hoveredZone === zone.id ? "rgba(14,165,160,0.3)" : "rgba(255,255,255,0.08)"}`,
+                      transition: "all 0.35s ease", fontSize: 22,
+                      boxShadow: hoveredZone === zone.id ? "0 0 20px rgba(14,165,160,0.15)" : "none",
                     }}>
                       {zone.icon}
                     </div>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: hoveredZone === zone.id ? "#0EA5A0" : "#d0d6e0", transition: "color 0.3s" }}>{zone.label}</span>
-                    <span style={{ fontSize: 9, fontFamily: "Space Mono, monospace", color: "#62666d", letterSpacing: 1.5, textTransform: "uppercase" }}>{zone.sublabel}</span>
-                    {/* Corner brackets */}
+                    <span style={{ fontSize: 14, fontWeight: 600, color: hoveredZone === zone.id ? "#0EA5A0" : "#e0e0e0", transition: "color 0.3s", letterSpacing: 0.3 }}>{zone.label}</span>
+                    <span style={{ fontSize: 9, fontFamily: "Space Mono, monospace", color: hoveredZone === zone.id ? "rgba(14,165,160,0.6)" : "#555", letterSpacing: 1.5, textTransform: "uppercase" }}>{zone.sublabel}</span>
+                    {/* Subtle screen scanline effect */}
+                    <div style={{ position: "absolute", inset: 0, borderRadius: 8, background: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.008) 2px, rgba(255,255,255,0.008) 4px)", pointerEvents: "none" }} />
+                    {/* Corner targeting brackets */}
                     {hoveredZone === zone.id && <>
-                      <div style={{ position: "absolute", top: 4, left: 4, width: 12, height: 12, borderTop: "1px solid rgba(14,165,160,0.4)", borderLeft: "1px solid rgba(14,165,160,0.4)" }} />
-                      <div style={{ position: "absolute", top: 4, right: 4, width: 12, height: 12, borderTop: "1px solid rgba(14,165,160,0.4)", borderRight: "1px solid rgba(14,165,160,0.4)" }} />
-                      <div style={{ position: "absolute", bottom: 4, left: 4, width: 12, height: 12, borderBottom: "1px solid rgba(14,165,160,0.4)", borderLeft: "1px solid rgba(14,165,160,0.4)" }} />
-                      <div style={{ position: "absolute", bottom: 4, right: 4, width: 12, height: 12, borderBottom: "1px solid rgba(14,165,160,0.4)", borderRight: "1px solid rgba(14,165,160,0.4)" }} />
+                      <div style={{ position: "absolute", top: 6, left: 6, width: 14, height: 14, borderTop: "2px solid rgba(14,165,160,0.5)", borderLeft: "2px solid rgba(14,165,160,0.5)" }} />
+                      <div style={{ position: "absolute", top: 6, right: 6, width: 14, height: 14, borderTop: "2px solid rgba(14,165,160,0.5)", borderRight: "2px solid rgba(14,165,160,0.5)" }} />
+                      <div style={{ position: "absolute", bottom: 6, left: 6, width: 14, height: 14, borderBottom: "2px solid rgba(14,165,160,0.5)", borderLeft: "2px solid rgba(14,165,160,0.5)" }} />
+                      <div style={{ position: "absolute", bottom: 6, right: 6, width: 14, height: 14, borderBottom: "2px solid rgba(14,165,160,0.5)", borderRight: "2px solid rgba(14,165,160,0.5)" }} />
                     </>}
                   </div>
                 ))}
