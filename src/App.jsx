@@ -55,154 +55,6 @@ const LiveClock = () => {
 // World Map Paint-Reveal — KidSuper-inspired interactive canvas
 // Uses uploaded painted world map image as the hidden layer
 // Dark charcoal cover with medium paintbrush eraser
-const WorldMapPaintReveal = () => {
-  const coverRef = React.useRef(null);
-  const containerRef = React.useRef(null);
-  const painting = React.useRef(false);
-  const lastPos = React.useRef(null);
-  const [loaded, setLoaded] = React.useState(false);
-  const [revealPct, setRevealPct] = React.useState(0);
-  const [imgOffset, setImgOffset] = React.useState({ x: 0, y: 0 });
-  const [cursorPos, setCursorPos] = React.useState({ x: -100, y: -100 });
-  const [showCursor, setShowCursor] = React.useState(false);
-
-  React.useEffect(() => {
-    const img = new Image();
-    img.src = "/worldmap-tapestry.webp";
-    img.onload = () => { setLoaded(true); initCover(); };
-    const initCover = () => {
-      const cover = coverRef.current;
-      if (!cover) return;
-      const r = cover.parentElement.getBoundingClientRect();
-      cover.width = r.width;
-      cover.height = r.height;
-      const ctx = cover.getContext("2d");
-      ctx.fillStyle = "#1a1a1a";
-      ctx.fillRect(0, 0, cover.width, cover.height);
-      for (let i = 0; i < 15000; i++) {
-        ctx.fillStyle = `rgba(255,255,255,${Math.random() * 0.035})`;
-        ctx.fillRect(Math.random() * cover.width, Math.random() * cover.height, 1, 1);
-      }
-    };
-    window.addEventListener("resize", initCover);
-    return () => window.removeEventListener("resize", initCover);
-  }, []);
-
-  const erase = (x, y) => {
-    const cover = coverRef.current;
-    if (!cover) return;
-    const ctx = cover.getContext("2d");
-    ctx.globalCompositeOperation = "destination-out";
-    const baseR = 48;
-    const r = baseR + Math.random() * 14;
-    const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
-    grad.addColorStop(0, "rgba(0,0,0,1)");
-    grad.addColorStop(0.35, "rgba(0,0,0,0.9)");
-    grad.addColorStop(0.7, "rgba(0,0,0,0.4)");
-    grad.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = grad;
-    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
-    for (let i = 0; i < 5; i++) {
-      const sx = x + (Math.random() - 0.5) * r * 1.6;
-      const sy = y + (Math.random() - 0.5) * r * 1.6;
-      const sr = 4 + Math.random() * 8;
-      ctx.fillStyle = "rgba(0,0,0,0.6)";
-      ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.fill();
-    }
-    if (lastPos.current) {
-      const lx = lastPos.current.x, ly = lastPos.current.y;
-      const dist = Math.sqrt((x - lx) ** 2 + (y - ly) ** 2);
-      const steps = Math.ceil(dist / 10);
-      for (let i = 0; i < steps; i++) {
-        const t = i / steps;
-        const mx = lx + (x - lx) * t, my = ly + (y - ly) * t;
-        const mr = baseR - 6 + Math.random() * 10;
-        const mg = ctx.createRadialGradient(mx, my, 0, mx, my, mr);
-        mg.addColorStop(0, "rgba(0,0,0,1)"); mg.addColorStop(0.6, "rgba(0,0,0,0.5)"); mg.addColorStop(1, "rgba(0,0,0,0)");
-        ctx.fillStyle = mg;
-        ctx.beginPath(); ctx.arc(mx, my, mr, 0, Math.PI * 2); ctx.fill();
-      }
-    }
-    lastPos.current = { x, y };
-    ctx.globalCompositeOperation = "source-over";
-    const data = ctx.getImageData(0, 0, cover.width, cover.height).data;
-    let clear = 0; const sample = 4000;
-    for (let i = 0; i < sample; i++) { if (data[Math.floor(Math.random() * (data.length / 4)) * 4 + 3] < 10) clear++; }
-    setRevealPct(Math.round((clear / sample) * 100));
-  };
-
-  const getPos = (e) => {
-    const rect = coverRef.current.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    return { x: clientX - rect.left, y: clientY - rect.top };
-  };
-
-  // Parallax + cursor tracking on any mouse move (not just painting)
-  const handleMouseMove = (e) => {
-    const container = containerRef.current;
-    if (!container) return;
-    const rect = container.getBoundingClientRect();
-    const mx = (e.clientX - rect.left) / rect.width - 0.5;
-    const my = (e.clientY - rect.top) / rect.height - 0.5;
-    setImgOffset({ x: mx * -20, y: my * -15 });
-    setCursorPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-    if (painting.current) {
-      e.preventDefault();
-      const p = getPos(e);
-      erase(p.x, p.y);
-    }
-  };
-
-  const onDown = (e) => { painting.current = true; const p = getPos(e); erase(p.x, p.y); };
-  const onUp = () => { painting.current = false; lastPos.current = null; };
-  const onTouchMove = (e) => { if (!painting.current) return; e.preventDefault(); const p = getPos(e); erase(p.x, p.y); };
-
-  return (
-    <div ref={containerRef} style={{ position: "relative", width: "100%", height: "100%", cursor: "none", background: "#1a1a1a", overflow: "hidden" }}
-      onMouseMove={handleMouseMove} onMouseDown={onDown} onMouseUp={onUp} onMouseLeave={() => { onUp(); setShowCursor(false); }}
-      onMouseEnter={() => setShowCursor(true)}
-      onTouchStart={onDown} onTouchMove={onTouchMove} onTouchEnd={onUp}
-    >
-      {/* World map image — parallax shift on mouse move */}
-      {loaded && (
-        <div style={{
-          position: "absolute", inset: -40, backgroundImage: "url(/worldmap-tapestry.webp)",
-          backgroundSize: "cover", backgroundPosition: "center",
-          transform: `translate(${imgOffset.x}px, ${imgOffset.y}px)`,
-          transition: "transform 0.3s cubic-bezier(0.175,0.885,0.32,1)",
-        }} />
-      )}
-      {/* Dark charcoal cover canvas */}
-      <canvas ref={coverRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} />
-      {/* Concorde airplane cursor */}
-      {showCursor && (
-        <div style={{
-          position: "absolute", left: cursorPos.x, top: cursorPos.y,
-          transform: "translate(-50%, -50%) rotate(-30deg)",
-          pointerEvents: "none", zIndex: 20, transition: "left 0.05s linear, top 0.05s linear",
-        }}>
-          <svg width="32" height="32" viewBox="0 0 64 64" fill="none">
-            {/* Concorde silhouette — sleek delta-wing shape */}
-            <path d="M32 4 L36 18 L58 28 L58 32 L36 26 L34 48 L42 54 L42 58 L32 52 L22 58 L22 54 L30 48 L28 26 L6 32 L6 28 L28 18 Z" fill="white" opacity="0.9" />
-            <path d="M32 4 L36 18 L58 28 L58 32 L36 26 L34 48 L42 54 L42 58 L32 52 L22 58 L22 54 L30 48 L28 26 L6 32 L6 28 L28 18 Z" stroke="rgba(0,0,0,0.3)" strokeWidth="0.5" fill="none" />
-            {/* Engine glow */}
-            <circle cx="32" cy="52" r="3" fill="#0EA5A0" opacity="0.6" />
-          </svg>
-        </div>
-      )}
-      {/* Reveal percentage */}
-      <div style={{
-        position: "absolute", bottom: 12, right: 16, zIndex: 10, pointerEvents: "none",
-        fontSize: 10, fontFamily: "Space Mono, monospace",
-        color: revealPct > 30 ? "rgba(0,0,0,0.3)" : "rgba(255,255,255,0.3)", letterSpacing: 1,
-      }}>
-        {revealPct}% revealed
-      </div>
-    </div>
-  );
-};
-
 // Per-page hero banner with travel photography
 // Hero banners removed — clean cosmic dashboard
 
@@ -1030,7 +882,7 @@ Start by introducing yourself briefly in-character with personality, and give an
         const ctx = c.getContext("2d");
         const mc = miniMapRef.current;
         const mctx = mc?.getContext("2d");
-        const worldImg = new Image(); worldImg.crossOrigin = "anonymous"; worldImg.src = "/worldmap-tapestry.webp";
+        const worldImg = { complete: false }; // no world map image
 
         const resize = () => {
           const dpr = window.devicePixelRatio || 1;
@@ -1098,75 +950,64 @@ Start by introducing yourself briefly in-character with personality, and give an
             ctx.beginPath(); ctx.arc(sx, sy, i % 4 === 0 ? 1.3 : 0.6, 0, Math.PI * 2); ctx.fill();
           }
 
-          // World map
-          if (worldImg.complete && worldImg.naturalWidth > 0) {
-            const imgW = worldImg.naturalWidth, imgH = worldImg.naturalHeight;
-            const fov = 100;
-            const terrainY = h * 0.52, terrainH = h * 0.14;
-            const srcCX = ((s.lon + 180) / 360) * imgW;
-            const srcCY = ((90 - s.lat) / 180) * imgH;
-            const srcW = (fov / 360) * imgW;
-            const srcH = (fov * 0.35 / 180) * imgH;
-            const sx = srcCX - srcW / 2;
-            const sy = Math.max(0, Math.min(imgH - srcH, srcCY - srcH / 2));
+          // Procedural terrain at horizon
+          const terrainY = h * 0.52, terrainH = h * 0.14;
+          const tGrad = ctx.createLinearGradient(0, terrainY, 0, terrainY + terrainH);
+          tGrad.addColorStop(0, "#1a3555"); tGrad.addColorStop(0.3, "#162a42"); tGrad.addColorStop(0.7, "#0e1c2e"); tGrad.addColorStop(1, "#080e18");
+          ctx.fillStyle = tGrad; ctx.fillRect(0, terrainY, w, terrainH);
 
-            // Draw with wrapping
-            if (sx < 0) {
-              ctx.drawImage(worldImg, imgW + sx, sy, -sx, srcH, 0, terrainY, (-sx / srcW) * w, terrainH);
-              ctx.drawImage(worldImg, 0, sy, srcW + sx, srcH, (-sx / srcW) * w, terrainY, ((srcW + sx) / srcW) * w, terrainH);
-            } else if (sx + srcW > imgW) {
-              const ov = (sx + srcW) - imgW;
-              ctx.drawImage(worldImg, sx, sy, srcW - ov, srcH, 0, terrainY, ((srcW - ov) / srcW) * w, terrainH);
-              ctx.drawImage(worldImg, 0, sy, ov, srcH, ((srcW - ov) / srcW) * w, terrainY, (ov / srcW) * w, terrainH);
-            } else {
-              ctx.drawImage(worldImg, sx, sy, srcW, srcH, 0, terrainY, w, terrainH);
-            }
-
-            // Atmospheric haze at horizon — blend terrain into sky
-            ctx.globalAlpha = 0.6;
-            const haze = ctx.createLinearGradient(0, terrainY - 10, 0, terrainY + terrainH);
-            haze.addColorStop(0, "rgba(18,40,74,0.9)"); haze.addColorStop(0.3, "rgba(18,40,74,0.5)"); haze.addColorStop(0.7, "rgba(10,20,40,0.3)"); haze.addColorStop(1, "rgba(0,0,0,0.6)");
-            ctx.fillStyle = haze; ctx.fillRect(0, terrainY - 10, w, terrainH + 20);
-            ctx.globalAlpha = 1;
-
-            // Landmarks
-            let closest = null, closestD = 999;
-            landmarks.forEach(lm => {
-              const d = dist(s.lon, s.lat, lm.lon, lm.lat);
-              if (d < closestD) { closestD = d; closest = lm; }
-              const p = project(lm.lon, lm.lat, s.lon, s.lat, w, h, fov);
-              if (p.vis && p.y > terrainY - 20 && p.y < h) {
-                const scale = Math.max(0.5, 1 - d / 50);
-                // Glow
-                ctx.fillStyle = `rgba(14,165,160,${0.15 * scale})`;
-                ctx.beginPath(); ctx.arc(p.x, p.y, 20 * scale, 0, Math.PI * 2); ctx.fill();
-                // Icon
-                ctx.font = `${Math.round(20 * scale)}px sans-serif`;
-                ctx.textAlign = "center";
-                ctx.fillText(lm.icon, p.x, p.y + 5);
-                // Name label
-                ctx.font = `600 ${Math.round(10 * scale)}px Inter, sans-serif`;
-                ctx.fillStyle = `rgba(255,255,255,${0.8 * scale})`;
-                ctx.fillText(lm.name, p.x, p.y + 22 * scale);
-                // Distance
-                if (d < 15) {
-                  ctx.font = `500 ${Math.round(8 * scale)}px 'Space Mono', monospace`;
-                  ctx.fillStyle = `rgba(14,165,160,${0.7 * scale})`;
-                  ctx.fillText(`${Math.round(d * 60)} nm`, p.x, p.y + 32 * scale);
-                }
-                ctx.textAlign = "left";
-              }
-            });
-            if (closest && closestD < 8) setNearbyLandmark(closest);
-            else setNearbyLandmark(null);
+          // Procedural terrain features — rolling hills silhouette
+          ctx.fillStyle = "rgba(12,20,35,0.7)";
+          ctx.beginPath(); ctx.moveTo(0, terrainY + 4);
+          for (let px = 0; px <= w; px += 4) {
+            const hill = Math.sin((px + s.lon * 8) * 0.008) * 8 + Math.sin((px + s.lon * 12) * 0.02) * 4 + Math.sin((px + s.lat * 6) * 0.035) * 2;
+            ctx.lineTo(px, terrainY + 4 + hill);
           }
+          ctx.lineTo(w, terrainY + terrainH); ctx.lineTo(0, terrainY + terrainH); ctx.closePath(); ctx.fill();
+
+          // Atmospheric haze
+          ctx.globalAlpha = 0.5;
+          const haze = ctx.createLinearGradient(0, terrainY - 10, 0, terrainY + terrainH);
+          haze.addColorStop(0, "rgba(18,40,74,0.8)"); haze.addColorStop(0.4, "rgba(18,40,74,0.3)"); haze.addColorStop(1, "rgba(0,0,0,0.4)");
+          ctx.fillStyle = haze; ctx.fillRect(0, terrainY - 10, w, terrainH + 20);
+          ctx.globalAlpha = 1;
+
+          // Landmarks
+          const fov = 100;
+          let closest = null, closestD = 999;
+          landmarks.forEach(lm => {
+            const d = dist(s.lon, s.lat, lm.lon, lm.lat);
+            if (d < closestD) { closestD = d; closest = lm; }
+            const p = project(lm.lon, lm.lat, s.lon, s.lat, w, h, fov);
+            if (p.vis && p.y > terrainY - 30 && p.y < terrainY + terrainH + 30) {
+              const scale = Math.max(0.5, 1 - d / 50);
+              ctx.fillStyle = `rgba(14,165,160,${0.15 * scale})`;
+              ctx.beginPath(); ctx.arc(p.x, p.y, 20 * scale, 0, Math.PI * 2); ctx.fill();
+              ctx.font = `${Math.round(20 * scale)}px sans-serif`;
+              ctx.textAlign = "center";
+              ctx.fillText(lm.icon, p.x, p.y + 5);
+              ctx.font = `600 ${Math.round(10 * scale)}px Inter, sans-serif`;
+              ctx.fillStyle = `rgba(255,255,255,${0.8 * scale})`;
+              ctx.fillText(lm.name, p.x, p.y + 22 * scale);
+              if (d < 15) {
+                ctx.font = `500 ${Math.round(8 * scale)}px 'Space Mono', monospace`;
+                ctx.fillStyle = `rgba(14,165,160,${0.7 * scale})`;
+                ctx.fillText(`${Math.round(d * 60)} nm`, p.x, p.y + 32 * scale);
+              }
+              ctx.textAlign = "left";
+            }
+          });
+          if (closest && closestD < 8) setNearbyLandmark(closest);
+          else setNearbyLandmark(null);
 
           // === MINI MAP ===
           if (mctx) {
             const mw = 180, mh = 90;
             mctx.clearRect(0, 0, mw, mh);
             mctx.fillStyle = "#080a0f"; mctx.fillRect(0, 0, mw, mh);
-            if (worldImg.complete) { mctx.globalAlpha = 0.3; mctx.drawImage(worldImg, 0, 0, mw, mh); mctx.globalAlpha = 1; }
+            if (true) { /* procedural mini-map background */
+              mctx.fillStyle = "#0c1018"; mctx.fillRect(0, 0, mw, mh);
+            }
             // Grid
             mctx.strokeStyle = "rgba(14,165,160,0.08)"; mctx.lineWidth = 0.5;
             for (let i = 1; i < 5; i++) { mctx.beginPath(); mctx.moveTo(i * 36, 0); mctx.lineTo(i * 36, mh); mctx.stroke(); }
@@ -1188,7 +1029,7 @@ Start by introducing yourself briefly in-character with personality, and give an
 
           animId.current = requestAnimationFrame(draw);
         };
-        worldImg.onload = draw; if (worldImg.complete) draw();
+        draw(); // start immediately
         return () => { cancelAnimationFrame(animId.current); window.removeEventListener("keydown", kd); window.removeEventListener("keyup", ku); window.removeEventListener("resize", resize); };
       }, []);
 
