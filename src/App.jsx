@@ -791,7 +791,7 @@ Start by introducing yourself briefly in-character with personality, and give an
       const [autopilotDest, setAutopilotDest] = React.useState(null);
       const [navExpanded, setNavExpanded] = React.useState(false);
       const audioCtxRef = React.useRef(null);
-      const skyContainerRef = React.useRef(null);  // Three.js renderer mounts here
+      const threeCanvasRef = React.useRef(null);    // React-managed canvas for Three.js
       const threeRef = React.useRef(null);          // holds renderer + cleanup
       const gamePhaseMirrorRef = React.useRef('landing'); // non-stale copy for rAF loop
       const [gamePhase, setGamePhase] = React.useState('landing');
@@ -1021,16 +1021,15 @@ Start by introducing yourself briefly in-character with personality, and give an
 
       // === THREE.JS 3D RENDERER ===
       React.useEffect(() => {
-        const container = skyContainerRef.current;
-        if (!container) return;
-        const W = container.clientWidth || window.innerWidth;
-        const H = container.clientHeight || window.innerHeight;
+        const canvas = threeCanvasRef.current;
+        if (!canvas) return;
+        const W = window.innerWidth;
+        const H = window.innerHeight;
 
-        // Renderer
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        // Renderer uses the React-managed canvas directly (no appendChild needed)
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
         renderer.setPixelRatio(window.devicePixelRatio);
-        renderer.setSize(W, H);
-        container.appendChild(renderer.domElement);
+        renderer.setSize(W, H, false); // false = don't override CSS width/height
 
         // Camera
         const camera = new THREE.PerspectiveCamera(75, W / H, 1, 500000);
@@ -1040,7 +1039,7 @@ Start by introducing yourself briefly in-character with personality, and give an
         // ===== LANDING SCENE (night airport) =====
         const landingScene = new THREE.Scene();
         landingScene.background = new THREE.Color(0x050810);
-        landingScene.fog = new THREE.FogExp2(0x050810, 0.00010);
+        landingScene.fog = new THREE.FogExp2(0x050810, 0.000025); // light fog so city/stars are visible
 
         // Stars
         const starPositions = [];
@@ -1233,11 +1232,11 @@ Start by introducing yourself briefly in-character with personality, and give an
 
         // Resize handler
         const onResize = () => {
-          const W2 = container.clientWidth;
-          const H2 = container.clientHeight;
+          const W2 = window.innerWidth;
+          const H2 = window.innerHeight;
           camera.aspect = W2 / H2;
           camera.updateProjectionMatrix();
-          renderer.setSize(W2, H2);
+          renderer.setSize(W2, H2, false);
         };
         window.addEventListener('resize', onResize);
 
@@ -1246,7 +1245,6 @@ Start by introducing yourself briefly in-character with personality, and give an
           cancelAnimationFrame(rafId);
           window.removeEventListener('resize', onResize);
           renderer.dispose();
-          if (container.contains(renderer.domElement)) container.removeChild(renderer.domElement);
         };
       }, []);
 
@@ -1505,8 +1503,8 @@ Start by introducing yourself briefly in-character with personality, and give an
 
           {!cockpitSection ? (
             <div style={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden" }}>
-              {/* Three.js container — renderer appends its canvas here */}
-              <div ref={skyContainerRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: 1 }} />
+              {/* Three.js canvas — React manages this element, passed directly to WebGLRenderer */}
+              <canvas ref={threeCanvasRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: 1, display: "block" }} />
 
               {/* Landing page overlay — shown over Three.js night airport scene before flight starts */}
               {gamePhase === 'landing' && (
