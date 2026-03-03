@@ -2164,8 +2164,8 @@ Start by introducing yourself briefly in-character with personality, and give an
         position: "sticky", top: 0, height: "100vh", overflowY: "auto", boxSizing: "border-box",
         backdropFilter: "blur(20px)", zIndex: 10,
       }}>
-        <div style={{ padding: "0 8px", marginBottom: 28 }}>
-          <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: 140, display: "block" }} />
+        <div style={{ padding: "0 0", marginBottom: 28 }}>
+          <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ width: "100%", display: "block" }} />
         </div>
 
         <nav style={{ display: "flex", flexDirection: "column", gap: 3, flex: 1 }}>
