@@ -781,7 +781,6 @@ Start by introducing yourself briefly in-character with personality, and give an
     // ==================== COCKPIT LANDING — IMMERSIVE FLIGHT ====================
     if (publicPage === "landing") {
       const [cockpitSection, setCockpitSection] = React.useState(null);
-      const [hoveredZone, setHoveredZone] = React.useState(null);
       const [audioPlayed, setAudioPlayed] = React.useState(false);
       const [showChime, setShowChime] = React.useState(false);
       const [paMuted, setPaMuted] = React.useState(false);
@@ -900,12 +899,12 @@ Start by introducing yourself briefly in-character with personality, and give an
                     <text x={70} y={633} fontSize={11} fill="#f0f0f0" textAnchor="middle" fontFamily="Space Mono, monospace" letterSpacing={2}>FEATURES</text>
                   </g>
                 </g>
-                {/* Green → Features  x=1508 y=625 w=237 h=306 */}
-                <g className="czg" onClick={() => setCockpitSection("features")} style={{ cursor: "pointer" }}>
+                {/* Green → About  x=1508 y=625 w=237 h=306 */}
+                <g className="czg" onClick={() => setCockpitSection("about")} style={{ cursor: "pointer" }}>
                   <rect className="cz" x={1508} y={625} width={237} height={306} />
                   <g className="ctt">
-                    <rect x={1508} y={598} width={115} height={22} rx={4} fill="rgba(0,0,0,0.85)" />
-                    <text x={1565} y={613} fontSize={11} fill="#f0f0f0" textAnchor="middle" fontFamily="Space Mono, monospace" letterSpacing={2}>FEATURES</text>
+                    <rect x={1567} y={598} width={85} height={22} rx={4} fill="rgba(0,0,0,0.85)" />
+                    <text x={1609} y={613} fontSize={11} fill="#f0f0f0" textAnchor="middle" fontFamily="Space Mono, monospace" letterSpacing={2}>ABOUT</text>
                   </g>
                 </g>
                 {/* Red → How It Works  x=822 y=676 w=117 h=151 */}
@@ -926,10 +925,21 @@ Start by introducing yourself briefly in-character with personality, and give an
                 </g>
               </svg>
 
-              {/* Logo */}
-              <div style={{ position: "absolute", top: 16, left: 20, zIndex: 20, display: "flex", alignItems: "center", gap: 8 }}>
-                <LogoMark size={24} />
-                <span style={{ fontSize: 15, fontWeight: 800, fontFamily: "Instrument Serif, serif" }}>CONTINUUM</span>
+              {/* Logo + mute stacked top-left */}
+              <div style={{ position: "absolute", top: 16, left: 20, zIndex: 20, display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <LogoMark size={24} />
+                  <span style={{ fontSize: 15, fontWeight: 800, fontFamily: "Instrument Serif, serif" }}>CONTINUUM</span>
+                </div>
+                {audioPlayed && !paMuted && (
+                  <button
+                    onClick={() => { window.speechSynthesis && window.speechSynthesis.cancel(); setPaMuted(true); }}
+                    style={{ background: "rgba(8,8,12,0.75)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, padding: "6px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, backdropFilter: "blur(8px)", alignSelf: "flex-start" }}
+                  >
+                    <span style={{ fontSize: 12 }}>🔇</span>
+                    <span style={{ fontSize: 9, fontFamily: "Space Mono, monospace", color: "#8a8f98", letterSpacing: 1 }}>MUTE PA</span>
+                  </button>
+                )}
               </div>
 
               {/* Flight code */}
@@ -947,36 +957,6 @@ Start by introducing yourself briefly in-character with personality, and give an
                 </p>
               </div>
 
-              {/* Nav buttons */}
-              <div style={{ position: "absolute", bottom: "2%", left: "50%", transform: "translateX(-50%)", zIndex: 20, display: "flex", gap: 4 }}>
-                {zones.map(z => (
-                  <button key={z.id} onClick={() => z.id === "login" ? goTo("login") : setCockpitSection(z.id)}
-                    onMouseEnter={() => setHoveredZone(z.id)} onMouseLeave={() => setHoveredZone(null)}
-                    style={{
-                      background: hoveredZone === z.id ? "rgba(14,165,160,0.2)" : "rgba(8,8,12,0.9)",
-                      border: hoveredZone === z.id ? "1px solid rgba(14,165,160,0.4)" : "1px solid rgba(255,255,255,0.06)",
-                      borderRadius: 6, padding: "8px 12px", cursor: "pointer", minWidth: 75,
-                      display: "flex", flexDirection: "column", alignItems: "center", gap: 2, transition: "all 0.2s",
-                    }}>
-                    <span style={{ fontSize: 16 }}>{z.icon}</span>
-                    <span style={{ fontSize: 9, fontWeight: 600, color: hoveredZone === z.id ? "#0EA5A0" : "#d0d6e0" }}>{z.label}</span>
-                    <span style={{ fontSize: 6, fontFamily: "Space Mono, monospace", color: "#555", letterSpacing: 1, textTransform: "uppercase" }}>{z.sub}</span>
-                  </button>
-                ))}
-              </div>
-
-              {/* Mute button — shown while PA is playing, hidden once finished or muted */}
-              {audioPlayed && !paMuted && (
-                <div style={{ position: "absolute", bottom: 20, right: 20, zIndex: 30 }}>
-                  <button
-                    onClick={() => { window.speechSynthesis && window.speechSynthesis.cancel(); setPaMuted(true); }}
-                    style={{ background: "rgba(8,8,12,0.75)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, padding: "8px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, backdropFilter: "blur(8px)" }}
-                  >
-                    <span style={{ fontSize: 14 }}>🔇</span>
-                    <span style={{ fontSize: 10, fontFamily: "Space Mono, monospace", color: "#8a8f98", letterSpacing: 1 }}>MUTE</span>
-                  </button>
-                </div>
-              )}
 
               {!audioPlayed && (
                 <div style={{ position: "absolute", top: "55%", left: "50%", transform: "translateX(-50%)", zIndex: 10, pointerEvents: "none" }}>
