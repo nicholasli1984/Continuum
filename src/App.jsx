@@ -872,7 +872,70 @@ Start by introducing yourself briefly in-character with personality, and give an
       const renderSection = (id) => {
         if (id === "features") return (<div style={{ padding: "40px 0" }}><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 2, background: "#23252a" }}>{[{ icon: "📊", t: "Unified Dashboard", d: "Every airline, hotel, and rental car program in one live view." },{ icon: "🧠", t: "AI Status Optimizer", d: "The fastest, cheapest path to the next tier. Mileage runs included." },{ icon: "💳", t: "Credit Card Intel", d: "Match cards to spending patterns and status goals automatically." },{ icon: "📈", t: "Year-End Projections", d: "See where you'll land Dec 31 with trips and promos factored in." },{ icon: "🔔", t: "Status Alerts", d: "Notified when you're close to a tier or a mileage run deal appears." },{ icon: "🧾", t: "Expense Tracking", d: "Log expenses, snap receipts, export clean reports." }].map((f, i) => (<div key={i} style={{ background: "#0f1011", padding: "28px 24px", borderLeft: "2px solid rgba(14,165,160,0.3)" }}><span style={{ fontSize: 24 }}>{f.icon}</span><h3 style={{ fontSize: 15, fontWeight: 600, color: "#f7f8f8", margin: "12px 0 8px" }}>{f.t}</h3><p style={{ fontSize: 13, color: "#8a8f98", lineHeight: 1.65 }}>{f.d}</p></div>))}</div></div>);
         if (id === "how-it-works") return (<div style={{ padding: "40px 0" }}><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 2, background: "#23252a" }}>{[{ s: "01", t: "Sign Up", d: "Free account in 30 seconds." },{ s: "02", t: "Import", d: "Connect loyalty accounts or enter manually." },{ s: "03", t: "AI Recs", d: "We analyze your patterns and show the path." },{ s: "04", t: "Hit Status", d: "Follow your roadmap. We track every mile." }].map((s, i) => (<div key={i} style={{ background: "#0f1011", padding: "28px 20px" }}><div style={{ fontSize: 32, fontFamily: "Space Mono, monospace", color: "#0EA5A0", fontWeight: 700, marginBottom: 12 }}>{s.s}</div><h3 style={{ fontSize: 15, fontWeight: 600, color: "#f7f8f8", margin: "0 0 8px" }}>{s.t}</h3><p style={{ fontSize: 13, color: "#8a8f98", lineHeight: 1.65 }}>{s.d}</p></div>))}</div></div>);
-        if (id === "partners") return (<div style={{ padding: "40px 0" }}>{[{ cat: "Airlines", items: [{ n: "American Airlines", d: "aa.com" },{ n: "United Airlines", d: "united.com" },{ n: "Delta Air Lines", d: "delta.com" },{ n: "British Airways", d: "britishairways.com" },{ n: "Cathay Pacific", d: "cathaypacific.com" },{ n: "Japan Airlines", d: "jal.co.jp" },{ n: "Qantas", d: "qantas.com" },{ n: "Singapore Airlines", d: "singaporeair.com" },{ n: "Emirates", d: "emirates.com" },{ n: "Lufthansa", d: "lufthansa.com" },{ n: "Air France", d: "airfrance.com" },{ n: "Alaska Airlines", d: "alaskaair.com" }]},{ cat: "Hotels", items: [{ n: "Marriott Bonvoy", d: "marriott.com" },{ n: "Hilton Honors", d: "hilton.com" },{ n: "World of Hyatt", d: "hyatt.com" },{ n: "IHG One Rewards", d: "ihg.com" },{ n: "Accor Live Limitless", d: "accor.com" },{ n: "Wyndham Rewards", d: "wyndham.com" }]},{ cat: "Credit Cards", items: [{ n: "Amex Platinum", d: "americanexpress.com" },{ n: "Chase Sapphire Reserve", d: "chase.com" },{ n: "Citi Premier", d: "citi.com" },{ n: "Capital One Venture X", d: "capitalone.com" }]}].map(g => (<div key={g.cat} style={{ marginBottom: 36 }}><h3 style={{ fontSize: 11, fontFamily: "Space Mono, monospace", color: "#0EA5A0", letterSpacing: 2, textTransform: "uppercase", marginBottom: 16 }}>{g.cat}</h3><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 8 }}>{g.items.map(item => (<div key={item.n} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: "#141516", border: "1px solid #23252a", borderRadius: 8 }}><img src={`https://logo.clearbit.com/${item.d}`} alt="" style={{ width: 22, height: 22, borderRadius: 4, background: "#fff" }} onError={e => { e.target.style.display = "none"; }} /><span style={{ fontSize: 12, color: "#d0d6e0" }}>{item.n}</span></div>))}</div></div>))}</div>);
+        if (id === "partners") {
+          const partnerGroups = [
+            { cat: "Airlines", items: [
+              { n: "American Airlines", d: "aa.com" },
+              { n: "United Airlines", d: "united.com" },
+              { n: "Delta Air Lines", d: "delta.com" },
+              { n: "British Airways", d: "britishairways.com" },
+              { n: "Cathay Pacific", d: "cathaypacific.com" },
+              { n: "Japan Airlines", d: "jal.co.jp" },
+              { n: "Qantas", d: "qantas.com" },
+              { n: "Singapore Airlines", d: "singaporeair.com" },
+              { n: "Emirates", d: "emirates.com" },
+              { n: "Lufthansa", d: "lufthansa.com" },
+              { n: "Air France", d: "airfrance.com" },
+              { n: "Alaska Airlines", d: "alaskaair.com" },
+            ]},
+            { cat: "Hotels", items: [
+              { n: "Marriott Bonvoy", d: "marriott.com" },
+              { n: "Hilton Honors", d: "hilton.com" },
+              { n: "World of Hyatt", d: "hyatt.com" },
+              { n: "IHG One Rewards", d: "ihg.com" },
+              { n: "Accor Live Limitless", d: "accor.com" },
+              { n: "Wyndham Rewards", d: "wyndham.com" },
+            ]},
+            { cat: "Credit Cards", items: [
+              { n: "Amex Platinum", d: "americanexpress.com" },
+              { n: "Chase Sapphire Reserve", d: "chase.com" },
+              { n: "Citi Premier", d: "citi.com" },
+              { n: "Capital One Venture X", d: "capitalone.com" },
+            ]},
+          ];
+          return (
+            <div style={{ padding: "40px 0" }}>
+              {partnerGroups.map(g => (
+                <div key={g.cat} style={{ marginBottom: 40 }}>
+                  <h3 style={{ fontSize: 11, fontFamily: "Space Mono, monospace", color: "#0EA5A0", letterSpacing: 2, textTransform: "uppercase", marginBottom: 16 }}>{g.cat}</h3>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 8 }}>
+                    {g.items.map(item => (
+                      <div key={item.n} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", background: "#141516", border: "1px solid #23252a", borderRadius: 10 }}>
+                        <div style={{ width: 40, height: 40, borderRadius: 8, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
+                          <img
+                            src={`https://logo.clearbit.com/${item.d}`}
+                            alt={item.n}
+                            style={{ width: 36, height: 36, objectFit: "contain" }}
+                            onError={e => {
+                              if (!e.target.dataset.fb) {
+                                e.target.dataset.fb = "1";
+                                e.target.src = `https://www.google.com/s2/favicons?domain=${item.d}&sz=64`;
+                              } else {
+                                e.target.style.display = "none";
+                                e.target.parentElement.innerHTML = `<span style="font-size:18px;font-weight:700;color:#0EA5A0;font-family:Space Mono,monospace">${item.n[0]}</span>`;
+                              }
+                            }}
+                          />
+                        </div>
+                        <span style={{ fontSize: 13, color: "#d0d6e0", fontWeight: 500 }}>{item.n}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        }
         if (id === "about") return (<div style={{ padding: "40px 0", maxWidth: 640 }}><p style={{ fontSize: 15, color: "#d0d6e0", lineHeight: 1.8, marginBottom: 20 }}>Continuum was born from frustration: tracking elite status across programs shouldn't require spreadsheets. We built the platform we wished existed.</p><p style={{ fontSize: 15, color: "#d0d6e0", lineHeight: 1.8, marginBottom: 28 }}>Based in Bermuda. Built by frequent flyers, reinsurance professionals, and travel obsessives.</p><div style={{ display: "flex", gap: 40 }}>{[{ v: "6", l: "Team" },{ v: "12M+", l: "Miles Tracked" },{ v: "2026", l: "Founded" }].map((s, i) => (<div key={i}><div style={{ fontSize: 24, fontFamily: "Space Mono, monospace", color: "#0EA5A0", fontWeight: 700 }}>{s.v}</div><div style={{ fontSize: 10, fontFamily: "Space Mono, monospace", color: "#62666d", letterSpacing: 1.5, marginTop: 2, textTransform: "uppercase" }}>{s.l}</div></div>))}</div></div>);
         if (id === "login") { goTo("login"); return null; }
         return null;
