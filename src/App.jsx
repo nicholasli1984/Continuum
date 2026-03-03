@@ -1074,13 +1074,13 @@ Start by introducing yourself briefly in-character with personality, and give an
               {/* Sky/terrain canvas — renders BEHIND the cockpit image */}
               <canvas ref={skyCanvasRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: 1 }} />
 
-              {/* Cockpit photo overlay — the window areas are transparent so sky shows through */}
+              {/* Cockpit photo overlay — fully visible so the cockpit window view shows without the dark canvas blocking it */}
               <div style={{
                 position: "absolute", inset: 0, zIndex: 2,
                 backgroundImage: "url(/cockpit.jpg)", backgroundSize: "cover", backgroundPosition: "center",
                 pointerEvents: "none",
-                maskImage: "linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.1) 20%, rgba(0,0,0,0) 30%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.4) 55%, rgba(0,0,0,1) 65%, rgba(0,0,0,1) 100%)",
-                WebkitMaskImage: "linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.1) 20%, rgba(0,0,0,0) 30%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.4) 55%, rgba(0,0,0,1) 65%, rgba(0,0,0,1) 100%)",
+                maskImage: "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 55%, rgba(0,0,0,1) 65%, rgba(0,0,0,1) 100%)",
+                WebkitMaskImage: "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 55%, rgba(0,0,0,1) 65%, rgba(0,0,0,1) 100%)",
               }} />
 
               {/* Cockpit bottom (instruments) — solid overlay so buttons are readable */}
