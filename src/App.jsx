@@ -916,12 +916,12 @@ Start by introducing yourself briefly in-character with personality, and give an
                     <text x={880} y={664} fontSize={11} fill="#f0f0f0" textAnchor="middle" fontFamily="Space Mono, monospace" letterSpacing={2}>HOW IT WORKS</text>
                   </g>
                 </g>
-                {/* Blue → Log In  inner rect x=726 y=704 w=311 h=284 */}
+                {/* Blue → Log In  keyboard section x=726 y=855 w=311 h=133 */}
                 <g className="czg" onClick={() => goTo("login")} style={{ cursor: "pointer" }}>
-                  <rect className="cz" x={726} y={704} width={311} height={284} />
+                  <rect className="cz" x={726} y={855} width={311} height={133} />
                   <g className="ctt">
-                    <rect x={840} y={677} width={85} height={22} rx={4} fill="rgba(0,0,0,0.85)" />
-                    <text x={882} y={692} fontSize={11} fill="#f0f0f0" textAnchor="middle" fontFamily="Space Mono, monospace" letterSpacing={2}>LOG IN</text>
+                    <rect x={824} y={828} width={85} height={22} rx={4} fill="rgba(0,0,0,0.85)" />
+                    <text x={866} y={843} fontSize={11} fill="#f0f0f0" textAnchor="middle" fontFamily="Space Mono, monospace" letterSpacing={2}>LOG IN</text>
                   </g>
                 </g>
               </svg>
