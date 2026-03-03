@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import * as THREE from 'three';
+import { Sky } from 'three/addons/objects/Sky.js';
 
 // ============================================================
 // LOGO COMPONENT — Geometric travel icon in Neuron brand style
@@ -789,7 +791,10 @@ Start by introducing yourself briefly in-character with personality, and give an
       const [autopilotDest, setAutopilotDest] = React.useState(null);
       const [navExpanded, setNavExpanded] = React.useState(false);
       const audioCtxRef = React.useRef(null);
-      const skyCanvasRef = React.useRef(null);
+      const skyContainerRef = React.useRef(null);  // Three.js renderer mounts here
+      const threeRef = React.useRef(null);          // holds renderer + cleanup
+      const gamePhaseMirrorRef = React.useRef('landing'); // non-stale copy for rAF loop
+      const [gamePhase, setGamePhase] = React.useState('landing');
       const navMapRef = React.useRef(null);
       const yokeRef = React.useRef(null);
       const throttleRef = React.useRef(null);
@@ -1014,37 +1019,252 @@ Start by introducing yourself briefly in-character with personality, and give an
         return () => { document.removeEventListener("click", h); document.removeEventListener("touchstart", h); };
       }, [playPA]);
 
-      // === FLIGHT CANVAS — renders sky/terrain visible through cockpit windows ===
+      // === THREE.JS 3D RENDERER ===
       React.useEffect(() => {
-        const c = skyCanvasRef.current;
-        if (!c) return;
-        const ctx = c.getContext("2d");
+        const container = skyContainerRef.current;
+        if (!container) return;
+        const W = container.clientWidth || window.innerWidth;
+        const H = container.clientHeight || window.innerHeight;
 
-        // Simplified continent polygons [lon, lat] for world map drawing
+        // Renderer
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(W, H);
+        container.appendChild(renderer.domElement);
+
+        // Camera
+        const camera = new THREE.PerspectiveCamera(75, W / H, 1, 500000);
+        camera.position.set(0, 0, 0);
+        camera.rotation.order = 'YXZ';
+
+        // ===== LANDING SCENE (night airport) =====
+        const landingScene = new THREE.Scene();
+        landingScene.background = new THREE.Color(0x050810);
+        landingScene.fog = new THREE.FogExp2(0x050810, 0.00010);
+
+        // Stars
+        const starPositions = [];
+        for (let i = 0; i < 1500; i++) {
+          const theta = Math.random() * Math.PI * 2;
+          const phi = Math.acos(2 * Math.random() - 1);
+          const r = 40000 + Math.random() * 10000;
+          starPositions.push(r * Math.sin(phi) * Math.cos(theta), r * Math.sin(phi) * Math.sin(theta), r * Math.cos(phi));
+        }
+        const starGeo = new THREE.BufferGeometry();
+        starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPositions, 3));
+        landingScene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 80, sizeAttenuation: true })));
+
+        // Moon
+        const moon = new THREE.Mesh(new THREE.SphereGeometry(600, 16, 16), new THREE.MeshBasicMaterial({ color: 0xeeeebb }));
+        moon.position.set(-8000, 12000, -40000);
+        landingScene.add(moon);
+
+        // Runway tarmac
+        const runway = new THREE.Mesh(new THREE.PlaneGeometry(800, 6000), new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 1 }));
+        runway.rotation.x = -Math.PI / 2;
+        runway.position.set(0, -30, -2000);
+        landingScene.add(runway);
+
+        // Runway centre dashes
+        for (let z = -4500; z < 500; z += 200) {
+          const dash = new THREE.Mesh(new THREE.PlaneGeometry(30, 100), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+          dash.rotation.x = -Math.PI / 2;
+          dash.position.set(0, -29, z);
+          landingScene.add(dash);
+        }
+
+        // Runway edge lights
+        for (let i = 0; i < 20; i++) {
+          const z = -4000 + i * 220;
+          [-350, 350].forEach(x => {
+            const sphere = new THREE.Mesh(new THREE.SphereGeometry(12, 8, 8), new THREE.MeshBasicMaterial({ color: 0xff8800 }));
+            sphere.position.set(x, -28, z);
+            landingScene.add(sphere);
+            const pt = new THREE.PointLight(0xff6600, 0.8, 1200);
+            pt.position.set(x, -20, z);
+            landingScene.add(pt);
+          });
+        }
+
+        // Terminal building
+        const terminal = new THREE.Mesh(new THREE.BoxGeometry(2000, 400, 600), new THREE.MeshStandardMaterial({ color: 0x1c2235, emissive: 0x0a1530, emissiveIntensity: 0.5 }));
+        terminal.position.set(0, 170, -5000);
+        landingScene.add(terminal);
+        for (let y = 0; y < 3; y++) {
+          const win = new THREE.Mesh(new THREE.BoxGeometry(1800, 60, 5), new THREE.MeshBasicMaterial({ color: 0xffeeaa }));
+          win.position.set(0, 50 + y * 100, -4702);
+          landingScene.add(win);
+        }
+
+        // City skyline
+        const bColors = [0x0d1b2a, 0x0a1628, 0x0e1a30];
+        const wColors = [0xffeeaa, 0x88bbff, 0xffffff];
+        for (let i = 0; i < 10; i++) {
+          const bH = 1200 + Math.random() * 3000;
+          const building = new THREE.Mesh(
+            new THREE.BoxGeometry(600 + Math.random() * 800, bH, 400),
+            new THREE.MeshStandardMaterial({ color: bColors[i % 3], emissive: new THREE.Color(wColors[i % 3]), emissiveIntensity: 0.05 + Math.random() * 0.08 })
+          );
+          building.position.set(-8000 + i * 1800 + (Math.random() - 0.5) * 600, -30 + bH / 2, -12000 - Math.random() * 4000);
+          landingScene.add(building);
+        }
+        landingScene.add(new THREE.AmbientLight(0x111122, 0.5));
+        const moonLight = new THREE.DirectionalLight(0x334466, 0.3);
+        moonLight.position.set(-1, 1, -1);
+        landingScene.add(moonLight);
+
+        // ===== FLIGHT SCENE =====
+        const flightScene = new THREE.Scene();
+        flightScene.fog = new THREE.FogExp2(0x87CEEB, 0.000032);
+
+        // Atmospheric sky shader
+        const sky = new Sky();
+        sky.scale.setScalar(500000);
+        flightScene.add(sky);
+        const skyUniforms = sky.material.uniforms;
+        skyUniforms['turbidity'].value = 10;
+        skyUniforms['rayleigh'].value = 2;
+        skyUniforms['mieCoefficient'].value = 0.005;
+        skyUniforms['mieDirectionalG'].value = 0.8;
+        const sunVec = new THREE.Vector3();
+        sunVec.setFromSphericalCoords(1, THREE.MathUtils.degToRad(75), THREE.MathUtils.degToRad(180));
+        skyUniforms['sunPosition'].value.copy(sunVec);
+
+        // Terrain — PlaneGeometry with sine-wave vertex displacement + vertex colours
+        const tRes = 100, tSize = 100000;
+        const terrainGeo = new THREE.PlaneGeometry(tSize, tSize, tRes, tRes);
+        terrainGeo.rotateX(-Math.PI / 2);
+        const posAttr = terrainGeo.attributes.position;
+        const tCols = [];
+        for (let i = 0; i < posAttr.count; i++) {
+          const vx = posAttr.getX(i), vz = posAttr.getZ(i);
+          const offset = Math.sin(vx * 0.0001) * 300 + Math.sin(vz * 0.00015) * 200 + Math.sin(vx * 0.00005 + vz * 0.00003) * 150;
+          posAttr.setY(i, -2500 + offset);
+          const n = Math.max(0, Math.min(1, (offset + 500) / 1000));
+          tCols.push(0.25 + n * 0.35, 0.45 - n * 0.15, 0.15);
+        }
+        terrainGeo.computeVertexNormals();
+        terrainGeo.setAttribute('color', new THREE.Float32BufferAttribute(tCols, 3));
+        const terrain = new THREE.Mesh(terrainGeo, new THREE.MeshLambertMaterial({ vertexColors: true }));
+        flightScene.add(terrain);
+
+        flightScene.add(new THREE.AmbientLight(0x88aacc, 0.6));
+        const sunLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        sunLight.position.set(5000, 8000, -3000);
+        flightScene.add(sunLight);
+
+        // Cloud sprites — procedural radial-gradient canvas texture
+        const cloudCanvas = document.createElement('canvas');
+        cloudCanvas.width = 256; cloudCanvas.height = 128;
+        const cctx = cloudCanvas.getContext('2d');
+        const cg = cctx.createRadialGradient(128, 64, 0, 128, 64, 100);
+        cg.addColorStop(0, 'rgba(255,255,255,0.9)');
+        cg.addColorStop(0.4, 'rgba(255,255,255,0.5)');
+        cg.addColorStop(1, 'rgba(255,255,255,0)');
+        cctx.fillStyle = cg; cctx.beginPath(); cctx.ellipse(128, 64, 110, 55, 0, 0, Math.PI * 2); cctx.fill();
+        const cloudTex = new THREE.CanvasTexture(cloudCanvas);
+        for (let i = 0; i < 80; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const d = 1000 + Math.random() * 3500;
+          const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: cloudTex, transparent: true, opacity: 0.6, depthWrite: false }));
+          sp.position.set(Math.sin(angle) * d, -800 + (Math.random() - 0.5) * 200, -Math.cos(angle) * d);
+          const sc = 400 + Math.random() * 600;
+          sp.scale.set(sc, sc / 2, 1);
+          flightScene.add(sp);
+        }
+
+        // Landmark sprites — canvas label per landmark, updated each frame for position
+        const lmList = landmarks.current;
+        const landmarkSprites = lmList.map(lm => {
+          const lc = document.createElement('canvas');
+          lc.width = 256; lc.height = 64;
+          const lctx = lc.getContext('2d');
+          lctx.fillStyle = 'rgba(0,0,0,0.6)';
+          lctx.beginPath(); lctx.roundRect(0, 0, 256, 64, 8); lctx.fill();
+          lctx.font = '28px sans-serif'; lctx.fillText(lm.icon, 8, 44);
+          lctx.font = 'bold 17px Inter, sans-serif'; lctx.fillStyle = 'white';
+          lctx.fillText(lm.name.slice(0, 18), 44, 42);
+          const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(lc), transparent: true, depthWrite: false }));
+          sp.scale.set(600, 150, 1);
+          sp.visible = false;
+          flightScene.add(sp);
+          return { sprite: sp, lm };
+        });
+
+        // --- Animation loop ---
+        const DEG2RAD = Math.PI / 180;
+        let rafId = null;
+        const animate = () => {
+          rafId = requestAnimationFrame(animate);
+          const phase = gamePhaseMirrorRef.current;
+
+          if (phase === 'landing') {
+            camera.position.set(0, 5, 200);
+            camera.lookAt(0, -5, -4000);
+            renderer.render(landingScene, camera);
+          } else {
+            const s = fs.current;
+            camera.position.set(0, 0, 0);
+            camera.rotation.y = -s.heading * DEG2RAD;
+            camera.rotation.z = -s.roll * DEG2RAD * 0.25;
+            camera.rotation.x = -0.12;
+
+            // Scroll terrain based on aircraft global position
+            terrain.position.x = -(s.lon + 64.78) * 800;
+            terrain.position.z = (s.lat - 32.3) * 800;
+
+            // Update landmark sprite world positions (bearing from aircraft)
+            landmarkSprites.forEach(({ sprite, lm }) => {
+              let dLon = lm.lon - s.lon;
+              while (dLon > 180) dLon -= 360; while (dLon < -180) dLon += 360;
+              const dLat = lm.lat - s.lat;
+              const angDist = Math.sqrt(dLon * dLon + dLat * dLat);
+              if (angDist > 80) { sprite.visible = false; return; }
+              const bearing = Math.atan2(dLon, dLat);
+              const worldDist = 2000 + Math.min(angDist * 80, 6000);
+              sprite.position.set(Math.sin(bearing) * worldDist, -2100, -Math.cos(bearing) * worldDist);
+              sprite.visible = true;
+            });
+
+            renderer.render(flightScene, camera);
+          }
+        };
+        animate();
+
+        // Resize handler
+        const onResize = () => {
+          const W2 = container.clientWidth;
+          const H2 = container.clientHeight;
+          camera.aspect = W2 / H2;
+          camera.updateProjectionMatrix();
+          renderer.setSize(W2, H2);
+        };
+        window.addEventListener('resize', onResize);
+
+        threeRef.current = { rafId, renderer };
+        return () => {
+          cancelAnimationFrame(rafId);
+          window.removeEventListener('resize', onResize);
+          renderer.dispose();
+          if (container.contains(renderer.domElement)) container.removeChild(renderer.domElement);
+        };
+      }, []);
+
+      // Sync gamePhase React state into the ref used by the rAF loop
+      React.useEffect(() => { gamePhaseMirrorRef.current = gamePhase; }, [gamePhase]);
+
+      // === FLIGHT STATE LOOP — controls, autopilot, nav map (Three.js handles 3D rendering) ===
+      React.useEffect(() => {
+        // Continent polygons used by the nav map 2D canvas
         const CONTINENTS = [
-          // North America
           [[-168,72],[-140,68],[-130,55],[-124,49],[-117,32],[-106,19],[-85,11],[-78,9],[-72,20],[-65,44],[-53,47],[-55,58],[-82,62],[-92,70],[-110,70],[-130,68],[-160,58],[-168,66],[-168,72]],
-          // South America
           [[-78,9],[-72,12],[-62,10],[-52,5],[-48,2],[-50,-2],[-35,-8],[-35,-14],[-40,-22],[-44,-23],[-52,-33],[-58,-38],[-65,-42],[-68,-55],[-62,-52],[-65,-55],[-70,-54],[-73,-42],[-70,-32],[-70,-20],[-75,-10],[-80,0],[-78,5],[-78,9]],
-          // Europe
           [[-10,36],[0,36],[8,44],[14,44],[20,40],[28,38],[30,46],[28,55],[18,63],[15,65],[25,72],[30,70],[35,65],[28,60],[18,58],[5,58],[-6,53],[-10,44],[-10,36]],
-          // Africa
           [[-18,15],[-17,25],[-5,30],[10,35],[24,37],[36,30],[42,20],[44,10],[40,0],[35,-10],[36,-20],[38,-25],[35,-30],[28,-35],[18,-34],[14,-24],[8,-5],[2,8],[-8,5],[-18,15]],
-          // Asia
           [[28,38],[36,30],[42,20],[44,10],[50,12],[58,22],[65,18],[72,22],[80,12],[90,22],[100,5],[110,2],[120,5],[125,20],[128,38],[135,48],[145,45],[140,42],[130,32],[122,30],[115,22],[100,22],[92,28],[80,30],[72,35],[65,42],[55,42],[50,40],[45,40],[38,40],[35,45],[28,50],[25,50],[22,46],[24,38],[28,38]],
-          // Australia
           [[114,-22],[124,-16],[136,-12],[140,-18],[148,-22],[152,-22],[153,-28],[151,-34],[148,-40],[140,-36],[130,-32],[114,-30],[114,-22]],
-          // Greenland
           [[-45,60],[-20,64],[-15,72],[-20,78],[-30,82],[-50,82],[-58,78],[-60,72],[-52,67],[-45,60]],
         ];
-
-        const resize = () => {
-          const dpr = window.devicePixelRatio || 1;
-          const rect = c.parentElement.getBoundingClientRect();
-          c.width = rect.width * dpr; c.height = rect.height * dpr;
-          ctx.scale(dpr, dpr); c.style.width = rect.width + "px"; c.style.height = rect.height + "px";
-        };
-        resize(); window.addEventListener("resize", resize);
 
         // Keyboard
         const kd = (e) => { keys.current[e.key] = true; };
@@ -1057,18 +1277,8 @@ Start by introducing yourself briefly in-character with personality, and give an
           return Math.sqrt(dLon * dLon + (lat2 - lat1) * (lat2 - lat1));
         };
 
-        // Project landmark to screen
-        const project = (lon, lat, vLon, vLat, w, h, fov) => {
-          let dLon = lon - vLon; while (dLon > 180) dLon -= 360; while (dLon < -180) dLon += 360;
-          const x = w / 2 + (dLon / fov) * w;
-          const y = h * 0.42 - ((lat - vLat) / (fov * 0.4)) * h * 0.2 + h * 0.12;
-          return { x, y, vis: Math.abs(dLon) < fov / 2 && Math.abs(lat - vLat) < fov * 0.3 };
-        };
-
         const draw = () => {
           const s = fs.current;
-          const w = c.width / (window.devicePixelRatio || 1);
-          const h = c.height / (window.devicePixelRatio || 1);
           const k = keys.current;
 
           // Controls
@@ -1100,61 +1310,11 @@ Start by introducing yourself briefly in-character with personality, and give an
           // Update throttle position
           if (throttleRef.current) throttleRef.current.style.bottom = `${5 + (s.speed / 1.5) * 65}%`;
 
-          // Clear and draw sky
-          ctx.clearRect(0, 0, w, h);
-          const sky = ctx.createLinearGradient(0, 0, 0, h * 0.7);
-          sky.addColorStop(0, "#1a6db5"); sky.addColorStop(0.3, "#2a8fd4");
-          sky.addColorStop(0.6, "#4aaee0"); sky.addColorStop(0.85, "#7ecbe8"); sky.addColorStop(1, "#a8d8ea");
-          ctx.fillStyle = sky; ctx.fillRect(0, 0, w, h);
-
-          // Clear sky — no stars for clean cockpit window view
-
-          // Procedural terrain at horizon
-          const terrainY = h * 0.52, terrainH = h * 0.14;
-          const tGrad = ctx.createLinearGradient(0, terrainY, 0, terrainY + terrainH);
-          tGrad.addColorStop(0, "#1a3555"); tGrad.addColorStop(0.3, "#162a42"); tGrad.addColorStop(0.7, "#0e1c2e"); tGrad.addColorStop(1, "#080e18");
-          ctx.fillStyle = tGrad; ctx.fillRect(0, terrainY, w, terrainH);
-
-          // Procedural terrain features — rolling hills silhouette
-          ctx.fillStyle = "rgba(12,20,35,0.7)";
-          ctx.beginPath(); ctx.moveTo(0, terrainY + 4);
-          for (let px = 0; px <= w; px += 4) {
-            const hill = Math.sin((px + s.lon * 8) * 0.008) * 8 + Math.sin((px + s.lon * 12) * 0.02) * 4 + Math.sin((px + s.lat * 6) * 0.035) * 2;
-            ctx.lineTo(px, terrainY + 4 + hill);
-          }
-          ctx.lineTo(w, terrainY + terrainH); ctx.lineTo(0, terrainY + terrainH); ctx.closePath(); ctx.fill();
-
-          // Atmospheric haze
-          ctx.globalAlpha = 0.5;
-          const haze = ctx.createLinearGradient(0, terrainY - 10, 0, terrainY + terrainH);
-          haze.addColorStop(0, "rgba(18,40,74,0.8)"); haze.addColorStop(0.4, "rgba(18,40,74,0.3)"); haze.addColorStop(1, "rgba(0,0,0,0.4)");
-          ctx.fillStyle = haze; ctx.fillRect(0, terrainY - 10, w, terrainH + 20);
-          ctx.globalAlpha = 1;
-
-          // Landmarks
-          const fov = 100;
+          // Nearby landmark detection (drives landmark callout)
           let closest = null, closestD = 999;
-          landmarks.forEach(lm => {
+          landmarks.current.forEach(lm => {
             const d = dist(s.lon, s.lat, lm.lon, lm.lat);
             if (d < closestD) { closestD = d; closest = lm; }
-            const p = project(lm.lon, lm.lat, s.lon, s.lat, w, h, fov);
-            if (p.vis && p.y > h * 0.1 && p.y < terrainY + terrainH) {
-              const scale = Math.max(0.5, 1 - d / 50);
-              ctx.fillStyle = `rgba(14,165,160,${0.15 * scale})`;
-              ctx.beginPath(); ctx.arc(p.x, p.y, 20 * scale, 0, Math.PI * 2); ctx.fill();
-              ctx.font = `${Math.round(20 * scale)}px sans-serif`;
-              ctx.textAlign = "center";
-              ctx.fillText(lm.icon, p.x, p.y + 5);
-              ctx.font = `600 ${Math.round(10 * scale)}px Inter, sans-serif`;
-              ctx.fillStyle = `rgba(255,255,255,${0.8 * scale})`;
-              ctx.fillText(lm.name, p.x, p.y + 22 * scale);
-              if (d < 15) {
-                ctx.font = `500 ${Math.round(8 * scale)}px 'Space Mono', monospace`;
-                ctx.fillStyle = `rgba(14,165,160,${0.7 * scale})`;
-                ctx.fillText(`${Math.round(d * 60)} nm`, p.x, p.y + 32 * scale);
-              }
-              ctx.textAlign = "left";
-            }
           });
           if (closest && closestD < 8) setNearbyLandmark(closest);
           else setNearbyLandmark(null);
@@ -1201,7 +1361,7 @@ Start by introducing yourself briefly in-character with personality, and give an
             }
             // Landmark dots — clickable targets
             const dotR = zoom >= 4 ? 4 : zoom >= 2.5 ? 3 : 2;
-            landmarks.forEach(lm => {
+            landmarks.current.forEach(lm => {
               const p = mapProj(lm.lon, lm.lat);
               if (p.x < -8 || p.x > nw + 8 || p.y < -8 || p.y > nh + 8) return;
               nmCtx.fillStyle = "rgba(14,165,160,0.85)";
@@ -1230,7 +1390,7 @@ Start by introducing yourself briefly in-character with personality, and give an
           animId.current = requestAnimationFrame(draw);
         };
         draw(); // start immediately
-        return () => { cancelAnimationFrame(animId.current); window.removeEventListener("keydown", kd); window.removeEventListener("keyup", ku); window.removeEventListener("resize", resize); };
+        return () => { cancelAnimationFrame(animId.current); window.removeEventListener("keydown", kd); window.removeEventListener("keyup", ku); };
       }, []);
 
       // Yoke mouse drag
@@ -1278,7 +1438,7 @@ Start by introducing yourself briefly in-character with personality, and give an
         const nw = rect.width, nh = rect.height;
         // Find closest landmark within 12px
         let best = null, bestDist = 12;
-        landmarks.forEach(lm => {
+        landmarks.current.forEach(lm => {
           const p = navProject(lm.lon, lm.lat, nw, nh);
           const d = Math.sqrt((p.x - px) ** 2 + (p.y - py) ** 2);
           if (d < bestDist) { bestDist = d; best = lm; }
@@ -1345,8 +1505,24 @@ Start by introducing yourself briefly in-character with personality, and give an
 
           {!cockpitSection ? (
             <div style={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden" }}>
-              {/* Sky/terrain canvas — renders BEHIND the cockpit image */}
-              <canvas ref={skyCanvasRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: 1 }} />
+              {/* Three.js container — renderer appends its canvas here */}
+              <div ref={skyContainerRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: 1 }} />
+
+              {/* Landing page overlay — shown over Three.js night airport scene before flight starts */}
+              {gamePhase === 'landing' && (
+                <div style={{ position: "absolute", inset: 0, zIndex: 5, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
+                  <div style={{ pointerEvents: "auto", textAlign: "center" }}>
+                    <h1 style={{ fontSize: "clamp(2.5rem, 6vw, 5rem)", fontFamily: "Instrument Serif, serif", fontWeight: 400, color: "#ffffff", textShadow: "0 0 60px rgba(70,160,255,0.6), 0 2px 20px rgba(0,0,0,0.9)", margin: 0, letterSpacing: "-0.02em" }}>CONTINUUM</h1>
+                    <p style={{ color: "#88bbff", fontSize: "clamp(0.75rem, 1.5vw, 1rem)", fontFamily: "Space Mono, monospace", letterSpacing: "0.2em", textTransform: "uppercase", marginTop: 8, marginBottom: 40, textShadow: "0 1px 8px rgba(0,0,0,0.8)" }}>World Flight Simulator</p>
+                    <button
+                      onClick={() => setGamePhase('flying')}
+                      style={{ background: "rgba(14,165,160,0.15)", border: "1px solid rgba(14,165,160,0.5)", borderRadius: 8, padding: "14px 40px", color: "#0EA5A0", fontSize: "clamp(0.8rem,1.2vw,1rem)", fontFamily: "Space Mono, monospace", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", cursor: "pointer", backdropFilter: "blur(10px)", boxShadow: "0 0 40px rgba(14,165,160,0.2)" }}
+                    >
+                      ✈ BEGIN FLIGHT
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Cockpit photo overlay — fully visible so the cockpit window view shows without the dark canvas blocking it */}
               <div style={{
