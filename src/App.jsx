@@ -901,13 +901,13 @@ Start by introducing yourself briefly in-character with personality, and give an
               { n: "Amex Platinum", d: "americanexpress.com", url: "https://www.americanexpress.com", desc: "The American Express Platinum Card is the benchmark for premium travel rewards. Earn 5x Membership Rewards points on flights and prepaid hotels booked through Amex Travel. Perks include access to 1,400+ airport lounges (including exclusive Centurion Lounges), $200 airline fee credit, $200 hotel credit, TSA PreCheck/Global Entry, and elite status at Hilton and Marriott. Annual fee: $695." },
               { n: "Chase Sapphire Reserve", d: "chase.com", url: "https://www.chase.com", desc: "The Chase Sapphire Reserve earns 3x Ultimate Rewards points on travel and dining globally, with points worth 50% more when redeemed through Chase Travel. Access 1,300+ Priority Pass lounges worldwide. Points transfer at 1:1 to 14 airline and hotel partners including Hyatt, United, and British Airways. Comes with a $300 travel credit. Annual fee: $550." },
               { n: "Citi Premier", d: "citi.com", url: "https://www.citi.com", desc: "The Citi Strata Premier (formerly Citi Premier) is an underrated powerhouse, earning 3x ThankYou Points on air travel, hotels, restaurants, supermarkets, and gas stations. Points transfer to 18 airline partners including Turkish Miles&Smiles, Singapore KrisFlyer, and Flying Blue — ideal for international business class awards. Annual fee: $95." },
-              { n: "Capital One Venture X", d: "capitalone.com", url: "https://www.capitalone.com", desc: "The Capital One Venture X earns 2x miles on all purchases, 5x on flights, and 10x on hotels booked through Capital One Travel. Access Capital One Lounges plus Priority Pass (1,300+ locations). Miles transfer to 15+ airline partners. The $300 travel credit and 10,000 annual bonus miles make it effectively free after the $395 annual fee." },
+              { n: "Capital One Venture X", d: "capitalone.com", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/Capital_One_logo.svg/512px-Capital_One_logo.svg.png", url: "https://www.capitalone.com", desc: "The Capital One Venture X earns 2x miles on all purchases, 5x on flights, and 10x on hotels booked through Capital One Travel. Access Capital One Lounges plus Priority Pass (1,300+ locations). Miles transfer to 15+ airline partners. The $300 travel credit and 10,000 annual bonus miles make it effectively free after the $395 annual fee." },
             ]},
           ];
 
           const PartnerLogo = ({ item, size = 36 }) => (
             <img
-              src={`https://logo.clearbit.com/${item.d}`}
+              src={item.logo || `https://logo.clearbit.com/${item.d}`}
               alt={item.n}
               style={{ width: size, height: size, objectFit: "contain" }}
               onError={e => {
