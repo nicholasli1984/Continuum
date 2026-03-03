@@ -876,7 +876,7 @@ Start by introducing yourself briefly in-character with personality, and give an
           {!cockpitSection ? (
             <div style={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden" }}>
               {/* Background image */}
-              <img src="/atr-cockpit.jpg" alt="" style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center", pointerEvents: "none", userSelect: "none" }} />
+              <img src="/cockpit.jpg" alt="" style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center", pointerEvents: "none", userSelect: "none" }} />
 
               {/* Clickable zone overlay — SVG matches cover scaling of the image */}
               <svg style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", overflow: "hidden", zIndex: 5 }} viewBox="0 0 1772 1181" preserveAspectRatio="xMidYMid slice">
