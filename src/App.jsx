@@ -1267,6 +1267,7 @@ Start by introducing yourself briefly in-character with personality, and give an
         };
 
         const draw = () => {
+          try {
           const s = fs.current;
           const k = keys.current;
 
@@ -1350,7 +1351,7 @@ Start by introducing yourself briefly in-character with personality, and give an
             }
             // Landmark dots — clickable targets
             const dotR = zoom >= 4 ? 4 : zoom >= 2.5 ? 3 : 2;
-            landmarks.current.forEach(lm => {
+            landmarks.forEach(lm => {
               const p = mapProj(lm.lon, lm.lat);
               if (p.x < -8 || p.x > nw + 8 || p.y < -8 || p.y > nh + 8) return;
               nmCtx.fillStyle = "rgba(14,165,160,0.85)";
@@ -1376,6 +1377,7 @@ Start by introducing yourself briefly in-character with personality, and give an
             nmCtx.strokeStyle = "rgba(14,165,160,0.25)"; nmCtx.lineWidth = 1; nmCtx.strokeRect(0,0,nw,nh);
           }
 
+          } catch(e) { console.error('[draw]', e); }
           animId.current = requestAnimationFrame(draw);
         };
         draw(); // start immediately
@@ -1427,7 +1429,7 @@ Start by introducing yourself briefly in-character with personality, and give an
         const nw = rect.width, nh = rect.height;
         // Find closest landmark within 12px
         let best = null, bestDist = 12;
-        landmarks.current.forEach(lm => {
+        landmarks.forEach(lm => {
           const p = navProject(lm.lon, lm.lat, nw, nh);
           const d = Math.sqrt((p.x - px) ** 2 + (p.y - py) ** 2);
           if (d < bestDist) { bestDist = d; best = lm; }
