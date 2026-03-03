@@ -108,7 +108,7 @@
   <line x1="425" y1="268" x2="515" y2="268" stroke="url(#goldGrad)" stroke-width="0.5" opacity="0.5"/>
 
   <!-- Tagline -->
-  <text x="400" y="300" text-anchor="middle" font-family="'Futura', 'Avenir', 'Trebuchet MS', sans-serif" font-size="10" font-weight="300" letter-spacing="5" fill="url(#goldGrad)" opacity="0.85">
+  <text x="400" y="305" text-anchor="middle" font-family="'Futura', 'Avenir', 'Trebuchet MS', sans-serif" font-size="20" font-weight="300" letter-spacing="5" fill="url(#goldGrad)" opacity="0.85">
     ELEVATE EVERY JOURNEY
   </text>
 </svg>
