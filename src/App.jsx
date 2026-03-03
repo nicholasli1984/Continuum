@@ -818,14 +818,25 @@ Start by introducing yourself briefly in-character with personality, and give an
                 u.rate = 0.88; u.pitch = 1.05; u.volume = 0.9;
                 const pick = () => {
                   const v = window.speechSynthesis.getVoices();
-                  const au = v.find(x => /karen|catherine|matilda|australian|google au/i.test(x.name))
+                  // Australian female voices by platform:
+                  // Chrome: "Google Australian English"
+                  // macOS/iOS: "Karen"
+                  // Windows 11: "Microsoft Natasha"
+                  // Others: any en-AU locale
+                  const au = v.find(x => /karen/i.test(x.name))
+                    || v.find(x => /natasha/i.test(x.name))
+                    || v.find(x => /google australian english/i.test(x.name))
+                    || v.find(x => /australian english/i.test(x.name))
+                    || v.find(x => /catherine|matilda|zoe/i.test(x.name))
                     || v.find(x => /en[-_]au/i.test(x.lang))
+                    || v.find(x => /en/i.test(x.lang) && x.name.toLowerCase().includes('female'))
                     || v.find(x => /en/i.test(x.lang));
                   if (au) u.voice = au;
                   u.onend = () => { setPaMuted(true); };
                   window.speechSynthesis.speak(u);
                 };
-                if (window.speechSynthesis.getVoices().length > 0) pick(); else window.speechSynthesis.onvoiceschanged = pick;
+                if (window.speechSynthesis.getVoices().length > 0) pick();
+                else window.speechSynthesis.onvoiceschanged = pick;
               }
             } catch(e) {}
           }, 1200);
@@ -864,7 +875,48 @@ Start by introducing yourself briefly in-character with personality, and give an
           {showChime && (<div style={{ position: "fixed", top: 20, left: "50%", transform: "translateX(-50%)", zIndex: 300, background: "rgba(14,165,160,0.15)", border: "1px solid rgba(14,165,160,0.3)", borderRadius: 8, padding: "8px 20px", display: "flex", alignItems: "center", gap: 8 }}><span>🔔</span><span style={{ fontSize: 11, fontFamily: "Space Mono, monospace", color: "#0EA5A0", letterSpacing: 1 }}>FASTEN SEATBELT</span></div>)}
 
           {!cockpitSection ? (
-            <div style={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden", backgroundImage: "url(/cockpit.jpg)", backgroundSize: "cover", backgroundPosition: "center" }}>
+            <div style={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden" }}>
+              {/* Background image */}
+              <img src="/atr-cockpit.jpg" alt="" style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center", pointerEvents: "none", userSelect: "none" }} />
+
+              {/* Clickable zone overlay — SVG matches cover scaling of the image */}
+              <svg style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", overflow: "hidden", zIndex: 5 }} viewBox="0 0 1772 1181" preserveAspectRatio="xMidYMid slice">
+                <defs>
+                  <style>{`.cz{fill:rgba(255,255,255,0);stroke:rgba(255,255,255,0);stroke-width:2;stroke-dasharray:8 5;cursor:pointer;transition:fill .25s,stroke .25s}.czg:hover .cz{fill:rgba(255,255,255,0.06);stroke:rgba(255,255,255,0.4)}.ctt{opacity:0;pointer-events:none;transition:opacity .2s}.czg:hover .ctt{opacity:1}`}</style>
+                </defs>
+                {/* Orange → Partners */}
+                <g className="czg" onClick={() => setCockpitSection("partners")} style={{ cursor: "pointer" }}>
+                  <rect className="cz" x={757} y={183} width={236} height={97} />
+                  <g className="ctt">
+                    <rect x={810} y={158} width={115} height={22} rx={4} fill="rgba(0,0,0,0.85)" />
+                    <text x={867} y={173} fontSize={11} fill="#f0f0f0" textAnchor="middle" fontFamily="Space Mono, monospace" letterSpacing={2}>PARTNERS</text>
+                  </g>
+                </g>
+                {/* Green → Features */}
+                <g className="czg" onClick={() => setCockpitSection("features")} style={{ cursor: "pointer" }}>
+                  <rect className="cz" x={1566} y={295} width={190} height={223} />
+                  <g className="ctt">
+                    <rect x={1573} y={270} width={115} height={22} rx={4} fill="rgba(0,0,0,0.85)" />
+                    <text x={1630} y={285} fontSize={11} fill="#f0f0f0" textAnchor="middle" fontFamily="Space Mono, monospace" letterSpacing={2}>FEATURES</text>
+                  </g>
+                </g>
+                {/* Red → How It Works */}
+                <g className="czg" onClick={() => setCockpitSection("how-it-works")} style={{ cursor: "pointer" }}>
+                  <rect className="cz" x={723} y={306} width={146} height={166} />
+                  <g className="ctt">
+                    <rect x={686} y={281} width={160} height={22} rx={4} fill="rgba(0,0,0,0.85)" />
+                    <text x={766} y={296} fontSize={11} fill="#f0f0f0" textAnchor="middle" fontFamily="Space Mono, monospace" letterSpacing={2}>HOW IT WORKS</text>
+                  </g>
+                </g>
+                {/* Blue → Log In */}
+                <g className="czg" onClick={() => goTo("login")} style={{ cursor: "pointer" }}>
+                  <rect className="cz" x={644} y={459} width={274} height={134} />
+                  <g className="ctt">
+                    <rect x={737} y={434} width={85} height={22} rx={4} fill="rgba(0,0,0,0.85)" />
+                    <text x={779} y={449} fontSize={11} fill="#f0f0f0" textAnchor="middle" fontFamily="Space Mono, monospace" letterSpacing={2}>LOG IN</text>
+                  </g>
+                </g>
+              </svg>
 
               {/* Logo */}
               <div style={{ position: "absolute", top: 16, left: 20, zIndex: 20, display: "flex", alignItems: "center", gap: 8 }}>
