@@ -1161,7 +1161,7 @@ Start by introducing yourself briefly in-character with personality, and give an
         }
 
         // Landmark sprites — canvas label per landmark, updated each frame for position
-        const lmList = landmarks.current;
+        const lmList = landmarks;
         const landmarkSprites = lmList.map(lm => {
           const lc = document.createElement('canvas');
           lc.width = 256; lc.height = 64;
@@ -1301,7 +1301,7 @@ Start by introducing yourself briefly in-character with personality, and give an
 
           // Nearby landmark detection (drives landmark callout)
           let closest = null, closestD = 999;
-          landmarks.current.forEach(lm => {
+          landmarks.forEach(lm => {
             const d = dist(s.lon, s.lat, lm.lon, lm.lat);
             if (d < closestD) { closestD = d; closest = lm; }
           });
