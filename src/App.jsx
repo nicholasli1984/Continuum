@@ -784,7 +784,7 @@ Start by introducing yourself briefly in-character with personality, and give an
       const [hoveredZone, setHoveredZone] = React.useState(null);
       const [audioPlayed, setAudioPlayed] = React.useState(false);
       const [showChime, setShowChime] = React.useState(false);
-      const [paText, setPaText] = React.useState("");
+      const [paMuted, setPaMuted] = React.useState(false);
       const audioCtxRef = React.useRef(null);
       const paPlayedGlobal = React.useRef(false);
 
@@ -809,23 +809,23 @@ Start by introducing yourself briefly in-character with personality, and give an
           };
           chime(ctx.currentTime);
           setShowChime(true); setTimeout(() => setShowChime(false), 2500);
-          const msg = "Good evening, ladies and gentlemen. This is your Captain speaking. Welcome aboard Continuum Flight CTM-2026. We're cruising at 38,000 feet. Grab the yoke to steer and adjust the throttle to change speed. Keep an eye out for world landmarks below. Sit back, enjoy the flight, and let's chase that elite status together.";
-          let i = 0;
-          const tt = setInterval(() => { if (i < msg.length) { setPaText(msg.slice(0, i + 1)); i++; } else { clearInterval(tt); setTimeout(() => setPaText(""), 5000); } }, 25);
+          const msg = "Good evening Ladies and Gentlemen, Welcome onboard Continuum Flight CTM2026 en route to your favourite destination. Just a reminder, once the seatbelt sign turns off, please feel free to roam and explore the many features of this tool. It's built for you to get to those elite status levels quickly and to maximize your hard earned dollars. If you require any assistance throughout the journey, please press on the passenger call button and we will be with you shortly. Safe travels and thank you for choosing Continuum.";
           setTimeout(() => {
             try {
               if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
                 const u = new SpeechSynthesisUtterance(msg);
-                u.rate = 0.88; u.pitch = 0.82; u.volume = 0.85;
+                u.rate = 0.88; u.pitch = 1.05; u.volume = 0.9;
                 const pick = () => {
                   const v = window.speechSynthesis.getVoices();
-                  const au = v.find(x => /karen|australian|google au/i.test(x.name) && /en/i.test(x.lang)) || v.find(x => /en.au/i.test(x.lang));
-                  if (au) u.voice = au; else { const en = v.find(x => /en/i.test(x.lang)); if (en) u.voice = en; }
+                  const au = v.find(x => /karen|catherine|matilda|australian|google au/i.test(x.name))
+                    || v.find(x => /en[-_]au/i.test(x.lang))
+                    || v.find(x => /en/i.test(x.lang));
+                  if (au) u.voice = au;
+                  u.onend = () => { setPaMuted(true); };
                   window.speechSynthesis.speak(u);
                 };
                 if (window.speechSynthesis.getVoices().length > 0) pick(); else window.speechSynthesis.onvoiceschanged = pick;
-                u.onend = () => { try { chime(ctx.currentTime); } catch(e) {} };
               }
             } catch(e) {}
           }, 1200);
@@ -905,10 +905,16 @@ Start by introducing yourself briefly in-character with personality, and give an
                 ))}
               </div>
 
-              {/* PA text */}
-              {paText && (
-                <div style={{ position: "absolute", bottom: "40%", left: 20, right: "50%", zIndex: 10, pointerEvents: "none" }}>
-                  <p style={{ fontSize: 10, fontFamily: "Space Mono, monospace", color: "rgba(14,165,160,0.4)", lineHeight: 1.5, maxWidth: 400 }}>🎙️ {paText}<span style={{ animation: "blink 1s infinite" }}>|</span></p>
+              {/* Mute button — shown while PA is playing, hidden once finished or muted */}
+              {audioPlayed && !paMuted && (
+                <div style={{ position: "absolute", bottom: 20, right: 20, zIndex: 30 }}>
+                  <button
+                    onClick={() => { window.speechSynthesis && window.speechSynthesis.cancel(); setPaMuted(true); }}
+                    style={{ background: "rgba(8,8,12,0.75)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, padding: "8px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, backdropFilter: "blur(8px)" }}
+                  >
+                    <span style={{ fontSize: 14 }}>🔇</span>
+                    <span style={{ fontSize: 10, fontFamily: "Space Mono, monospace", color: "#8a8f98", letterSpacing: 1 }}>MUTE</span>
+                  </button>
                 </div>
               )}
 
