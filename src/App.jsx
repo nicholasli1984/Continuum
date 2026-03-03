@@ -411,7 +411,86 @@ export default function EliteStatusTracker() {
   const [conciergeLoading, setConciergeLoading] = useState(false);
   const [conciergeSpeaking, setConciergeSpeaking] = useState(false);
 
+  // ── PA announcement state (top-level so mute button works on all pages) ──
+  const [audioPlayed, setAudioPlayed] = useState(false);
+  const [showChime, setShowChime] = useState(false);
+  const [paMuted, setPaMuted] = useState(false);
+  const [paEnded, setPaEnded] = useState(false);
+  const audioCtxRef = React.useRef(null);
+  const paPlayedRef = React.useRef(false);
+
   useEffect(() => { setTimeout(() => setAnimateIn(true), 100); }, []);
+
+  // PA plays once per session (sessionStorage guards against StrictMode double-invoke)
+  const playPA = useCallback(() => {
+    if (paPlayedRef.current || sessionStorage.getItem('pa_played')) return;
+    paPlayedRef.current = true;
+    sessionStorage.setItem('pa_played', '1');
+    setAudioPlayed(true);
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      audioCtxRef.current = ctx;
+      const chime = (t) => {
+        [880, 660].forEach((f, i) => {
+          const o = ctx.createOscillator(), g = ctx.createGain();
+          o.type = "sine"; o.frequency.value = f;
+          g.gain.setValueAtTime(0.3, t + i * 0.18);
+          g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.18 + 1);
+          o.connect(g); g.connect(ctx.destination);
+          o.start(t + i * 0.18); o.stop(t + i * 0.18 + 1);
+        });
+      };
+      chime(ctx.currentTime);
+      setShowChime(true); setTimeout(() => setShowChime(false), 2500);
+      const msg = "Good evening Ladies and Gentlemen, Welcome onboard Continuum Flight CTM2026 en route to your favourite destination. Just a reminder, once the seatbelt sign turns off, please feel free to roam and explore the many features of this tool. It's built for you to get to those elite status levels quickly and to maximize your hard earned dollars. If you require any assistance throughout the journey, please press on the passenger call button and we will be with you shortly. Safe travels and thank you for choosing Continuum.";
+      setTimeout(() => {
+        try {
+          if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(msg);
+            u.rate = 0.88; u.pitch = 1.05; u.volume = 0.9;
+            const pick = () => {
+              const v = window.speechSynthesis.getVoices();
+              const au = v.find(x => /karen/i.test(x.name))
+                || v.find(x => /natasha/i.test(x.name))
+                || v.find(x => /google australian english/i.test(x.name))
+                || v.find(x => /australian english/i.test(x.name))
+                || v.find(x => /catherine|matilda|zoe/i.test(x.name))
+                || v.find(x => /en[-_]au/i.test(x.lang))
+                || v.find(x => /en/i.test(x.lang) && x.name.toLowerCase().includes('female'))
+                || v.find(x => /en/i.test(x.lang));
+              if (au) u.voice = au;
+              u.onend = () => { setPaEnded(true); };
+              window.speechSynthesis.speak(u);
+            };
+            if (window.speechSynthesis.getVoices().length > 0) pick();
+            else {
+              window.speechSynthesis.onvoiceschanged = () => {
+                window.speechSynthesis.onvoiceschanged = null;
+                pick();
+              };
+            }
+          }
+        } catch(e) {}
+      }, 1200);
+    } catch(e) {}
+  }, []);
+
+  // Trigger PA on first click/touch anywhere while on the landing page
+  useEffect(() => {
+    if (isLoggedIn || publicPage !== "landing") return;
+    const h = () => {
+      playPA();
+      document.removeEventListener("click", h);
+      document.removeEventListener("touchstart", h);
+    };
+    document.addEventListener("click", h);
+    document.addEventListener("touchstart", h);
+    return () => {
+      document.removeEventListener("click", h);
+      document.removeEventListener("touchstart", h);
+    };
+  }, [playPA, isLoggedIn, publicPage]);
 
   // AI Concierge — Diverse voice profiles mapped to airline/hotel nationality
   const VOICE_PROFILES = {
@@ -781,75 +860,6 @@ Start by introducing yourself briefly in-character with personality, and give an
     // ==================== COCKPIT LANDING — IMMERSIVE FLIGHT ====================
     if (publicPage === "landing") {
       const [cockpitSection, setCockpitSection] = React.useState(null);
-      const [audioPlayed, setAudioPlayed] = React.useState(false);
-      const [showChime, setShowChime] = React.useState(false);
-      const [paMuted, setPaMuted] = React.useState(false);
-      const audioCtxRef = React.useRef(null);
-      const paPlayedGlobal = React.useRef(false);
-
-
-      // PA — plays ONCE ever per page load
-      const playPA = React.useCallback(() => {
-        if (paPlayedGlobal.current) return;
-        paPlayedGlobal.current = true;
-        setAudioPlayed(true);
-        try {
-          const ctx = new (window.AudioContext || window.webkitAudioContext)();
-          audioCtxRef.current = ctx;
-          const chime = (t) => {
-            [880, 660].forEach((f, i) => {
-              const o = ctx.createOscillator(), g = ctx.createGain();
-              o.type = "sine"; o.frequency.value = f;
-              g.gain.setValueAtTime(0.3, t + i * 0.18);
-              g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.18 + 1);
-              o.connect(g); g.connect(ctx.destination);
-              o.start(t + i * 0.18); o.stop(t + i * 0.18 + 1);
-            });
-          };
-          chime(ctx.currentTime);
-          setShowChime(true); setTimeout(() => setShowChime(false), 2500);
-          const msg = "Good evening Ladies and Gentlemen, Welcome onboard Continuum Flight CTM2026 en route to your favourite destination. Just a reminder, once the seatbelt sign turns off, please feel free to roam and explore the many features of this tool. It's built for you to get to those elite status levels quickly and to maximize your hard earned dollars. If you require any assistance throughout the journey, please press on the passenger call button and we will be with you shortly. Safe travels and thank you for choosing Continuum.";
-          setTimeout(() => {
-            try {
-              if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const u = new SpeechSynthesisUtterance(msg);
-                u.rate = 0.88; u.pitch = 1.05; u.volume = 0.9;
-                const pick = () => {
-                  const v = window.speechSynthesis.getVoices();
-                  // Australian female voices by platform:
-                  // Chrome: "Google Australian English"
-                  // macOS/iOS: "Karen"
-                  // Windows 11: "Microsoft Natasha"
-                  // Others: any en-AU locale
-                  const au = v.find(x => /karen/i.test(x.name))
-                    || v.find(x => /natasha/i.test(x.name))
-                    || v.find(x => /google australian english/i.test(x.name))
-                    || v.find(x => /australian english/i.test(x.name))
-                    || v.find(x => /catherine|matilda|zoe/i.test(x.name))
-                    || v.find(x => /en[-_]au/i.test(x.lang))
-                    || v.find(x => /en/i.test(x.lang) && x.name.toLowerCase().includes('female'))
-                    || v.find(x => /en/i.test(x.lang));
-                  if (au) u.voice = au;
-                  u.onend = () => { setPaMuted(true); };
-                  window.speechSynthesis.speak(u);
-                };
-                if (window.speechSynthesis.getVoices().length > 0) pick();
-                else window.speechSynthesis.onvoiceschanged = pick;
-              }
-            } catch(e) {}
-          }, 1200);
-        } catch(e) {}
-      }, []);
-
-      React.useEffect(() => {
-        const h = () => { playPA(); document.removeEventListener("click", h); document.removeEventListener("touchstart", h); };
-        document.addEventListener("click", h); document.addEventListener("touchstart", h);
-        return () => { document.removeEventListener("click", h); document.removeEventListener("touchstart", h); };
-      }, [playPA]);
-
-
-
 
       const zones = [
         { id: "features", label: "Features", sub: "Flight Display", icon: "📊" },
@@ -872,6 +882,17 @@ Start by introducing yourself briefly in-character with personality, and give an
         <div style={{ minHeight: "100vh", color: "#f7f8f8", fontFamily: "Inter, -apple-system, sans-serif", overflow: "hidden" }}>
           <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
           {showChime && (<div style={{ position: "fixed", top: 20, left: "50%", transform: "translateX(-50%)", zIndex: 300, background: "rgba(14,165,160,0.15)", border: "1px solid rgba(14,165,160,0.3)", borderRadius: 8, padding: "8px 20px", display: "flex", alignItems: "center", gap: 8 }}><span>🔔</span><span style={{ fontSize: 11, fontFamily: "Space Mono, monospace", color: "#0EA5A0", letterSpacing: 1 }}>FASTEN SEATBELT</span></div>)}
+
+          {/* Global PA mute toggle — visible on all pages while announcement is active */}
+          {audioPlayed && !paEnded && (
+            <button
+              onClick={() => { if (paMuted) { window.speechSynthesis?.resume(); setPaMuted(false); } else { window.speechSynthesis?.pause(); setPaMuted(true); } }}
+              style={{ position: "fixed", bottom: 24, right: 24, zIndex: 9999, background: "rgba(8,8,12,0.88)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 10, padding: "10px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, backdropFilter: "blur(12px)", boxShadow: "0 4px 24px rgba(0,0,0,0.5)" }}
+            >
+              <span style={{ fontSize: 15 }}>{paMuted ? "🔊" : "🔇"}</span>
+              <span style={{ fontSize: 9, fontFamily: "Space Mono, monospace", color: "#8a8f98", letterSpacing: 1 }}>{paMuted ? "RESUME PA" : "MUTE PA"}</span>
+            </button>
+          )}
 
           {!cockpitSection ? (
             <div style={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden" }}>
@@ -925,21 +946,10 @@ Start by introducing yourself briefly in-character with personality, and give an
                 </g>
               </svg>
 
-              {/* Logo + mute stacked top-left */}
-              <div style={{ position: "absolute", top: 16, left: 20, zIndex: 20, display: "flex", flexDirection: "column", gap: 8 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <LogoMark size={24} />
-                  <span style={{ fontSize: 15, fontWeight: 800, fontFamily: "Instrument Serif, serif" }}>CONTINUUM</span>
-                </div>
-                {audioPlayed && !paMuted && (
-                  <button
-                    onClick={() => { window.speechSynthesis && window.speechSynthesis.cancel(); setPaMuted(true); }}
-                    style={{ background: "rgba(8,8,12,0.75)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, padding: "6px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, backdropFilter: "blur(8px)", alignSelf: "flex-start" }}
-                  >
-                    <span style={{ fontSize: 12 }}>🔇</span>
-                    <span style={{ fontSize: 9, fontFamily: "Space Mono, monospace", color: "#8a8f98", letterSpacing: 1 }}>MUTE PA</span>
-                  </button>
-                )}
+              {/* Logo top-left */}
+              <div style={{ position: "absolute", top: 16, left: 20, zIndex: 20, display: "flex", alignItems: "center", gap: 8 }}>
+                <LogoMark size={24} />
+                <span style={{ fontSize: 15, fontWeight: 800, fontFamily: "Instrument Serif, serif" }}>CONTINUUM</span>
               </div>
 
               {/* Flight code */}
@@ -982,6 +992,15 @@ Start by introducing yourself briefly in-character with personality, and give an
     // ==================== LOGIN PAGE ====================
     return (
       <Shell showBg>
+        {audioPlayed && !paEnded && (
+          <button
+            onClick={() => { if (paMuted) { window.speechSynthesis?.resume(); setPaMuted(false); } else { window.speechSynthesis?.pause(); setPaMuted(true); } }}
+            style={{ position: "fixed", bottom: 24, right: 24, zIndex: 9999, background: "rgba(8,8,12,0.88)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 10, padding: "10px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, backdropFilter: "blur(12px)", boxShadow: "0 4px 24px rgba(0,0,0,0.5)" }}
+          >
+            <span style={{ fontSize: 15 }}>{paMuted ? "🔊" : "🔇"}</span>
+            <span style={{ fontSize: 9, fontFamily: "Space Mono, monospace", color: "#8a8f98", letterSpacing: 1 }}>{paMuted ? "RESUME PA" : "MUTE PA"}</span>
+          </button>
+        )}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "calc(100vh - 200px)", padding: "36px 20px" }}>
           <div style={{
             width: "100%", maxWidth: 440, opacity: animateIn ? 1 : 0, transform: animateIn ? "translateY(0)" : "translateY(20px)", transition: "all 0.8s cubic-bezier(0.16,1,0.3,1)",
