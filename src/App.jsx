@@ -886,34 +886,34 @@ Start by introducing yourself briefly in-character with personality, and give an
                 </defs>
                 {/* Orange → Partners */}
                 <g className="czg" onClick={() => setCockpitSection("partners")} style={{ cursor: "pointer" }}>
-                  <rect className="cz" x={757} y={183} width={236} height={97} />
+                  <rect className="cz" x={797} y={390} width={213} height={106} />
                   <g className="ctt">
-                    <rect x={810} y={158} width={115} height={22} rx={4} fill="rgba(0,0,0,0.85)" />
-                    <text x={867} y={173} fontSize={11} fill="#f0f0f0" textAnchor="middle" fontFamily="Space Mono, monospace" letterSpacing={2}>PARTNERS</text>
+                    <rect x={846} y={363} width={115} height={22} rx={4} fill="rgba(0,0,0,0.85)" />
+                    <text x={903} y={378} fontSize={11} fill="#f0f0f0" textAnchor="middle" fontFamily="Space Mono, monospace" letterSpacing={2}>PARTNERS</text>
                   </g>
                 </g>
                 {/* Green → Features */}
                 <g className="czg" onClick={() => setCockpitSection("features")} style={{ cursor: "pointer" }}>
-                  <rect className="cz" x={1566} y={295} width={190} height={223} />
+                  <rect className="cz" x={1542} y={461} width={213} height={283} />
                   <g className="ctt">
-                    <rect x={1573} y={270} width={115} height={22} rx={4} fill="rgba(0,0,0,0.85)" />
-                    <text x={1630} y={285} fontSize={11} fill="#f0f0f0" textAnchor="middle" fontFamily="Space Mono, monospace" letterSpacing={2}>FEATURES</text>
+                    <rect x={1549} y={434} width={115} height={22} rx={4} fill="rgba(0,0,0,0.85)" />
+                    <text x={1606} y={449} fontSize={11} fill="#f0f0f0" textAnchor="middle" fontFamily="Space Mono, monospace" letterSpacing={2}>FEATURES</text>
                   </g>
                 </g>
                 {/* Red → How It Works */}
                 <g className="czg" onClick={() => setCockpitSection("how-it-works")} style={{ cursor: "pointer" }}>
-                  <rect className="cz" x={723} y={306} width={146} height={166} />
+                  <rect className="cz" x={727} y={508} width={159} height={177} />
                   <g className="ctt">
-                    <rect x={686} y={281} width={160} height={22} rx={4} fill="rgba(0,0,0,0.85)" />
-                    <text x={766} y={296} fontSize={11} fill="#f0f0f0" textAnchor="middle" fontFamily="Space Mono, monospace" letterSpacing={2}>HOW IT WORKS</text>
+                    <rect x={647} y={481} width={160} height={22} rx={4} fill="rgba(0,0,0,0.85)" />
+                    <text x={727} y={496} fontSize={11} fill="#f0f0f0" textAnchor="middle" fontFamily="Space Mono, monospace" letterSpacing={2}>HOW IT WORKS</text>
                   </g>
                 </g>
                 {/* Blue → Log In */}
                 <g className="czg" onClick={() => goTo("login")} style={{ cursor: "pointer" }}>
-                  <rect className="cz" x={644} y={459} width={274} height={134} />
+                  <rect className="cz" x={655} y={673} width={320} height={154} />
                   <g className="ctt">
-                    <rect x={737} y={434} width={85} height={22} rx={4} fill="rgba(0,0,0,0.85)" />
-                    <text x={779} y={449} fontSize={11} fill="#f0f0f0" textAnchor="middle" fontFamily="Space Mono, monospace" letterSpacing={2}>LOG IN</text>
+                    <rect x={773} y={646} width={85} height={22} rx={4} fill="rgba(0,0,0,0.85)" />
+                    <text x={815} y={661} fontSize={11} fill="#f0f0f0" textAnchor="middle" fontFamily="Space Mono, monospace" letterSpacing={2}>LOG IN</text>
                   </g>
                 </g>
               </svg>
