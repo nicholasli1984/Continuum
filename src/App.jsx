@@ -860,6 +860,7 @@ Start by introducing yourself briefly in-character with personality, and give an
     // ==================== COCKPIT LANDING — IMMERSIVE FLIGHT ====================
     if (publicPage === "landing") {
       const [cockpitSection, setCockpitSection] = React.useState(null);
+      const [selectedPartner, setSelectedPartner] = React.useState(null);
 
       const zones = [
         { id: "features", label: "Features", sub: "Flight Display", icon: "📊" },
@@ -875,65 +876,117 @@ Start by introducing yourself briefly in-character with personality, and give an
         if (id === "partners") {
           const partnerGroups = [
             { cat: "Airlines", items: [
-              { n: "American Airlines", d: "aa.com" },
-              { n: "United Airlines", d: "united.com" },
-              { n: "Delta Air Lines", d: "delta.com" },
-              { n: "British Airways", d: "britishairways.com" },
-              { n: "Cathay Pacific", d: "cathaypacific.com" },
-              { n: "Japan Airlines", d: "jal.co.jp" },
-              { n: "Qantas", d: "qantas.com" },
-              { n: "Singapore Airlines", d: "singaporeair.com" },
-              { n: "Emirates", d: "emirates.com" },
-              { n: "Lufthansa", d: "lufthansa.com" },
-              { n: "Air France", d: "airfrance.com" },
-              { n: "Alaska Airlines", d: "alaskaair.com" },
+              { n: "American Airlines", d: "aa.com", url: "https://www.aa.com", desc: "AAdvantage is one of the world's largest airline loyalty programs. Earn miles on American, oneworld, and partner flights plus everyday spending. Elite tiers — Gold, Platinum, Platinum Pro, and Executive Platinum — unlock systemwide upgrades, priority boarding, complimentary checked bags, and dedicated phone lines." },
+              { n: "United Airlines", d: "united.com", url: "https://www.united.com", desc: "MileagePlus members earn miles on United, Star Alliance, and 40+ partners. Elite tiers — Silver, Gold, Platinum, and 1K — deliver priority boarding, upgrades, and dedicated customer service. 1K is among the most coveted domestic elite statuses, offering unlimited domestic upgrades and four global upgrades annually." },
+              { n: "Delta Air Lines", d: "delta.com", url: "https://www.delta.com", desc: "SkyMiles never expire and can be earned on Delta, SkyTeam, and partner flights. Medallion tiers — Silver, Gold, Platinum, and Diamond — provide upgrade priority, Sky Club lounge access, and choice benefits. Diamond Medallion members receive a complimentary companion certificate and dedicated concierge support." },
+              { n: "British Airways", d: "britishairways.com", url: "https://www.britishairways.com", desc: "Executive Club earns Avios on British Airways, Iberia, Aer Lingus, and all oneworld partners. Tiers — Blue, Bronze, Silver, and Gold — award bonus Avios, seat upgrades, and worldwide lounge access. Gold members benefit from confirmed upgrades and priority on every flight." },
+              { n: "Cathay Pacific", d: "cathaypacific.com", url: "https://www.cathaypacific.com", desc: "Asia Miles is earned across oneworld, 30+ airline partners, hotels, and dining. Marco Polo Club tiers — Green, Silver, Gold, and Diamond — provide access to Cathay's award-winning lounges, seat upgrades, and bonus miles. Diamond members enjoy dedicated airport services and confirmed business class upgrades." },
+              { n: "Japan Airlines", d: "jal.co.jp", url: "https://www.jal.co.jp", desc: "JAL Mileage Bank (JMB) rewards loyalty across JAL, oneworld, and dozens of global partners. JGC (JAL Global Club) membership grants permanent lounge access and elite privileges. JMB Diamond members receive the highest upgrade priority, exclusive ground services, and bonus mile multipliers." },
+              { n: "Qantas", d: "qantas.com", url: "https://www.qantas.com", desc: "Qantas Frequent Flyer is Australia's most popular loyalty program with 15 million members. Points are earned on flights, Woolworths, and hundreds of partners. Elite tiers — Silver, Gold, Platinum, and Platinum One — offer lounge access, upgrade credits, and the ultra-exclusive Platinum One concierge." },
+              { n: "Singapore Airlines", d: "singaporeair.com", url: "https://www.singaporeair.com", desc: "KrisFlyer miles are earned on Singapore Airlines, Scoot, and Star Alliance partners. KrisFlyer Elite Silver and Elite Gold tiers unlock priority check-in, extra baggage, and Silver or Gold Kris lounge access globally. Singapore Airlines is consistently rated among the world's finest for in-flight product." },
+              { n: "Emirates", d: "emirates.com", url: "https://www.emirates.com", desc: "Skywards miles are earned on Emirates and flydubai flights, hotels, and retail partners. Tiers — Blue, Silver, Gold, and Platinum — deliver lounge access, upgrade awards, and bonus miles. Platinum members benefit from a dedicated relationship manager and unlimited first class upgrade opportunities." },
+              { n: "Lufthansa", d: "lufthansa.com", url: "https://www.lufthansa.com", desc: "Miles & More is Europe's largest frequent flyer program, spanning Lufthansa Group and Star Alliance. Tiers — Frequent Traveller, Senator, and HON Circle — are invitation-only at the top level, making HON Circle one of aviation's most exclusive elite statuses, with just ~100,000 holders worldwide." },
+              { n: "Air France", d: "airfrance.com", url: "https://www.airfrance.com", desc: "Flying Blue is the joint loyalty program of Air France and KLM, covering SkyTeam and 30+ partners. Tiers — Explorer, Silver, Gold, Platinum, and Ultimate — provide lounge access, upgrade vouchers, and bonus miles. Ultimate members enjoy dedicated account managers and unlimited upgrade confirmations." },
+              { n: "Alaska Airlines", d: "alaskaair.com", url: "https://www.alaskaair.com", desc: "Mileage Plan is consistently rated North America's best airline loyalty program. Miles don't expire and the program partners with 13 airlines — including Emirates, Japan Airlines, and Cathay Pacific — for exceptional award redemption value. Elite tiers MVP, MVP Gold, and MVP Gold 75K reward loyalty with upgrades, lounge access, and companion fares." },
             ]},
             { cat: "Hotels", items: [
-              { n: "Marriott Bonvoy", d: "marriott.com" },
-              { n: "Hilton Honors", d: "hilton.com" },
-              { n: "World of Hyatt", d: "hyatt.com" },
-              { n: "IHG One Rewards", d: "ihg.com" },
-              { n: "Accor Live Limitless", d: "accor.com" },
-              { n: "Wyndham Rewards", d: "wyndham.com" },
+              { n: "Marriott Bonvoy", d: "marriott.com", url: "https://www.marriott.com", desc: "The world's largest hotel loyalty program spans 30+ brands and 8,000+ properties in 139 countries, from budget Fairfields to ultra-luxury Ritz-Carltons. Elite tiers — Silver, Gold, Platinum, Titanium, and Ambassador — unlock complimentary breakfast, suite upgrades, and lounge access. Ambassador Elite members receive a dedicated personal ambassador for 24/7 service." },
+              { n: "Hilton Honors", d: "hilton.com", url: "https://www.hilton.com", desc: "Hilton Honors covers 7,000+ properties across 18 brands including Waldorf Astoria, Conrad, and Hampton Inn. Points never expire with activity, and members can pool points with family. Diamond status — the highest tier — delivers complimentary breakfast worldwide, executive lounge access, and confirmed room upgrades." },
+              { n: "World of Hyatt", d: "hyatt.com", url: "https://www.hyatt.com", desc: "World of Hyatt is the preferred program for luxury and boutique hotel enthusiasts, covering 1,100+ properties including Park Hyatt, Grand Hyatt, and Alila. Globalist status — achieved at 60 nights — is considered the most rewarding hotel elite status available, offering confirmed suite upgrades, complimentary club lounge access, and guest of honor benefits." },
+              { n: "IHG One Rewards", d: "ihg.com", url: "https://www.ihg.com", desc: "IHG One Rewards connects 6,000+ hotels across 18 brands — from Holiday Inn to InterContinental and Six Senses. Tiers — Club, Silver, Gold, Platinum, and Diamond Elite — provide bonus points, room upgrades, and early check-in. Diamond Elite members receive guaranteed room availability and confirmed upgrades at InterContinentals worldwide." },
+              { n: "Accor Live Limitless", d: "accor.com", url: "https://all.accor.com", desc: "ALL (Accor Live Limitless) is Europe's leading hotel loyalty platform spanning 40+ brands and 5,500+ properties — from ibis to Fairmont and Raffles. Points are earned on stays, dining, spa, and partners. Platinum and Diamond members receive guaranteed late checkout, suite upgrades, and dedicated concierge service at luxury properties." },
+              { n: "Wyndham Rewards", d: "wyndhamhotels.com", url: "https://www.wyndhamhotels.com", desc: "Wyndham Rewards covers 9,000+ hotels across 24 brands in 95 countries — the broadest network in the industry. The straightforward points system and fixed award night pricing make it easy to maximize. Diamond members receive complimentary upgrades, early check-in, late checkout, and priority customer care." },
             ]},
             { cat: "Credit Cards", items: [
-              { n: "Amex Platinum", d: "americanexpress.com" },
-              { n: "Chase Sapphire Reserve", d: "chase.com" },
-              { n: "Citi Premier", d: "citi.com" },
-              { n: "Capital One Venture X", d: "capitalone.com" },
+              { n: "Amex Platinum", d: "americanexpress.com", url: "https://www.americanexpress.com", desc: "The American Express Platinum Card is the benchmark for premium travel rewards. Earn 5x Membership Rewards points on flights and prepaid hotels booked through Amex Travel. Perks include access to 1,400+ airport lounges (including exclusive Centurion Lounges), $200 airline fee credit, $200 hotel credit, TSA PreCheck/Global Entry, and elite status at Hilton and Marriott. Annual fee: $695." },
+              { n: "Chase Sapphire Reserve", d: "chase.com", url: "https://www.chase.com", desc: "The Chase Sapphire Reserve earns 3x Ultimate Rewards points on travel and dining globally, with points worth 50% more when redeemed through Chase Travel. Access 1,300+ Priority Pass lounges worldwide. Points transfer at 1:1 to 14 airline and hotel partners including Hyatt, United, and British Airways. Comes with a $300 travel credit. Annual fee: $550." },
+              { n: "Citi Premier", d: "citi.com", url: "https://www.citi.com", desc: "The Citi Strata Premier (formerly Citi Premier) is an underrated powerhouse, earning 3x ThankYou Points on air travel, hotels, restaurants, supermarkets, and gas stations. Points transfer to 18 airline partners including Turkish Miles&Smiles, Singapore KrisFlyer, and Flying Blue — ideal for international business class awards. Annual fee: $95." },
+              { n: "Capital One Venture X", d: "capitalone.com", url: "https://www.capitalone.com", desc: "The Capital One Venture X earns 2x miles on all purchases, 5x on flights, and 10x on hotels booked through Capital One Travel. Access Capital One Lounges plus Priority Pass (1,300+ locations). Miles transfer to 15+ airline partners. The $300 travel credit and 10,000 annual bonus miles make it effectively free after the $395 annual fee." },
             ]},
           ];
+
+          const PartnerLogo = ({ item, size = 36 }) => (
+            <img
+              src={`https://logo.clearbit.com/${item.d}`}
+              alt={item.n}
+              style={{ width: size, height: size, objectFit: "contain" }}
+              onError={e => {
+                if (!e.target.dataset.fb) {
+                  e.target.dataset.fb = "1";
+                  e.target.src = `https://www.google.com/s2/favicons?domain=${item.d}&sz=64`;
+                } else {
+                  e.target.style.display = "none";
+                  e.target.parentElement.innerHTML = `<span style="font-size:${Math.round(size*0.5)}px;font-weight:700;color:#0EA5A0;font-family:Space Mono,monospace">${item.n[0]}</span>`;
+                }
+              }}
+            />
+          );
+
           return (
-            <div style={{ padding: "40px 0" }}>
-              {partnerGroups.map(g => (
-                <div key={g.cat} style={{ marginBottom: 40 }}>
-                  <h3 style={{ fontSize: 11, fontFamily: "Space Mono, monospace", color: "#0EA5A0", letterSpacing: 2, textTransform: "uppercase", marginBottom: 16 }}>{g.cat}</h3>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 8 }}>
-                    {g.items.map(item => (
-                      <div key={item.n} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", background: "#141516", border: "1px solid #23252a", borderRadius: 10 }}>
-                        <div style={{ width: 40, height: 40, borderRadius: 8, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
-                          <img
-                            src={`https://logo.clearbit.com/${item.d}`}
-                            alt={item.n}
-                            style={{ width: 36, height: 36, objectFit: "contain" }}
-                            onError={e => {
-                              if (!e.target.dataset.fb) {
-                                e.target.dataset.fb = "1";
-                                e.target.src = `https://www.google.com/s2/favicons?domain=${item.d}&sz=64`;
-                              } else {
-                                e.target.style.display = "none";
-                                e.target.parentElement.innerHTML = `<span style="font-size:18px;font-weight:700;color:#0EA5A0;font-family:Space Mono,monospace">${item.n[0]}</span>`;
-                              }
-                            }}
-                          />
+            <>
+              <div style={{ padding: "40px 0" }}>
+                {partnerGroups.map(g => (
+                  <div key={g.cat} style={{ marginBottom: 40 }}>
+                    <h3 style={{ fontSize: 11, fontFamily: "Space Mono, monospace", color: "#0EA5A0", letterSpacing: 2, textTransform: "uppercase", marginBottom: 16 }}>{g.cat}</h3>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 8 }}>
+                      {g.items.map(item => (
+                        <div
+                          key={item.n}
+                          onClick={() => setSelectedPartner({ ...item, cat: g.cat })}
+                          style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", background: "#141516", border: "1px solid #23252a", borderRadius: 10, cursor: "pointer", transition: "border-color .2s, background .2s" }}
+                          onMouseEnter={e => { e.currentTarget.style.borderColor = "#0EA5A0"; e.currentTarget.style.background = "#1a1c1f"; }}
+                          onMouseLeave={e => { e.currentTarget.style.borderColor = "#23252a"; e.currentTarget.style.background = "#141516"; }}
+                        >
+                          <div style={{ width: 40, height: 40, borderRadius: 8, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
+                            <PartnerLogo item={item} size={36} />
+                          </div>
+                          <span style={{ fontSize: 13, color: "#d0d6e0", fontWeight: 500 }}>{item.n}</span>
                         </div>
-                        <span style={{ fontSize: 13, color: "#d0d6e0", fontWeight: 500 }}>{item.n}</span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Partner detail modal */}
+              {selectedPartner && (
+                <div
+                  onClick={() => setSelectedPartner(null)}
+                  style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.72)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, backdropFilter: "blur(6px)" }}
+                >
+                  <div
+                    onClick={e => e.stopPropagation()}
+                    style={{ background: "#141516", border: "1px solid #2e3138", borderRadius: 16, padding: 32, maxWidth: 500, width: "100%", position: "relative", boxShadow: "0 32px 80px rgba(0,0,0,0.6)" }}
+                  >
+                    <button
+                      onClick={() => setSelectedPartner(null)}
+                      style={{ position: "absolute", top: 14, right: 16, background: "none", border: "none", cursor: "pointer", color: "#62666d", fontSize: 22, lineHeight: 1, padding: 4 }}
+                    >×</button>
+
+                    <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
+                      <div style={{ width: 56, height: 56, borderRadius: 12, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
+                        <PartnerLogo item={selectedPartner} size={48} />
                       </div>
-                    ))}
+                      <div>
+                        <div style={{ fontSize: 9, fontFamily: "Space Mono, monospace", color: "#0EA5A0", letterSpacing: 2, textTransform: "uppercase", marginBottom: 4 }}>{selectedPartner.cat}</div>
+                        <h2 style={{ fontSize: 20, fontWeight: 700, color: "#f7f8f8", margin: 0, lineHeight: 1.2 }}>{selectedPartner.n}</h2>
+                      </div>
+                    </div>
+
+                    <p style={{ fontSize: 14, color: "#9ca3af", lineHeight: 1.75, marginBottom: 28, margin: "0 0 28px" }}>{selectedPartner.desc}</p>
+
+                    <a
+                      href={selectedPartner.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#0EA5A0", color: "#000", textDecoration: "none", borderRadius: 8, padding: "10px 20px", fontSize: 11, fontFamily: "Space Mono, monospace", fontWeight: 700, letterSpacing: 1, textTransform: "uppercase" }}
+                    >
+                      Visit Website ↗
+                    </a>
                   </div>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           );
         }
         if (id === "about") return (<div style={{ padding: "40px 0", maxWidth: 640 }}><p style={{ fontSize: 15, color: "#d0d6e0", lineHeight: 1.8, marginBottom: 20 }}>Continuum was born from frustration: tracking elite status across programs shouldn't require spreadsheets. We built the platform we wished existed.</p><p style={{ fontSize: 15, color: "#d0d6e0", lineHeight: 1.8, marginBottom: 28 }}>Based in Bermuda. Built by frequent flyers, reinsurance professionals, and travel obsessives.</p><div style={{ display: "flex", gap: 40 }}>{[{ v: "6", l: "Team" },{ v: "12M+", l: "Miles Tracked" },{ v: "2026", l: "Founded" }].map((s, i) => (<div key={i}><div style={{ fontSize: 24, fontFamily: "Space Mono, monospace", color: "#0EA5A0", fontWeight: 700 }}>{s.v}</div><div style={{ fontSize: 10, fontFamily: "Space Mono, monospace", color: "#62666d", letterSpacing: 1.5, marginTop: 2, textTransform: "uppercase" }}>{s.l}</div></div>))}</div></div>);
