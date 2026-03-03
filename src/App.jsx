@@ -933,7 +933,7 @@ Start by introducing yourself briefly in-character with personality, and give an
           // Update yoke rotation
           if (yokeRef.current) yokeRef.current.style.transform = `rotate(${s.roll}deg)`;
           // Update throttle position
-          if (throttleRef.current) throttleRef.current.style.height = `${20 + (s.speed / 1.5) * 60}%`;
+          if (throttleRef.current) throttleRef.current.style.bottom = `${5 + (s.speed / 1.5) * 65}%`;
 
           // Clear and draw sky
           ctx.clearRect(0, 0, w, h);
@@ -1095,13 +1095,51 @@ Start by introducing yourself briefly in-character with personality, and give an
               {/* === INTERACTIVE YOKE (center bottom) === */}
               <div style={{ position: "absolute", bottom: "14%", left: "50%", transform: "translateX(-50%)", zIndex: 20, cursor: "grab" }}
                 onMouseDown={onYokeDown}>
-                <div ref={yokeRef} style={{ transition: "transform 0.1s ease-out" }}>
-                  <svg width="100" height="60" viewBox="0 0 100 60">
-                    {/* Yoke shape */}
-                    <ellipse cx="50" cy="50" rx="45" ry="12" fill="none" stroke="#8a8f98" strokeWidth="3" />
-                    <rect x="46" y="10" width="8" height="40" rx="3" fill="#34343a" stroke="#8a8f98" strokeWidth="1.5" />
-                    <circle cx="50" cy="12" r="6" fill="#23252a" stroke="#0EA5A0" strokeWidth="1" />
-                    <text x="50" y="15" textAnchor="middle" fill="#0EA5A0" fontSize="7" fontFamily="Space Mono">Y</text>
+                <div ref={yokeRef}>
+                  <svg width="200" height="130" viewBox="0 0 200 130">
+                    <defs>
+                      <linearGradient id="yokeBody" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#272730"/>
+                        <stop offset="100%" stopColor="#141418"/>
+                      </linearGradient>
+                    </defs>
+                    {/* Center column */}
+                    <rect x="88" y="88" width="24" height="38" rx="5" fill="url(#yokeBody)" stroke="#38383e" strokeWidth="2"/>
+                    {/* Column cap */}
+                    <rect x="80" y="80" width="40" height="12" rx="4" fill="#1e1e26" stroke="#38383e" strokeWidth="1.5"/>
+                    {/* Main horizontal grip bar */}
+                    <rect x="14" y="58" width="172" height="26" rx="11" fill="url(#yokeBody)" stroke="#38383e" strokeWidth="2"/>
+                    {/* Top highlight */}
+                    <rect x="16" y="59" width="168" height="4" rx="2" fill="rgba(255,255,255,0.06)"/>
+                    {/* Grip ridges */}
+                    <rect x="46" y="61" width="5" height="20" rx="2.5" fill="#1a1a22"/>
+                    <rect x="58" y="61" width="5" height="20" rx="2.5" fill="#1a1a22"/>
+                    <rect x="70" y="61" width="5" height="20" rx="2.5" fill="#1a1a22"/>
+                    <rect x="98" y="61" width="5" height="20" rx="2.5" fill="#1a1a22"/>
+                    <rect x="126" y="61" width="5" height="20" rx="2.5" fill="#1a1a22"/>
+                    <rect x="138" y="61" width="5" height="20" rx="2.5" fill="#1a1a22"/>
+                    <rect x="150" y="61" width="5" height="20" rx="2.5" fill="#1a1a22"/>
+                    {/* Left arm */}
+                    <path d="M20 66 C16 46 22 24 44 20 L56 20 C34 24 28 46 28 66 Z" fill="#1c1c24" stroke="#38383e" strokeWidth="2"/>
+                    {/* Right arm */}
+                    <path d="M180 66 C184 46 178 24 156 20 L144 20 C166 24 172 46 172 66 Z" fill="#1c1c24" stroke="#38383e" strokeWidth="2"/>
+                    {/* Top connecting bar */}
+                    <rect x="50" y="16" width="100" height="9" rx="3.5" fill="#1c1c24" stroke="#38383e" strokeWidth="1.5"/>
+                    {/* Left PTT button */}
+                    <circle cx="30" cy="48" r="9" fill="#0a5e5b" stroke="#0EA5A0" strokeWidth="1.5"/>
+                    <text x="30" y="51.5" textAnchor="middle" dominantBaseline="middle" fill="#0EA5A0" fontSize="6" fontFamily="Space Mono" fontWeight="700">PTT</text>
+                    {/* Left AP DISC button */}
+                    <circle cx="46" cy="30" r="7" fill="#7f1d1d" stroke="#ef4444" strokeWidth="1.5"/>
+                    <text x="46" y="33.5" textAnchor="middle" dominantBaseline="middle" fill="#fca5a5" fontSize="5" fontFamily="Space Mono">AP</text>
+                    {/* Right A/P engage button */}
+                    <circle cx="170" cy="48" r="9" fill="#0a5e5b" stroke="#0EA5A0" strokeWidth="1.5"/>
+                    <text x="170" y="51.5" textAnchor="middle" dominantBaseline="middle" fill="#0EA5A0" fontSize="5" fontFamily="Space Mono" fontWeight="700">A/P</text>
+                    {/* Right TOGA button */}
+                    <circle cx="154" cy="30" r="7" fill="#78350f" stroke="#f59e0b" strokeWidth="1.5"/>
+                    <text x="154" y="33.5" textAnchor="middle" dominantBaseline="middle" fill="#fbbf24" fontSize="5" fontFamily="Space Mono">TO</text>
+                    {/* Center status LED */}
+                    <circle cx="100" cy="88" r="4" fill="#0EA5A0" opacity="0.45"/>
+                    <circle cx="100" cy="88" r="2" fill="#0EA5A0" opacity="0.85"/>
                   </svg>
                 </div>
                 <div style={{ textAlign: "center", marginTop: 2, fontSize: 8, fontFamily: "Space Mono, monospace", color: "#62666d", letterSpacing: 1 }}>DRAG TO STEER</div>
@@ -1110,9 +1148,27 @@ Start by introducing yourself briefly in-character with personality, and give an
               {/* === THROTTLE (left of yoke) === */}
               <div style={{ position: "absolute", bottom: "12%", left: "28%", zIndex: 20, cursor: "ns-resize" }}
                 onMouseDown={onThrottleDown}>
-                <div style={{ width: 28, height: 80, background: "#1a1a1e", border: "1px solid #34343a", borderRadius: 4, position: "relative", overflow: "hidden" }}>
-                  <div ref={throttleRef} style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "30%", background: "linear-gradient(180deg, #0EA5A0, #0a7a76)", borderRadius: "0 0 3px 3px", transition: "height 0.15s ease" }} />
-                  <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 16, height: 3, background: "#8a8f98", borderRadius: 2 }} />
+                <div style={{ width: 60, height: 150, background: "linear-gradient(180deg, #0e0e12, #111116)", border: "2px solid #28282e", borderRadius: 10, position: "relative", boxShadow: "0 8px 32px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.04)" }}>
+                  {/* Center gate slot */}
+                  <div style={{ position: "absolute", left: "50%", top: 10, bottom: 10, width: 8, transform: "translateX(-50%)", background: "#06060a", borderRadius: 4, border: "1px solid #18181e", boxShadow: "inset 0 2px 6px rgba(0,0,0,0.9)" }}/>
+                  {/* MCT detent */}
+                  <div style={{ position: "absolute", left: 10, right: 10, top: "22%", borderTop: "1px dashed rgba(14,165,160,0.3)", pointerEvents: "none" }}>
+                    <span style={{ position: "absolute", right: 0, top: 2, fontSize: 6, color: "rgba(14,165,160,0.55)", fontFamily: "Space Mono, monospace" }}>MCT</span>
+                  </div>
+                  {/* CL detent */}
+                  <div style={{ position: "absolute", left: 10, right: 10, top: "50%", borderTop: "1px dashed rgba(14,165,160,0.3)", pointerEvents: "none" }}>
+                    <span style={{ position: "absolute", right: 0, top: 2, fontSize: 6, color: "rgba(14,165,160,0.55)", fontFamily: "Space Mono, monospace" }}>CL</span>
+                  </div>
+                  {/* IDLE detent */}
+                  <div style={{ position: "absolute", left: 10, right: 10, top: "80%", borderTop: "1px dashed rgba(14,165,160,0.3)", pointerEvents: "none" }}>
+                    <span style={{ position: "absolute", right: 0, top: 2, fontSize: 6, color: "rgba(14,165,160,0.55)", fontFamily: "Space Mono, monospace" }}>IDL</span>
+                  </div>
+                  {/* Throttle lever handle */}
+                  <div ref={throttleRef} style={{ position: "absolute", left: 7, right: 7, bottom: "16%", height: 32, background: "linear-gradient(180deg, #3a3a46, #20202a)", borderRadius: 7, border: "1px solid #4e4e5a", boxShadow: "0 3px 12px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.08)", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", gap: 3 }}>
+                    <div style={{ width: "72%", height: 2, background: "rgba(255,255,255,0.18)", borderRadius: 1 }}/>
+                    <div style={{ width: "72%", height: 2, background: "rgba(255,255,255,0.1)", borderRadius: 1 }}/>
+                    <div style={{ width: "72%", height: 2, background: "rgba(255,255,255,0.05)", borderRadius: 1 }}/>
+                  </div>
                 </div>
                 <div style={{ textAlign: "center", marginTop: 4, fontSize: 7, fontFamily: "Space Mono, monospace", color: "#62666d", letterSpacing: 1 }}>THROTTLE</div>
               </div>
