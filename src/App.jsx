@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import * as THREE from 'three';
-import { Sky } from 'three/addons/objects/Sky.js';
 
 // ============================================================
 // LOGO COMPONENT — Geometric travel icon in Neuron brand style
@@ -1023,6 +1022,7 @@ Start by introducing yourself briefly in-character with personality, and give an
       React.useEffect(() => {
         const canvas = threeCanvasRef.current;
         if (!canvas) return;
+        try {
         const W = window.innerWidth;
         const H = window.innerHeight;
 
@@ -1114,20 +1114,8 @@ Start by introducing yourself briefly in-character with personality, and give an
 
         // ===== FLIGHT SCENE =====
         const flightScene = new THREE.Scene();
+        flightScene.background = new THREE.Color(0x1a6db5);
         flightScene.fog = new THREE.FogExp2(0x87CEEB, 0.000032);
-
-        // Atmospheric sky shader
-        const sky = new Sky();
-        sky.scale.setScalar(500000);
-        flightScene.add(sky);
-        const skyUniforms = sky.material.uniforms;
-        skyUniforms['turbidity'].value = 10;
-        skyUniforms['rayleigh'].value = 2;
-        skyUniforms['mieCoefficient'].value = 0.005;
-        skyUniforms['mieDirectionalG'].value = 0.8;
-        const sunVec = new THREE.Vector3();
-        sunVec.setFromSphericalCoords(1, THREE.MathUtils.degToRad(75), THREE.MathUtils.degToRad(180));
-        skyUniforms['sunPosition'].value.copy(sunVec);
 
         // Terrain — PlaneGeometry with sine-wave vertex displacement + vertex colours
         const tRes = 100, tSize = 100000;
@@ -1179,7 +1167,7 @@ Start by introducing yourself briefly in-character with personality, and give an
           lc.width = 256; lc.height = 64;
           const lctx = lc.getContext('2d');
           lctx.fillStyle = 'rgba(0,0,0,0.6)';
-          lctx.beginPath(); lctx.roundRect(0, 0, 256, 64, 8); lctx.fill();
+          lctx.fillRect(0, 0, 256, 64);
           lctx.font = '28px sans-serif'; lctx.fillText(lm.icon, 8, 44);
           lctx.font = 'bold 17px Inter, sans-serif'; lctx.fillStyle = 'white';
           lctx.fillText(lm.name.slice(0, 18), 44, 42);
@@ -1246,6 +1234,9 @@ Start by introducing yourself briefly in-character with personality, and give an
           window.removeEventListener('resize', onResize);
           renderer.dispose();
         };
+        } catch (err) {
+          console.error('[Three.js] init error:', err);
+        }
       }, []);
 
       // Sync gamePhase React state into the ref used by the rAF loop
