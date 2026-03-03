@@ -786,9 +786,11 @@ Start by introducing yourself briefly in-character with personality, and give an
       const [showChime, setShowChime] = React.useState(false);
       const [paText, setPaText] = React.useState("");
       const [nearbyLandmark, setNearbyLandmark] = React.useState(null);
+      const [autopilotDest, setAutopilotDest] = React.useState(null);
+      const [navExpanded, setNavExpanded] = React.useState(false);
       const audioCtxRef = React.useRef(null);
       const skyCanvasRef = React.useRef(null);
-      const miniMapRef = React.useRef(null);
+      const navMapRef = React.useRef(null);
       const yokeRef = React.useRef(null);
       const throttleRef = React.useRef(null);
       const fs = React.useRef({ lon: -64.78, lat: 32.3, heading: 90, speed: 0.25, alt: 38000, roll: 0 });
@@ -796,34 +798,171 @@ Start by introducing yourself briefly in-character with personality, and give an
       const keys = React.useRef({});
       const animId = React.useRef(null);
       const paPlayedGlobal = React.useRef(false);
+      const autopilotRef = React.useRef(null); // live ref for draw loop
+      const mapZoomRef = React.useRef(2.5);
+      const mapPanRef = React.useRef(null); // null = follow aircraft; {lon,lat} = manual pan
+      const navExpandedRef = React.useRef(false);
+      const mapDragRef = React.useRef({ dragging: false, lastX: 0, lastY: 0 });
 
-      // Landmarks with real coordinates and images
+      // Landmarks with real coordinates — 120+ real-world locations
       const landmarks = React.useRef([
-        { name: "Eiffel Tower", lon: 2.29, lat: 48.86, icon: "🗼", img: "eiffel+tower+paris" },
-        { name: "Mount Fuji", lon: 138.73, lat: 35.36, icon: "🗻", img: "mount+fuji+japan" },
-        { name: "CN Tower", lon: -79.39, lat: 43.64, icon: "🏙️", img: "cn+tower+toronto" },
-        { name: "Rocky Mountains", lon: -105.78, lat: 39.55, icon: "⛰️", img: "rocky+mountains+colorado" },
-        { name: "Kilimanjaro", lon: 37.35, lat: -3.07, icon: "🏔️", img: "mount+kilimanjaro" },
-        { name: "Taipei 101", lon: 121.56, lat: 25.03, icon: "🏗️", img: "taipei+101" },
-        { name: "Statue of Liberty", lon: -74.04, lat: 40.69, icon: "🗽", img: "statue+of+liberty" },
-        { name: "Colosseum", lon: 12.49, lat: 41.89, icon: "🏟️", img: "colosseum+rome" },
-        { name: "Sydney Opera House", lon: 151.21, lat: -33.86, icon: "🏛️", img: "sydney+opera+house" },
-        { name: "Taj Mahal", lon: 78.04, lat: 27.17, icon: "🕌", img: "taj+mahal+india" },
-        { name: "Great Wall", lon: 116.57, lat: 40.43, icon: "🏯", img: "great+wall+china" },
-        { name: "Big Ben", lon: -0.12, lat: 51.50, icon: "🏰", img: "big+ben+london" },
-        { name: "Pyramids of Giza", lon: 31.13, lat: 29.98, icon: "🔺", img: "pyramids+giza" },
-        { name: "Christ the Redeemer", lon: -43.21, lat: -22.95, icon: "✝️", img: "christ+redeemer+rio" },
-        { name: "Machu Picchu", lon: -72.55, lat: -13.16, icon: "🏔️", img: "machu+picchu+peru" },
-        { name: "Bermuda", lon: -64.78, lat: 32.30, icon: "🇧🇲", img: "bermuda+island" },
-        { name: "Dubai Burj Khalifa", lon: 55.27, lat: 25.20, icon: "🌆", img: "burj+khalifa+dubai" },
-        { name: "Hong Kong Skyline", lon: 114.17, lat: 22.28, icon: "🌃", img: "hong+kong+skyline" },
-        { name: "Golden Gate Bridge", lon: -122.48, lat: 37.82, icon: "🌉", img: "golden+gate+bridge" },
-        { name: "Santorini", lon: 25.43, lat: 36.39, icon: "🏖️", img: "santorini+greece" },
-        { name: "Petra", lon: 35.44, lat: 30.33, icon: "🏜️", img: "petra+jordan" },
-        { name: "Angkor Wat", lon: 103.87, lat: 13.41, icon: "⛩️", img: "angkor+wat+cambodia" },
-        { name: "Niagara Falls", lon: -79.07, lat: 43.08, icon: "💧", img: "niagara+falls" },
-        { name: "Northern Lights Iceland", lon: -22.0, lat: 64.15, icon: "🌌", img: "northern+lights+iceland" },
-        { name: "Table Mountain", lon: 18.40, lat: -33.96, icon: "🌊", img: "table+mountain+cape+town" },
+        // === ICONIC MONUMENTS ===
+        { name: "Eiffel Tower", lon: 2.29, lat: 48.86, icon: "🗼" },
+        { name: "Statue of Liberty", lon: -74.04, lat: 40.69, icon: "🗽" },
+        { name: "Big Ben", lon: -0.12, lat: 51.50, icon: "🕰️" },
+        { name: "Colosseum", lon: 12.49, lat: 41.89, icon: "🏟️" },
+        { name: "Pyramids of Giza", lon: 31.13, lat: 29.98, icon: "🔺" },
+        { name: "Taj Mahal", lon: 78.04, lat: 27.17, icon: "🕌" },
+        { name: "Great Wall of China", lon: 116.57, lat: 40.43, icon: "🏯" },
+        { name: "Sydney Opera House", lon: 151.21, lat: -33.86, icon: "🏛️" },
+        { name: "Christ the Redeemer", lon: -43.21, lat: -22.95, icon: "✝️" },
+        { name: "Sagrada Família", lon: 2.17, lat: 41.40, icon: "⛪" },
+        { name: "Acropolis", lon: 23.73, lat: 37.97, icon: "🏛️" },
+        { name: "Brandenburg Gate", lon: 13.38, lat: 52.52, icon: "🏛️" },
+        { name: "Kremlin", lon: 37.62, lat: 55.75, icon: "🏰" },
+        { name: "Hagia Sophia", lon: 28.98, lat: 41.01, icon: "🕌" },
+        { name: "Petra", lon: 35.44, lat: 30.33, icon: "🏜️" },
+        { name: "Angkor Wat", lon: 103.87, lat: 13.41, icon: "⛩️" },
+        { name: "Machu Picchu", lon: -72.55, lat: -13.16, icon: "🏔️" },
+        { name: "Stonehenge", lon: -1.83, lat: 51.18, icon: "🗿" },
+        { name: "Vatican City", lon: 12.45, lat: 41.90, icon: "✝️" },
+        { name: "Alhambra", lon: -3.59, lat: 37.18, icon: "🏰" },
+        // === SKYSCRAPERS & TOWERS ===
+        { name: "Burj Khalifa", lon: 55.27, lat: 25.20, icon: "🌆" },
+        { name: "Eiffel Tower", lon: 2.29, lat: 48.85, icon: "🗼" },
+        { name: "CN Tower", lon: -79.39, lat: 43.64, icon: "🏙️" },
+        { name: "Taipei 101", lon: 121.56, lat: 25.03, icon: "🏗️" },
+        { name: "Shanghai Tower", lon: 121.50, lat: 31.23, icon: "🌆" },
+        { name: "Petronas Towers", lon: 101.71, lat: 3.16, icon: "🌆" },
+        { name: "Empire State Building", lon: -73.99, lat: 40.75, icon: "🏙️" },
+        { name: "One World Trade Center", lon: -74.01, lat: 40.71, icon: "🏙️" },
+        { name: "Tokyo Skytree", lon: 139.81, lat: 35.71, icon: "📡" },
+        { name: "Burj Al Arab", lon: 55.19, lat: 25.14, icon: "🏖️" },
+        // === NATURAL WONDERS ===
+        { name: "Grand Canyon", lon: -112.10, lat: 36.10, icon: "🏜️" },
+        { name: "Niagara Falls", lon: -79.07, lat: 43.08, icon: "💧" },
+        { name: "Victoria Falls", lon: 25.85, lat: -17.93, icon: "💧" },
+        { name: "Iguazu Falls", lon: -54.44, lat: -25.69, icon: "💧" },
+        { name: "Angel Falls", lon: -62.53, lat: 5.97, icon: "💧" },
+        { name: "Mount Everest", lon: 86.92, lat: 27.99, icon: "🏔️" },
+        { name: "Mount Fuji", lon: 138.73, lat: 35.36, icon: "🗻" },
+        { name: "Kilimanjaro", lon: 37.35, lat: -3.07, icon: "🏔️" },
+        { name: "Denali", lon: -151.00, lat: 63.07, icon: "⛰️" },
+        { name: "Mont Blanc", lon: 6.86, lat: 45.83, icon: "⛰️" },
+        { name: "Matterhorn", lon: 7.66, lat: 45.98, icon: "⛰️" },
+        { name: "K2", lon: 76.51, lat: 35.88, icon: "🏔️" },
+        { name: "Rocky Mountains", lon: -105.78, lat: 39.55, icon: "⛰️" },
+        { name: "Yellowstone", lon: -110.59, lat: 44.43, icon: "🌋" },
+        { name: "Great Barrier Reef", lon: 145.77, lat: -16.29, icon: "🐠" },
+        { name: "Amazon Rainforest", lon: -60.02, lat: -3.47, icon: "🌴" },
+        { name: "Sahara Desert", lon: 11.38, lat: 23.42, icon: "🏜️" },
+        { name: "Dead Sea", lon: 35.50, lat: 31.56, icon: "🧂" },
+        { name: "Northern Lights Iceland", lon: -22.0, lat: 64.15, icon: "🌌" },
+        { name: "Aurora Borealis Norway", lon: 18.95, lat: 69.65, icon: "🌌" },
+        // === BRIDGES ===
+        { name: "Golden Gate Bridge", lon: -122.48, lat: 37.82, icon: "🌉" },
+        { name: "Tower Bridge London", lon: -0.07, lat: 51.51, icon: "🌉" },
+        { name: "Sydney Harbour Bridge", lon: 151.21, lat: -33.85, icon: "🌉" },
+        { name: "Millau Viaduct", lon: 3.02, lat: 44.08, icon: "🌉" },
+        // === CITIES — AMERICAS ===
+        { name: "New York City", lon: -73.94, lat: 40.66, icon: "🌆" },
+        { name: "Los Angeles", lon: -118.24, lat: 34.05, icon: "🎬" },
+        { name: "Chicago", lon: -87.63, lat: 41.88, icon: "🌆" },
+        { name: "Miami", lon: -80.19, lat: 25.77, icon: "🏖️" },
+        { name: "Las Vegas", lon: -115.14, lat: 36.17, icon: "🎰" },
+        { name: "San Francisco", lon: -122.42, lat: 37.77, icon: "🌉" },
+        { name: "Vancouver", lon: -123.12, lat: 49.28, icon: "🏔️" },
+        { name: "Montreal", lon: -73.55, lat: 45.50, icon: "🍁" },
+        { name: "Mexico City", lon: -99.13, lat: 19.43, icon: "🌮" },
+        { name: "Cancún", lon: -86.85, lat: 21.16, icon: "🏖️" },
+        { name: "Havana", lon: -82.39, lat: 23.14, icon: "🎺" },
+        { name: "Bogotá", lon: -74.08, lat: 4.71, icon: "🌆" },
+        { name: "Rio de Janeiro", lon: -43.18, lat: -22.90, icon: "🏖️" },
+        { name: "São Paulo", lon: -46.63, lat: -23.55, icon: "🌆" },
+        { name: "Buenos Aires", lon: -58.38, lat: -34.61, icon: "💃" },
+        { name: "Santiago", lon: -70.65, lat: -33.46, icon: "🍷" },
+        { name: "Lima", lon: -77.04, lat: -12.05, icon: "🏛️" },
+        { name: "Bermuda", lon: -64.78, lat: 32.30, icon: "🇧🇲" },
+        { name: "Nassau, Bahamas", lon: -77.35, lat: 25.05, icon: "🏝️" },
+        // === CITIES — EUROPE ===
+        { name: "London", lon: -0.13, lat: 51.51, icon: "🎡" },
+        { name: "Paris", lon: 2.35, lat: 48.86, icon: "🥐" },
+        { name: "Rome", lon: 12.50, lat: 41.90, icon: "🍕" },
+        { name: "Madrid", lon: -3.70, lat: 40.42, icon: "🎭" },
+        { name: "Barcelona", lon: 2.16, lat: 41.39, icon: "🎨" },
+        { name: "Amsterdam", lon: 4.90, lat: 52.37, icon: "🌷" },
+        { name: "Berlin", lon: 13.41, lat: 52.52, icon: "🍺" },
+        { name: "Vienna", lon: 16.37, lat: 48.21, icon: "🎻" },
+        { name: "Prague", lon: 14.42, lat: 50.08, icon: "🏰" },
+        { name: "Budapest", lon: 19.04, lat: 47.50, icon: "♨️" },
+        { name: "Copenhagen", lon: 12.57, lat: 55.68, icon: "🧜" },
+        { name: "Stockholm", lon: 18.07, lat: 59.33, icon: "👑" },
+        { name: "Oslo", lon: 10.75, lat: 59.91, icon: "🛶" },
+        { name: "Helsinki", lon: 24.94, lat: 60.17, icon: "🧊" },
+        { name: "Athens", lon: 23.73, lat: 37.98, icon: "🏛️" },
+        { name: "Lisbon", lon: -9.14, lat: 38.72, icon: "🐟" },
+        { name: "Zurich", lon: 8.54, lat: 47.38, icon: "⌚" },
+        { name: "Santorini", lon: 25.43, lat: 36.39, icon: "🏖️" },
+        { name: "Venice", lon: 12.34, lat: 45.44, icon: "🚣" },
+        // === CITIES — AFRICA & MIDDLE EAST ===
+        { name: "Cairo", lon: 31.24, lat: 30.06, icon: "🔺" },
+        { name: "Casablanca", lon: -7.60, lat: 33.59, icon: "🕌" },
+        { name: "Nairobi", lon: 36.82, lat: -1.29, icon: "🦁" },
+        { name: "Cape Town", lon: 18.42, lat: -33.93, icon: "🌊" },
+        { name: "Table Mountain", lon: 18.40, lat: -33.96, icon: "⛰️" },
+        { name: "Lagos", lon: 3.38, lat: 6.45, icon: "🌆" },
+        { name: "Johannesburg", lon: 28.04, lat: -26.20, icon: "💎" },
+        { name: "Marrakech", lon: -8.01, lat: 31.63, icon: "🌴" },
+        { name: "Dubai", lon: 55.30, lat: 25.26, icon: "🌆" },
+        { name: "Abu Dhabi", lon: 54.37, lat: 24.47, icon: "🕌" },
+        { name: "Riyadh", lon: 46.72, lat: 24.69, icon: "🏙️" },
+        { name: "Jerusalem", lon: 35.22, lat: 31.77, icon: "🕍" },
+        { name: "Istanbul", lon: 29.01, lat: 41.01, icon: "🕌" },
+        // === CITIES — ASIA ===
+        { name: "Tokyo", lon: 139.69, lat: 35.69, icon: "🗼" },
+        { name: "Beijing", lon: 116.41, lat: 39.91, icon: "🏯" },
+        { name: "Shanghai", lon: 121.47, lat: 31.23, icon: "🌆" },
+        { name: "Hong Kong", lon: 114.17, lat: 22.28, icon: "🌃" },
+        { name: "Seoul", lon: 126.98, lat: 37.57, icon: "🎎" },
+        { name: "Singapore", lon: 103.82, lat: 1.35, icon: "🦁" },
+        { name: "Bangkok", lon: 100.52, lat: 13.75, icon: "🛕" },
+        { name: "Mumbai", lon: 72.88, lat: 19.08, icon: "🎬" },
+        { name: "Delhi", lon: 77.21, lat: 28.61, icon: "🕌" },
+        { name: "Kolkata", lon: 88.36, lat: 22.57, icon: "🌺" },
+        { name: "Bali", lon: 115.19, lat: -8.41, icon: "🌴" },
+        { name: "Kathmandu", lon: 85.31, lat: 27.71, icon: "🏔️" },
+        { name: "Colombo", lon: 79.86, lat: 6.93, icon: "🌴" },
+        { name: "Hanoi", lon: 105.85, lat: 21.03, icon: "🏮" },
+        { name: "Ho Chi Minh City", lon: 106.66, lat: 10.82, icon: "🏙️" },
+        { name: "Manila", lon: 120.98, lat: 14.60, icon: "🌺" },
+        { name: "Jakarta", lon: 106.83, lat: -6.21, icon: "🌆" },
+        { name: "Kuala Lumpur", lon: 101.69, lat: 3.14, icon: "🌆" },
+        { name: "Osaka", lon: 135.50, lat: 34.69, icon: "🏯" },
+        { name: "Taipei", lon: 121.56, lat: 25.05, icon: "🌆" },
+        { name: "Maldives", lon: 73.51, lat: 4.17, icon: "🏝️" },
+        // === OCEANIA & PACIFIC ===
+        { name: "Sydney", lon: 151.21, lat: -33.87, icon: "🦘" },
+        { name: "Melbourne", lon: 144.96, lat: -37.81, icon: "☕" },
+        { name: "Auckland", lon: 174.76, lat: -36.87, icon: "🐑" },
+        { name: "Queenstown NZ", lon: 168.67, lat: -45.03, icon: "🏔️" },
+        { name: "Honolulu Hawaii", lon: -157.83, lat: 21.31, icon: "🌺" },
+        { name: "Fiji Islands", lon: 177.44, lat: -17.71, icon: "🏝️" },
+        { name: "Galápagos Islands", lon: -90.96, lat: -0.67, icon: "🐢" },
+        { name: "Easter Island", lon: -109.37, lat: -27.11, icon: "🗿" },
+        // === ISLANDS & COASTAL ===
+        { name: "Iceland Reykjavik", lon: -21.82, lat: 64.13, icon: "🌋" },
+        { name: "Greenland", lon: -42.60, lat: 71.71, icon: "🧊" },
+        { name: "Madagascar", lon: 46.87, lat: -18.91, icon: "🦜" },
+        { name: "Seychelles", lon: 55.49, lat: -4.68, icon: "🏝️" },
+        { name: "Malta", lon: 14.51, lat: 35.90, icon: "🏰" },
+        { name: "Cyprus", lon: 33.37, lat: 35.13, icon: "🏛️" },
+        { name: "Azores", lon: -25.67, lat: 37.74, icon: "🌋" },
+        // === AIRPORTS (major hubs) ===
+        { name: "JFK Airport", lon: -73.78, lat: 40.64, icon: "✈️" },
+        { name: "Heathrow Airport", lon: -0.45, lat: 51.48, icon: "✈️" },
+        { name: "Dubai Int'l Airport", lon: 55.36, lat: 25.25, icon: "✈️" },
+        { name: "Singapore Changi", lon: 103.99, lat: 1.36, icon: "✈️" },
+        { name: "Tokyo Narita", lon: 140.39, lat: 35.77, icon: "✈️" },
       ]).current;
 
       // PA — plays ONCE ever per page load
@@ -880,16 +1019,30 @@ Start by introducing yourself briefly in-character with personality, and give an
         const c = skyCanvasRef.current;
         if (!c) return;
         const ctx = c.getContext("2d");
-        const mc = miniMapRef.current;
-        const mctx = mc?.getContext("2d");
-        const worldImg = { complete: false }; // no world map image
+
+        // Simplified continent polygons [lon, lat] for world map drawing
+        const CONTINENTS = [
+          // North America
+          [[-168,72],[-140,68],[-130,55],[-124,49],[-117,32],[-106,19],[-85,11],[-78,9],[-72,20],[-65,44],[-53,47],[-55,58],[-82,62],[-92,70],[-110,70],[-130,68],[-160,58],[-168,66],[-168,72]],
+          // South America
+          [[-78,9],[-72,12],[-62,10],[-52,5],[-48,2],[-50,-2],[-35,-8],[-35,-14],[-40,-22],[-44,-23],[-52,-33],[-58,-38],[-65,-42],[-68,-55],[-62,-52],[-65,-55],[-70,-54],[-73,-42],[-70,-32],[-70,-20],[-75,-10],[-80,0],[-78,5],[-78,9]],
+          // Europe
+          [[-10,36],[0,36],[8,44],[14,44],[20,40],[28,38],[30,46],[28,55],[18,63],[15,65],[25,72],[30,70],[35,65],[28,60],[18,58],[5,58],[-6,53],[-10,44],[-10,36]],
+          // Africa
+          [[-18,15],[-17,25],[-5,30],[10,35],[24,37],[36,30],[42,20],[44,10],[40,0],[35,-10],[36,-20],[38,-25],[35,-30],[28,-35],[18,-34],[14,-24],[8,-5],[2,8],[-8,5],[-18,15]],
+          // Asia
+          [[28,38],[36,30],[42,20],[44,10],[50,12],[58,22],[65,18],[72,22],[80,12],[90,22],[100,5],[110,2],[120,5],[125,20],[128,38],[135,48],[145,45],[140,42],[130,32],[122,30],[115,22],[100,22],[92,28],[80,30],[72,35],[65,42],[55,42],[50,40],[45,40],[38,40],[35,45],[28,50],[25,50],[22,46],[24,38],[28,38]],
+          // Australia
+          [[114,-22],[124,-16],[136,-12],[140,-18],[148,-22],[152,-22],[153,-28],[151,-34],[148,-40],[140,-36],[130,-32],[114,-30],[114,-22]],
+          // Greenland
+          [[-45,60],[-20,64],[-15,72],[-20,78],[-30,82],[-50,82],[-58,78],[-60,72],[-52,67],[-45,60]],
+        ];
 
         const resize = () => {
           const dpr = window.devicePixelRatio || 1;
           const rect = c.parentElement.getBoundingClientRect();
           c.width = rect.width * dpr; c.height = rect.height * dpr;
           ctx.scale(dpr, dpr); c.style.width = rect.width + "px"; c.style.height = rect.height + "px";
-          if (mc) { mc.width = 180; mc.height = 90; }
         };
         resize(); window.addEventListener("resize", resize);
 
@@ -929,6 +1082,18 @@ Start by introducing yourself briefly in-character with personality, and give an
           s.lat += Math.cos(rad) * s.speed * 0.03;
           if (s.lon > 180) s.lon -= 360; if (s.lon < -180) s.lon += 360;
           s.lat = Math.max(-75, Math.min(75, s.lat));
+
+          // Autopilot — steer toward destination (manual keys override)
+          const apDest = autopilotRef.current;
+          if (apDest && !k["ArrowLeft"] && !k["ArrowRight"] && !k["a"] && !k["d"]) {
+            let dLon = apDest.lon - s.lon; while (dLon > 180) dLon -= 360; while (dLon < -180) dLon += 360;
+            const dLat = apDest.lat - s.lat;
+            const tHead = Math.atan2(dLon, dLat) * 180 / Math.PI;
+            let hd = tHead - s.heading; while (hd > 180) hd -= 360; while (hd < -180) hd += 360;
+            s.heading += hd * 0.025;
+            s.roll = Math.max(-18, Math.min(18, hd * 0.4));
+            if (Math.sqrt(dLon * dLon + dLat * dLat) < 1.5) { autopilotRef.current = null; setAutopilotDest(null); }
+          }
 
           // Update yoke rotation
           if (yokeRef.current) yokeRef.current.style.transform = `rotate(${s.roll}deg)`;
@@ -994,31 +1159,72 @@ Start by introducing yourself briefly in-character with personality, and give an
           if (closest && closestD < 8) setNearbyLandmark(closest);
           else setNearbyLandmark(null);
 
-          // === MINI MAP ===
-          if (mctx) {
-            const mw = 180, mh = 90;
-            mctx.clearRect(0, 0, mw, mh);
-            mctx.fillStyle = "#080a0f"; mctx.fillRect(0, 0, mw, mh);
-            if (true) { /* procedural mini-map background */
-              mctx.fillStyle = "#0c1018"; mctx.fillRect(0, 0, mw, mh);
-            }
-            // Grid
-            mctx.strokeStyle = "rgba(14,165,160,0.08)"; mctx.lineWidth = 0.5;
-            for (let i = 1; i < 5; i++) { mctx.beginPath(); mctx.moveTo(i * 36, 0); mctx.lineTo(i * 36, mh); mctx.stroke(); }
-            for (let i = 1; i < 3; i++) { mctx.beginPath(); mctx.moveTo(0, i * 30); mctx.lineTo(mw, i * 30); mctx.stroke(); }
-            // Landmark dots
-            landmarks.forEach(lm => {
-              const lx = ((lm.lon + 180) / 360) * mw, ly = ((90 - lm.lat) / 180) * mh;
-              mctx.fillStyle = "rgba(14,165,160,0.25)"; mctx.beginPath(); mctx.arc(lx, ly, 1.5, 0, Math.PI * 2); mctx.fill();
+          // === INTERACTIVE NAV MAP ===
+          const nmc = navMapRef.current;
+          if (nmc) {
+            const nmCtx = nmc.getContext("2d");
+            const nw = nmc.width, nh = nmc.height;
+            const zoom = mapZoomRef.current;
+            const panLon = mapPanRef.current ? mapPanRef.current.lon : s.lon;
+            const panLat = mapPanRef.current ? mapPanRef.current.lat : s.lat;
+            const mapProj = (lon, lat) => {
+              let dLon = lon - panLon; while (dLon > 180) dLon -= 360; while (dLon < -180) dLon += 360;
+              return { x: dLon / (180 / zoom) * nw / 2 + nw / 2, y: -(lat - panLat) / (90 / zoom) * nh / 2 + nh / 2 };
+            };
+            // Ocean background
+            nmCtx.fillStyle = "#0a1628"; nmCtx.fillRect(0, 0, nw, nh);
+            // Lat/lon grid every 30°
+            nmCtx.strokeStyle = "rgba(14,165,160,0.07)"; nmCtx.lineWidth = 0.5;
+            for (let gLon = -180; gLon <= 180; gLon += 30) { const p1 = mapProj(gLon,-80), p2 = mapProj(gLon,80); nmCtx.beginPath(); nmCtx.moveTo(p1.x,p1.y); nmCtx.lineTo(p2.x,p2.y); nmCtx.stroke(); }
+            for (let gLat = -80; gLat <= 80; gLat += 30) { const p1 = mapProj(-180,gLat), p2 = mapProj(180,gLat); nmCtx.beginPath(); nmCtx.moveTo(p1.x,p1.y); nmCtx.lineTo(p2.x,p2.y); nmCtx.stroke(); }
+            // Continent polygons
+            CONTINENTS.forEach(pts => {
+              nmCtx.fillStyle = "#1c3826"; nmCtx.strokeStyle = "#2a4a34"; nmCtx.lineWidth = 0.8;
+              nmCtx.beginPath();
+              pts.forEach(([lon, lat], i) => { const p = mapProj(lon, lat); if (i === 0) nmCtx.moveTo(p.x, p.y); else nmCtx.lineTo(p.x, p.y); });
+              nmCtx.closePath(); nmCtx.fill(); nmCtx.stroke();
             });
-            // Aircraft
-            const px = ((s.lon + 180) / 360) * mw, py = ((90 - s.lat) / 180) * mh;
-            mctx.fillStyle = "rgba(14,165,160,0.3)"; mctx.beginPath(); mctx.arc(px, py, 5, 0, Math.PI * 2); mctx.fill();
-            mctx.fillStyle = "#0EA5A0"; mctx.beginPath(); mctx.arc(px, py, 2, 0, Math.PI * 2); mctx.fill();
-            const hr = s.heading * Math.PI / 180;
-            mctx.strokeStyle = "#0EA5A0"; mctx.lineWidth = 1;
-            mctx.beginPath(); mctx.moveTo(px, py); mctx.lineTo(px + Math.sin(hr) * 10, py - Math.cos(hr) * 10); mctx.stroke();
-            mctx.strokeStyle = "rgba(14,165,160,0.2)"; mctx.strokeRect(0, 0, mw, mh);
+            // Flight path + destination marker
+            const dest = autopilotRef.current;
+            if (dest) {
+              const dp = mapProj(dest.lon, dest.lat), acp2 = mapProj(s.lon, s.lat);
+              nmCtx.strokeStyle = "rgba(245,158,11,0.65)"; nmCtx.lineWidth = 1.5; nmCtx.setLineDash([5,4]);
+              nmCtx.beginPath(); nmCtx.moveTo(acp2.x, acp2.y); nmCtx.lineTo(dp.x, dp.y); nmCtx.stroke();
+              nmCtx.setLineDash([]);
+              nmCtx.strokeStyle = "#f59e0b"; nmCtx.lineWidth = 1.5;
+              nmCtx.beginPath(); nmCtx.arc(dp.x, dp.y, 8, 0, Math.PI * 2); nmCtx.stroke();
+              nmCtx.fillStyle = "#f59e0b"; nmCtx.beginPath(); nmCtx.arc(dp.x, dp.y, 3, 0, Math.PI * 2); nmCtx.fill();
+              if (zoom >= 1.5) {
+                nmCtx.font = "8px 'Space Mono',monospace"; nmCtx.fillStyle = "#fbbf24";
+                nmCtx.fillText(dest.name, dp.x + 11, dp.y + 4);
+              }
+            }
+            // Landmark dots — clickable targets
+            const dotR = zoom >= 4 ? 4 : zoom >= 2.5 ? 3 : 2;
+            landmarks.forEach(lm => {
+              const p = mapProj(lm.lon, lm.lat);
+              if (p.x < -8 || p.x > nw + 8 || p.y < -8 || p.y > nh + 8) return;
+              nmCtx.fillStyle = "rgba(14,165,160,0.85)";
+              nmCtx.beginPath(); nmCtx.arc(p.x, p.y, dotR, 0, Math.PI * 2); nmCtx.fill();
+              if (zoom >= 3) {
+                nmCtx.font = `8px sans-serif`; nmCtx.fillText(lm.icon, p.x - 5, p.y - 4);
+                nmCtx.font = "7px 'Space Mono',monospace"; nmCtx.fillStyle = "rgba(255,255,255,0.8)";
+                nmCtx.fillText(lm.name, p.x + 6, p.y + 4);
+              } else if (zoom >= 1.5) {
+                nmCtx.font = "9px sans-serif"; nmCtx.fillText(lm.icon, p.x - 5, p.y + 4);
+              }
+            });
+            // Aircraft triangle
+            const acp = mapProj(s.lon, s.lat);
+            nmCtx.save(); nmCtx.translate(acp.x, acp.y); nmCtx.rotate(s.heading * Math.PI / 180);
+            nmCtx.fillStyle = "#0EA5A0";
+            nmCtx.beginPath(); nmCtx.moveTo(0,-9); nmCtx.lineTo(-5,6); nmCtx.lineTo(0,3); nmCtx.lineTo(5,6); nmCtx.closePath(); nmCtx.fill();
+            nmCtx.restore();
+            // Zoom level label + AP status
+            nmCtx.font = "7px 'Space Mono',monospace"; nmCtx.fillStyle = "rgba(14,165,160,0.55)";
+            nmCtx.fillText(`${zoom.toFixed(1)}x  ${dest ? "AP ON" : ""}`, 4, nh - 4);
+            // Border
+            nmCtx.strokeStyle = "rgba(14,165,160,0.25)"; nmCtx.lineWidth = 1; nmCtx.strokeRect(0,0,nw,nh);
           }
 
           animId.current = requestAnimationFrame(draw);
@@ -1045,6 +1251,74 @@ Start by introducing yourself briefly in-character with personality, and give an
       React.useEffect(() => {
         window.addEventListener("mousemove", onThrottleMove); window.addEventListener("mouseup", onThrottleUp);
         return () => { window.removeEventListener("mousemove", onThrottleMove); window.removeEventListener("mouseup", onThrottleUp); };
+      }, []);
+
+      // Nav map — shared projection helper (mirrors draw loop logic)
+      const navProject = (lon, lat, nw, nh) => {
+        const zoom = mapZoomRef.current;
+        const panLon = mapPanRef.current ? mapPanRef.current.lon : fs.current.lon;
+        const panLat = mapPanRef.current ? mapPanRef.current.lat : fs.current.lat;
+        let dLon = lon - panLon; while (dLon > 180) dLon -= 360; while (dLon < -180) dLon += 360;
+        return { x: dLon / (180 / zoom) * nw / 2 + nw / 2, y: -(lat - panLat) / (90 / zoom) * nh / 2 + nh / 2 };
+      };
+      const navUnproject = (px, py, nw, nh) => {
+        const zoom = mapZoomRef.current;
+        const panLon = mapPanRef.current ? mapPanRef.current.lon : fs.current.lon;
+        const panLat = mapPanRef.current ? mapPanRef.current.lat : fs.current.lat;
+        const lon = (px - nw / 2) / (nw / 2) * (180 / zoom) + panLon;
+        const lat = -((py - nh / 2) / (nh / 2)) * (90 / zoom) + panLat;
+        return { lon: ((lon + 540) % 360) - 180, lat: Math.max(-85, Math.min(85, lat)) };
+      };
+
+      // Nav map click → set autopilot destination
+      const onNavMapClick = (e) => {
+        if (mapDragRef.current.moved) return; // ignore click after drag
+        const rect = e.currentTarget.getBoundingClientRect();
+        const px = e.clientX - rect.left, py = e.clientY - rect.top;
+        const nw = rect.width, nh = rect.height;
+        // Find closest landmark within 12px
+        let best = null, bestDist = 12;
+        landmarks.forEach(lm => {
+          const p = navProject(lm.lon, lm.lat, nw, nh);
+          const d = Math.sqrt((p.x - px) ** 2 + (p.y - py) ** 2);
+          if (d < bestDist) { bestDist = d; best = lm; }
+        });
+        const dest = best || { ...navUnproject(px, py, nw, nh), name: "Custom waypoint" };
+        autopilotRef.current = dest;
+        setAutopilotDest(dest);
+        mapPanRef.current = null; // re-center on aircraft
+      };
+
+      // Nav map scroll → zoom
+      const onNavMapWheel = (e) => {
+        e.preventDefault();
+        mapZoomRef.current = Math.max(0.8, Math.min(8, mapZoomRef.current * (e.deltaY < 0 ? 1.15 : 0.87)));
+      };
+
+      // Nav map drag → pan
+      const onNavMapMouseDown = (e) => {
+        mapDragRef.current = { dragging: true, lastX: e.clientX, lastY: e.clientY, moved: false };
+        e.preventDefault();
+      };
+      const onNavMapMouseMove = (e) => {
+        if (!mapDragRef.current.dragging) return;
+        const dx = e.clientX - mapDragRef.current.lastX, dy = e.clientY - mapDragRef.current.lastY;
+        if (Math.abs(dx) > 2 || Math.abs(dy) > 2) mapDragRef.current.moved = true;
+        const rect = navMapRef.current?.getBoundingClientRect();
+        if (!rect) return;
+        const zoom = mapZoomRef.current;
+        const base = mapPanRef.current || { lon: fs.current.lon, lat: fs.current.lat };
+        mapPanRef.current = {
+          lon: ((base.lon - dx / rect.width * (360 / zoom)) + 540) % 360 - 180,
+          lat: Math.max(-85, Math.min(85, base.lat + dy / rect.height * (180 / zoom))),
+        };
+        mapDragRef.current.lastX = e.clientX; mapDragRef.current.lastY = e.clientY;
+      };
+      const onNavMapMouseUp = () => { mapDragRef.current.dragging = false; };
+      React.useEffect(() => {
+        window.addEventListener("mousemove", onNavMapMouseMove);
+        window.addEventListener("mouseup", onNavMapMouseUp);
+        return () => { window.removeEventListener("mousemove", onNavMapMouseMove); window.removeEventListener("mouseup", onNavMapMouseUp); };
       }, []);
 
       const zones = [
@@ -1191,10 +1465,41 @@ Start by introducing yourself briefly in-character with personality, and give an
                 <span style={{ fontSize: 9, fontFamily: "Space Mono, monospace", color: "#0EA5A0", letterSpacing: 2 }}>CTM-2026</span>
               </div>
 
-              {/* Mini map */}
-              <div style={{ position: "absolute", top: 48, right: 20, zIndex: 20, borderRadius: 6, overflow: "hidden", border: "1px solid rgba(14,165,160,0.15)", boxShadow: "0 4px 16px rgba(0,0,0,0.4)" }}>
-                <canvas ref={miniMapRef} width={180} height={90} style={{ display: "block", width: 180, height: 90 }} />
-                <div style={{ position: "absolute", top: 3, left: 5, fontSize: 7, fontFamily: "Space Mono, monospace", color: "rgba(14,165,160,0.5)", letterSpacing: 1 }}>POSITION</div>
+              {/* === INTERACTIVE NAV MAP PANEL === */}
+              <div style={{ position: "absolute", top: 48, right: 20, zIndex: 25, userSelect: "none" }}>
+                {/* Header bar */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(8,9,12,0.92)", border: "1px solid rgba(14,165,160,0.25)", borderBottom: navExpanded ? "none" : undefined, borderRadius: navExpanded ? "8px 8px 0 0" : 8, padding: "4px 8px", gap: 8 }}>
+                  <span style={{ fontSize: 7, fontFamily: "Space Mono, monospace", color: "#0EA5A0", letterSpacing: 1.5 }}>NAV MAP</span>
+                  {autopilotDest && (
+                    <span style={{ fontSize: 7, fontFamily: "Space Mono, monospace", color: "#f59e0b", maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      AP → {autopilotDest.name}
+                    </span>
+                  )}
+                  <div style={{ display: "flex", gap: 4 }}>
+                    {autopilotDest && (
+                      <button onClick={() => { autopilotRef.current = null; setAutopilotDest(null); }} style={{ background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 4, padding: "1px 5px", cursor: "pointer", fontSize: 7, fontFamily: "Space Mono, monospace", color: "#f87171" }}>AP OFF</button>
+                    )}
+                    <button onClick={() => { mapPanRef.current = null; }} style={{ background: "rgba(14,165,160,0.1)", border: "1px solid rgba(14,165,160,0.2)", borderRadius: 4, padding: "1px 5px", cursor: "pointer", fontSize: 7, fontFamily: "Space Mono, monospace", color: "#0EA5A0" }}>CTR</button>
+                    <button onClick={() => { mapZoomRef.current = Math.min(8, mapZoomRef.current * 1.3); }} style={{ background: "rgba(14,165,160,0.1)", border: "1px solid rgba(14,165,160,0.2)", borderRadius: 4, padding: "1px 5px", cursor: "pointer", fontSize: 9, color: "#0EA5A0" }}>+</button>
+                    <button onClick={() => { mapZoomRef.current = Math.max(0.8, mapZoomRef.current * 0.77); }} style={{ background: "rgba(14,165,160,0.1)", border: "1px solid rgba(14,165,160,0.2)", borderRadius: 4, padding: "1px 5px", cursor: "pointer", fontSize: 9, color: "#0EA5A0" }}>−</button>
+                    <button onClick={() => { const next = !navExpandedRef.current; navExpandedRef.current = next; setNavExpanded(next); }} style={{ background: "rgba(14,165,160,0.1)", border: "1px solid rgba(14,165,160,0.2)", borderRadius: 4, padding: "1px 6px", cursor: "pointer", fontSize: 9, color: "#0EA5A0" }}>{navExpanded ? "▾" : "▴"}</button>
+                  </div>
+                </div>
+                {/* Single canvas — resizes on expand/collapse */}
+                <div style={{ position: "relative", overflow: "hidden", borderRadius: "0 0 8px 8px", border: "1px solid rgba(14,165,160,0.22)", borderTop: "1px solid rgba(14,165,160,0.08)", boxShadow: "0 6px 24px rgba(0,0,0,0.6)" }}>
+                  <canvas
+                    ref={navMapRef}
+                    width={navExpanded ? 480 : 220}
+                    height={navExpanded ? 300 : 130}
+                    style={{ display: "block", width: navExpanded ? 480 : 220, height: navExpanded ? 300 : 130, cursor: "crosshair" }}
+                    onClick={onNavMapClick}
+                    onWheel={onNavMapWheel}
+                    onMouseDown={onNavMapMouseDown}
+                  />
+                  <div style={{ position: "absolute", bottom: 4, left: 6, fontSize: 6, fontFamily: "Space Mono, monospace", color: "rgba(14,165,160,0.4)", pointerEvents: "none" }}>
+                    {navExpanded ? "CLICK LANDMARK · SCROLL ZOOM · DRAG PAN" : "CLICK TO NAVIGATE"}
+                  </div>
+                </div>
               </div>
 
               {/* Landmark proximity alert */}
@@ -1214,7 +1519,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                   Your status. <span style={{ color: "#0EA5A0" }}>Your cockpit.</span>
                 </h1>
                 <p style={{ fontSize: 11, color: "#8a8f98", marginTop: 8, textShadow: "0 1px 8px rgba(0,0,0,0.8)" }}>
-                  Drag the yoke · Slide the throttle · Arrow keys / WASD to fly
+                  Drag the yoke · Slide the throttle · Click the map to autopilot
                 </p>
               </div>
 
