@@ -1111,9 +1111,10 @@ Start by introducing yourself briefly in-character with personality, and give an
       );
     }
 
-    // ==================== LOGIN PAGE ====================
+    // ==================== LOGIN PAGE (Split-Screen Glassmorphism) ====================
     return (
-      <Shell showBg>
+      <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: "#08090a" }}>
+        {/* Mute button */}
         {audioPlayed && !paEnded && (
           <button
             onClick={() => { if (paMuted) { window.speechSynthesis?.resume(); setPaMuted(false); } else { window.speechSynthesis?.pause(); setPaMuted(true); } }}
@@ -1123,84 +1124,137 @@ Start by introducing yourself briefly in-character with personality, and give an
             <span style={{ fontSize: 9, fontFamily: "Space Mono, monospace", color: "#8a8f98", letterSpacing: 1 }}>{paMuted ? "RESUME PA" : "MUTE PA"}</span>
           </button>
         )}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "calc(100vh - 200px)", padding: "36px 20px" }}>
-          <div style={{
-            width: "100%", maxWidth: 440, opacity: animateIn ? 1 : 0, transform: animateIn ? "translateY(0)" : "translateY(20px)", transition: "all 0.8s cubic-bezier(0.16,1,0.3,1)",
+
+        {/* LEFT PANEL — Image (60%) */}
+        <div style={{ flex: "0 0 60%", position: "relative", overflow: "hidden" }}>
+          <img src="/login-bg.jpg" alt="Airport Lounge" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }} />
+          {/* Gradient overlay */}
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(8,9,10,0.3) 0%, rgba(14,165,160,0.08) 50%, rgba(8,9,10,0.5) 100%)" }} />
+          {/* Bottom text overlay */}
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "60px 48px 40px", background: "linear-gradient(to top, rgba(8,9,10,0.9) 0%, transparent 100%)" }}>
+            <h2 style={{ fontSize: 32, fontWeight: 800, color: "#f7f8f8", margin: "0 0 10px", fontFamily: "Inter, sans-serif", lineHeight: 1.2 }}>
+              Travel Without<br />Boundaries
+            </h2>
+            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", margin: 0, fontFamily: "Inter, sans-serif", maxWidth: 380, lineHeight: 1.6 }}>
+              Track your elite status, plan smarter trips, and unlock premium experiences across 30+ airline and hotel partners.
+            </p>
+          </div>
+          {/* Back button */}
+          <button onClick={() => goTo("landing")} style={{
+            position: "absolute", top: 28, left: 28, background: "rgba(8,8,12,0.6)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10,
+            padding: "8px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, backdropFilter: "blur(12px)", zIndex: 10,
           }}>
-            <div style={{ textAlign: "center", marginBottom: 32 }}>
-              <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}><img src="/ContinuumLogo.png" alt="Continuum" style={{ height: 220, display: "block" }} /></div>
-              <h1 style={{ fontSize: 26, fontWeight: 800, color: "#f7f8f8", margin: 0, letterSpacing: -0.5, fontFamily: "Inter, sans-serif" }}>Welcome Back</h1>
-              <p style={{ color: "rgba(14,165,160,0.6)", fontSize: 13, marginTop: 6, fontFamily: "Inter, sans-serif" }}>Sign in to your Continuum account</p>
+            <span style={{ fontSize: 13, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>← Back</span>
+          </button>
+        </div>
+
+        {/* RIGHT PANEL — Login Form (40%) */}
+        <div style={{
+          flex: "0 0 40%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+          padding: "40px 48px", position: "relative", overflow: "auto",
+          background: "linear-gradient(180deg, #0a0b0d 0%, #0d0f12 50%, #0a0b0d 100%)",
+        }}>
+          {/* Subtle glow effect */}
+          <div style={{ position: "absolute", top: "30%", left: "50%", transform: "translate(-50%, -50%)", width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle, rgba(14,165,160,0.06) 0%, transparent 70%)", pointerEvents: "none" }} />
+
+          <div style={{
+            width: "100%", maxWidth: 380,
+            opacity: animateIn ? 1 : 0, transform: animateIn ? "translateY(0)" : "translateY(24px)",
+            transition: "all 0.8s cubic-bezier(0.16,1,0.3,1)", position: "relative", zIndex: 1,
+          }}>
+            {/* Logo + Header */}
+            <div style={{ textAlign: "center", marginBottom: 36 }}>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+                <img src="/ContinuumLogo.png" alt="Continuum" style={{ height: 160, display: "block" }} />
+              </div>
+              <h1 style={{ fontSize: 24, fontWeight: 700, color: "#f7f8f8", margin: "0 0 6px", fontFamily: "Inter, sans-serif", letterSpacing: -0.3 }}>
+                {isRegistering ? "Create Account" : "Welcome Back"}
+              </h1>
+              <p style={{ color: "rgba(138,143,152,0.8)", fontSize: 13, margin: 0, fontFamily: "Inter, sans-serif" }}>
+                {isRegistering ? "Join the Continuum experience" : "Sign in to your account"}
+              </p>
             </div>
+
+            {/* Glassmorphism Card */}
             <div style={{
-              background: "linear-gradient(135deg, rgba(14,165,160,0.06), rgba(0,0,0,0.02), rgba(14,165,160,0.04))",
-              border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, padding: 30,
-              backdropFilter: "blur(40px)", boxShadow: "0 25px 60px rgba(44,36,24,0.2), inset 0 1px 0 rgba(14,165,160,0.08)",
-              position: "relative", overflow: "hidden",
+              background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)",
+              borderRadius: 16, padding: "28px 24px",
+              backdropFilter: "blur(40px)", WebkitBackdropFilter: "blur(40px)",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)",
             }}>
-              <FlightPath style={{ top: 8, right: 8, width: 130, height: 28 }} />
-              <div style={{ display: "flex", marginBottom: 24, background: "rgba(255,255,255,0.03)", borderRadius: 8, padding: 3 }}>
+              {/* Tab Toggle */}
+              <div style={{ display: "flex", marginBottom: 24, background: "rgba(255,255,255,0.04)", borderRadius: 10, padding: 3 }}>
                 {["Sign In", "Register"].map((tab, i) => (
                   <button key={tab} onClick={() => setIsRegistering(i === 1)} style={{
-                    flex: 1, padding: "9px 0", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: "Inter, sans-serif",
-                    background: (i === 0 ? !isRegistering : isRegistering) ? "rgba(14,165,160,0.2)" : "transparent",
-                    color: (i === 0 ? !isRegistering : isRegistering) ? "#0EA5A0" : "#62666d", transition: "all 0.3s",
+                    flex: 1, padding: "10px 0", border: "none", borderRadius: 8, cursor: "pointer",
+                    fontSize: 13, fontWeight: 600, fontFamily: "Inter, sans-serif",
+                    background: (i === 0 ? !isRegistering : isRegistering) ? "rgba(14,165,160,0.15)" : "transparent",
+                    color: (i === 0 ? !isRegistering : isRegistering) ? "#0EA5A0" : "#62666d",
+                    transition: "all 0.3s ease",
                   }}>{tab}</button>
                 ))}
               </div>
 
               {!isRegistering ? (
                 <div>
-                  <label style={{ display: "block", marginBottom: 14 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Email</span>
+                  <label style={{ display: "block", marginBottom: 16 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1.2, fontFamily: "Inter, sans-serif" }}>Email</span>
                     <input type="email" value={loginForm.email} onChange={e => setLoginForm(p => ({ ...p, email: e.target.value }))} placeholder="alex@example.com"
-                      style={{ display: "block", width: "100%", marginTop: 6, padding: "11px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, color: "#f7f8f8", fontSize: 14, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
+                      style={{ display: "block", width: "100%", marginTop: 8, padding: "12px 16px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#f7f8f8", fontSize: 14, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box", transition: "border-color 0.3s" }} />
                   </label>
-                  <label style={{ display: "block", marginBottom: 22 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Password</span>
+                  <label style={{ display: "block", marginBottom: 24 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1.2, fontFamily: "Inter, sans-serif" }}>Password</span>
                     <input type="password" value={loginForm.password} onChange={e => setLoginForm(p => ({ ...p, password: e.target.value }))} placeholder="••••••••"
-                      style={{ display: "block", width: "100%", marginTop: 6, padding: "11px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, color: "#f7f8f8", fontSize: 14, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
+                      style={{ display: "block", width: "100%", marginTop: 8, padding: "12px 16px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#f7f8f8", fontSize: 14, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box", transition: "border-color 0.3s" }} />
                   </label>
                   <button onClick={handleLogin} style={{
-                    width: "100%", padding: "12px 0", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "Inter, sans-serif",
-                    background: "linear-gradient(135deg, #0EA5A0, #0EA5A0)", color: "#f7f8f8", boxShadow: "0 4px 20px rgba(14,165,160,0.3)",
+                    width: "100%", padding: "13px 0", border: "none", borderRadius: 10, cursor: "pointer",
+                    fontSize: 14, fontWeight: 700, fontFamily: "Inter, sans-serif", letterSpacing: 0.3,
+                    background: "linear-gradient(135deg, #0EA5A0, #0c8e8a)", color: "#fff",
+                    boxShadow: "0 4px 20px rgba(14,165,160,0.3), inset 0 1px 0 rgba(255,255,255,0.1)",
+                    transition: "all 0.3s ease",
                   }}>Sign In</button>
                   <button onClick={() => { setLoginForm({ email: "alex@example.com", password: "demo" }); setTimeout(handleLogin, 100); }} style={{
-                    width: "100%", padding: "10px 0", border: "1px solid rgba(14,165,160,0.2)", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: "Inter, sans-serif",
-                    background: "rgba(255,255,255,0.03)", color: "#0EA5A0", marginTop: 10,
+                    width: "100%", padding: "11px 0", border: "1px solid rgba(14,165,160,0.15)", borderRadius: 10, cursor: "pointer",
+                    fontSize: 13, fontWeight: 600, fontFamily: "Inter, sans-serif",
+                    background: "rgba(14,165,160,0.04)", color: "#0EA5A0", marginTop: 10,
+                    transition: "all 0.3s ease",
                   }}>Try Demo Account →</button>
                 </div>
               ) : (
                 <div>
-                  <label style={{ display: "block", marginBottom: 12 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Full Name</span>
+                  <label style={{ display: "block", marginBottom: 14 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1.2, fontFamily: "Inter, sans-serif" }}>Full Name</span>
                     <input value={registerForm.name} onChange={e => setRegisterForm(p => ({ ...p, name: e.target.value }))} placeholder="Your name"
-                      style={{ display: "block", width: "100%", marginTop: 6, padding: "11px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, color: "#f7f8f8", fontSize: 14, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
+                      style={{ display: "block", width: "100%", marginTop: 8, padding: "12px 16px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#f7f8f8", fontSize: 14, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box", transition: "border-color 0.3s" }} />
                   </label>
-                  <label style={{ display: "block", marginBottom: 12 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Email</span>
+                  <label style={{ display: "block", marginBottom: 14 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1.2, fontFamily: "Inter, sans-serif" }}>Email</span>
                     <input type="email" value={registerForm.email} onChange={e => setRegisterForm(p => ({ ...p, email: e.target.value }))} placeholder="you@email.com"
-                      style={{ display: "block", width: "100%", marginTop: 6, padding: "11px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, color: "#f7f8f8", fontSize: 14, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
+                      style={{ display: "block", width: "100%", marginTop: 8, padding: "12px 16px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#f7f8f8", fontSize: 14, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box", transition: "border-color 0.3s" }} />
                   </label>
-                  <label style={{ display: "block", marginBottom: 22 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Password</span>
+                  <label style={{ display: "block", marginBottom: 24 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1.2, fontFamily: "Inter, sans-serif" }}>Password</span>
                     <input type="password" value={registerForm.password} onChange={e => setRegisterForm(p => ({ ...p, password: e.target.value }))} placeholder="••••••••"
-                      style={{ display: "block", width: "100%", marginTop: 6, padding: "11px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, color: "#f7f8f8", fontSize: 14, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
+                      style={{ display: "block", width: "100%", marginTop: 8, padding: "12px 16px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#f7f8f8", fontSize: 14, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box", transition: "border-color 0.3s" }} />
                   </label>
                   <button onClick={handleRegister} style={{
-                    width: "100%", padding: "12px 0", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "Inter, sans-serif",
-                    background: "linear-gradient(135deg, #0EA5A0, #0EA5A0)", color: "#f7f8f8", boxShadow: "0 4px 20px rgba(14,165,160,0.3)",
+                    width: "100%", padding: "13px 0", border: "none", borderRadius: 10, cursor: "pointer",
+                    fontSize: 14, fontWeight: 700, fontFamily: "Inter, sans-serif", letterSpacing: 0.3,
+                    background: "linear-gradient(135deg, #0EA5A0, #0c8e8a)", color: "#fff",
+                    boxShadow: "0 4px 20px rgba(14,165,160,0.3), inset 0 1px 0 rgba(255,255,255,0.1)",
+                    transition: "all 0.3s ease",
                   }}>Create Account</button>
                 </div>
               )}
 
-              <div style={{ textAlign: "center", marginTop: 18, padding: "12px 0 0", borderTop: "1px solid rgba(0,0,0,0.02)" }}>
-                <p style={{ color: "#62666d", fontSize: 11, fontFamily: "Inter, sans-serif", margin: 0 }}>By signing in, you agree to our Terms of Service</p>
+              <div style={{ textAlign: "center", marginTop: 20, padding: "14px 0 0", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+                <p style={{ color: "#52555c", fontSize: 11, fontFamily: "Inter, sans-serif", margin: 0 }}>By signing in, you agree to our Terms of Service</p>
               </div>
             </div>
           </div>
         </div>
-      </Shell>
+      </div>
     );
   }
 
