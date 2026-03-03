@@ -418,6 +418,8 @@ export default function EliteStatusTracker() {
   const [paEnded, setPaEnded] = useState(false);
   const audioCtxRef = React.useRef(null);
   const paPlayedRef = React.useRef(false);
+  const [cockpitSection, setCockpitSection] = useState(null);
+  const [selectedPartner, setSelectedPartner] = useState(null);
 
   useEffect(() => { setTimeout(() => setAnimateIn(true), 100); }, []);
 
@@ -761,7 +763,7 @@ Start by introducing yourself briefly in-character with personality, and give an
       { id: "features", label: "Features" },
       { id: "pricing", label: "Pricing" },
     ];
-    const goTo = (page) => { setPublicPage(page); window.scrollTo(0, 0); };
+    const goTo = (page) => { setPublicPage(page); setCockpitSection(null); setSelectedPartner(null); window.scrollTo(0, 0); };
     const fontLink = <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />;
 
     // --- Top nav: Logo + Features + Pricing + Login ---
@@ -859,9 +861,6 @@ Start by introducing yourself briefly in-character with personality, and give an
     // Inspired by basement.studio's interactive canvas approach
     // ==================== COCKPIT LANDING — IMMERSIVE FLIGHT ====================
     if (publicPage === "landing") {
-      const [cockpitSection, setCockpitSection] = React.useState(null);
-      const [selectedPartner, setSelectedPartner] = React.useState(null);
-
       const zones = [
         { id: "features", label: "Features", sub: "Flight Display", icon: "📊" },
         { id: "how-it-works", label: "How It Works", sub: "Navigation", icon: "🧭" },
