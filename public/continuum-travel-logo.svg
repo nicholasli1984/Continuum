@@ -103,17 +103,12 @@
     CONTINUUM
   </text>
 
-  <!-- TRAVEL subtitle -->
-  <text x="400" y="282" text-anchor="middle" font-family="'Futura', 'Avenir', 'Trebuchet MS', sans-serif" font-size="16" font-weight="300" letter-spacing="12" fill="url(#goldGrad)" opacity="0.85">
-    TRAVEL
-  </text>
-
-  <!-- Thin gold separator lines flanking TRAVEL -->
-  <line x1="245" y1="273" x2="335" y2="273" stroke="url(#goldGrad)" stroke-width="0.5" opacity="0.5"/>
-  <line x1="465" y1="273" x2="555" y2="273" stroke="url(#goldGrad)" stroke-width="0.5" opacity="0.5"/>
+  <!-- Thin gold separator lines -->
+  <line x1="285" y1="268" x2="375" y2="268" stroke="url(#goldGrad)" stroke-width="0.5" opacity="0.5"/>
+  <line x1="425" y1="268" x2="515" y2="268" stroke="url(#goldGrad)" stroke-width="0.5" opacity="0.5"/>
 
   <!-- Tagline -->
-  <text x="400" y="330" text-anchor="middle" font-family="'Futura', 'Avenir', 'Trebuchet MS', sans-serif" font-size="10" font-weight="300" letter-spacing="5" fill="#6B7280" opacity="0.7">
+  <text x="400" y="300" text-anchor="middle" font-family="'Futura', 'Avenir', 'Trebuchet MS', sans-serif" font-size="10" font-weight="300" letter-spacing="5" fill="url(#goldGrad)" opacity="0.85">
     ELEVATE EVERY JOURNEY
   </text>
 </svg>
