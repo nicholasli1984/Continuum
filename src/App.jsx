@@ -774,9 +774,8 @@ Start by introducing yourself briefly in-character with personality, and give an
         borderBottom: "1px solid #23252a",
         display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
-        <button onClick={() => { goTo("landing"); }} style={{ display: "flex", alignItems: "center", gap: 10, background: "none", border: "none", cursor: "pointer", flexShrink: 0 }}>
-          <LogoMark size={26} />
-          <span style={{ fontSize: 16, fontWeight: 800, color: "#f7f8f8", fontFamily: "Instrument Serif, Georgia, serif", letterSpacing: -0.5 }}>CONTINUUM</span>
+        <button onClick={() => { goTo("landing"); }} style={{ background: "none", border: "none", cursor: "pointer", flexShrink: 0, padding: 0 }}>
+          <img src="/ContinuumLogo.png" alt="Continuum" style={{ height: 44, display: "block" }} />
         </button>
         <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
           {navLinks.map(n => (
@@ -800,9 +799,8 @@ Start by introducing yourself briefly in-character with personality, and give an
       <footer style={{ position: "relative", zIndex: 1, padding: "64px 32px 32px", borderTop: "1px solid #23252a", background: "#08090a", marginTop: 0 }}>
         <div style={{ maxWidth: 1060, margin: "0 auto", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 48 }}>
           <div style={{ maxWidth: 320 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-              <LogoMark size={22} />
-              <span style={{ fontSize: 14, fontWeight: 800, fontFamily: "Inter, sans-serif", color: "#f7f8f8", letterSpacing: 1 }}>CONTINUUM</span>
+            <div style={{ marginBottom: 16 }}>
+              <img src="/ContinuumLogo.png" alt="Continuum" style={{ height: 40, display: "block" }} />
             </div>
             <p style={{ fontSize: 13, color: "#8a8f98", fontFamily: "DM Sans, sans-serif", lineHeight: 1.7, fontWeight: 400 }}>
               Built by frequent flyers who got tired of spreadsheets. We track your status so you can focus on the journey.
@@ -1072,9 +1070,8 @@ Start by introducing yourself briefly in-character with personality, and give an
               </svg>
 
               {/* Logo top-left */}
-              <div style={{ position: "absolute", top: 16, left: 20, zIndex: 20, display: "flex", alignItems: "center", gap: 8 }}>
-                <LogoMark size={24} />
-                <span style={{ fontSize: 15, fontWeight: 800, fontFamily: "Instrument Serif, serif" }}>CONTINUUM</span>
+              <div style={{ position: "absolute", top: 12, left: 16, zIndex: 20 }}>
+                <img src="/ContinuumLogo.png" alt="Continuum" style={{ height: 48, display: "block" }} />
               </div>
 
               {/* Flight code */}
@@ -1131,7 +1128,7 @@ Start by introducing yourself briefly in-character with personality, and give an
             width: "100%", maxWidth: 440, opacity: animateIn ? 1 : 0, transform: animateIn ? "translateY(0)" : "translateY(20px)", transition: "all 0.8s cubic-bezier(0.16,1,0.3,1)",
           }}>
             <div style={{ textAlign: "center", marginBottom: 32 }}>
-              <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}><LogoMark size={52} /></div>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}><img src="/ContinuumLogo.png" alt="Continuum" style={{ height: 72, display: "block" }} /></div>
               <h1 style={{ fontSize: 26, fontWeight: 800, color: "#f7f8f8", margin: 0, letterSpacing: -0.5, fontFamily: "Inter, sans-serif" }}>Welcome Back</h1>
               <p style={{ color: "rgba(14,165,160,0.6)", fontSize: 13, marginTop: 6, fontFamily: "Inter, sans-serif" }}>Sign in to your Continuum account</p>
             </div>
@@ -2007,7 +2004,7 @@ Start by introducing yourself briefly in-character with personality, and give an
   const renderPremium = () => (
     <div>
       <div style={{ textAlign: "center", marginBottom: 40 }}>
-        <div style={{ fontSize: 48, marginBottom: 12, display: "flex", justifyContent: "center" }}><LogoMark size={64} /></div>
+        <div style={{ marginBottom: 12, display: "flex", justifyContent: "center" }}><img src="/ContinuumLogo.png" alt="Continuum" style={{ height: 80, display: "block" }} /></div>
         <h2 style={{ fontSize: 26, fontWeight: 800, color: "#f7f8f8", margin: 0, fontFamily: "Inter, sans-serif" }}>Continuum Premium</h2>
         <p style={{ color: "#8a8f98", fontSize: 14, fontFamily: "Inter, sans-serif", marginTop: 6 }}>Maximize every mile, every night, every point.</p>
       </div>
@@ -2113,9 +2110,8 @@ Start by introducing yourself briefly in-character with personality, and give an
         position: "sticky", top: 0, height: "100vh", overflowY: "auto", boxSizing: "border-box",
         backdropFilter: "blur(20px)", zIndex: 10,
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 8px", marginBottom: 28 }}>
-          <LogoMark size={28} />
-          <span style={{ fontSize: 17, fontWeight: 800, fontFamily: "Inter, sans-serif", letterSpacing: -0.3 }}>Continuum</span>
+        <div style={{ padding: "0 8px", marginBottom: 28 }}>
+          <img src="/ContinuumLogo.png" alt="Continuum" style={{ height: 48, display: "block" }} />
         </div>
 
         <nav style={{ display: "flex", flexDirection: "column", gap: 3, flex: 1 }}>
@@ -2539,7 +2535,7 @@ Start by introducing yourself briefly in-character with personality, and give an
           <div onClick={e => e.stopPropagation()} style={{
             background: "linear-gradient(135deg, #141516, #191a1b)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 8, padding: 32, width: "100%", maxWidth: 400, textAlign: "center",
           }}>
-            <div style={{ fontSize: 42, marginBottom: 12, display: "flex", justifyContent: "center" }}><LogoMark size={56} /></div>
+            <div style={{ marginBottom: 12, display: "flex", justifyContent: "center" }}><img src="/ContinuumLogo.png" alt="Continuum" style={{ height: 72, display: "block" }} /></div>
             <h3 style={{ fontSize: 20, fontWeight: 800, color: "#f7f8f8", margin: "0 0 8px", fontFamily: "Inter, sans-serif" }}>Upgrade to Premium</h3>
             <p style={{ color: "#8a8f98", fontSize: 13, fontFamily: "Inter, sans-serif", marginBottom: 24 }}>
               Unlock the Trip Optimizer, status match alerts, PDF exports, and more.
@@ -2742,9 +2738,8 @@ Start by introducing yourself briefly in-character with personality, and give an
               {/* Report Header */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
                 <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                    <LogoMark size={24} />
-                    <span style={{ fontSize: 13, fontWeight: 700, color: "#0EA5A0", fontFamily: "Inter, sans-serif" }}>Continuum</span>
+                  <div style={{ marginBottom: 6 }}>
+                    <img src="/ContinuumLogo.png" alt="Continuum" style={{ height: 36, display: "block" }} />
                   </div>
                   <h3 style={{ fontSize: 20, fontWeight: 800, color: "#f7f8f8", margin: 0, fontFamily: "Inter, sans-serif" }}>Expense Report</h3>
                 </div>
