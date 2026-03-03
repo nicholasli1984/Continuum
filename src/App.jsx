@@ -884,36 +884,36 @@ Start by introducing yourself briefly in-character with personality, and give an
                 <defs>
                   <style>{`.cz{fill:rgba(255,255,255,0);stroke:rgba(255,255,255,0);stroke-width:2;stroke-dasharray:8 5;cursor:pointer;transition:fill .25s,stroke .25s}.czg:hover .cz{fill:rgba(255,255,255,0.06);stroke:rgba(255,255,255,0.4)}.ctt{opacity:0;pointer-events:none;transition:opacity .2s}.czg:hover .ctt{opacity:1}`}</style>
                 </defs>
-                {/* Orange → Partners */}
+                {/* Orange → Partners  (pixel-detected: x=787 y=565 w=180 h=66) */}
                 <g className="czg" onClick={() => setCockpitSection("partners")} style={{ cursor: "pointer" }}>
-                  <rect className="cz" x={797} y={390} width={213} height={106} />
+                  <rect className="cz" x={787} y={565} width={180} height={66} />
                   <g className="ctt">
-                    <rect x={846} y={363} width={115} height={22} rx={4} fill="rgba(0,0,0,0.85)" />
-                    <text x={903} y={378} fontSize={11} fill="#f0f0f0" textAnchor="middle" fontFamily="Space Mono, monospace" letterSpacing={2}>PARTNERS</text>
+                    <rect x={819} y={538} width={115} height={22} rx={4} fill="rgba(0,0,0,0.85)" />
+                    <text x={876} y={553} fontSize={11} fill="#f0f0f0" textAnchor="middle" fontFamily="Space Mono, monospace" letterSpacing={2}>PARTNERS</text>
                   </g>
                 </g>
-                {/* Green → Features */}
+                {/* Green → Features  (pixel-detected: x=1508 y=625 w=237 h=306) */}
                 <g className="czg" onClick={() => setCockpitSection("features")} style={{ cursor: "pointer" }}>
-                  <rect className="cz" x={1542} y={461} width={213} height={283} />
+                  <rect className="cz" x={1508} y={625} width={237} height={306} />
                   <g className="ctt">
-                    <rect x={1549} y={434} width={115} height={22} rx={4} fill="rgba(0,0,0,0.85)" />
-                    <text x={1606} y={449} fontSize={11} fill="#f0f0f0" textAnchor="middle" fontFamily="Space Mono, monospace" letterSpacing={2}>FEATURES</text>
+                    <rect x={1508} y={598} width={115} height={22} rx={4} fill="rgba(0,0,0,0.85)" />
+                    <text x={1565} y={613} fontSize={11} fill="#f0f0f0" textAnchor="middle" fontFamily="Space Mono, monospace" letterSpacing={2}>FEATURES</text>
                   </g>
                 </g>
-                {/* Red → How It Works */}
+                {/* Red → How It Works  (pixel-detected: x=822 y=676 w=117 h=151) */}
                 <g className="czg" onClick={() => setCockpitSection("how-it-works")} style={{ cursor: "pointer" }}>
-                  <rect className="cz" x={727} y={508} width={159} height={177} />
+                  <rect className="cz" x={822} y={676} width={117} height={151} />
                   <g className="ctt">
-                    <rect x={647} y={481} width={160} height={22} rx={4} fill="rgba(0,0,0,0.85)" />
-                    <text x={727} y={496} fontSize={11} fill="#f0f0f0" textAnchor="middle" fontFamily="Space Mono, monospace" letterSpacing={2}>HOW IT WORKS</text>
+                    <rect x={800} y={649} width={160} height={22} rx={4} fill="rgba(0,0,0,0.85)" />
+                    <text x={880} y={664} fontSize={11} fill="#f0f0f0" textAnchor="middle" fontFamily="Space Mono, monospace" letterSpacing={2}>HOW IT WORKS</text>
                   </g>
                 </g>
-                {/* Blue → Log In */}
+                {/* Blue → Log In  (pixel-detected: x=584 y=704 w=582 h=284) */}
                 <g className="czg" onClick={() => goTo("login")} style={{ cursor: "pointer" }}>
-                  <rect className="cz" x={655} y={673} width={320} height={154} />
+                  <rect className="cz" x={584} y={704} width={582} height={284} />
                   <g className="ctt">
-                    <rect x={773} y={646} width={85} height={22} rx={4} fill="rgba(0,0,0,0.85)" />
-                    <text x={815} y={661} fontSize={11} fill="#f0f0f0" textAnchor="middle" fontFamily="Space Mono, monospace" letterSpacing={2}>LOG IN</text>
+                    <rect x={833} y={677} width={85} height={22} rx={4} fill="rgba(0,0,0,0.85)" />
+                    <text x={875} y={692} fontSize={11} fill="#f0f0f0" textAnchor="middle" fontFamily="Space Mono, monospace" letterSpacing={2}>LOG IN</text>
                   </g>
                 </g>
               </svg>
