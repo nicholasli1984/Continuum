@@ -1103,8 +1103,8 @@ Start by introducing yourself briefly in-character with personality, and give an
           // Clear and draw sky
           ctx.clearRect(0, 0, w, h);
           const sky = ctx.createLinearGradient(0, 0, 0, h * 0.7);
-          sky.addColorStop(0, "#020510"); sky.addColorStop(0.3, "#081830");
-          sky.addColorStop(0.6, "#12284a"); sky.addColorStop(0.85, "#1a3555"); sky.addColorStop(1, "#2a4060");
+          sky.addColorStop(0, "#1a6db5"); sky.addColorStop(0.3, "#2a8fd4");
+          sky.addColorStop(0.6, "#4aaee0"); sky.addColorStop(0.85, "#7ecbe8"); sky.addColorStop(1, "#a8d8ea");
           ctx.fillStyle = sky; ctx.fillRect(0, 0, w, h);
 
           // Clear sky — no stars for clean cockpit window view
@@ -1138,7 +1138,7 @@ Start by introducing yourself briefly in-character with personality, and give an
             const d = dist(s.lon, s.lat, lm.lon, lm.lat);
             if (d < closestD) { closestD = d; closest = lm; }
             const p = project(lm.lon, lm.lat, s.lon, s.lat, w, h, fov);
-            if (p.vis && p.y > terrainY - 30 && p.y < terrainY + terrainH + 30) {
+            if (p.vis && p.y > h * 0.1 && p.y < terrainY + terrainH) {
               const scale = Math.max(0.5, 1 - d / 50);
               ctx.fillStyle = `rgba(14,165,160,${0.15 * scale})`;
               ctx.beginPath(); ctx.arc(p.x, p.y, 20 * scale, 0, Math.PI * 2); ctx.fill();
@@ -1353,8 +1353,8 @@ Start by introducing yourself briefly in-character with personality, and give an
                 position: "absolute", inset: 0, zIndex: 2,
                 backgroundImage: "url(/cockpit.jpg)", backgroundSize: "cover", backgroundPosition: "center",
                 pointerEvents: "none",
-                maskImage: "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 55%, rgba(0,0,0,1) 65%, rgba(0,0,0,1) 100%)",
-                WebkitMaskImage: "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 55%, rgba(0,0,0,1) 65%, rgba(0,0,0,1) 100%)",
+                maskImage: "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 13%, rgba(0,0,0,0.12) 22%, rgba(0,0,0,0) 30%, rgba(0,0,0,0) 54%, rgba(0,0,0,0.55) 62%, rgba(0,0,0,1) 68%, rgba(0,0,0,1) 100%)",
+                WebkitMaskImage: "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 13%, rgba(0,0,0,0.12) 22%, rgba(0,0,0,0) 30%, rgba(0,0,0,0) 54%, rgba(0,0,0,0.55) 62%, rgba(0,0,0,1) 68%, rgba(0,0,0,1) 100%)",
               }} />
 
               {/* Cockpit bottom (instruments) — solid overlay so buttons are readable */}
