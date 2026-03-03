@@ -775,7 +775,7 @@ Start by introducing yourself briefly in-character with personality, and give an
         display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
         <button onClick={() => { goTo("landing"); }} style={{ background: "none", border: "none", cursor: "pointer", flexShrink: 0, padding: 0 }}>
-          <img src="/ContinuumLogo.png" alt="Continuum" style={{ height: 112, display: "block" }} />
+          <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: 112, display: "block" }} />
         </button>
         <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
           {navLinks.map(n => (
@@ -800,7 +800,7 @@ Start by introducing yourself briefly in-character with personality, and give an
         <div style={{ maxWidth: 1060, margin: "0 auto", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 48 }}>
           <div style={{ maxWidth: 320 }}>
             <div style={{ marginBottom: 16 }}>
-              <img src="/ContinuumLogo.png" alt="Continuum" style={{ height: 120, display: "block" }} />
+              <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: 120, display: "block" }} />
             </div>
             <p style={{ fontSize: 13, color: "#8a8f98", fontFamily: "DM Sans, sans-serif", lineHeight: 1.7, fontWeight: 400 }}>
               Built by frequent flyers who got tired of spreadsheets. We track your status so you can focus on the journey.
@@ -1071,7 +1071,7 @@ Start by introducing yourself briefly in-character with personality, and give an
 
               {/* Logo top-left */}
               <div style={{ position: "absolute", top: 12, left: 16, zIndex: 20 }}>
-                <img src="/ContinuumLogo.png" alt="Continuum" style={{ height: 160, display: "block" }} />
+                <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: 160, display: "block" }} />
               </div>
 
               {/* Flight code */}
@@ -1165,7 +1165,7 @@ Start by introducing yourself briefly in-character with personality, and give an
             {/* Logo + Header */}
             <div style={{ textAlign: "center", marginBottom: 36 }}>
               <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
-                <img src="/ContinuumLogo.png" alt="Continuum" style={{ height: 160, display: "block" }} />
+                <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: 160, display: "block" }} />
               </div>
               <h1 style={{ fontSize: 24, fontWeight: 700, color: "#f7f8f8", margin: "0 0 6px", fontFamily: "Inter, sans-serif", letterSpacing: -0.3 }}>
                 {isRegistering ? "Create Account" : "Welcome Back"}
@@ -2058,7 +2058,7 @@ Start by introducing yourself briefly in-character with personality, and give an
   const renderPremium = () => (
     <div>
       <div style={{ textAlign: "center", marginBottom: 40 }}>
-        <div style={{ marginBottom: 12, display: "flex", justifyContent: "center" }}><img src="/ContinuumLogo.png" alt="Continuum" style={{ height: 240, display: "block" }} /></div>
+        <div style={{ marginBottom: 12, display: "flex", justifyContent: "center" }}><img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: 240, display: "block" }} /></div>
         <h2 style={{ fontSize: 26, fontWeight: 800, color: "#f7f8f8", margin: 0, fontFamily: "Inter, sans-serif" }}>Continuum Premium</h2>
         <p style={{ color: "#8a8f98", fontSize: 14, fontFamily: "Inter, sans-serif", marginTop: 6 }}>Maximize every mile, every night, every point.</p>
       </div>
@@ -2165,7 +2165,7 @@ Start by introducing yourself briefly in-character with personality, and give an
         backdropFilter: "blur(20px)", zIndex: 10,
       }}>
         <div style={{ padding: "0 8px", marginBottom: 28 }}>
-          <img src="/ContinuumLogo.png" alt="Continuum" style={{ height: 140, display: "block" }} />
+          <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: 140, display: "block" }} />
         </div>
 
         <nav style={{ display: "flex", flexDirection: "column", gap: 3, flex: 1 }}>
@@ -2589,7 +2589,7 @@ Start by introducing yourself briefly in-character with personality, and give an
           <div onClick={e => e.stopPropagation()} style={{
             background: "linear-gradient(135deg, #141516, #191a1b)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 8, padding: 32, width: "100%", maxWidth: 400, textAlign: "center",
           }}>
-            <div style={{ marginBottom: 12, display: "flex", justifyContent: "center" }}><img src="/ContinuumLogo.png" alt="Continuum" style={{ height: 220, display: "block" }} /></div>
+            <div style={{ marginBottom: 12, display: "flex", justifyContent: "center" }}><img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: 220, display: "block" }} /></div>
             <h3 style={{ fontSize: 20, fontWeight: 800, color: "#f7f8f8", margin: "0 0 8px", fontFamily: "Inter, sans-serif" }}>Upgrade to Premium</h3>
             <p style={{ color: "#8a8f98", fontSize: 13, fontFamily: "Inter, sans-serif", marginBottom: 24 }}>
               Unlock the Trip Optimizer, status match alerts, PDF exports, and more.
@@ -2793,7 +2793,7 @@ Start by introducing yourself briefly in-character with personality, and give an
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
                 <div>
                   <div style={{ marginBottom: 6 }}>
-                    <img src="/ContinuumLogo.png" alt="Continuum" style={{ height: 112, display: "block" }} />
+                    <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: 112, display: "block" }} />
                   </div>
                   <h3 style={{ fontSize: 20, fontWeight: 800, color: "#f7f8f8", margin: 0, fontFamily: "Inter, sans-serif" }}>Expense Report</h3>
                 </div>

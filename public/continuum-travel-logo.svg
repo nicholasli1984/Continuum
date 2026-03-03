@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" width="800" height="400">
+  <defs>
+    <!-- Teal gradient for the infinity/continuum mark -->
+    <linearGradient id="tealGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3E1A0D"/>
+      <stop offset="40%" stop-color="#8B4513"/>
+      <stop offset="100%" stop-color="#D4742D"/>
+    </linearGradient>
+    
+    <!-- Gold accent gradient -->
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#C9A84C"/>
+      <stop offset="50%" stop-color="#F0D78C"/>
+      <stop offset="100%" stop-color="#C9A84C"/>
+    </linearGradient>
+
+    <!-- Subtle glow filter -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Background removed for transparency -->
+
+  <!-- Continuum Mark: stylized infinity path representing endless travel -->
+  <g transform="translate(400, 155)">
+    <!-- Outer infinity stroke — the main mark -->
+    <path d="
+      M -105,0
+      C -105,-42 -70,-48 -50,-48
+      C -25,-48 -10,-25 0,-10
+      C 10,-25 25,-48 50,-48
+      C 70,-48 105,-42 105,0
+      C 105,42 70,48 50,48
+      C 25,48 10,25 0,10
+      C -10,25 -25,48 -50,48
+      C -70,48 -105,42 -105,0
+      Z
+    " fill="none" stroke="url(#tealGrad)" stroke-width="3.5" stroke-linecap="round" filter="url(#glow)"/>
+
+    <!-- Inner path — thinner, gold, offset for depth -->
+    <path d="
+      M -93,0
+      C -93,-32 -65,-37 -50,-37
+      C -30,-37 -13,-18 0,-4
+      C 13,-18 30,-37 50,-37
+      C 65,-37 93,-32 93,0
+      C 93,32 65,37 50,37
+      C 30,37 13,18 0,4
+      C -13,18 -30,37 -50,37
+      C -65,37 -93,32 -93,0
+      Z
+    " fill="none" stroke="url(#goldGrad)" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+
+    <!-- Small diamond accent at the crossover point -->
+    <polygon points="0,-7 5,0 0,7 -5,0" fill="url(#goldGrad)" opacity="0.9"/>
+
+    <!-- Stylized aircraft silhouette emerging from the path -->
+    <g transform="translate(85,-30) rotate(-35)">
+      <path d="
+        M 0,0
+        L 4,-2
+        L 18,-2
+        L 22,0
+        L 18,2
+        L 4,2
+        Z
+      " fill="#D4742D" opacity="0.85"/>
+      <!-- Wing -->
+      <path d="
+        M 8,-2
+        L 12,-8
+        L 14,-8
+        L 12,-2
+        Z
+      " fill="#D4742D" opacity="0.65"/>
+      <path d="
+        M 8,2
+        L 12,8
+        L 14,8
+        L 12,2
+        Z
+      " fill="#D4742D" opacity="0.65"/>
+      <!-- Tail -->
+      <path d="
+        M 2,-1
+        L 0,-5
+        L 2,-5
+        L 4,-1
+        Z
+      " fill="#D4742D" opacity="0.5"/>
+    </g>
+
+    <!-- Subtle trail dots behind the aircraft -->
+    <circle cx="65" cy="-35" r="1.5" fill="#D4742D" opacity="0.4"/>
+    <circle cx="57" cy="-32" r="1" fill="#D4742D" opacity="0.25"/>
+    <circle cx="50" cy="-28" r="0.7" fill="#D4742D" opacity="0.15"/>
+  </g>
+
+  <!-- CONTINUUM wordmark -->
+  <text x="400" y="248" text-anchor="middle" font-family="'Didot', 'Playfair Display', 'Georgia', serif" font-size="52" font-weight="400" letter-spacing="18" fill="#F0F0F0" opacity="0.95">
+    CONTINUUM
+  </text>
+
+  <!-- TRAVEL subtitle -->
+  <text x="400" y="282" text-anchor="middle" font-family="'Futura', 'Avenir', 'Trebuchet MS', sans-serif" font-size="16" font-weight="300" letter-spacing="12" fill="url(#goldGrad)" opacity="0.85">
+    TRAVEL
+  </text>
+
+  <!-- Thin gold separator lines flanking TRAVEL -->
+  <line x1="245" y1="273" x2="335" y2="273" stroke="url(#goldGrad)" stroke-width="0.5" opacity="0.5"/>
+  <line x1="465" y1="273" x2="555" y2="273" stroke="url(#goldGrad)" stroke-width="0.5" opacity="0.5"/>
+
+  <!-- Tagline -->
+  <text x="400" y="330" text-anchor="middle" font-family="'Futura', 'Avenir', 'Trebuchet MS', sans-serif" font-size="10" font-weight="300" letter-spacing="5" fill="#6B7280" opacity="0.7">
+    ELEVATE EVERY JOURNEY
+  </text>
+</svg>
