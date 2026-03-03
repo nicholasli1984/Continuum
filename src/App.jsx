@@ -360,7 +360,7 @@ const Badge = ({ children, color = "#0EA5A0", small }) => (
 );
 
 const MiniBar = ({ value, max, color, height = 6 }) => (
-  <div style={{ width: "100%", height, borderRadius: height, background: "#23252a", overflow: "hidden" }}>
+  <div style={{ width: "100%", height, borderRadius: height, background: "#2a2640", overflow: "hidden" }}>
     <div style={{ width: `${Math.min((value / max) * 100, 100)}%`, height: "100%", borderRadius: height, background: `linear-gradient(90deg, ${color}, ${color}99)`, transition: "width 1s ease" }} />
   </div>
 );
@@ -771,7 +771,7 @@ Start by introducing yourself briefly in-character with personality, and give an
       <nav style={{
         position: "sticky", top: 0, zIndex: 100, padding: "0 32px", height: 56,
         background: "rgba(8,9,10,0.92)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
-        borderBottom: "1px solid #23252a",
+        borderBottom: "1px solid #2a2640",
         display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
         <button onClick={() => { goTo("landing"); }} style={{ background: "none", border: "none", cursor: "pointer", flexShrink: 0, padding: 0 }}>
@@ -788,7 +788,7 @@ Start by introducing yourself briefly in-character with personality, and give an
           <button onClick={() => goTo("login")} style={{
             padding: "8px 22px", border: "1px solid #34343a", cursor: "pointer", marginLeft: 16,
             fontSize: 10.5, fontWeight: 700, fontFamily: "Space Mono, monospace", letterSpacing: 1.5, textTransform: "uppercase",
-            background: "#141516", color: "#f7f8f8", border: "1px solid #23252a", transition: "all 0.25s cubic-bezier(0.175,0.885,0.32,1)",
+            background: "#211e2e", color: "#f7f8f8", border: "1px solid #2a2640", transition: "all 0.25s cubic-bezier(0.175,0.885,0.32,1)",
           }}>Log In</button>
         </div>
       </nav>
@@ -796,7 +796,7 @@ Start by introducing yourself briefly in-character with personality, and give an
 
     // --- Footer ---
     const Footer = () => (
-      <footer style={{ position: "relative", zIndex: 1, padding: "64px 32px 32px", borderTop: "1px solid #23252a", background: "#08090a", marginTop: 0 }}>
+      <footer style={{ position: "relative", zIndex: 1, padding: "64px 32px 32px", borderTop: "1px solid #2a2640", background: "#08090a", marginTop: 0 }}>
         <div style={{ maxWidth: 1060, margin: "0 auto", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 48 }}>
           <div style={{ maxWidth: 320 }}>
             <div style={{ marginBottom: 16 }}>
@@ -828,7 +828,7 @@ Start by introducing yourself briefly in-character with personality, and give an
             </div>
           </div>
         </div>
-        <div style={{ maxWidth: 1060, margin: "40px auto 0", paddingTop: 20, borderTop: "1px solid #23252a", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ maxWidth: 1060, margin: "40px auto 0", paddingTop: 20, borderTop: "1px solid #2a2640", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <p style={{ fontSize: 10, color: "#62666d", fontFamily: "Space Mono, monospace", letterSpacing: 1 }}>© 2026 CONTINUUM. ALL RIGHTS RESERVED.</p>
           <p style={{ fontSize: 10, color: "#62666d", fontFamily: "Space Mono, monospace" }}>BUILT IN BERMUDA 🇧🇲</p>
         </div>
@@ -868,8 +868,8 @@ Start by introducing yourself briefly in-character with personality, and give an
       ];
 
       const renderSection = (id) => {
-        if (id === "features") return (<div style={{ padding: "40px 0" }}><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 2, background: "#23252a" }}>{[{ icon: "📊", t: "Unified Dashboard", d: "Every airline, hotel, and rental car program in one live view." },{ icon: "🧠", t: "AI Status Optimizer", d: "The fastest, cheapest path to the next tier. Mileage runs included." },{ icon: "💳", t: "Credit Card Intel", d: "Match cards to spending patterns and status goals automatically." },{ icon: "📈", t: "Year-End Projections", d: "See where you'll land Dec 31 with trips and promos factored in." },{ icon: "🔔", t: "Status Alerts", d: "Notified when you're close to a tier or a mileage run deal appears." },{ icon: "🧾", t: "Expense Tracking", d: "Log expenses, snap receipts, export clean reports." }].map((f, i) => (<div key={i} style={{ background: "#0f1011", padding: "28px 24px", borderLeft: "2px solid rgba(14,165,160,0.3)" }}><span style={{ fontSize: 24 }}>{f.icon}</span><h3 style={{ fontSize: 15, fontWeight: 600, color: "#f7f8f8", margin: "12px 0 8px" }}>{f.t}</h3><p style={{ fontSize: 13, color: "#8a8f98", lineHeight: 1.65 }}>{f.d}</p></div>))}</div></div>);
-        if (id === "how-it-works") return (<div style={{ padding: "40px 0" }}><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 2, background: "#23252a" }}>{[{ s: "01", t: "Sign Up", d: "Free account in 30 seconds." },{ s: "02", t: "Import", d: "Connect loyalty accounts or enter manually." },{ s: "03", t: "AI Recs", d: "We analyze your patterns and show the path." },{ s: "04", t: "Hit Status", d: "Follow your roadmap. We track every mile." }].map((s, i) => (<div key={i} style={{ background: "#0f1011", padding: "28px 20px" }}><div style={{ fontSize: 32, fontFamily: "Space Mono, monospace", color: "#0EA5A0", fontWeight: 700, marginBottom: 12 }}>{s.s}</div><h3 style={{ fontSize: 15, fontWeight: 600, color: "#f7f8f8", margin: "0 0 8px" }}>{s.t}</h3><p style={{ fontSize: 13, color: "#8a8f98", lineHeight: 1.65 }}>{s.d}</p></div>))}</div></div>);
+        if (id === "features") return (<div style={{ padding: "40px 0" }}><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 2, background: "#2a2640" }}>{[{ icon: "📊", t: "Unified Dashboard", d: "Every airline, hotel, and rental car program in one live view." },{ icon: "🧠", t: "AI Status Optimizer", d: "The fastest, cheapest path to the next tier. Mileage runs included." },{ icon: "💳", t: "Credit Card Intel", d: "Match cards to spending patterns and status goals automatically." },{ icon: "📈", t: "Year-End Projections", d: "See where you'll land Dec 31 with trips and promos factored in." },{ icon: "🔔", t: "Status Alerts", d: "Notified when you're close to a tier or a mileage run deal appears." },{ icon: "🧾", t: "Expense Tracking", d: "Log expenses, snap receipts, export clean reports." }].map((f, i) => (<div key={i} style={{ background: "#1a1725", padding: "28px 24px", borderLeft: "2px solid rgba(14,165,160,0.3)" }}><span style={{ fontSize: 24 }}>{f.icon}</span><h3 style={{ fontSize: 15, fontWeight: 600, color: "#f7f8f8", margin: "12px 0 8px" }}>{f.t}</h3><p style={{ fontSize: 13, color: "#8a8f98", lineHeight: 1.65 }}>{f.d}</p></div>))}</div></div>);
+        if (id === "how-it-works") return (<div style={{ padding: "40px 0" }}><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 2, background: "#2a2640" }}>{[{ s: "01", t: "Sign Up", d: "Free account in 30 seconds." },{ s: "02", t: "Import", d: "Connect loyalty accounts or enter manually." },{ s: "03", t: "AI Recs", d: "We analyze your patterns and show the path." },{ s: "04", t: "Hit Status", d: "Follow your roadmap. We track every mile." }].map((s, i) => (<div key={i} style={{ background: "#1a1725", padding: "28px 20px" }}><div style={{ fontSize: 32, fontFamily: "Space Mono, monospace", color: "#0EA5A0", fontWeight: 700, marginBottom: 12 }}>{s.s}</div><h3 style={{ fontSize: 15, fontWeight: 600, color: "#f7f8f8", margin: "0 0 8px" }}>{s.t}</h3><p style={{ fontSize: 13, color: "#8a8f98", lineHeight: 1.65 }}>{s.d}</p></div>))}</div></div>);
         if (id === "partners") {
           const partnerGroups = [
             { cat: "Airlines", items: [
@@ -940,9 +940,9 @@ Start by introducing yourself briefly in-character with personality, and give an
                         <div
                           key={item.n}
                           onClick={() => setSelectedPartner({ ...item, cat: g.cat })}
-                          style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", background: "#141516", border: "1px solid #23252a", borderRadius: 10, cursor: "pointer", transition: "border-color .2s, background .2s" }}
+                          style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", background: "#211e2e", border: "1px solid #2a2640", borderRadius: 10, cursor: "pointer", transition: "border-color .2s, background .2s" }}
                           onMouseEnter={e => { e.currentTarget.style.borderColor = "#0EA5A0"; e.currentTarget.style.background = "#1a1c1f"; }}
-                          onMouseLeave={e => { e.currentTarget.style.borderColor = "#23252a"; e.currentTarget.style.background = "#141516"; }}
+                          onMouseLeave={e => { e.currentTarget.style.borderColor = "#2a2640"; e.currentTarget.style.background = "#211e2e"; }}
                         >
                           <div style={{ width: 40, height: 40, borderRadius: 8, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
                             <PartnerLogo item={item} size={36} />
@@ -963,7 +963,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                 >
                   <div
                     onClick={e => e.stopPropagation()}
-                    style={{ background: "#141516", border: "1px solid #2e3138", borderRadius: 16, padding: 32, maxWidth: 500, width: "100%", position: "relative", boxShadow: "0 32px 80px rgba(0,0,0,0.6)" }}
+                    style={{ background: "#211e2e", border: "1px solid #2e3138", borderRadius: 16, padding: 32, maxWidth: 500, width: "100%", position: "relative", boxShadow: "0 32px 80px rgba(0,0,0,0.6)" }}
                   >
                     <button
                       onClick={() => setSelectedPartner(null)}
@@ -1098,8 +1098,8 @@ Start by introducing yourself briefly in-character with personality, and give an
             </div>
           ) : (
             <div style={{ minHeight: "100vh", background: "#08090a" }}>
-              <div style={{ padding: "20px 32px", borderBottom: "1px solid #23252a", display: "flex", alignItems: "center", gap: 16 }}>
-                <button onClick={() => setCockpitSection(null)} style={{ background: "#141516", border: "1px solid #23252a", borderRadius: 8, padding: "8px 16px", cursor: "pointer", fontSize: 12, fontFamily: "Space Mono, monospace", color: "#8a8f98" }}>← Cockpit</button>
+              <div style={{ padding: "20px 32px", borderBottom: "1px solid #2a2640", display: "flex", alignItems: "center", gap: 16 }}>
+                <button onClick={() => setCockpitSection(null)} style={{ background: "#211e2e", border: "1px solid #2a2640", borderRadius: 8, padding: "8px 16px", cursor: "pointer", fontSize: 12, fontFamily: "Space Mono, monospace", color: "#8a8f98" }}>← Cockpit</button>
                 <div><h1 style={{ fontSize: 18, fontWeight: 700, color: "#f7f8f8", margin: 0 }}>{zones.find(z => z.id === cockpitSection)?.label}</h1></div>
                 <div style={{ marginLeft: "auto" }}><button onClick={() => goTo("login")} style={{ background: "#0EA5A0", border: "none", borderRadius: 8, padding: "8px 20px", cursor: "pointer", fontSize: 11, fontFamily: "Space Mono, monospace", fontWeight: 700, color: "#000", letterSpacing: 1, textTransform: "uppercase" }}>Log In →</button></div>
               </div>
@@ -1285,15 +1285,13 @@ Start by introducing yourself briefly in-character with personality, and give an
             { label: "Status Advances", value: willAdvanceCount, icon: "🚀", color: "#f472b6" },
           ].map((stat, i) => (
             <div key={i} style={{
-              background: `linear-gradient(135deg, ${stat.color}08, rgba(0,0,0,0.02))`,
-              border: `1px solid ${stat.color}15`, borderRadius: 8, padding: "18px 20px",
-              display: "flex", alignItems: "center", gap: 14, position: "relative", overflow: "hidden",
-              boxShadow: `0 4px 20px ${stat.color}08`,
+              background: "#1a1725", border: "1px solid #2a2640", borderLeft: `3px solid ${stat.color}`,
+              borderRadius: 12, padding: "18px 20px",
+              display: "flex", alignItems: "center", gap: 14,
             }}>
-              <FlightPath color={stat.color} style={{ bottom: 4, left: 20, width: 120, height: 24 }} />
-              <div style={{ fontSize: 28, position: "relative" }}>{stat.icon}</div>
+              <div style={{ fontSize: 28 }}>{stat.icon}</div>
               <div>
-                <div style={{ fontSize: 24, fontWeight: 800, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{stat.value}</div>
+                <div style={{ fontSize: 24, fontWeight: 700, color: "#fff", fontFamily: "'Inter Tight', Inter, sans-serif" }}>{stat.value}</div>
                 <div style={{ fontSize: 11, color: "#8a8f98", fontWeight: 500, fontFamily: "Inter, sans-serif" }}>{stat.label}</div>
               </div>
             </div>
@@ -1310,11 +1308,9 @@ Start by introducing yourself briefly in-character with personality, and give an
                 const progress = s.nextTier ? (s.projected / s.nextTier.threshold) * 100 : 100;
                 return (
                   <div key={p.id} onClick={() => { setSelectedProgram(p.id); setActiveView("programs"); }} style={{
-                    background: `linear-gradient(135deg, ${p.color}15, ${p.accent}10)`, border: `1px solid ${p.color}30`,
-                    borderRadius: 8, padding: 22, cursor: "pointer", transition: "all 0.3s",
-                    boxShadow: `0 4px 25px ${p.color}10`, position: "relative", overflow: "hidden",
+                    background: "#1a1725", border: "1px solid #2a2640", borderLeft: `3px solid ${p.color}`,
+                    borderRadius: 12, padding: 22, cursor: "pointer", transition: "all 0.15s",
                   }}>
-                    <FlightPath color={p.color} style={{ top: 6, right: 6, width: 100, height: 20 }} />
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
                       <div>
                         <div style={{ fontSize: 13, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{p.name}</div>
@@ -1354,13 +1350,12 @@ Start by introducing yourself briefly in-character with personality, and give an
                 const progress = s.nextTier ? (s.projected / s.nextTier.threshold) * 100 : 100;
                 return (
                   <div key={p.id} onClick={() => { setSelectedProgram(p.id); setActiveView("programs"); }} style={{
-                    background: `linear-gradient(135deg, ${p.color}15, ${p.accent}10)`, border: `1px solid ${p.color}30`,
-                    borderRadius: 8, padding: 22, cursor: "pointer", transition: "all 0.3s",
-                    boxShadow: `0 4px 25px ${p.color}10`,
+                    background: "#1a1725", border: "1px solid #2a2640", borderLeft: `3px solid ${p.color}`,
+                    borderRadius: 12, padding: 22, cursor: "pointer", transition: "all 0.15s",
                   }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
                       <div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{p.name}</div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: "Inter, sans-serif" }}>{p.name}</div>
                         <div style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif", marginTop: 2 }}>
                           {s.currentTier ? s.currentTier.name : "Member"} • {s.current} nights YTD
                         </div>
@@ -1392,7 +1387,7 @@ Start by introducing yourself briefly in-character with personality, and give an
               const prog = allPrograms.find(p => p.id === trip.program);
               return (
                 <div key={trip.id} style={{
-                  background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8, padding: "14px 18px",
+                  background: "#1a1725", border: "1px solid #2a2640", borderRadius: 12, padding: "14px 18px",
                   display: "flex", justifyContent: "space-between", alignItems: "center",
                 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -1425,8 +1420,8 @@ Start by introducing yourself briefly in-character with personality, and give an
           <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 8 }}>
             {CREDIT_CARD_OFFERS.slice(0, 3).map((card, i) => (
               <div key={i} style={{
-                minWidth: 220, background: `linear-gradient(135deg, ${card.color}20, ${card.color}08)`, border: `1px solid ${card.color}30`,
-                borderRadius: 8, padding: 18, flex: "0 0 auto",
+                minWidth: 220, background: "#1a1725", border: "1px solid #2a2640", borderTop: `3px solid ${card.color}`,
+                borderRadius: 12, padding: 18, flex: "0 0 auto",
               }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif", marginBottom: 6 }}>{card.name}</div>
                 <div style={{ fontSize: 20, fontWeight: 800, color: "#fbbf24", fontFamily: "Inter, sans-serif", marginBottom: 4 }}>{card.bonus}</div>
@@ -1464,12 +1459,12 @@ Start by introducing yourself briefly in-character with personality, and give an
       <div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
           <div>
-            <h2 style={{ fontSize: 20, fontWeight: 800, color: "#f7f8f8", margin: 0, fontFamily: "Inter, sans-serif" }}>Loyalty Programs</h2>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: 0, fontFamily: "'Inter Tight', Inter, sans-serif" }}>Loyalty Programs</h2>
             <p style={{ color: "#8a8f98", fontSize: 12, margin: "4px 0 0", fontFamily: "Inter, sans-serif" }}>Link and manage all your accounts</p>
           </div>
           <button onClick={() => setShowAddProgram(true)} style={{
             padding: "10px 20px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Inter, sans-serif",
-            background: "linear-gradient(135deg, #0EA5A0, #0EA5A0)", color: "#f7f8f8", boxShadow: "0 4px 15px rgba(14,165,160,0.3)",
+            background: "#0EA5A0", color: "#f7f8f8", boxShadow: "none",
           }}>+ Add Program</button>
         </div>
 
@@ -1484,9 +1479,9 @@ Start by introducing yourself briefly in-character with personality, and give an
 
                 return (
                   <div key={prog.id} style={{
-                    background: isLinked ? `linear-gradient(135deg, ${prog.color}12, ${prog.accent || prog.color}08)` : "rgba(0,0,0,0.02)",
-                    border: `1px solid ${isLinked ? prog.color + "30" : "rgba(0,0,0,0.03)"}`,
-                    borderRadius: 8, padding: 22, transition: "all 0.3s",
+                    background: "#1a1725",
+                    border: `1px solid #2a2640`, borderLeft: isLinked ? `3px solid ${prog.color}` : undefined,
+                    borderRadius: 12, padding: 22, transition: "all 0.15s",
                   }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -1518,7 +1513,7 @@ Start by introducing yourself briefly in-character with personality, and give an
 
                     {isCard && isLinked && (
                       <div style={{ marginBottom: 14 }}>
-                        <div style={{ fontSize: 18, fontWeight: 800, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>
+                        <div style={{ fontSize: 18, fontWeight: 700, color: "#fff", fontFamily: "'Inter Tight', Inter, sans-serif" }}>
                           {(linkedAccounts[prog.id]?.pointsBalance || 0).toLocaleString()} pts
                         </div>
                         <div style={{ fontSize: 11, color: "#62666d", fontFamily: "Inter, sans-serif", marginTop: 2 }}>{prog.perks}</div>
@@ -1538,7 +1533,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                     {isLinked ? (
                       <div style={{ display: "flex", gap: 6 }}>
                         <span style={{
-                          flex: 1, padding: "9px 0", borderRadius: 8, border: "1px solid rgba(14,165,160,0.1)",
+                          flex: 1, padding: "9px 0", borderRadius: 8, border: "1px solid #2a2640",
                           background: "rgba(255,255,255,0.03)", color: "#8a8f98",
                           fontSize: 12, fontWeight: 600, fontFamily: "Inter, sans-serif", textAlign: "center",
                         }}>✓ Connected</span>
@@ -1571,12 +1566,12 @@ Start by introducing yourself briefly in-character with personality, and give an
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
         <div>
-          <h2 style={{ fontSize: 20, fontWeight: 800, color: "#f7f8f8", margin: 0, fontFamily: "Inter, sans-serif" }}>Annual Travel Plan</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: 0, fontFamily: "'Inter Tight', Inter, sans-serif" }}>Annual Travel Plan</h2>
           <p style={{ color: "#8a8f98", fontSize: 12, margin: "4px 0 0", fontFamily: "Inter, sans-serif" }}>{trips.length} trips planned for 2026</p>
         </div>
         <button onClick={() => setShowAddTrip(true)} style={{
           padding: "10px 20px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Inter, sans-serif",
-          background: "linear-gradient(135deg, #0EA5A0, #0EA5A0)", color: "#f7f8f8", boxShadow: "0 4px 15px rgba(14,165,160,0.3)",
+          background: "#0EA5A0", color: "#f7f8f8", boxShadow: "none",
         }}>+ Add Trip</button>
       </div>
 
@@ -1584,13 +1579,13 @@ Start by introducing yourself briefly in-character with personality, and give an
       <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
         <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search trips..."
           style={{
-            padding: "8px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(14,165,160,0.1)",
+            padding: "8px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640",
             borderRadius: 8, color: "#f7f8f8", fontSize: 12, fontFamily: "Inter, sans-serif", outline: "none", flex: 1, minWidth: 160,
           }} />
         {["all", "confirmed", "planned", "wishlist"].map(s => (
           <button key={s} onClick={() => setFilterStatus(s)} style={{
             padding: "8px 14px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600, fontFamily: "Inter, sans-serif",
-            background: filterStatus === s ? "rgba(14,165,160,0.2)" : "rgba(0,0,0,0.02)",
+            background: filterStatus === s ? "rgba(14,165,160,0.2)" : "rgba(255,255,255,0.03)",
             color: filterStatus === s ? "#0EA5A0" : "rgba(0,0,0,0.3)", textTransform: "capitalize",
           }}>{s}</button>
         ))}
@@ -1602,13 +1597,13 @@ Start by introducing yourself briefly in-character with personality, and give an
           const prog = allPrograms.find(p => p.id === trip.program);
           return (
             <div key={trip.id} style={{
-              background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8, padding: "16px 20px",
+              background: "#1a1725", border: "1px solid #2a2640", borderRadius: 12, padding: "16px 20px",
               display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12,
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                 <div style={{
                   width: 44, height: 44, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22,
-                  background: prog ? `${prog.color}15` : "rgba(0,0,0,0.02)",
+                  background: prog ? `${prog.color}15` : "rgba(255,255,255,0.03)",
                 }}>{trip.type === "flight" ? "✈️" : trip.type === "hotel" ? "🏨" : "🚗"}</div>
                 <div>
                   {trip.tripName && <div style={{ fontSize: 13, fontWeight: 700, color: "#0EA5A0", fontFamily: "Inter, sans-serif", marginBottom: 2 }}>{trip.tripName}</div>}
@@ -1676,7 +1671,7 @@ Start by introducing yourself briefly in-character with personality, and give an
 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
             <div>
-              <h2 style={{ fontSize: 20, fontWeight: 800, color: "#f7f8f8", margin: 0, fontFamily: "Inter, sans-serif" }}>
+              <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: 0, fontFamily: "'Inter Tight', Inter, sans-serif" }}>
                 {trip.type === "flight" ? "✈️" : trip.type === "hotel" ? "🏨" : "🚗"} {getTripName(trip)}
               </h2>
               <p style={{ color: "#8a8f98", fontSize: 12, margin: "4px 0 0", fontFamily: "Inter, sans-serif" }}>
@@ -1690,7 +1685,7 @@ Start by introducing yourself briefly in-character with personality, and give an
               }}>📄 Generate Report</button>
               <button onClick={() => setShowAddExpense(trip.id)} style={{
                 padding: "9px 18px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "Inter, sans-serif",
-                background: "linear-gradient(135deg, #0EA5A0, #0EA5A0)", color: "#f7f8f8",
+                background: "#0EA5A0", color: "#f7f8f8",
               }}>+ Add Expense</button>
             </div>
           </div>
@@ -1698,15 +1693,15 @@ Start by introducing yourself briefly in-character with personality, and give an
           {/* Trip expense summary */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginBottom: 24 }}>
             <div style={{ background: "rgba(14,165,160,0.08)", border: "1px solid rgba(14,165,160,0.2)", borderRadius: 8, padding: 18 }}>
-              <div style={{ fontSize: 22, fontWeight: 800, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>${tripTotal.toLocaleString()}</div>
+              <div style={{ fontSize: 22, fontWeight: 700, color: "#fff", fontFamily: "'Inter Tight', Inter, sans-serif" }}>${tripTotal.toLocaleString()}</div>
               <div style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>Total Spend</div>
             </div>
-            <div style={{ background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8, padding: 18 }}>
-              <div style={{ fontSize: 22, fontWeight: 800, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{tripExps.length}</div>
+            <div style={{ background: "#1a1725", border: "1px solid #2a2640", borderRadius: 8, padding: 18 }}>
+              <div style={{ fontSize: 22, fontWeight: 700, color: "#fff", fontFamily: "'Inter Tight', Inter, sans-serif" }}>{tripExps.length}</div>
               <div style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>Expenses</div>
             </div>
-            <div style={{ background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8, padding: 18 }}>
-              <div style={{ fontSize: 22, fontWeight: 800, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{tripExps.filter(e => e.receipt).length}</div>
+            <div style={{ background: "#1a1725", border: "1px solid #2a2640", borderRadius: 8, padding: 18 }}>
+              <div style={{ fontSize: 22, fontWeight: 700, color: "#fff", fontFamily: "'Inter Tight', Inter, sans-serif" }}>{tripExps.filter(e => e.receipt).length}</div>
               <div style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>With Receipts</div>
             </div>
           </div>
@@ -1736,7 +1731,7 @@ Start by introducing yourself briefly in-character with personality, and give an
               const cat = EXPENSE_CATEGORIES.find(c => c.id === exp.category);
               return (
                 <div key={exp.id} style={{
-                  background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8, padding: "14px 18px",
+                  background: "#1a1725", border: "1px solid #2a2640", borderRadius: 8, padding: "14px 18px",
                   display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12,
                 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
@@ -1750,7 +1745,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                         {exp.date} • {exp.paymentMethod || "—"} {exp.receipt ? "• 🧾" : ""} {exp.notes ? `• ${exp.notes}` : ""}
                       </div>
                       {exp.receiptImage?.data && exp.receiptImage.type?.startsWith("image/") && (
-                        <img src={exp.receiptImage.data} alt="Receipt" style={{ width: 32, height: 32, objectFit: "cover", borderRadius: 8, marginTop: 4, border: "1px solid rgba(255,255,255,0.05)", cursor: "pointer" }}
+                        <img src={exp.receiptImage.data} alt="Receipt" style={{ width: 32, height: 32, objectFit: "cover", borderRadius: 8, marginTop: 4, border: "1px solid #2a2640", cursor: "pointer" }}
                           onClick={(e) => { e.stopPropagation(); window.open(exp.receiptImage.data, "_blank"); }} title="Click to view full receipt" />
                       )}
                     </div>
@@ -1782,7 +1777,7 @@ Start by introducing yourself briefly in-character with personality, and give an
       <div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
           <div>
-            <h2 style={{ fontSize: 20, fontWeight: 800, color: "#f7f8f8", margin: 0, fontFamily: "Inter, sans-serif" }}>Trip Expenses</h2>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: 0, fontFamily: "'Inter Tight', Inter, sans-serif" }}>Trip Expenses</h2>
             <p style={{ color: "#8a8f98", fontSize: 12, margin: "4px 0 0", fontFamily: "Inter, sans-serif" }}>Track spending across all your trips</p>
           </div>
         </div>
@@ -1790,15 +1785,15 @@ Start by introducing yourself briefly in-character with personality, and give an
         {/* Grand total stats */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14, marginBottom: 28 }}>
           <div style={{ background: "rgba(14,165,160,0.08)", border: "1px solid rgba(14,165,160,0.2)", borderRadius: 8, padding: 18 }}>
-            <div style={{ fontSize: 26, fontWeight: 800, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>${grandTotal.toLocaleString()}</div>
+            <div style={{ fontSize: 26, fontWeight: 700, color: "#fff", fontFamily: "'Inter Tight', Inter, sans-serif" }}>${grandTotal.toLocaleString()}</div>
             <div style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>Total Across All Trips</div>
           </div>
-          <div style={{ background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8, padding: 18 }}>
-            <div style={{ fontSize: 26, fontWeight: 800, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{expenses.length}</div>
+          <div style={{ background: "#1a1725", border: "1px solid #2a2640", borderRadius: 8, padding: 18 }}>
+            <div style={{ fontSize: 26, fontWeight: 700, color: "#fff", fontFamily: "'Inter Tight', Inter, sans-serif" }}>{expenses.length}</div>
             <div style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>Total Expenses</div>
           </div>
-          <div style={{ background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8, padding: 18 }}>
-            <div style={{ fontSize: 26, fontWeight: 800, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{tripsWithExpenses.filter(t => t.total > 0).length}</div>
+          <div style={{ background: "#1a1725", border: "1px solid #2a2640", borderRadius: 8, padding: 18 }}>
+            <div style={{ fontSize: 26, fontWeight: 700, color: "#fff", fontFamily: "'Inter Tight', Inter, sans-serif" }}>{tripsWithExpenses.filter(t => t.total > 0).length}</div>
             <div style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>Trips With Expenses</div>
           </div>
         </div>
@@ -1828,14 +1823,14 @@ Start by introducing yourself briefly in-character with personality, and give an
             const prog = allPrograms.find(p => p.id === trip.program);
             return (
               <div key={trip.id} style={{
-                background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8, padding: "16px 20px",
+                background: "#1a1725", border: "1px solid #2a2640", borderRadius: 8, padding: "16px 20px",
                 cursor: "pointer", transition: "all 0.2s",
               }} onClick={() => setExpenseViewTrip(trip.id)}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1 }}>
                     <div style={{
                       width: 42, height: 42, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20,
-                      background: prog ? `${prog.color}15` : "rgba(0,0,0,0.02)",
+                      background: prog ? `${prog.color}15` : "rgba(255,255,255,0.03)",
                     }}>{trip.type === "flight" ? "✈️" : trip.type === "hotel" ? "🏨" : "🚗"}</div>
                     <div>
                       <div style={{ fontSize: 14, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{getTripName(trip)}</div>
@@ -1876,7 +1871,7 @@ Start by introducing yourself briefly in-character with personality, and give an
       <div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
           <div>
-            <h2 style={{ fontSize: 20, fontWeight: 800, color: "#f7f8f8", margin: 0, fontFamily: "Inter, sans-serif" }}>Trip Optimizer</h2>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: 0, fontFamily: "'Inter Tight', Inter, sans-serif" }}>Trip Optimizer</h2>
             <p style={{ color: "#8a8f98", fontSize: 12, margin: "4px 0 0", fontFamily: "Inter, sans-serif" }}>See how crediting flights differently affects your status</p>
           </div>
           <Badge color="#f59e0b">★ PREMIUM</Badge>
@@ -1884,23 +1879,23 @@ Start by introducing yourself briefly in-character with personality, and give an
 
         {user?.tier !== "premium" ? (
           <div style={{
-            background: "linear-gradient(135deg, rgba(245,158,11,0.08), rgba(14,165,160,0.08))", border: "1px solid rgba(245,158,11,0.2)",
-            borderRadius: 8, padding: 40, textAlign: "center",
+            background: "#1a1725", border: "1px solid #2a2640",
+            borderRadius: 12, padding: 40, textAlign: "center",
           }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
-            <h3 style={{ fontSize: 20, fontWeight: 800, color: "#f7f8f8", fontFamily: "Inter, sans-serif", margin: "0 0 8px" }}>Unlock Trip Optimizer</h3>
+            <h3 style={{ fontSize: 20, fontWeight: 700, color: "#fff", fontFamily: "'Inter Tight', Inter, sans-serif", margin: "0 0 8px" }}>Unlock Trip Optimizer</h3>
             <p style={{ color: "#8a8f98", fontSize: 13, fontFamily: "Inter, sans-serif", maxWidth: 400, margin: "0 auto 24px" }}>
               See the optimal way to credit each flight across your airline programs. Find hidden status shortcuts and maximize every trip.
             </p>
             <button onClick={() => setShowUpgrade(true)} style={{
               padding: "12px 32px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "Inter, sans-serif",
-              background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#f7f8f8", boxShadow: "0 4px 20px rgba(245,158,11,0.3)",
+              background: "#f59e0b", color: "#fff",
             }}>Upgrade to Premium — $9.99/mo</button>
           </div>
         ) : (
           <div>
             <div style={{
-              background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8, padding: 22, marginBottom: 20,
+              background: "#1a1725", border: "1px solid #2a2640", borderRadius: 8, padding: 22, marginBottom: 20,
             }}>
               <h4 style={{ fontSize: 14, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif", marginBottom: 14 }}>Optimal Credit Strategy for 2026</h4>
               <div style={{ fontSize: 12, color: "#8a8f98", fontFamily: "Inter, sans-serif", marginBottom: 16 }}>
@@ -1934,8 +1929,8 @@ Start by introducing yourself briefly in-character with personality, and give an
             </div>
 
             <div style={{
-              background: "linear-gradient(135deg, rgba(52,211,153,0.08), rgba(16,185,129,0.04))", border: "1px solid rgba(52,211,153,0.2)",
-              borderRadius: 8, padding: 22,
+              background: "#1a1725", border: "1px solid #2a2640", borderLeft: "3px solid #34d399",
+              borderRadius: 12, padding: 22,
             }}>
               <h4 style={{ fontSize: 14, fontWeight: 700, color: "#34d399", fontFamily: "Inter, sans-serif", marginBottom: 10 }}>💡 Optimizer Recommendations</h4>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -1979,7 +1974,7 @@ Start by introducing yourself briefly in-character with personality, and give an
       <div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
           <div>
-            <h2 style={{ fontSize: 20, fontWeight: 800, color: "#f7f8f8", margin: 0, fontFamily: "Inter, sans-serif" }}>Annual Reports</h2>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: 0, fontFamily: "'Inter Tight', Inter, sans-serif" }}>Annual Reports</h2>
             <p style={{ color: "#8a8f98", fontSize: 12, margin: "4px 0 0", fontFamily: "Inter, sans-serif" }}>Your 2026 travel year at a glance</p>
           </div>
           <button onClick={() => setShowUpgrade(true)} style={{
@@ -1989,7 +1984,7 @@ Start by introducing yourself briefly in-character with personality, and give an
         </div>
 
         {/* Bar Chart */}
-        <div style={{ background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8, padding: 22, marginBottom: 20 }}>
+        <div style={{ background: "#1a1725", border: "1px solid #2a2640", borderRadius: 8, padding: 22, marginBottom: 20 }}>
           <h4 style={{ fontSize: 14, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif", marginBottom: 18 }}>Points Earned by Month</h4>
           <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 140 }}>
             {monthlyData.map((d, i) => (
@@ -1999,7 +1994,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                 </div>
                 <div style={{
                   width: "100%", maxWidth: 32, height: `${Math.max((d.points / maxPts) * 100, 3)}%`, minHeight: 3,
-                  borderRadius: "4px 4px 0 0", background: d.points > 0 ? "linear-gradient(180deg, #0EA5A0, #0EA5A0)" : "rgba(0,0,0,0.02)",
+                  borderRadius: "4px 4px 0 0", background: d.points > 0 ? "linear-gradient(180deg, #0EA5A0, #0EA5A0)" : "rgba(255,255,255,0.03)",
                   transition: "height 1s ease",
                 }} />
                 <span style={{ fontSize: 9, color: "#62666d", fontFamily: "Inter, sans-serif" }}>{d.month}</span>
@@ -2020,14 +2015,14 @@ Start by introducing yourself briefly in-character with personality, and give an
               background: `${stat.color}08`, border: `1px solid ${stat.color}20`, borderRadius: 8, padding: 20,
             }}>
               <div style={{ fontSize: 24, marginBottom: 6 }}>{stat.icon}</div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{stat.value}</div>
+              <div style={{ fontSize: 22, fontWeight: 700, color: "#fff", fontFamily: "'Inter Tight', Inter, sans-serif" }}>{stat.value}</div>
               <div style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif", marginTop: 2 }}>{stat.label}</div>
             </div>
           ))}
         </div>
 
         {/* Status Forecast */}
-        <div style={{ background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8, padding: 22 }}>
+        <div style={{ background: "#1a1725", border: "1px solid #2a2640", borderRadius: 8, padding: 22 }}>
           <h4 style={{ fontSize: 14, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif", marginBottom: 14 }}>Year-End Status Forecast</h4>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: 10 }}>
             {allPrograms.filter(p => linkedAccounts[p.id] && p.tiers).map(prog => {
@@ -2036,7 +2031,7 @@ Start by introducing yourself briefly in-character with personality, and give an
               return (
                 <div key={prog.id} style={{
                   display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderRadius: 8,
-                  background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", border: "1px solid rgba(0,0,0,0.02)",
+                  background: "#1a1725", border: "1px solid rgba(0,0,0,0.02)",
                 }}>
                   <span style={{ fontSize: 20 }}>{prog.logo}</span>
                   <div style={{ flex: 1 }}>
@@ -2059,7 +2054,7 @@ Start by introducing yourself briefly in-character with personality, and give an
     <div>
       <div style={{ textAlign: "center", marginBottom: 40 }}>
         <div style={{ marginBottom: 12, display: "flex", justifyContent: "center" }}><img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: 240, display: "block" }} /></div>
-        <h2 style={{ fontSize: 26, fontWeight: 800, color: "#f7f8f8", margin: 0, fontFamily: "Inter, sans-serif" }}>Continuum Premium</h2>
+        <h2 style={{ fontSize: 26, fontWeight: 700, color: "#fff", margin: 0, fontFamily: "'Inter Tight', Inter, sans-serif" }}>Continuum Premium</h2>
         <p style={{ color: "#8a8f98", fontSize: 14, fontFamily: "Inter, sans-serif", marginTop: 6 }}>Maximize every mile, every night, every point.</p>
       </div>
 
@@ -2070,9 +2065,9 @@ Start by introducing yourself briefly in-character with personality, and give an
           { name: "Pro", price: "$24.99", period: "/month", color: "#f59e0b", features: ["Everything in Premium", "API access & integrations", "Multi-year status tracking", "Tax deduction reports", "Team/family accounts", "White-label option", "Dedicated account manager", "Custom analytics"] },
         ].map((plan, i) => (
           <div key={i} style={{
-            background: plan.popular ? `linear-gradient(135deg, ${plan.color}15, ${plan.color}08)` : "rgba(0,0,0,0.02)",
-            border: `1px solid ${plan.popular ? plan.color + "40" : "rgba(0,0,0,0.03)"}`,
-            borderRadius: 8, padding: 28, position: "relative", overflow: "hidden",
+            background: plan.popular ? "#1a1725" : "rgba(255,255,255,0.03)",
+            border: `1px solid ${plan.popular ? plan.color + "40" : "#2a2640"}`,
+            borderRadius: 12, padding: 28, position: "relative", overflow: "hidden",
           }}>
             {plan.popular && (
               <div style={{
@@ -2082,7 +2077,7 @@ Start by introducing yourself briefly in-character with personality, and give an
             )}
             <div style={{ fontSize: 16, fontWeight: 700, color: plan.popular ? "#0EA5A0" : "#FFFFFF", fontFamily: "Inter, sans-serif", marginBottom: 6 }}>{plan.name}</div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 18 }}>
-              <span style={{ fontSize: 36, fontWeight: 800, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{plan.price}</span>
+              <span style={{ fontSize: 36, fontWeight: 700, color: "#fff", fontFamily: "'Inter Tight', Inter, sans-serif" }}>{plan.price}</span>
               <span style={{ fontSize: 13, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>{plan.period}</span>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 22 }}>
@@ -2093,10 +2088,9 @@ Start by introducing yourself briefly in-character with personality, and give an
               ))}
             </div>
             <button style={{
-              width: "100%", padding: "12px 0", borderRadius: 8, border: plan.popular ? "none" : "1px solid rgba(0,0,0,0.03)",
-              background: plan.popular ? `linear-gradient(135deg, #0EA5A0, #0EA5A0)` : "rgba(0,0,0,0.02)",
-              color: "#f7f8f8", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "Inter, sans-serif",
-              boxShadow: plan.popular ? "0 4px 20px rgba(14,165,160,0.3)" : "none",
+              width: "100%", padding: "12px 0", borderRadius: 8, border: plan.popular ? "none" : "1px solid #2a2640",
+              background: plan.popular ? "#0EA5A0" : "rgba(255,255,255,0.03)",
+              color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "Inter, sans-serif",
             }}>{plan.price === "$0" ? "Current Plan" : "Upgrade Now"}</button>
           </div>
         ))}
@@ -2104,9 +2098,9 @@ Start by introducing yourself briefly in-character with personality, and give an
 
       {/* Feature Highlights */}
       <div style={{
-        background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8, padding: 24,
+        background: "#1a1725", border: "1px solid #2a2640", borderRadius: 12, padding: 24,
       }}>
-        <h3 style={{ fontSize: 16, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif", marginBottom: 16 }}>Why Go Premium?</h3>
+        <h3 style={{ fontSize: 16, fontWeight: 700, color: "#fff", fontFamily: "'Inter Tight', Inter, sans-serif", marginBottom: 16 }}>Why Go Premium?</h3>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
           {[
             { icon: "🧠", title: "AI Trip Optimizer", desc: "Know exactly where to credit every flight for maximum status acceleration" },
@@ -2117,7 +2111,7 @@ Start by introducing yourself briefly in-character with personality, and give an
             { icon: "👨‍👩‍👧‍👦", title: "Family Accounts", desc: "Track status for your whole family and optimize household loyalty strategy" },
           ].map((f, i) => (
             <div key={i} style={{
-              background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", borderRadius: 8, padding: 16,
+              background: "#1a1725", borderRadius: 8, padding: 16,
             }}>
               <div style={{ fontSize: 24, marginBottom: 8 }}>{f.icon}</div>
               <div style={{ fontSize: 13, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif", marginBottom: 4 }}>{f.title}</div>
@@ -2149,91 +2143,86 @@ Start by introducing yourself briefly in-character with personality, and give an
   // ============================================================
   return (
     <div style={{
-      minHeight: "100vh", background: "#08090a",
-      fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", color: "#f7f8f8", display: "flex", position: "relative",
+      minHeight: "100vh", background: "#13111C",
+      fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", color: "#fff", display: "flex", flexDirection: "column", position: "relative",
     }}>
       <TravelAtmosphere />
-      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+      <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
 
-      {/* Sidebar */}
-      <aside style={{
-        width: 220, minHeight: "100vh",
-        background: "#0f1011",
-        borderRight: "1px solid #23252a",
-        padding: "20px 12px", display: "flex", flexDirection: "column", flexShrink: 0,
-        position: "sticky", top: 0, height: "100vh", overflowY: "auto", boxSizing: "border-box",
-        backdropFilter: "blur(20px)", zIndex: 10,
+      {/* Railway-style Top Navigation */}
+      <nav style={{
+        position: "sticky", top: 0, zIndex: 100, height: 56, flexShrink: 0,
+        background: "rgba(19,17,28,0.92)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
+        borderBottom: "1px solid #2a2640",
+        display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px",
       }}>
-        <div style={{ padding: "0 0", marginBottom: 28 }}>
-          <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ width: "100%", display: "block" }} />
+        {/* Left: Logo */}
+        <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
+          <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: 36, display: "block" }} />
         </div>
 
-        <nav style={{ display: "flex", flexDirection: "column", gap: 3, flex: 1 }}>
+        {/* Center: Horizontal nav tabs */}
+        <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
           {navItems.map(item => (
             <button key={item.id} onClick={() => setActiveView(item.id)} style={{
-              display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 8, border: "none", cursor: "pointer",
+              display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 8, border: "none", cursor: "pointer",
               background: activeView === item.id ? "rgba(14,165,160,0.12)" : "transparent",
-              color: activeView === item.id ? "#0EA5A0" : "rgba(0,0,0,0.3)",
-              fontSize: 13, fontWeight: activeView === item.id ? 600 : 500, fontFamily: "Inter, sans-serif", textAlign: "left", transition: "all 0.2s", width: "100%",
+              color: activeView === item.id ? "#0EA5A0" : "#8a8f98",
+              fontSize: 13, fontWeight: activeView === item.id ? 600 : 500, fontFamily: "Inter, sans-serif",
+              transition: "all 0.15s ease", whiteSpace: "nowrap",
             }}>
-              <span style={{ fontSize: 16, width: 22, textAlign: "center" }}>{item.icon}</span>
+              <span style={{ fontSize: 14 }}>{item.icon}</span>
               {item.label}
-              {item.id === "premium" && <span style={{ marginLeft: "auto", fontSize: 9, background: "rgba(245,158,11,0.15)", color: "#f59e0b", padding: "1px 6px", borderRadius: 8, fontWeight: 700 }}>PRO</span>}
+              {item.id === "premium" && <span style={{ fontSize: 9, background: "rgba(245,158,11,0.15)", color: "#f59e0b", padding: "1px 6px", borderRadius: 8, fontWeight: 700 }}>PRO</span>}
             </button>
           ))}
-        </nav>
+        </div>
 
-        {/* User Card */}
-        <div style={{
-          background: "linear-gradient(135deg, rgba(14,165,160,0.08), rgba(0,0,0,0.02))",
-          border: "1px solid rgba(14,165,160,0.08)", borderRadius: 8, padding: 14, marginTop: 12,
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+        {/* Right: Notifications, Settings, User, Sign Out */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+          <IconBtn icon="🔔" label="Notifications" badge />
+          <IconBtn icon="⚙️" label="Settings" />
+          <div style={{ width: 1, height: 24, background: "#2a2640", margin: "0 4px" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{
-              width: 36, height: 36, borderRadius: 8, background: "linear-gradient(135deg, #0EA5A0, #0EA5A0)",
-              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700,
+              width: 30, height: 30, borderRadius: 8, background: "linear-gradient(135deg, #0EA5A0, #0c8e8a)",
+              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff",
             }}>{user?.avatar || "U"}</div>
-            <div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{user?.name}</div>
-              <div style={{ fontSize: 10, color: "#62666d", fontFamily: "Inter, sans-serif" }}>{user?.tier === "premium" ? "Premium" : "Free Plan"}</div>
+            <div style={{ textAlign: "left" }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#fff" }}>{user?.name?.split(" ")[0]}</div>
+              <div style={{ fontSize: 10, color: "#62666d" }}>{user?.tier === "premium" ? "Premium" : "Free"}</div>
             </div>
           </div>
           <button onClick={handleLogout} style={{
-            width: "100%", padding: "7px 0", borderRadius: 8, border: "1px solid rgba(255,255,255,0.05)", background: "rgba(255,255,255,0.03)",
-            color: "#62666d", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif",
+            padding: "6px 12px", borderRadius: 8, border: "1px solid #2a2640", background: "transparent",
+            color: "#8a8f98", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif", transition: "all 0.15s",
           }}>Sign Out</button>
         </div>
-      </aside>
+      </nav>
 
-      {/* Main Content */}
-      <main style={{ flex: 1, padding: "28px 40px", overflowY: "auto", minWidth: 0, position: "relative", zIndex: 1 }}>
-        {/* Top Bar */}
-        <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: 16 }}>
-          <div style={{ display: "flex", gap: 6 }}>
-            <IconBtn icon="🔔" label="Notifications" badge />
-            <IconBtn icon="⚙️" label="Settings" />
+      {/* Main Content — full width, centered */}
+      <main style={{ flex: 1, overflowY: "auto", minWidth: 0, position: "relative", zIndex: 1 }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 40px 60px" }}>
+
+          {/* Page Header */}
+          <div style={{ marginBottom: 32 }}>
+            <h1 style={{ fontSize: 28, fontWeight: 700, color: "#fff", margin: 0, fontFamily: "'Inter Tight', Inter, sans-serif", letterSpacing: -0.5 }}>
+              {activeView === "dashboard" ? `Welcome back, ${user?.name?.split(" ")[0]}` : navItems.find(n => n.id === activeView)?.label}
+            </h1>
+            <p style={{ fontSize: 14, color: "#8a8f98", fontFamily: "Inter, sans-serif", marginTop: 6, lineHeight: 1.5 }}>
+              {activeView === "dashboard" ? `${new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })} · ${Object.keys(linkedAccounts).length} programs tracked` :
+              activeView === "programs" ? "Link and manage all your loyalty accounts" :
+              activeView === "trips" ? "Plan, track, and optimize your upcoming travel" :
+              activeView === "expenses" ? "Track spending and receipts across every trip" :
+              activeView === "optimizer" ? "AI-powered recommendations to maximize your status" :
+              activeView === "reports" ? "Insights and analytics across all programs" :
+              activeView === "premium" ? "Unlock the full power of Continuum" : ""}
+            </p>
           </div>
-        </div>
 
-        {/* Page Header — clean text, no hero image */}
-        <div style={{ marginBottom: 20, padding: "4px 0" }}>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: "#f7f8f8", margin: 0, fontFamily: "Inter, sans-serif" }}>
-            {activeView === "dashboard" ? `Welcome back, ${user?.name?.split(" ")[0]}` : navItems.find(n => n.id === activeView)?.label}
-          </h1>
-          <p style={{ fontSize: 12, color: "rgba(14,165,160,0.6)", fontFamily: "Inter, sans-serif", marginTop: 4 }}>
-            {activeView === "dashboard" ? `${new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })} · ${Object.keys(linkedAccounts).length} programs tracked` :
-            activeView === "programs" ? "Link and manage all your loyalty accounts" :
-            activeView === "trips" ? "Plan, track, and optimize your upcoming travel" :
-            activeView === "expenses" ? "Track spending and receipts across every trip" :
-            activeView === "optimizer" ? "AI-powered recommendations to maximize your status" :
-            activeView === "reports" ? "Insights and analytics across all programs" :
-            activeView === "premium" ? "Unlock the full power of Continuum" : ""}
-          </p>
-          <div style={{ width: 30, height: 2, borderRadius: 0, background: "#0EA5A0", marginTop: 10 }} />
+          {/* View Content */}
+          {viewRenderers[activeView]?.()}
         </div>
-
-        {/* View Content */}
-        {viewRenderers[activeView]?.()}
       </main>
 
       {/* ============================================================ */}
@@ -2246,9 +2235,9 @@ Start by introducing yourself briefly in-character with personality, and give an
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
         }} onClick={() => setShowAddTrip(false)}>
           <div onClick={e => e.stopPropagation()} style={{
-            background: "linear-gradient(135deg, #141516, #191a1b)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, padding: 28, width: "100%", maxWidth: 440,
+            background: "#211e2e", border: "1px solid #2a2640", borderRadius: 8, padding: 28, width: "100%", maxWidth: 440,
           }}>
-            <h3 style={{ fontSize: 18, fontWeight: 800, color: "#f7f8f8", margin: "0 0 20px", fontFamily: "Inter, sans-serif" }}>Add Trip</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: "0 0 20px", fontFamily: "'Inter Tight', Inter, sans-serif" }}>Add Trip</h3>
 
             {/* Trip Name */}
             <label style={{ display: "block", marginBottom: 16 }}>
@@ -2257,7 +2246,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                 placeholder="e.g. London Spring Getaway, Tokyo Anniversary"
                 style={{
                   display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box",
+                  border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box",
                 }} />
             </label>
 
@@ -2265,7 +2254,7 @@ Start by introducing yourself briefly in-character with personality, and give an
               {["flight", "hotel", "rental"].map(type => (
                 <button key={type} onClick={() => setNewTrip(p => ({ ...p, type, program: type === "flight" ? "aa" : type === "hotel" ? "marriott" : "hertz" }))} style={{
                   flex: 1, padding: "10px 0", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "Inter, sans-serif",
-                  background: newTrip.type === type ? "rgba(14,165,160,0.2)" : "rgba(0,0,0,0.02)",
+                  background: newTrip.type === type ? "rgba(14,165,160,0.2)" : "rgba(255,255,255,0.03)",
                   color: newTrip.type === type ? "#0EA5A0" : "rgba(0,0,0,0.3)", textTransform: "capitalize",
                 }}>{type === "flight" ? "✈️" : type === "hotel" ? "🏨" : "🚗"} {type}</button>
               ))}
@@ -2274,11 +2263,11 @@ Start by introducing yourself briefly in-character with personality, and give an
             <label style={{ display: "block", marginBottom: 14 }}>
               <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Program</span>
               <select value={newTrip.program} onChange={e => setNewTrip(p => ({ ...p, program: e.target.value }))} style={{
-                display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(14,165,160,0.1)",
+                display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640",
                 borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box",
               }}>
                 {(newTrip.type === "flight" ? [...LOYALTY_PROGRAMS.airlines, ...customPrograms.filter(p => p.category === "airline")] : newTrip.type === "hotel" ? [...LOYALTY_PROGRAMS.hotels, ...customPrograms.filter(p => p.category === "hotel")] : [...LOYALTY_PROGRAMS.rentals, ...customPrograms.filter(p => p.category === "rental")]).map(p => (
-                  <option key={p.id} value={p.id} style={{ background: "linear-gradient(135deg, #141516, #191a1b)" }}>{p.name}</option>
+                  <option key={p.id} value={p.id} style={{ background: "#211e2e" }}>{p.name}</option>
                 ))}
               </select>
             </label>
@@ -2291,7 +2280,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                 placeholder={newTrip.type === "flight" ? "JFK → LAX" : newTrip.type === "hotel" ? "Hotel name" : "City"}
                 style={{
                   display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box",
+                  border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box",
                 }} />
             </label>
 
@@ -2300,7 +2289,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                 <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Date</span>
                 <input type="date" value={newTrip.date} onChange={e => setNewTrip(p => ({ ...p, date: e.target.value }))} style={{
                   display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box",
+                  border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box",
                 }} />
               </label>
               {newTrip.type === "flight" && (
@@ -2308,11 +2297,11 @@ Start by introducing yourself briefly in-character with personality, and give an
                   <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Class</span>
                   <select value={newTrip.class} onChange={e => setNewTrip(p => ({ ...p, class: e.target.value }))} style={{
                     display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)",
-                    border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box",
+                    border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box",
                   }}>
-                    <option value="domestic" style={{ background: "linear-gradient(135deg, #141516, #191a1b)" }}>Domestic Economy</option>
-                    <option value="international" style={{ background: "linear-gradient(135deg, #141516, #191a1b)" }}>International</option>
-                    <option value="premium" style={{ background: "linear-gradient(135deg, #141516, #191a1b)" }}>Premium / Business</option>
+                    <option value="domestic" style={{ background: "#211e2e" }}>Domestic Economy</option>
+                    <option value="international" style={{ background: "#211e2e" }}>International</option>
+                    <option value="premium" style={{ background: "#211e2e" }}>Premium / Business</option>
                   </select>
                 </label>
               )}
@@ -2321,7 +2310,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                   <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Nights</span>
                   <input type="number" min={1} value={newTrip.nights} onChange={e => setNewTrip(p => ({ ...p, nights: parseInt(e.target.value) || 1 }))} style={{
                     display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)",
-                    border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box",
+                    border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box",
                   }} />
                 </label>
               )}
@@ -2331,22 +2320,22 @@ Start by introducing yourself briefly in-character with personality, and give an
               <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Status</span>
               <select value={newTrip.status} onChange={e => setNewTrip(p => ({ ...p, status: e.target.value }))} style={{
                 display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)",
-                border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box",
+                border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box",
               }}>
-                <option value="confirmed" style={{ background: "linear-gradient(135deg, #141516, #191a1b)" }}>Confirmed</option>
-                <option value="planned" style={{ background: "linear-gradient(135deg, #141516, #191a1b)" }}>Planned</option>
-                <option value="wishlist" style={{ background: "linear-gradient(135deg, #141516, #191a1b)" }}>Wishlist</option>
+                <option value="confirmed" style={{ background: "#211e2e" }}>Confirmed</option>
+                <option value="planned" style={{ background: "#211e2e" }}>Planned</option>
+                <option value="wishlist" style={{ background: "#211e2e" }}>Wishlist</option>
               </select>
             </label>
 
             <div style={{ display: "flex", gap: 10 }}>
               <button onClick={() => setShowAddTrip(false)} style={{
-                flex: 1, padding: "11px 0", borderRadius: 8, border: "1px solid rgba(14,165,160,0.1)", background: "rgba(255,255,255,0.03)",
+                flex: 1, padding: "11px 0", borderRadius: 8, border: "1px solid #2a2640", background: "rgba(255,255,255,0.03)",
                 color: "#8a8f98", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif",
               }}>Cancel</button>
               <button onClick={handleAddTrip} style={{
                 flex: 1, padding: "11px 0", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Inter, sans-serif",
-                background: "linear-gradient(135deg, #0EA5A0, #0EA5A0)", color: "#f7f8f8",
+                background: "#0EA5A0", color: "#f7f8f8",
               }}>Add Trip</button>
             </div>
           </div>
@@ -2359,9 +2348,9 @@ Start by introducing yourself briefly in-character with personality, and give an
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
         }} onClick={() => setShowLinkModal(null)}>
           <div onClick={e => e.stopPropagation()} style={{
-            background: "linear-gradient(135deg, #141516, #191a1b)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, padding: 28, width: "100%", maxWidth: 400,
+            background: "#211e2e", border: "1px solid #2a2640", borderRadius: 8, padding: 28, width: "100%", maxWidth: 400,
           }}>
-            <h3 style={{ fontSize: 18, fontWeight: 800, color: "#f7f8f8", margin: "0 0 6px", fontFamily: "Inter, sans-serif" }}>Link Account</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: "0 0 6px", fontFamily: "'Inter Tight', Inter, sans-serif" }}>Link Account</h3>
             <p style={{ color: "#8a8f98", fontSize: 12, margin: "0 0 20px", fontFamily: "Inter, sans-serif" }}>
               Connect your {allPrograms.find(p => p.id === showLinkModal)?.name || "loyalty"} account
             </p>
@@ -2371,7 +2360,7 @@ Start by introducing yourself briefly in-character with personality, and give an
               <input value={linkForm.memberId} onChange={e => setLinkForm(p => ({ ...p, memberId: e.target.value }))} placeholder="Enter your member number"
                 style={{
                   display: "block", width: "100%", marginTop: 6, padding: "12px 14px", background: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, color: "#f7f8f8", fontSize: 14, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box",
+                  border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 14, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box",
                 }} />
             </label>
             <p style={{ fontSize: 10, color: "#62666d", fontFamily: "Inter, sans-serif", marginBottom: 20 }}>
@@ -2380,12 +2369,12 @@ Start by introducing yourself briefly in-character with personality, and give an
 
             <div style={{ display: "flex", gap: 10 }}>
               <button onClick={() => setShowLinkModal(null)} style={{
-                flex: 1, padding: "11px 0", borderRadius: 8, border: "1px solid rgba(14,165,160,0.1)", background: "rgba(255,255,255,0.03)",
+                flex: 1, padding: "11px 0", borderRadius: 8, border: "1px solid #2a2640", background: "rgba(255,255,255,0.03)",
                 color: "#8a8f98", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif",
               }}>Cancel</button>
               <button onClick={() => handleLinkAccount(showLinkModal)} style={{
                 flex: 1, padding: "11px 0", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Inter, sans-serif",
-                background: "linear-gradient(135deg, #0EA5A0, #0EA5A0)", color: "#f7f8f8",
+                background: "#0EA5A0", color: "#f7f8f8",
               }}>Link Account</button>
             </div>
           </div>
@@ -2405,9 +2394,9 @@ Start by introducing yourself briefly in-character with personality, and give an
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
         }} onClick={() => setShowAddProgram(false)}>
           <div onClick={e => e.stopPropagation()} style={{
-            background: "linear-gradient(135deg, #141516, #191a1b)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, padding: 28, width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto",
+            background: "#211e2e", border: "1px solid #2a2640", borderRadius: 8, padding: 28, width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto",
           }}>
-            <h3 style={{ fontSize: 18, fontWeight: 800, color: "#f7f8f8", margin: "0 0 6px", fontFamily: "Inter, sans-serif" }}>Add Loyalty Program</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: "0 0 6px", fontFamily: "'Inter Tight', Inter, sans-serif" }}>Add Loyalty Program</h3>
             <p style={{ color: "#8a8f98", fontSize: 12, margin: "0 0 20px", fontFamily: "Inter, sans-serif" }}>Choose from {PROGRAM_DIRECTORY.airlines.length + PROGRAM_DIRECTORY.hotels.length + PROGRAM_DIRECTORY.rentals.length + PROGRAM_DIRECTORY.creditCards.length}+ programs or add a custom one</p>
 
             {/* Category Tabs */}
@@ -2421,7 +2410,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                 ].map(cat => (
                   <button key={cat.id} onClick={() => setNewProgram(p => ({ ...p, category: cat.id, selectedId: "", search: "" }))} style={{
                     flex: 1, padding: "8px 0", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600, fontFamily: "Inter, sans-serif",
-                    background: newProgram.category === cat.id ? "rgba(14,165,160,0.2)" : "rgba(0,0,0,0.02)",
+                    background: newProgram.category === cat.id ? "rgba(14,165,160,0.2)" : "rgba(255,255,255,0.03)",
                     color: newProgram.category === cat.id ? "#0EA5A0" : "rgba(0,0,0,0.3)", transition: "all 0.2s",
                   }}>{cat.icon} {cat.label} ({cat.count})</button>
                 ))}
@@ -2434,14 +2423,14 @@ Start by introducing yourself briefly in-character with personality, and give an
                 value={newProgram.search || ""}
                 onChange={e => setNewProgram(p => ({ ...p, search: e.target.value, selectedId: "" }))}
                 placeholder={`Search ${newProgram.category === "card" ? "credit cards" : newProgram.category + "s"}...`}
-                style={{ display: "block", width: "100%", padding: "10px 12px 10px 36px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }}
+                style={{ display: "block", width: "100%", padding: "10px 12px 10px 36px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }}
               />
               <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", opacity: 0.3 }}>🔍</span>
             </div>
 
             {/* Program List */}
             {!selectedProg && (
-              <div style={{ maxHeight: 240, overflowY: "auto", marginBottom: 14, borderRadius: 8, border: "1px solid rgba(255,255,255,0.05)" }}>
+              <div style={{ maxHeight: 240, overflowY: "auto", marginBottom: 14, borderRadius: 8, border: "1px solid #2a2640" }}>
                 {filtered.map(prog => {
                   const isLinked = alreadyLinked.includes(prog.id);
                   return (
@@ -2451,7 +2440,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                         border: "none", borderBottom: "1px solid rgba(0,0,0,0.02)", cursor: isLinked ? "default" : "pointer",
                         opacity: isLinked ? 0.4 : 1, transition: "background 0.15s", textAlign: "left",
                       }}
-                      onMouseEnter={e => { if (!isLinked) e.currentTarget.style.background = "rgba(0,0,0,0.02)"; }}
+                      onMouseEnter={e => { if (!isLinked) e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
                       onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
                     >
                       <span style={{ fontSize: 20, width: 28, textAlign: "center" }}>{prog.logo}</span>
@@ -2494,7 +2483,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                       </div>
                     </div>
                     <button onClick={() => setNewProgram(p => ({ ...p, selectedId: "" }))} style={{
-                      background: "#23252a", border: "none", borderRadius: 8, width: 28, height: 28, color: "#8a8f98", cursor: "pointer", fontSize: 14,
+                      background: "#2a2640", border: "none", borderRadius: 8, width: 28, height: 28, color: "#8a8f98", cursor: "pointer", fontSize: 14,
                     }}>✕</button>
                   </div>
                   {/* Tier badges */}
@@ -2533,7 +2522,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                 <label style={{ display: "block", marginBottom: 12 }}>
                   <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Member / Account Number</span>
                   <input value={newProgram.memberId} onChange={e => setNewProgram(p => ({ ...p, memberId: e.target.value }))} placeholder="Enter your member number to link"
-                    style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
+                    style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
                 </label>
               </div>
             )}
@@ -2541,7 +2530,7 @@ Start by introducing yourself briefly in-character with personality, and give an
             {/* Action buttons */}
             <div style={{ display: "flex", gap: 10 }}>
               <button onClick={() => { setShowAddProgram(false); setNewProgram({ name: "", category: "airline", logo: "✈️", color: "#0EA5A0", memberId: "", unit: "Points", tiers: "", selectedId: "", search: "" }); }} style={{
-                flex: 1, padding: "11px 0", borderRadius: 8, border: "1px solid rgba(14,165,160,0.1)", background: "rgba(255,255,255,0.03)",
+                flex: 1, padding: "11px 0", borderRadius: 8, border: "1px solid #2a2640", background: "rgba(255,255,255,0.03)",
                 color: "#8a8f98", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif",
               }}>Cancel</button>
               {selectedProg ? (
@@ -2571,7 +2560,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                   setShowAddProgram(false);
                   setNewProgram({ name: "", category: "airline", logo: "✈️", color: "#0EA5A0", memberId: "", unit: "Points", tiers: "", selectedId: "", search: "" });
                 }} style={{
-                  flex: 1, padding: "11px 0", borderRadius: 8, border: "1px solid rgba(14,165,160,0.1)", background: "rgba(255,255,255,0.03)",
+                  flex: 1, padding: "11px 0", borderRadius: 8, border: "1px solid #2a2640", background: "rgba(255,255,255,0.03)",
                   color: "#8a8f98", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif",
                 }}>+ Add Custom</button>
               )}
@@ -2587,21 +2576,21 @@ Start by introducing yourself briefly in-character with personality, and give an
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
         }} onClick={() => setShowUpgrade(false)}>
           <div onClick={e => e.stopPropagation()} style={{
-            background: "linear-gradient(135deg, #141516, #191a1b)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 8, padding: 32, width: "100%", maxWidth: 400, textAlign: "center",
+            background: "#211e2e", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 8, padding: 32, width: "100%", maxWidth: 400, textAlign: "center",
           }}>
             <div style={{ marginBottom: 12, display: "flex", justifyContent: "center" }}><img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: 220, display: "block" }} /></div>
-            <h3 style={{ fontSize: 20, fontWeight: 800, color: "#f7f8f8", margin: "0 0 8px", fontFamily: "Inter, sans-serif" }}>Upgrade to Premium</h3>
+            <h3 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: "0 0 8px", fontFamily: "'Inter Tight', Inter, sans-serif" }}>Upgrade to Premium</h3>
             <p style={{ color: "#8a8f98", fontSize: 13, fontFamily: "Inter, sans-serif", marginBottom: 24 }}>
               Unlock the Trip Optimizer, status match alerts, PDF exports, and more.
             </p>
-            <div style={{ fontSize: 36, fontWeight: 800, color: "#f7f8f8", fontFamily: "Inter, sans-serif", marginBottom: 4 }}>$9.99<span style={{ fontSize: 14, color: "#8a8f98" }}>/mo</span></div>
+            <div style={{ fontSize: 36, fontWeight: 700, color: "#fff", fontFamily: "'Inter Tight', Inter, sans-serif", marginBottom: 4 }}>$9.99<span style={{ fontSize: 14, color: "#8a8f98" }}>/mo</span></div>
             <p style={{ fontSize: 11, color: "#62666d", fontFamily: "Inter, sans-serif", marginBottom: 24 }}>Cancel anytime. 7-day free trial.</p>
             <button onClick={() => { setUser(prev => ({ ...prev, tier: "premium" })); setShowUpgrade(false); }} style={{
               width: "100%", padding: "13px 0", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "Inter, sans-serif",
-              background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#f7f8f8", boxShadow: "0 4px 20px rgba(245,158,11,0.3)", marginBottom: 10,
+              background: "#f59e0b", color: "#fff", marginBottom: 10,
             }}>Start Free Trial</button>
             <button onClick={() => setShowUpgrade(false)} style={{
-              width: "100%", padding: "11px 0", borderRadius: 8, border: "1px solid rgba(14,165,160,0.1)", background: "rgba(255,255,255,0.03)",
+              width: "100%", padding: "11px 0", borderRadius: 8, border: "1px solid #2a2640", background: "rgba(255,255,255,0.03)",
               color: "#8a8f98", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif",
             }}>Maybe Later</button>
           </div>
@@ -2614,9 +2603,9 @@ Start by introducing yourself briefly in-character with personality, and give an
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
         }} onClick={() => setShowAddExpense(null)}>
           <div onClick={e => e.stopPropagation()} style={{
-            background: "linear-gradient(135deg, #141516, #191a1b)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, padding: 28, width: "100%", maxWidth: 480,
+            background: "#211e2e", border: "1px solid #2a2640", borderRadius: 8, padding: 28, width: "100%", maxWidth: 480,
           }}>
-            <h3 style={{ fontSize: 18, fontWeight: 800, color: "#f7f8f8", margin: "0 0 6px", fontFamily: "Inter, sans-serif" }}>Add Expense</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: "0 0 6px", fontFamily: "'Inter Tight', Inter, sans-serif" }}>Add Expense</h3>
             <p style={{ color: "#8a8f98", fontSize: 12, margin: "0 0 20px", fontFamily: "Inter, sans-serif" }}>
               {(() => { const t = trips.find(t => t.id === showAddExpense); return t ? `${t.type === "flight" ? "✈️" : t.type === "hotel" ? "🏨" : "🚗"} ${getTripName(t)}` : ""; })()}
             </p>
@@ -2628,7 +2617,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                 {EXPENSE_CATEGORIES.map(cat => (
                   <button key={cat.id} onClick={() => setNewExpense(p => ({ ...p, category: cat.id }))} style={{
                     padding: "6px 12px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600, fontFamily: "Inter, sans-serif",
-                    background: newExpense.category === cat.id ? `${cat.color}25` : "rgba(0,0,0,0.02)",
+                    background: newExpense.category === cat.id ? `${cat.color}25` : "rgba(255,255,255,0.03)",
                     color: newExpense.category === cat.id ? cat.color : "rgba(0,0,0,0.3)", transition: "all 0.2s",
                   }}>{cat.icon} {cat.label}</button>
                 ))}
@@ -2639,12 +2628,12 @@ Start by introducing yourself briefly in-character with personality, and give an
               <label style={{ flex: 2 }}>
                 <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Description</span>
                 <input value={newExpense.description} onChange={e => setNewExpense(p => ({ ...p, description: e.target.value }))} placeholder="e.g. Marriott 3 nights"
-                  style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
+                  style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
               </label>
               <label style={{ flex: 1 }}>
                 <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Amount ($)</span>
                 <input type="number" min="0" step="0.01" value={newExpense.amount} onChange={e => setNewExpense(p => ({ ...p, amount: e.target.value }))} placeholder="0.00"
-                  style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
+                  style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
               </label>
             </div>
 
@@ -2652,18 +2641,18 @@ Start by introducing yourself briefly in-character with personality, and give an
               <label style={{ flex: 1 }}>
                 <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Date</span>
                 <input type="date" value={newExpense.date} onChange={e => setNewExpense(p => ({ ...p, date: e.target.value }))}
-                  style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
+                  style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
               </label>
               <label style={{ flex: 1 }}>
                 <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Payment Method</span>
                 <select value={newExpense.paymentMethod} onChange={e => setNewExpense(p => ({ ...p, paymentMethod: e.target.value }))}
-                  style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }}>
-                  <option value="" style={{ background: "linear-gradient(135deg, #141516, #191a1b)" }}>Select...</option>
-                  <option value="Amex Platinum" style={{ background: "linear-gradient(135deg, #141516, #191a1b)" }}>Amex Platinum</option>
-                  <option value="Chase Sapphire" style={{ background: "linear-gradient(135deg, #141516, #191a1b)" }}>Chase Sapphire Reserve</option>
-                  <option value="Cash" style={{ background: "linear-gradient(135deg, #141516, #191a1b)" }}>Cash</option>
-                  <option value="Debit Card" style={{ background: "linear-gradient(135deg, #141516, #191a1b)" }}>Debit Card</option>
-                  <option value="Other" style={{ background: "linear-gradient(135deg, #141516, #191a1b)" }}>Other</option>
+                  style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }}>
+                  <option value="" style={{ background: "#211e2e" }}>Select...</option>
+                  <option value="Amex Platinum" style={{ background: "#211e2e" }}>Amex Platinum</option>
+                  <option value="Chase Sapphire" style={{ background: "#211e2e" }}>Chase Sapphire Reserve</option>
+                  <option value="Cash" style={{ background: "#211e2e" }}>Cash</option>
+                  <option value="Debit Card" style={{ background: "#211e2e" }}>Debit Card</option>
+                  <option value="Other" style={{ background: "#211e2e" }}>Other</option>
                 </select>
               </label>
             </div>
@@ -2671,7 +2660,7 @@ Start by introducing yourself briefly in-character with personality, and give an
             <label style={{ display: "block", marginBottom: 14 }}>
               <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Notes (optional)</span>
               <input value={newExpense.notes} onChange={e => setNewExpense(p => ({ ...p, notes: e.target.value }))} placeholder="Business meal, personal, etc."
-                style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
+                style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
             </label>
 
             {/* Receipt Upload / Camera */}
@@ -2722,7 +2711,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                   <button onClick={() => setNewExpense(p => ({ ...p, receipt: false, receiptImage: null }))} style={{
                     flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
                     padding: "18px 12px", borderRadius: 8, border: `2px dashed ${!newExpense.receipt ? "rgba(0,0,0,0.04)" : "rgba(0,0,0,0.03)"}`,
-                    background: !newExpense.receipt ? "rgba(0,0,0,0.02)" : "transparent", cursor: "pointer",
+                    background: !newExpense.receipt ? "rgba(255,255,255,0.03)" : "transparent", cursor: "pointer",
                   }}>
                     <span style={{ fontSize: 22 }}>⊘</span>
                     <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>No Receipt</span>
@@ -2736,7 +2725,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                   display: "flex", alignItems: "center", gap: 12,
                 }}>
                   {newExpense.receiptImage.type?.startsWith("image/") ? (
-                    <img src={newExpense.receiptImage.data} alt="Receipt" style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 8, border: "1px solid rgba(255,255,255,0.05)" }} />
+                    <img src={newExpense.receiptImage.data} alt="Receipt" style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 8, border: "1px solid #2a2640" }} />
                   ) : (
                     <div style={{ width: 56, height: 56, borderRadius: 8, background: "rgba(255,255,255,0.03)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>📄</div>
                   )}
@@ -2756,12 +2745,12 @@ Start by introducing yourself briefly in-character with personality, and give an
 
             <div style={{ display: "flex", gap: 10 }}>
               <button onClick={() => setShowAddExpense(null)} style={{
-                flex: 1, padding: "11px 0", borderRadius: 8, border: "1px solid rgba(14,165,160,0.1)", background: "rgba(255,255,255,0.03)",
+                flex: 1, padding: "11px 0", borderRadius: 8, border: "1px solid #2a2640", background: "rgba(255,255,255,0.03)",
                 color: "#8a8f98", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif",
               }}>Cancel</button>
               <button onClick={handleAddExpense} style={{
                 flex: 1, padding: "11px 0", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Inter, sans-serif",
-                background: "linear-gradient(135deg, #0EA5A0, #0EA5A0)", color: "#f7f8f8",
+                background: "#0EA5A0", color: "#f7f8f8",
               }}>Add Expense</button>
             </div>
           </div>
@@ -2786,7 +2775,7 @@ Start by introducing yourself briefly in-character with personality, and give an
             position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
           }} onClick={() => setShowExpenseReport(null)}>
             <div onClick={e => e.stopPropagation()} style={{
-              background: "linear-gradient(135deg, #141516, #191a1b)", border: "1px solid rgba(14,165,160,0.1)", borderRadius: 8, padding: 32, width: "100%", maxWidth: 600,
+              background: "#211e2e", border: "1px solid #2a2640", borderRadius: 8, padding: 32, width: "100%", maxWidth: 600,
               maxHeight: "85vh", overflowY: "auto",
             }}>
               {/* Report Header */}
@@ -2795,7 +2784,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                   <div style={{ marginBottom: 6 }}>
                     <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: 112, display: "block" }} />
                   </div>
-                  <h3 style={{ fontSize: 20, fontWeight: 800, color: "#f7f8f8", margin: 0, fontFamily: "Inter, sans-serif" }}>Expense Report</h3>
+                  <h3 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: 0, fontFamily: "'Inter Tight', Inter, sans-serif" }}>Expense Report</h3>
                 </div>
                 <div style={{ textAlign: "right" }}>
                   <div style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>Generated {new Date().toLocaleDateString()}</div>
@@ -2822,7 +2811,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                   <div style={{ fontSize: 10, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>Total</div>
                 </div>
                 <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 8, padding: 14, textAlign: "center" }}>
-                  <div style={{ fontSize: 20, fontWeight: 800, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{tripExps.length}</div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", fontFamily: "'Inter Tight', Inter, sans-serif" }}>{tripExps.length}</div>
                   <div style={{ fontSize: 10, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>Items</div>
                 </div>
                 <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 8, padding: 14, textAlign: "center" }}>
@@ -2841,7 +2830,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                       <span style={{ fontSize: 12, color: "#d0d6e0", fontFamily: "Inter, sans-serif" }}>{cat.label} ({cat.count})</span>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <div style={{ width: 80, height: 5, borderRadius: 8, background: "#23252a", overflow: "hidden" }}>
+                      <div style={{ width: 80, height: 5, borderRadius: 8, background: "#2a2640", overflow: "hidden" }}>
                         <div style={{ width: `${(cat.total / tripTotal) * 100}%`, height: "100%", background: cat.color, borderRadius: 8 }} />
                       </div>
                       <span style={{ fontSize: 13, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif", minWidth: 70, textAlign: "right" }}>${cat.total.toLocaleString()}</span>
@@ -2853,7 +2842,7 @@ Start by introducing yourself briefly in-character with personality, and give an
               {/* Line Items */}
               <div style={{ marginBottom: 24 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: "#8a8f98", fontFamily: "Inter, sans-serif", marginBottom: 10 }}>LINE ITEMS</div>
-                <div style={{ background: "linear-gradient(135deg, rgba(14,165,160,0.02), rgba(0,0,0,0.02))", borderRadius: 8, overflow: "hidden" }}>
+                <div style={{ background: "#1a1725", borderRadius: 8, overflow: "hidden" }}>
                   {/* Header */}
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 80px 90px 70px 28px", gap: 8, padding: "10px 14px", background: "rgba(255,255,255,0.03)", borderBottom: "1px solid rgba(0,0,0,0.03)" }}>
                     <span style={{ fontSize: 10, fontWeight: 700, color: "#8a8f98", fontFamily: "Inter, sans-serif", textTransform: "uppercase" }}>Description</span>
@@ -2890,12 +2879,12 @@ Start by introducing yourself briefly in-character with personality, and give an
 
               <div style={{ display: "flex", gap: 10 }}>
                 <button onClick={() => setShowExpenseReport(null)} style={{
-                  flex: 1, padding: "11px 0", borderRadius: 8, border: "1px solid rgba(14,165,160,0.1)", background: "rgba(255,255,255,0.03)",
+                  flex: 1, padding: "11px 0", borderRadius: 8, border: "1px solid #2a2640", background: "rgba(255,255,255,0.03)",
                   color: "#8a8f98", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif",
                 }}>Close</button>
                 <button onClick={() => window.print()} style={{
                   flex: 1, padding: "11px 0", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Inter, sans-serif",
-                  background: "linear-gradient(135deg, #0EA5A0, #0EA5A0)", color: "#f7f8f8",
+                  background: "#0EA5A0", color: "#f7f8f8",
                 }}>🖨️ Print / Save PDF</button>
               </div>
             </div>
