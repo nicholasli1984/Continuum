@@ -859,29 +859,12 @@ Start by introducing yourself briefly in-character with personality, and give an
       };
 
       return (
-        <div style={{ minHeight: "100vh", background: "#000", color: "#f7f8f8", fontFamily: "Inter, -apple-system, sans-serif", overflow: "hidden" }}>
+        <div style={{ minHeight: "100vh", color: "#f7f8f8", fontFamily: "Inter, -apple-system, sans-serif", overflow: "hidden" }}>
           <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
           {showChime && (<div style={{ position: "fixed", top: 20, left: "50%", transform: "translateX(-50%)", zIndex: 300, background: "rgba(14,165,160,0.15)", border: "1px solid rgba(14,165,160,0.3)", borderRadius: 8, padding: "8px 20px", display: "flex", alignItems: "center", gap: 8 }}><span>🔔</span><span style={{ fontSize: 11, fontFamily: "Space Mono, monospace", color: "#0EA5A0", letterSpacing: 1 }}>FASTEN SEATBELT</span></div>)}
 
           {!cockpitSection ? (
-            <div style={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden" }}>
-              {/* Cockpit photo overlay — fully visible so the cockpit window view shows without the dark canvas blocking it */}
-              <div style={{
-                position: "absolute", inset: 0, zIndex: 2,
-                backgroundImage: "url(/cockpit.jpg)", backgroundSize: "cover", backgroundPosition: "center",
-                pointerEvents: "none",
-                maskImage: "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 13%, rgba(0,0,0,0.12) 22%, rgba(0,0,0,0) 30%, rgba(0,0,0,0) 54%, rgba(0,0,0,0.55) 62%, rgba(0,0,0,1) 68%, rgba(0,0,0,1) 100%)",
-                WebkitMaskImage: "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 13%, rgba(0,0,0,0.12) 22%, rgba(0,0,0,0) 30%, rgba(0,0,0,0) 54%, rgba(0,0,0,0.55) 62%, rgba(0,0,0,1) 68%, rgba(0,0,0,1) 100%)",
-              }} />
-
-              {/* Cockpit bottom (instruments) — solid overlay so buttons are readable */}
-              <div style={{
-                position: "absolute", bottom: 0, left: 0, right: 0, height: "38%", zIndex: 3,
-                backgroundImage: "url(/cockpit.jpg)", backgroundSize: "cover", backgroundPosition: "center bottom",
-              }} />
-
-              {/* Dark overlay on instrument area for readability */}
-              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "38%", zIndex: 4, background: "rgba(0,0,0,0.55)" }} />
+            <div style={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden", backgroundImage: "url(/cockpit.jpg)", backgroundSize: "cover", backgroundPosition: "center" }}>
 
               {/* Logo */}
               <div style={{ position: "absolute", top: 16, left: 20, zIndex: 20, display: "flex", alignItems: "center", gap: 8 }}>
