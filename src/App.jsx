@@ -421,6 +421,14 @@ export default function EliteStatusTracker() {
   const [cockpitSection, setCockpitSection] = useState(null);
   const [selectedPartner, setSelectedPartner] = useState(null);
 
+  // ── Mobile detection ──
+  const [isMobile, setIsMobile] = useState(typeof window !== "undefined" && window.innerWidth < 768);
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
   useEffect(() => { setTimeout(() => setAnimateIn(true), 100); }, []);
 
   // PA plays once per session (sessionStorage guards against StrictMode double-invoke)
@@ -769,16 +777,16 @@ Start by introducing yourself briefly in-character with personality, and give an
     // --- Top nav: Logo + Features + Pricing + Login ---
     const TopNav = () => (
       <nav style={{
-        position: "sticky", top: 0, zIndex: 100, padding: "0 32px", height: 56,
+        position: "sticky", top: 0, zIndex: 100, padding: isMobile ? "0 12px" : "0 32px", height: 56,
         background: "rgba(8,9,10,0.92)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
         borderBottom: "1px solid #2a2640",
         display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
         <button onClick={() => { goTo("landing"); }} style={{ background: "none", border: "none", cursor: "pointer", flexShrink: 0, padding: 0 }}>
-          <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: 112, display: "block" }} />
+          <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: isMobile ? 40 : 112, display: "block" }} />
         </button>
         <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
-          {navLinks.map(n => (
+          {!isMobile && navLinks.map(n => (
             <button key={n.id} onClick={() => { if (publicPage === "landing") scrollTo(n.id); else { goTo("landing"); setTimeout(() => scrollTo(n.id), 100); }}} style={{
               padding: "18px 14px", border: "none", cursor: "pointer", background: "rgba(255,255,255,0.03)",
               fontSize: 10.5, fontWeight: 600, fontFamily: "Space Mono, monospace", letterSpacing: 1.5, textTransform: "uppercase",
@@ -786,9 +794,9 @@ Start by introducing yourself briefly in-character with personality, and give an
             }}>{n.label}</button>
           ))}
           <button onClick={() => goTo("login")} style={{
-            padding: "8px 22px", border: "1px solid #34343a", cursor: "pointer", marginLeft: 16,
+            padding: isMobile ? "8px 16px" : "8px 22px", border: "1px solid #2a2640", cursor: "pointer", marginLeft: isMobile ? 0 : 16,
             fontSize: 10.5, fontWeight: 700, fontFamily: "Space Mono, monospace", letterSpacing: 1.5, textTransform: "uppercase",
-            background: "#211e2e", color: "#f7f8f8", border: "1px solid #2a2640", transition: "all 0.25s cubic-bezier(0.175,0.885,0.32,1)",
+            background: "#211e2e", color: "#f7f8f8", transition: "all 0.25s cubic-bezier(0.175,0.885,0.32,1)",
           }}>Log In</button>
         </div>
       </nav>
@@ -796,11 +804,11 @@ Start by introducing yourself briefly in-character with personality, and give an
 
     // --- Footer ---
     const Footer = () => (
-      <footer style={{ position: "relative", zIndex: 1, padding: "64px 32px 32px", borderTop: "1px solid #2a2640", background: "#08090a", marginTop: 0 }}>
-        <div style={{ maxWidth: 1060, margin: "0 auto", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 48 }}>
-          <div style={{ maxWidth: 320 }}>
+      <footer style={{ position: "relative", zIndex: 1, padding: isMobile ? "32px 16px 24px" : "64px 32px 32px", borderTop: "1px solid #2a2640", background: "#08090a", marginTop: 0 }}>
+        <div style={{ maxWidth: 1060, margin: "0 auto", display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", flexWrap: "wrap", gap: isMobile ? 32 : 48 }}>
+          <div style={{ maxWidth: isMobile ? "100%" : 320 }}>
             <div style={{ marginBottom: 16 }}>
-              <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: 120, display: "block" }} />
+              <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: isMobile ? 60 : 120, display: "block" }} />
             </div>
             <p style={{ fontSize: 13, color: "#8a8f98", fontFamily: "DM Sans, sans-serif", lineHeight: 1.7, fontWeight: 400 }}>
               Built by frequent flyers who got tired of spreadsheets. We track your status so you can focus on the journey.
@@ -1018,14 +1026,17 @@ Start by introducing yourself briefly in-character with personality, and give an
           )}
 
           {!cockpitSection ? (
-            <div style={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden" }}>
+            <div style={{ position: "relative", width: "100%", height: "100vh", overflow: "hidden" }}>
               {/* Background image */}
               <img src="/cockpit.jpg" alt="" style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center", pointerEvents: "none", userSelect: "none" }} />
 
               {/* Clickable zone overlay — SVG matches cover scaling of the image */}
               <svg style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", overflow: "hidden", zIndex: 5 }} viewBox="0 0 1772 1181" preserveAspectRatio="xMidYMid slice">
                 <defs>
-                  <style>{`.cz{fill:rgba(255,255,255,0);stroke:rgba(255,255,255,0);stroke-width:2;stroke-dasharray:8 5;cursor:pointer;transition:fill .25s,stroke .25s}.czg:hover .cz{fill:rgba(255,255,255,0.06);stroke:rgba(255,255,255,0.4)}.ctt{opacity:0;pointer-events:none;transition:opacity .2s}.czg:hover .ctt{opacity:1}`}</style>
+                  <style>{isMobile
+                    ? `.cz{fill:rgba(255,255,255,0.06);stroke:rgba(255,255,255,0.35);stroke-width:2;stroke-dasharray:8 5;cursor:pointer;transition:fill .25s,stroke .25s}.czg:active .cz{fill:rgba(255,255,255,0.12);stroke:rgba(255,255,255,0.6)}.ctt{opacity:1;pointer-events:none}`
+                    : `.cz{fill:rgba(255,255,255,0);stroke:rgba(255,255,255,0);stroke-width:2;stroke-dasharray:8 5;cursor:pointer;transition:fill .25s,stroke .25s}.czg:hover .cz{fill:rgba(255,255,255,0.06);stroke:rgba(255,255,255,0.4)}.ctt{opacity:0;pointer-events:none;transition:opacity .2s}.czg:hover .ctt{opacity:1}`
+                  }</style>
                 </defs>
                 {/* Orange → Partners  x=787 y=565 w=180 h=66 */}
                 <g className="czg" onClick={() => setCockpitSection("partners")} style={{ cursor: "pointer" }}>
@@ -1070,8 +1081,8 @@ Start by introducing yourself briefly in-character with personality, and give an
               </svg>
 
               {/* Logo top-left */}
-              <div style={{ position: "absolute", top: 12, left: 16, zIndex: 20 }}>
-                <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: 160, display: "block" }} />
+              <div style={{ position: "absolute", top: isMobile ? 8 : 12, left: isMobile ? 8 : 16, zIndex: 20 }}>
+                <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: isMobile ? 60 : 160, display: "block" }} />
               </div>
 
               {/* Flight code */}
@@ -1080,7 +1091,7 @@ Start by introducing yourself briefly in-character with personality, and give an
               </div>
 
               {/* Instructions */}
-              <div style={{ position: "absolute", top: "30%", left: "50%", transform: "translateX(-50%)", zIndex: 10, textAlign: "center", pointerEvents: "none" }}>
+              <div style={{ position: "absolute", top: isMobile ? "15%" : "30%", left: "50%", transform: "translateX(-50%)", zIndex: 10, textAlign: "center", pointerEvents: "none", width: isMobile ? "90%" : "auto" }}>
                 <h1 style={{ fontSize: "clamp(1.5rem, 3vw, 2.4rem)", fontFamily: "Instrument Serif, serif", fontWeight: 400, fontStyle: "italic", textShadow: "0 2px 20px rgba(0,0,0,0.7)", margin: 0 }}>
                   Your status. <span style={{ color: "#0EA5A0" }}>Your cockpit.</span>
                 </h1>
@@ -1098,12 +1109,12 @@ Start by introducing yourself briefly in-character with personality, and give an
             </div>
           ) : (
             <div style={{ minHeight: "100vh", background: "#08090a" }}>
-              <div style={{ padding: "20px 32px", borderBottom: "1px solid #2a2640", display: "flex", alignItems: "center", gap: 16 }}>
+              <div style={{ padding: isMobile ? "12px 16px" : "20px 32px", borderBottom: "1px solid #2a2640", display: "flex", alignItems: "center", gap: isMobile ? 10 : 16, flexWrap: isMobile ? "wrap" : "nowrap" }}>
                 <button onClick={() => setCockpitSection(null)} style={{ background: "#211e2e", border: "1px solid #2a2640", borderRadius: 8, padding: "8px 16px", cursor: "pointer", fontSize: 12, fontFamily: "Space Mono, monospace", color: "#8a8f98" }}>← Cockpit</button>
-                <div><h1 style={{ fontSize: 18, fontWeight: 700, color: "#f7f8f8", margin: 0 }}>{zones.find(z => z.id === cockpitSection)?.label}</h1></div>
+                <div><h1 style={{ fontSize: isMobile ? 15 : 18, fontWeight: 700, color: "#f7f8f8", margin: 0 }}>{zones.find(z => z.id === cockpitSection)?.label}</h1></div>
                 <div style={{ marginLeft: "auto" }}><button onClick={() => goTo("login")} style={{ background: "#0EA5A0", border: "none", borderRadius: 8, padding: "8px 20px", cursor: "pointer", fontSize: 11, fontFamily: "Space Mono, monospace", fontWeight: 700, color: "#000", letterSpacing: 1, textTransform: "uppercase" }}>Log In →</button></div>
               </div>
-              <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 32px" }}>{renderSection(cockpitSection)}</div>
+              <div style={{ maxWidth: 960, margin: "0 auto", padding: isMobile ? "0 16px" : "0 32px" }}>{renderSection(cockpitSection)}</div>
               <Footer />
             </div>
           )}
@@ -1113,7 +1124,7 @@ Start by introducing yourself briefly in-character with personality, and give an
 
     // ==================== LOGIN PAGE (Split-Screen Glassmorphism) ====================
     return (
-      <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: "#08090a" }}>
+      <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", height: "100vh", overflow: "hidden", background: "#08090a" }}>
         {/* Mute button */}
         {audioPlayed && !paEnded && (
           <button
@@ -1125,7 +1136,8 @@ Start by introducing yourself briefly in-character with personality, and give an
           </button>
         )}
 
-        {/* LEFT PANEL — Image (60%) */}
+        {/* LEFT PANEL — Image (hidden on mobile, 60% on desktop) */}
+        {!isMobile && (
         <div style={{ flex: "0 0 60%", position: "relative", overflow: "hidden" }}>
           <img src="/login-bg.jpg" alt="Airport Lounge" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }} />
           {/* Gradient overlay */}
@@ -1147,11 +1159,12 @@ Start by introducing yourself briefly in-character with personality, and give an
             <span style={{ fontSize: 13, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>← Back</span>
           </button>
         </div>
+        )}
 
-        {/* RIGHT PANEL — Login Form (40%) */}
+        {/* RIGHT PANEL — Login Form (full on mobile, 40% on desktop) */}
         <div style={{
-          flex: "0 0 40%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-          padding: "40px 48px", position: "relative", overflow: "auto",
+          flex: isMobile ? 1 : "0 0 40%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+          padding: isMobile ? "24px 20px" : "40px 48px", position: "relative", overflow: "auto",
           background: "linear-gradient(180deg, #0a0b0d 0%, #0d0f12 50%, #0a0b0d 100%)",
         }}>
           {/* Subtle glow effect */}
@@ -1162,10 +1175,17 @@ Start by introducing yourself briefly in-character with personality, and give an
             opacity: animateIn ? 1 : 0, transform: animateIn ? "translateY(0)" : "translateY(24px)",
             transition: "all 0.8s cubic-bezier(0.16,1,0.3,1)", position: "relative", zIndex: 1,
           }}>
+            {/* Back button on mobile (since image panel is hidden) */}
+            {isMobile && (
+              <button onClick={() => goTo("landing")} style={{
+                alignSelf: "flex-start", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8,
+                padding: "6px 14px", cursor: "pointer", marginBottom: 16, fontSize: 13, color: "#8a8f98", fontFamily: "Inter, sans-serif",
+              }}>← Back</button>
+            )}
             {/* Logo + Header */}
-            <div style={{ textAlign: "center", marginBottom: 36 }}>
+            <div style={{ textAlign: "center", marginBottom: isMobile ? 24 : 36 }}>
               <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
-                <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: 160, display: "block" }} />
+                <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: isMobile ? 80 : 160, display: "block" }} />
               </div>
               <h1 style={{ fontSize: 24, fontWeight: 700, color: "#f7f8f8", margin: "0 0 6px", fontFamily: "Inter, sans-serif", letterSpacing: -0.3 }}>
                 {isRegistering ? "Create Account" : "Welcome Back"}
@@ -2151,62 +2171,99 @@ Start by introducing yourself briefly in-character with personality, and give an
 
       {/* Railway-style Top Navigation */}
       <nav style={{
-        position: "sticky", top: 0, zIndex: 100, height: 56, flexShrink: 0,
+        position: "sticky", top: 0, zIndex: 100, flexShrink: 0,
         background: "rgba(19,17,28,0.92)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
         borderBottom: "1px solid #2a2640",
-        display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px",
+        ...(isMobile
+          ? { display: "flex", flexDirection: "column", padding: 0 }
+          : { height: 56, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px" }
+        ),
       }}>
-        {/* Left: Logo */}
-        <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
-          <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: 36, display: "block" }} />
-        </div>
-
-        {/* Center: Horizontal nav tabs */}
-        <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
-          {navItems.map(item => (
-            <button key={item.id} onClick={() => setActiveView(item.id)} style={{
-              display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 8, border: "none", cursor: "pointer",
-              background: activeView === item.id ? "rgba(14,165,160,0.12)" : "transparent",
-              color: activeView === item.id ? "#0EA5A0" : "#8a8f98",
-              fontSize: 13, fontWeight: activeView === item.id ? 600 : 500, fontFamily: "Inter, sans-serif",
-              transition: "all 0.15s ease", whiteSpace: "nowrap",
-            }}>
-              <span style={{ fontSize: 14 }}>{item.icon}</span>
-              {item.label}
-              {item.id === "premium" && <span style={{ fontSize: 9, background: "rgba(245,158,11,0.15)", color: "#f59e0b", padding: "1px 6px", borderRadius: 8, fontWeight: 700 }}>PRO</span>}
-            </button>
-          ))}
-        </div>
-
-        {/* Right: Notifications, Settings, User, Sign Out */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-          <IconBtn icon="🔔" label="Notifications" badge />
-          <IconBtn icon="⚙️" label="Settings" />
-          <div style={{ width: 1, height: 24, background: "#2a2640", margin: "0 4px" }} />
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{
-              width: 30, height: 30, borderRadius: 8, background: "linear-gradient(135deg, #0EA5A0, #0c8e8a)",
-              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff",
-            }}>{user?.avatar || "U"}</div>
-            <div style={{ textAlign: "left" }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "#fff" }}>{user?.name?.split(" ")[0]}</div>
-              <div style={{ fontSize: 10, color: "#62666d" }}>{user?.tier === "premium" ? "Premium" : "Free"}</div>
-            </div>
+        {/* Top row: Logo + user actions */}
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: isMobile ? "8px 12px" : 0,
+          ...(isMobile ? {} : { width: "100%" }),
+        }}>
+          {/* Left: Logo */}
+          <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
+            <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: isMobile ? 28 : 36, display: "block" }} />
           </div>
-          <button onClick={handleLogout} style={{
-            padding: "6px 12px", borderRadius: 8, border: "1px solid #2a2640", background: "transparent",
-            color: "#8a8f98", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif", transition: "all 0.15s",
-          }}>Sign Out</button>
+
+          {/* Center: Horizontal nav tabs (desktop only) */}
+          {!isMobile && (
+          <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+            {navItems.map(item => (
+              <button key={item.id} onClick={() => setActiveView(item.id)} style={{
+                display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 8, border: "none", cursor: "pointer",
+                background: activeView === item.id ? "rgba(14,165,160,0.12)" : "transparent",
+                color: activeView === item.id ? "#0EA5A0" : "#8a8f98",
+                fontSize: 13, fontWeight: activeView === item.id ? 600 : 500, fontFamily: "Inter, sans-serif",
+                transition: "all 0.15s ease", whiteSpace: "nowrap",
+              }}>
+                <span style={{ fontSize: 14 }}>{item.icon}</span>
+                {item.label}
+                {item.id === "premium" && <span style={{ fontSize: 9, background: "rgba(245,158,11,0.15)", color: "#f59e0b", padding: "1px 6px", borderRadius: 8, fontWeight: 700 }}>PRO</span>}
+              </button>
+            ))}
+          </div>
+          )}
+
+          {/* Right: Notifications, Settings, User, Sign Out */}
+          <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 4 : 8, flexShrink: 0 }}>
+            <IconBtn icon="🔔" label="Notifications" badge />
+            {!isMobile && <IconBtn icon="⚙️" label="Settings" />}
+            <div style={{ width: 1, height: 24, background: "#2a2640", margin: "0 4px" }} />
+            {!isMobile && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{
+                width: 30, height: 30, borderRadius: 8, background: "linear-gradient(135deg, #0EA5A0, #0c8e8a)",
+                display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff",
+              }}>{user?.avatar || "U"}</div>
+              <div style={{ textAlign: "left" }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#fff" }}>{user?.name?.split(" ")[0]}</div>
+                <div style={{ fontSize: 10, color: "#62666d" }}>{user?.tier === "premium" ? "Premium" : "Free"}</div>
+              </div>
+            </div>
+            )}
+            <button onClick={handleLogout} style={{
+              padding: "6px 12px", borderRadius: 8, border: "1px solid #2a2640", background: "transparent",
+              color: "#8a8f98", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif", transition: "all 0.15s",
+            }}>Sign Out</button>
+          </div>
         </div>
+
+        {/* Mobile: Scrollable tab bar below header */}
+        {isMobile && (
+          <div style={{
+            display: "flex", alignItems: "center", gap: 0, overflowX: "auto", WebkitOverflowScrolling: "touch",
+            borderTop: "1px solid rgba(42,38,64,0.5)", padding: "0 8px",
+            scrollbarWidth: "none", msOverflowStyle: "none",
+          }}>
+            {navItems.map(item => (
+              <button key={item.id} onClick={() => setActiveView(item.id)} style={{
+                display: "flex", alignItems: "center", gap: 4, padding: "8px 10px", borderRadius: 0, border: "none", cursor: "pointer",
+                background: "transparent",
+                borderBottom: activeView === item.id ? "2px solid #0EA5A0" : "2px solid transparent",
+                color: activeView === item.id ? "#0EA5A0" : "#8a8f98",
+                fontSize: 11, fontWeight: activeView === item.id ? 600 : 500, fontFamily: "Inter, sans-serif",
+                transition: "all 0.15s ease", whiteSpace: "nowrap", flexShrink: 0,
+              }}>
+                <span style={{ fontSize: 13 }}>{item.icon}</span>
+                {item.label}
+              </button>
+            ))}
+          </div>
+        )}
       </nav>
 
       {/* Main Content — full width, centered */}
       <main style={{ flex: 1, overflowY: "auto", minWidth: 0, position: "relative", zIndex: 1 }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 40px 60px" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto", padding: isMobile ? "20px 16px 40px" : "32px 40px 60px" }}>
 
           {/* Page Header */}
-          <div style={{ marginBottom: 32 }}>
-            <h1 style={{ fontSize: 28, fontWeight: 700, color: "#fff", margin: 0, fontFamily: "'Inter Tight', Inter, sans-serif", letterSpacing: -0.5 }}>
+          <div style={{ marginBottom: isMobile ? 20 : 32 }}>
+            <h1 style={{ fontSize: isMobile ? 22 : 28, fontWeight: 700, color: "#fff", margin: 0, fontFamily: "'Inter Tight', Inter, sans-serif", letterSpacing: -0.5 }}>
               {activeView === "dashboard" ? `Welcome back, ${user?.name?.split(" ")[0]}` : navItems.find(n => n.id === activeView)?.label}
             </h1>
             <p style={{ fontSize: 14, color: "#8a8f98", fontFamily: "Inter, sans-serif", marginTop: 6, lineHeight: 1.5 }}>
@@ -2805,7 +2862,7 @@ Start by introducing yourself briefly in-character with personality, and give an
               </div>
 
               {/* Summary Stats */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 20 }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: 12, marginBottom: 20 }}>
                 <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 8, padding: 14, textAlign: "center" }}>
                   <div style={{ fontSize: 20, fontWeight: 800, color: "#0EA5A0", fontFamily: "Inter, sans-serif" }}>${tripTotal.toLocaleString()}</div>
                   <div style={{ fontSize: 10, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>Total</div>
@@ -2844,28 +2901,29 @@ Start by introducing yourself briefly in-character with personality, and give an
                 <div style={{ fontSize: 12, fontWeight: 700, color: "#8a8f98", fontFamily: "Inter, sans-serif", marginBottom: 10 }}>LINE ITEMS</div>
                 <div style={{ background: "#1a1725", borderRadius: 8, overflow: "hidden" }}>
                   {/* Header */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 80px 90px 70px 28px", gap: 8, padding: "10px 14px", background: "rgba(255,255,255,0.03)", borderBottom: "1px solid rgba(0,0,0,0.03)" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 70px" : "1fr 80px 90px 70px 28px", gap: 8, padding: "10px 14px", background: "rgba(255,255,255,0.03)", borderBottom: "1px solid rgba(0,0,0,0.03)" }}>
                     <span style={{ fontSize: 10, fontWeight: 700, color: "#8a8f98", fontFamily: "Inter, sans-serif", textTransform: "uppercase" }}>Description</span>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: "#8a8f98", fontFamily: "Inter, sans-serif", textTransform: "uppercase" }}>Date</span>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: "#8a8f98", fontFamily: "Inter, sans-serif", textTransform: "uppercase" }}>Payment</span>
+                    {!isMobile && <span style={{ fontSize: 10, fontWeight: 700, color: "#8a8f98", fontFamily: "Inter, sans-serif", textTransform: "uppercase" }}>Date</span>}
+                    {!isMobile && <span style={{ fontSize: 10, fontWeight: 700, color: "#8a8f98", fontFamily: "Inter, sans-serif", textTransform: "uppercase" }}>Payment</span>}
                     <span style={{ fontSize: 10, fontWeight: 700, color: "#8a8f98", fontFamily: "Inter, sans-serif", textTransform: "uppercase", textAlign: "right" }}>Amount</span>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: "#8a8f98", fontFamily: "Inter, sans-serif", textAlign: "center" }}>🧾</span>
+                    {!isMobile && <span style={{ fontSize: 10, fontWeight: 700, color: "#8a8f98", fontFamily: "Inter, sans-serif", textAlign: "center" }}>🧾</span>}
                   </div>
                   {/* Rows */}
                   {tripExps.map((exp, i) => {
                     const cat = EXPENSE_CATEGORIES.find(c => c.id === exp.category);
                     return (
-                      <div key={exp.id} style={{ display: "grid", gridTemplateColumns: "1fr 80px 90px 70px 28px", gap: 8, padding: "10px 14px", borderBottom: i < tripExps.length - 1 ? "1px solid rgba(0,0,0,0.02)" : "none", alignItems: "center" }}>
+                      <div key={exp.id} style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 70px" : "1fr 80px 90px 70px 28px", gap: 8, padding: "10px 14px", borderBottom: i < tripExps.length - 1 ? "1px solid rgba(0,0,0,0.02)" : "none", alignItems: "center" }}>
                         <div>
                           <span style={{ fontSize: 12, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{cat?.icon} {exp.description}</span>
                           {exp.notes && <div style={{ fontSize: 10, color: "#62666d", marginTop: 1 }}>{exp.notes}</div>}
+                          {isMobile && <div style={{ fontSize: 10, color: "#62666d", marginTop: 1 }}>{exp.date?.slice(5)} {exp.receipt ? "🧾" : ""}</div>}
                         </div>
-                        <span style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>{exp.date?.slice(5)}</span>
-                        <span style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.paymentMethod || "—"}</span>
+                        {!isMobile && <span style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>{exp.date?.slice(5)}</span>}
+                        {!isMobile && <span style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.paymentMethod || "—"}</span>}
                         <span style={{ fontSize: 12, fontWeight: 700, color: exp.amount === 0 ? "#34d399" : "#FFFFFF", fontFamily: "Inter, sans-serif", textAlign: "right" }}>
                           {exp.amount === 0 ? "Free" : `$${exp.amount.toLocaleString()}`}
                         </span>
-                        <span style={{ fontSize: 12, textAlign: "center" }}>{exp.receipt ? "✓" : "—"}</span>
+                        {!isMobile && <span style={{ fontSize: 12, textAlign: "center" }}>{exp.receipt ? "✓" : "—"}</span>}
                       </div>
                     );
                   })}
