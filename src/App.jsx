@@ -1163,15 +1163,15 @@ Start by introducing yourself briefly in-character with personality, and give an
 
         {/* RIGHT PANEL — Login Form (full on mobile, 40% on desktop) */}
         <div style={{
-          flex: isMobile ? 1 : "0 0 40%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-          padding: isMobile ? "24px 20px" : "40px 48px", position: "relative", overflow: "auto",
+          flex: isMobile ? 1 : "0 0 40%", display: "flex", flexDirection: "column", alignItems: "center",
+          padding: isMobile ? "24px 20px" : "40px 48px", position: "relative", overflowY: "auto",
           background: "linear-gradient(180deg, #0a0b0d 0%, #0d0f12 50%, #0a0b0d 100%)",
         }}>
           {/* Subtle glow effect */}
           <div style={{ position: "absolute", top: "30%", left: "50%", transform: "translate(-50%, -50%)", width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle, rgba(14,165,160,0.06) 0%, transparent 70%)", pointerEvents: "none" }} />
 
           <div style={{
-            width: "100%", maxWidth: 380,
+            width: "100%", maxWidth: 380, margin: "auto 0",
             opacity: animateIn ? 1 : 0, transform: animateIn ? "translateY(0)" : "translateY(24px)",
             transition: "all 0.8s cubic-bezier(0.16,1,0.3,1)", position: "relative", zIndex: 1,
           }}>
