@@ -1421,7 +1421,25 @@ Start by introducing yourself briefly in-character with personality, and give an
   });
 
   const renderDashboard = () => {
-    const D = darkMode;
+    // Landing page palette — fixed dark, sharp-edged, bold minimalist
+    const lp = {
+      bg:       "#08090a",
+      surface:  "#0f1012",
+      surface2: "#17191d",
+      border:   "#1e2028",
+      border2:  "#2a2640",
+      text:     "#f7f8f8",
+      text2:    "#d0d6e0",
+      dim:      "#8a8f98",
+      teal:     "#0EA5A0",
+      tealDim:  "rgba(14,165,160,0.12)",
+      tealBord: "rgba(14,165,160,0.25)",
+      red:      "#ef4444",
+      green:    "#34d399",
+      mono:     "'Space Mono', 'JetBrains Mono', monospace",
+      sans:     "'DM Sans', 'Outfit', sans-serif",
+    };
+
     const airlineStatuses = LOYALTY_PROGRAMS.airlines.map(p => ({ ...p, status: getProjectedStatus(p.id) })).filter(p => p.status);
     const hotelStatuses = LOYALTY_PROGRAMS.hotels.map(p => ({ ...p, status: getProjectedStatus(p.id) })).filter(p => p.status);
     const totalTrips = trips.length;
@@ -1434,113 +1452,122 @@ Start by introducing yourself briefly in-character with personality, and give an
     const hour = new Date().getHours();
     const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 
-    const SectionHead = ({ icon, title, count, action, actionLabel }) => (
-      <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 16 }}>
-        <h3 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 22, fontWeight: 500, color: css.text, margin: 0, letterSpacing: -0.3 }}>{icon} {title}</h3>
-        {count !== undefined && <span style={{ fontSize: 11, color: css.text3, fontFamily: "'JetBrains Mono', monospace" }}>{count}</span>}
-        <div style={{ flex: 1, height: 1, background: css.border, marginLeft: 4 }} />
-        {action && <button onClick={action} style={{ background: "none", border: `1px solid ${css.border}`, color: css.accent, fontSize: 11, fontWeight: 600, cursor: "pointer", padding: "4px 12px", borderRadius: 8, transition: "all 0.15s" }}>{actionLabel}</button>}
+    // Shared styles
+    const box = { background: lp.surface, border: `1px solid ${lp.border}` };
+    const SectionLabel = ({ children, action, actionLabel }) => (
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: lp.teal, fontFamily: lp.mono }}>{children}</span>
+        <div style={{ flex: 1, height: 1, background: lp.border }} />
+        {action && (
+          <button onClick={action} style={{ background: "none", border: `1px solid ${lp.border2}`, color: lp.dim, fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", padding: "4px 12px", fontFamily: lp.mono, transition: "color 0.15s" }}
+            onMouseEnter={e => e.currentTarget.style.color = lp.teal} onMouseLeave={e => e.currentTarget.style.color = lp.dim}>
+            {actionLabel}
+          </button>
+        )}
       </div>
     );
 
     return (
-      <div>
-        {/* Greeting */}
-        <div className="c-a1" style={{ marginBottom: 32 }}>
-          <h1 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: isMobile ? 36 : 52, fontWeight: 500, color: css.text, margin: "0 0 4px", letterSpacing: -1, lineHeight: 1.05 }}>
-            {greeting}, {user?.name?.split(" ")[0]}.
-          </h1>
-          <p style={{ fontSize: 14, color: css.text2, margin: 0, fontWeight: 400 }}>
-            {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })} &nbsp;·&nbsp; {Object.keys(linkedAccounts).length} programs tracked
-          </p>
+      <div style={{ fontFamily: lp.sans, color: lp.text }}>
+
+        {/* ── Top bar: greeting + date ── */}
+        <div className="c-a1" style={{ borderBottom: `1px solid ${lp.border}`, paddingBottom: 24, marginBottom: 28 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12 }}>
+            <div>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: lp.teal, fontFamily: lp.mono, marginBottom: 8 }}>{greeting}</div>
+              <h1 style={{ fontFamily: lp.mono, fontSize: isMobile ? 28 : 40, fontWeight: 700, color: lp.text, margin: 0, letterSpacing: -1, lineHeight: 1 }}>
+                {user?.name?.split(" ")[0]?.toUpperCase()}
+              </h1>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: 11, color: lp.dim, fontFamily: lp.mono }}>{new Date().toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }).toUpperCase()}</div>
+              <div style={{ fontSize: 10, color: lp.dim, fontFamily: lp.mono, marginTop: 2 }}>{Object.keys(linkedAccounts).length} PROGRAMS TRACKED</div>
+            </div>
+          </div>
         </div>
 
-        {/* Next trip hero + stat pills row */}
-        <div className="c-a2" style={{ display: "grid", gridTemplateColumns: nextTrip ? (isMobile ? "1fr" : "1fr auto") : "1fr", gap: 12, marginBottom: 28 }}>
-          {/* Stat pills */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10 }}>
-            {[
-              { label: "Linked", value: Object.keys(linkedAccounts).length, sub: "programs", color: css.accent },
-              { label: "Portfolio", value: totalPointsValue >= 1000 ? `${Math.round(totalPointsValue/1000)}K` : String(totalPointsValue), sub: "total pts", color: css.gold },
-              { label: "Confirmed", value: confirmedTrips, sub: `of ${totalTrips} trips`, color: css.success },
-              { label: "Advancing", value: willAdvanceCount, sub: "status upgrades", color: "#9B6FD6" },
-            ].map((s, i) => (
-              <div key={i} className="c-card" style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 16, padding: "18px 20px", position: "relative", overflow: "hidden", boxShadow: D ? "none" : "0 1px 4px rgba(0,0,0,0.06)" }}>
-                <div style={{ fontSize: 28, fontWeight: 700, color: css.text, fontFamily: "'JetBrains Mono', monospace", letterSpacing: -1, lineHeight: 1, marginBottom: 4 }}>{s.value}</div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: css.text2, marginBottom: 1 }}>{s.label}</div>
-                <div style={{ fontSize: 10, color: s.color, fontWeight: 500 }}>{s.sub}</div>
-                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, ${s.color}, transparent)`, opacity: 0.6 }} />
-              </div>
-            ))}
-          </div>
-
-          {/* Next trip countdown */}
+        {/* ── Stat grid ── */}
+        <div className="c-a2" style={{ display: "grid", gridTemplateColumns: nextTrip ? (isMobile ? "1fr 1fr" : "1fr 1fr 1fr 1fr 1fr") : "repeat(4, 1fr)", gap: 0, border: `1px solid ${lp.border}`, marginBottom: 28 }}>
+          {[
+            { label: "Linked", value: Object.keys(linkedAccounts).length, sub: "PROGRAMS", accent: lp.teal },
+            { label: "Portfolio", value: totalPointsValue >= 1000 ? `${Math.round(totalPointsValue/1000)}K` : String(totalPointsValue), sub: "TOTAL PTS", accent: "#C9A84C" },
+            { label: "Confirmed", value: confirmedTrips, sub: `OF ${totalTrips} TRIPS`, accent: lp.green },
+            { label: "Advancing", value: willAdvanceCount, sub: "STATUS UPGRADES", accent: "#9B6FD6" },
+          ].map((s, i, arr) => (
+            <div key={i} style={{ padding: "22px 24px", borderRight: i < arr.length - 1 && !nextTrip ? `1px solid ${lp.border}` : (nextTrip && i < arr.length - 1 ? `1px solid ${lp.border}` : "none"), background: lp.surface, position: "relative" }}>
+              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: s.accent }} />
+              <div style={{ fontSize: isMobile ? 28 : 36, fontWeight: 700, color: lp.text, fontFamily: lp.mono, letterSpacing: -2, lineHeight: 1, marginBottom: 6 }}>{s.value}</div>
+              <div style={{ fontSize: 8, fontWeight: 700, color: s.accent, fontFamily: lp.mono, letterSpacing: "0.15em" }}>{s.sub}</div>
+              <div style={{ fontSize: 10, color: lp.dim, fontFamily: lp.mono, marginTop: 2 }}>{s.label}</div>
+            </div>
+          ))}
           {nextTrip && (
-            <div className="c-card" style={{
-              background: css.accentBg, border: `1px solid ${css.accentBorder}`,
-              borderRadius: 16, padding: "20px 24px", minWidth: isMobile ? "auto" : 220,
-              display: "flex", flexDirection: "column", justifyContent: "space-between",
-              boxShadow: D ? "none" : "0 2px 12px rgba(212,116,45,0.08)",
-            }}>
-              <div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
-                  <div style={{ width: 6, height: 6, borderRadius: "50%", background: css.accent, animation: "c-pulse 2s infinite" }} />
-                  <span style={{ fontSize: 10, color: css.accent, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase" }}>Next trip</span>
-                </div>
-                <div style={{ fontSize: 17, fontWeight: 700, color: css.text, marginBottom: 3, lineHeight: 1.2 }}>{nextTrip.route || nextTrip.property || nextTrip.location}</div>
-                <div style={{ fontSize: 11, color: css.text2 }}>{new Date(nextTrip.date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</div>
-              </div>
-              <div style={{ marginTop: 14, display: "flex", alignItems: "baseline", gap: 4 }}>
-                <span style={{ fontSize: 42, fontWeight: 700, color: css.accent, fontFamily: "'JetBrains Mono', monospace", lineHeight: 1 }}>{daysToNext}</span>
-                <span style={{ fontSize: 11, color: css.text2, fontWeight: 500 }}>days</span>
-              </div>
+            <div style={{ padding: "22px 24px", background: lp.tealDim, borderLeft: `1px solid ${lp.tealBord}`, position: "relative" }}>
+              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: lp.teal }} />
+              <div style={{ fontSize: 8, fontWeight: 700, color: lp.teal, fontFamily: lp.mono, letterSpacing: "0.15em", marginBottom: 6 }}>NEXT TRIP</div>
+              <div style={{ fontSize: isMobile ? 28 : 36, fontWeight: 700, color: lp.teal, fontFamily: lp.mono, letterSpacing: -2, lineHeight: 1 }}>{daysToNext}<span style={{ fontSize: 12, fontWeight: 400, marginLeft: 4 }}>D</span></div>
+              <div style={{ fontSize: 10, color: lp.text2, fontFamily: lp.mono, marginTop: 6, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{nextTrip.route || nextTrip.property || nextTrip.location}</div>
             </div>
           )}
         </div>
 
-        {/* Quick actions */}
-        <div className="c-a2" style={{ display: "flex", gap: 8, marginBottom: 36, flexWrap: "wrap" }}>
-          <button onClick={() => setShowAddTrip(true)} className="c-btn-primary" style={{ padding: "9px 20px", borderRadius: 10, border: "none", background: css.accent, color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>+ Add Trip</button>
-          {[["→ Optimizer","optimizer"],["Reports","reports"],["Programs","programs"]].map(([l,v]) => (
-            <button key={v} onClick={() => setActiveView(v)} className="c-nav-btn" style={{ padding: "9px 16px", borderRadius: 10, border: `1px solid ${css.border}`, background: "transparent", color: css.text2, fontSize: 13, fontWeight: 400, cursor: "pointer" }}>{l}</button>
+        {/* ── Quick actions ── */}
+        <div className="c-a2" style={{ display: "flex", gap: 0, marginBottom: 36, border: `1px solid ${lp.border}`, overflow: "hidden", width: "fit-content" }}>
+          <button onClick={() => setShowAddTrip(true)} style={{ padding: "10px 24px", border: "none", background: lp.teal, color: "#fff", fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", fontFamily: lp.mono }}>+ ADD TRIP</button>
+          {[["OPTIMIZER","optimizer"],["REPORTS","reports"],["PROGRAMS","programs"]].map(([l,v], i) => (
+            <button key={v} onClick={() => setActiveView(v)} style={{ padding: "10px 20px", border: "none", borderLeft: `1px solid ${lp.border}`, background: lp.surface, color: lp.dim, fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", fontFamily: lp.mono, transition: "color 0.15s, background 0.15s" }}
+              onMouseEnter={e => { e.currentTarget.style.color = lp.teal; e.currentTarget.style.background = lp.tealDim; }}
+              onMouseLeave={e => { e.currentTarget.style.color = lp.dim; e.currentTarget.style.background = lp.surface; }}
+            >{l} →</button>
           ))}
         </div>
 
-        {/* Airline Status */}
+        {/* ── Airline Status ── */}
         {airlineStatuses.length > 0 && (
           <div className="c-a3" style={{ marginBottom: 32 }}>
-            <SectionHead icon="✈" title="Airline Elite Status" count={`${airlineStatuses.length} programs`} action={() => setActiveView("programs")} actionLabel="Manage →" />
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12 }}>
-              {airlineStatuses.map(p => {
+            <SectionLabel action={() => setActiveView("programs")} actionLabel="MANAGE →">Airline Elite Status — {airlineStatuses.length} Programs</SectionLabel>
+            <div style={{ border: `1px solid ${lp.border}`, overflow: "hidden" }}>
+              {/* Column header */}
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 60px" : "240px 1fr 100px 90px", background: lp.surface2, borderBottom: `1px solid ${lp.border}` }}>
+                {["PROGRAM", !isMobile && "PROGRESS", !isMobile && "STATUS", "TO NEXT"].filter(Boolean).map((h, i) => (
+                  <div key={i} style={{ padding: "8px 14px", fontSize: 8, fontWeight: 700, letterSpacing: "0.15em", color: lp.dim, fontFamily: lp.mono, textAlign: i > 1 ? "right" : "left" }}>{h}</div>
+                ))}
+              </div>
+              {airlineStatuses.map((p, idx) => {
                 const s = p.status;
-                const progress = s.nextTier ? Math.min((s.projected / s.nextTier.threshold) * 100, 100) : 100;
+                const pct = s.nextTier ? Math.min((s.projected / s.nextTier.threshold) * 100, 100) : 100;
                 return (
-                  <div key={p.id} className="c-card" onClick={() => { setSelectedProgram(p.id); setActiveView("programs"); }} style={{
-                    background: css.surface, border: `1px solid ${css.border}`, borderRadius: 16, padding: "20px 22px",
-                    cursor: "pointer", position: "relative", overflow: "hidden",
-                    boxShadow: D ? "none" : "0 1px 4px rgba(0,0,0,0.05)",
-                  }}>
-                    <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, ${p.color}, ${p.color}40)` }} />
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
+                  <div key={p.id} onClick={() => { setSelectedProgram(p.id); setActiveView("programs"); }} style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 60px" : "240px 1fr 100px 90px", alignItems: "center", cursor: "pointer", borderBottom: idx < airlineStatuses.length - 1 ? `1px solid ${lp.border}` : "none", transition: "background 0.12s" }}
+                    onMouseEnter={e => e.currentTarget.style.background = lp.surface2}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                    <div style={{ padding: "14px", display: "flex", alignItems: "center", gap: 10, borderRight: `1px solid ${lp.border}` }}>
+                      <div style={{ width: 3, height: 32, background: p.color, flexShrink: 0 }} />
+                      <ProgramLogo prog={p} size={22} />
                       <div>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: css.text, marginBottom: 3 }}>{p.name}</div>
-                        <div style={{ fontSize: 11, color: css.text2 }}>
-                          <span style={{ fontWeight: 600, color: p.color }}>{s.currentTier?.name || "Member"}</span>
-                          <span style={{ margin: "0 6px", color: css.border }}>→</span>
-                          {s.nextTier?.name || "Top Tier"}
+                        <div style={{ fontSize: 12, fontWeight: 700, color: lp.text, fontFamily: lp.mono }}>{p.name.split(" ").slice(-1)[0].toUpperCase()}</div>
+                        <div style={{ fontSize: 9, color: lp.dim, fontFamily: lp.mono, marginTop: 1 }}>{p.name.split(" ").slice(0, -1).join(" ")}</div>
+                      </div>
+                    </div>
+                    {!isMobile && (
+                      <div style={{ padding: "14px 14px", borderRight: `1px solid ${lp.border}` }}>
+                        <div style={{ width: "100%", height: 3, background: lp.border2 }}>
+                          <div style={{ width: `${pct}%`, height: "100%", background: p.color, transition: "width 1s ease" }} />
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5, fontSize: 8, color: lp.dim, fontFamily: lp.mono }}>
+                          <span>{s.projected.toLocaleString()}</span>
+                          <span style={{ color: lp.teal }}>{s.tripBoosts > 0 ? `+${s.tripBoosts.toLocaleString()} PLANNED` : ""}</span>
+                          <span>{s.nextTier?.threshold.toLocaleString() || "MAX"}</span>
                         </div>
                       </div>
-                      {s.willAdvance
-                        ? <span style={{ background: css.successBg, color: css.success, border: `1px solid ${css.success}30`, borderRadius: 20, padding: "3px 10px", fontSize: 10, fontWeight: 700, flexShrink: 0 }}>↑ Advancing</span>
-                        : <div style={{ textAlign: "right" }}><div style={{ fontSize: 18, fontWeight: 700, color: css.text, fontFamily: "'JetBrains Mono', monospace" }}>{Math.round(progress)}%</div><div style={{ fontSize: 9, color: css.text3 }}>to next</div></div>
-                      }
-                    </div>
-                    <div style={{ width: "100%", height: 6, borderRadius: 3, background: css.surface2, overflow: "hidden", marginBottom: 8 }}>
-                      <div style={{ width: `${progress}%`, height: "100%", borderRadius: 3, background: `linear-gradient(90deg, ${p.color}, ${p.color}cc)`, transition: "width 1s ease" }} />
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: css.text3, fontFamily: "'JetBrains Mono', monospace" }}>
-                      <span>{s.projected.toLocaleString()}</span>
-                      <span>{s.tripBoosts > 0 && <span style={{ color: css.success, marginRight: 8 }}>+{s.tripBoosts.toLocaleString()} planned</span>}{s.nextTier?.threshold.toLocaleString()}</span>
+                    )}
+                    {!isMobile && (
+                      <div style={{ padding: "14px", borderRight: `1px solid ${lp.border}`, textAlign: "right" }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: p.color, fontFamily: lp.mono }}>{s.currentTier?.name || "MEMBER"}</div>
+                        {s.willAdvance && <div style={{ fontSize: 8, color: lp.green, fontFamily: lp.mono, marginTop: 2 }}>↑ ADVANCING</div>}
+                      </div>
+                    )}
+                    <div style={{ padding: "14px", textAlign: "right" }}>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: s.nextTier ? lp.text : lp.green, fontFamily: lp.mono }}>{s.nextTier ? Math.round(pct) + "%" : "MAX"}</div>
                     </div>
                   </div>
                 );
@@ -1549,36 +1576,51 @@ Start by introducing yourself briefly in-character with personality, and give an
           </div>
         )}
 
-        {/* Hotel Status */}
+        {/* ── Hotel Status ── */}
         {hotelStatuses.length > 0 && (
           <div className="c-a4" style={{ marginBottom: 32 }}>
-            <SectionHead icon="🏨" title="Hotel Elite Status" count={`${hotelStatuses.length} programs`} action={() => setActiveView("programs")} actionLabel="Manage →" />
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12 }}>
-              {hotelStatuses.map(p => {
+            <SectionLabel action={() => setActiveView("programs")} actionLabel="MANAGE →">Hotel Elite Status — {hotelStatuses.length} Programs</SectionLabel>
+            <div style={{ border: `1px solid ${lp.border}`, overflow: "hidden" }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 60px" : "240px 1fr 100px 90px", background: lp.surface2, borderBottom: `1px solid ${lp.border}` }}>
+                {["PROGRAM", !isMobile && "PROGRESS", !isMobile && "STATUS", "NIGHTS"].filter(Boolean).map((h, i) => (
+                  <div key={i} style={{ padding: "8px 14px", fontSize: 8, fontWeight: 700, letterSpacing: "0.15em", color: lp.dim, fontFamily: lp.mono, textAlign: i > 1 ? "right" : "left" }}>{h}</div>
+                ))}
+              </div>
+              {hotelStatuses.map((p, idx) => {
                 const s = p.status;
-                const progress = s.nextTier ? Math.min((s.projected / s.nextTier.threshold) * 100, 100) : 100;
+                const pct = s.nextTier ? Math.min((s.projected / s.nextTier.threshold) * 100, 100) : 100;
                 return (
-                  <div key={p.id} className="c-card" onClick={() => { setSelectedProgram(p.id); setActiveView("programs"); }} style={{
-                    background: css.surface, border: `1px solid ${css.border}`, borderRadius: 16, padding: "20px 22px",
-                    cursor: "pointer", position: "relative", overflow: "hidden",
-                    boxShadow: D ? "none" : "0 1px 4px rgba(0,0,0,0.05)",
-                  }}>
-                    <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, ${p.color}, ${p.color}40)` }} />
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+                  <div key={p.id} onClick={() => { setSelectedProgram(p.id); setActiveView("programs"); }} style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 60px" : "240px 1fr 100px 90px", alignItems: "center", cursor: "pointer", borderBottom: idx < hotelStatuses.length - 1 ? `1px solid ${lp.border}` : "none", transition: "background 0.12s" }}
+                    onMouseEnter={e => e.currentTarget.style.background = lp.surface2}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                    <div style={{ padding: "14px", display: "flex", alignItems: "center", gap: 10, borderRight: `1px solid ${lp.border}` }}>
+                      <div style={{ width: 3, height: 32, background: p.color, flexShrink: 0 }} />
+                      <ProgramLogo prog={p} size={22} />
                       <div>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: css.text, marginBottom: 3 }}>{p.name}</div>
-                        <div style={{ fontSize: 11, color: css.text2 }}>
-                          <span style={{ fontWeight: 600, color: p.color }}>{s.currentTier?.name || "Member"}</span> · {s.current} nights YTD
+                        <div style={{ fontSize: 12, fontWeight: 700, color: lp.text, fontFamily: lp.mono }}>{p.name.split(" ").slice(-1)[0].toUpperCase()}</div>
+                        <div style={{ fontSize: 9, color: lp.dim, fontFamily: lp.mono, marginTop: 1 }}>{p.name.split(" ").slice(0, -1).join(" ")}</div>
+                      </div>
+                    </div>
+                    {!isMobile && (
+                      <div style={{ padding: "14px", borderRight: `1px solid ${lp.border}` }}>
+                        <div style={{ width: "100%", height: 3, background: lp.border2 }}>
+                          <div style={{ width: `${pct}%`, height: "100%", background: p.color, transition: "width 1s ease" }} />
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5, fontSize: 8, color: lp.dim, fontFamily: lp.mono }}>
+                          <span>{s.projected} nts</span>
+                          <span style={{ color: lp.teal }}>{s.tripBoosts > 0 ? `+${s.tripBoosts} PLANNED` : ""}</span>
+                          <span>{s.nextTier?.threshold || "MAX"} nts</span>
                         </div>
                       </div>
-                      {s.willAdvance && <span style={{ background: css.successBg, color: css.success, border: `1px solid ${css.success}30`, borderRadius: 20, padding: "3px 10px", fontSize: 10, fontWeight: 700, flexShrink: 0 }}>↑ Tier Up</span>}
-                    </div>
-                    <div style={{ width: "100%", height: 6, borderRadius: 3, background: css.surface2, overflow: "hidden", marginBottom: 8 }}>
-                      <div style={{ width: `${progress}%`, height: "100%", borderRadius: 3, background: `linear-gradient(90deg, ${p.color}, ${p.color}cc)`, transition: "width 1s ease" }} />
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: css.text3, fontFamily: "'JetBrains Mono', monospace" }}>
-                      <span>{s.projected} / {s.nextTier?.threshold || "MAX"} nights</span>
-                      {s.tripBoosts > 0 && <span style={{ color: css.success }}>+{s.tripBoosts} planned</span>}
+                    )}
+                    {!isMobile && (
+                      <div style={{ padding: "14px", borderRight: `1px solid ${lp.border}`, textAlign: "right" }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: p.color, fontFamily: lp.mono }}>{s.currentTier?.name || "MEMBER"}</div>
+                        {s.willAdvance && <div style={{ fontSize: 8, color: lp.green, fontFamily: lp.mono, marginTop: 2 }}>↑ ADVANCING</div>}
+                      </div>
+                    )}
+                    <div style={{ padding: "14px", textAlign: "right" }}>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: s.nextTier ? lp.text : lp.green, fontFamily: lp.mono }}>{s.nextTier ? `${s.nextTier.threshold - s.projected}` : "MAX"}</div>
                     </div>
                   </div>
                 );
@@ -1587,35 +1629,44 @@ Start by introducing yourself briefly in-character with personality, and give an
           </div>
         )}
 
-        {/* Two-column: Trips + Cards */}
-        <div className="c-a5" style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 340px", gap: 24 }}>
+        {/* ── Two-column: Trips + Cards ── */}
+        <div className="c-a5" style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 320px", gap: 24 }}>
+
           {/* Upcoming Trips */}
           <div>
-            <SectionHead icon="📅" title="Upcoming Trips" count={`${trips.length}`} action={() => setActiveView("trips")} actionLabel="View all →" />
-            <div style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 16, overflow: "hidden", boxShadow: D ? "none" : "0 1px 4px rgba(0,0,0,0.05)" }}>
-              {trips.slice(0, 5).map((trip, idx) => {
+            <SectionLabel action={() => setActiveView("trips")} actionLabel="ALL TRIPS →">Upcoming Trips — {trips.length}</SectionLabel>
+            <div style={{ border: `1px solid ${lp.border}`, overflow: "hidden" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 80px 80px", background: lp.surface2, borderBottom: `1px solid ${lp.border}` }}>
+                {["ROUTE / PROPERTY", "DATE", "STATUS"].map((h, i) => (
+                  <div key={i} style={{ padding: "8px 14px", fontSize: 8, fontWeight: 700, letterSpacing: "0.15em", color: lp.dim, fontFamily: lp.mono, textAlign: i > 0 ? "right" : "left" }}>{h}</div>
+                ))}
+              </div>
+              {trips.slice(0, 6).map((trip, idx) => {
                 const prog = allPrograms.find(p => p.id === trip.program);
-                const sColor = trip.status === "confirmed" ? css.success : trip.status === "planned" ? css.warning : css.accent;
+                const sColor = trip.status === "confirmed" ? lp.green : trip.status === "planned" ? "#C9A84C" : lp.teal;
                 return (
-                  <div key={trip.id} className="c-row-hover" style={{
-                    display: "flex", alignItems: "center", gap: 12, padding: "13px 20px",
-                    borderBottom: idx < Math.min(trips.length, 5) - 1 ? `1px solid ${css.border}` : "none",
-                  }}>
-                    <div style={{ width: 34, height: 34, borderRadius: 10, background: `${prog?.color || css.accent}18`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>
-                      {trip.type === "flight" ? "✈️" : trip.type === "hotel" ? "🏨" : "🚗"}
+                  <div key={trip.id} style={{ display: "grid", gridTemplateColumns: "1fr 80px 80px", alignItems: "center", borderBottom: idx < Math.min(trips.length, 6) - 1 ? `1px solid ${lp.border}` : "none", transition: "background 0.12s" }}
+                    onMouseEnter={e => e.currentTarget.style.background = lp.surface2}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                    <div style={{ padding: "12px 14px", display: "flex", alignItems: "center", gap: 10, borderRight: `1px solid ${lp.border}` }}>
+                      <div style={{ width: 3, height: 28, background: prog?.color || lp.teal, flexShrink: 0 }} />
+                      <div>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: lp.text, fontFamily: lp.mono, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: isMobile ? 140 : 240 }}>{trip.route || trip.property || trip.location}</div>
+                        <div style={{ fontSize: 8, color: lp.dim, fontFamily: lp.mono, marginTop: 2 }}>{prog?.name?.split(" ")[0] || "—"}</div>
+                      </div>
                     </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: css.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{trip.route || trip.property || trip.location}</div>
-                      <div style={{ fontSize: 11, color: css.text3, marginTop: 1, fontFamily: "'JetBrains Mono', monospace" }}>{trip.date} · {prog?.name?.split(" ")[0] || "—"}</div>
+                    <div style={{ padding: "12px 14px", textAlign: "right", borderRight: `1px solid ${lp.border}` }}>
+                      <div style={{ fontSize: 9, color: lp.dim, fontFamily: lp.mono }}>{trip.date?.slice(5)}</div>
                     </div>
-                    <span style={{ background: `${sColor}15`, color: sColor, border: `1px solid ${sColor}30`, borderRadius: 20, padding: "2px 9px", fontSize: 10, fontWeight: 600, textTransform: "capitalize", flexShrink: 0 }}>{trip.status}</span>
+                    <div style={{ padding: "12px 14px", textAlign: "right" }}>
+                      <span style={{ fontSize: 8, fontWeight: 700, color: sColor, fontFamily: lp.mono, letterSpacing: "0.1em", textTransform: "uppercase" }}>{trip.status}</span>
+                    </div>
                   </div>
                 );
               })}
               {trips.length === 0 && (
-                <div style={{ textAlign: "center", padding: "40px 20px", color: css.text3 }}>
-                  <div style={{ fontSize: 28, marginBottom: 8 }}>✈️</div>
-                  <button onClick={() => setShowAddTrip(true)} style={{ background: "none", border: "none", color: css.accent, cursor: "pointer", fontWeight: 600, fontSize: 13 }}>Add your first trip →</button>
+                <div style={{ padding: "32px 20px", textAlign: "center" }}>
+                  <button onClick={() => setShowAddTrip(true)} style={{ background: "none", border: "none", color: lp.teal, cursor: "pointer", fontWeight: 700, fontSize: 11, fontFamily: lp.mono, letterSpacing: "0.1em" }}>+ ADD FIRST TRIP</button>
                 </div>
               )}
             </div>
@@ -1623,20 +1674,27 @@ Start by introducing yourself briefly in-character with personality, and give an
 
           {/* Recommended Cards */}
           <div>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 16 }}>
-              <h3 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 22, fontWeight: 500, color: css.text, margin: 0 }}>💳 Cards</h3>
-              <span style={{ fontSize: 9, background: css.goldBg, color: css.gold, border: `1px solid ${css.gold}40`, borderRadius: 20, padding: "2px 8px", fontWeight: 700, letterSpacing: 1 }}>SPONSORED</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+              <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: lp.teal, fontFamily: lp.mono }}>Card Offers</span>
+              <span style={{ fontSize: 7, fontWeight: 700, color: lp.dim, border: `1px solid ${lp.border2}`, padding: "2px 6px", fontFamily: lp.mono, letterSpacing: "0.1em" }}>SPONSORED</span>
+              <div style={{ flex: 1, height: 1, background: lp.border }} />
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ border: `1px solid ${lp.border}`, overflow: "hidden" }}>
               {CREDIT_CARD_OFFERS.slice(0, 3).map((card, i) => (
-                <div key={i} className="c-card" style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: "16px 18px", position: "relative", overflow: "hidden", boxShadow: D ? "none" : "0 1px 4px rgba(0,0,0,0.05)" }}>
-                  <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: card.color }} />
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: css.text }}>{card.name}</div>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: css.warning, fontFamily: "'JetBrains Mono', monospace" }}>{card.bonus}</div>
+                <div key={i} style={{ padding: "16px 18px", borderBottom: i < 2 ? `1px solid ${lp.border}` : "none", position: "relative", transition: "background 0.12s" }}
+                  onMouseEnter={e => e.currentTarget.style.background = lp.surface2}
+                  onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                  <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 2, background: card.color }} />
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4, paddingLeft: 6 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: lp.text, fontFamily: lp.mono }}>{card.name}</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "#C9A84C", fontFamily: lp.mono }}>{card.bonus}</div>
                   </div>
-                  <div style={{ fontSize: 10, color: css.text3, marginBottom: 8, fontFamily: "'JetBrains Mono', monospace" }}>Spend {card.spend} · {card.fee}</div>
-                  <button style={{ width: "100%", padding: "7px 0", borderRadius: 8, border: `1px solid ${css.border}`, background: "transparent", color: css.accent, fontSize: 11, fontWeight: 600, cursor: "pointer", transition: "all 0.15s" }}>Apply Now →</button>
+                  <div style={{ fontSize: 8, color: lp.dim, marginBottom: 10, fontFamily: lp.mono, paddingLeft: 6 }}>SPEND {card.spend} · {card.fee}</div>
+                  <button style={{ width: "100%", padding: "7px 0", border: `1px solid ${lp.tealBord}`, background: "transparent", color: lp.teal, fontSize: 9, fontWeight: 700, cursor: "pointer", fontFamily: lp.mono, letterSpacing: "0.12em", textTransform: "uppercase", transition: "background 0.15s" }}
+                    onMouseEnter={e => e.currentTarget.style.background = lp.tealDim}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                    APPLY NOW →
+                  </button>
                 </div>
               ))}
             </div>
