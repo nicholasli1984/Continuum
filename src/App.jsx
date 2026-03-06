@@ -1164,12 +1164,13 @@ Start by introducing yourself briefly in-character with personality, and give an
                 <span style={{ fontSize: 9, fontFamily: "Space Mono, monospace", color: "#0EA5A0", letterSpacing: 2 }}>CTM-2026</span>
               </div>
 
-              {/* Instructions */}
-              <div style={{ position: "absolute", top: isMobile ? "15%" : "30%", left: "50%", transform: "translateX(-50%)", zIndex: 10, textAlign: "center", pointerEvents: "none", width: isMobile ? "90%" : "auto" }}>
-                <h1 style={{ fontSize: "clamp(1.5rem, 3vw, 2.4rem)", fontFamily: "Instrument Serif, serif", fontWeight: 400, fontStyle: "italic", textShadow: "0 2px 20px rgba(0,0,0,0.7)", margin: 0 }}>
-                  Your status. <span style={{ color: "#0EA5A0" }}>Your cockpit.</span>
+              {/* Bottom gradient + headline */}
+              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "45%", background: "linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.5) 50%, transparent 100%)", zIndex: 8, pointerEvents: "none" }} />
+              <div style={{ position: "absolute", bottom: isMobile ? 80 : 64, left: "50%", transform: "translateX(-50%)", zIndex: 10, textAlign: "center", pointerEvents: "none", width: isMobile ? "90%" : "auto", whiteSpace: "nowrap" }}>
+                <h1 style={{ fontSize: "clamp(1.6rem, 3vw, 2.6rem)", fontFamily: "Instrument Serif, serif", fontWeight: 400, fontStyle: "italic", color: "#f0ece6", margin: 0, letterSpacing: "-0.01em" }}>
+                  Your status.{" "}<span style={{ color: "#E8883A" }}>Your cockpit.</span>
                 </h1>
-                <p style={{ fontSize: 11, color: "#8a8f98", marginTop: 8, textShadow: "0 1px 8px rgba(0,0,0,0.8)" }}>
+                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 10, letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: "Space Mono, monospace" }}>
                   Elite status tracking, reimagined.
                 </p>
               </div>
