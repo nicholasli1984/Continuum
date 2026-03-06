@@ -367,7 +367,7 @@ const IconBtn = ({ icon, label, active, onClick, badge }) => (
 // MAIN APP
 // ============================================================
 export default function EliteStatusTracker() {
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [publicPage, setPublicPage] = useState("landing");
   const [user, setUser] = useState(null);
