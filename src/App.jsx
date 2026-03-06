@@ -392,8 +392,6 @@ export default function EliteStatusTracker() {
   const [newExpense, setNewExpense] = useState({ category: "flight", description: "", amount: "", currency: "USD", fxRate: 1, date: "", paymentMethod: "", receipt: false, receiptImage: null, notes: "" });
   const [expenseViewTrip, setExpenseViewTrip] = useState(null); // null = overview, tripId = detail
   const [showExpenseReport, setShowExpenseReport] = useState(null); // tripId for report modal
-  const [reportCurrency, setReportCurrency] = useState("USD");
-  const [reportFxToUSD, setReportFxToUSD] = useState(1); // units of reportCurrency per 1 USD
   const [customPrograms, setCustomPrograms] = useState([]);
   const [showAddProgram, setShowAddProgram] = useState(false);
   const [newProgram, setNewProgram] = useState({ name: "", category: "airline", logo: "✈️", color: "#0EA5A0", memberId: "", unit: "Points", tiers: "", selectedId: "", search: "" });
@@ -3110,20 +3108,19 @@ Start by introducing yourself briefly in-character with personality, and give an
         const prog = allPrograms.find(p => p.id === trip.program);
         const receiptCount = tripExps.filter(e => e.receipt).length;
 
-        // Currency conversion helpers
+        // Per-expense: show in its own entered currency; total rolls up in USD
         const CURRENCY_SYMBOLS = { USD:"$", EUR:"€", GBP:"£", CAD:"CA$", AUD:"A$", JPY:"¥", CHF:"Fr", CNY:"¥", HKD:"HK$", SGD:"S$", MXN:"MX$", BRL:"R$", INR:"₹", KRW:"₩", AED:"د.إ", THB:"฿", NOK:"kr", SEK:"kr", DKK:"kr", NZD:"NZ$" };
-        const rptSym = CURRENCY_SYMBOLS[reportCurrency] || reportCurrency + " ";
-        const fxFactor = parseFloat(reportFxToUSD) || 1; // units of reportCurrency per 1 USD
-        // Each expense: USD amount = exp.amount * (exp.fxRate||1), then → report currency = USD * fxFactor
-        const toRpt = (exp) => exp.amount * (exp.fxRate || 1) * fxFactor;
-        const fmtRpt = (n) => n === 0 ? "Free" : `${rptSym}${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        const symFor = (cur) => CURRENCY_SYMBOLS[cur] || (cur + " ");
+        const fmtAmt = (n, cur) => n === 0 ? "Free" : `${symFor(cur)}${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        const toUSD = (exp) => exp.amount * (exp.fxRate || 1);
 
-        const tripTotal = tripExps.reduce((s, e) => s + toRpt(e), 0);
+        // USD total (all expenses converted via their own fxRate)
+        const tripTotalUSD = tripExps.reduce((s, e) => s + toUSD(e), 0);
         const catSummary = EXPENSE_CATEGORIES.map(cat => ({
           ...cat,
-          total: tripExps.filter(e => e.category === cat.id).reduce((s, e) => s + toRpt(e), 0),
+          totalUSD: tripExps.filter(e => e.category === cat.id).reduce((s, e) => s + toUSD(e), 0),
           count: tripExps.filter(e => e.category === cat.id).length,
-        })).filter(c => c.total > 0);
+        })).filter(c => c.totalUSD > 0);
 
         return (
           <div style={{
@@ -3134,34 +3131,7 @@ Start by introducing yourself briefly in-character with personality, and give an
               maxHeight: "85vh", overflowY: "auto",
             }}>
 
-              {/* ── Currency selector ── */}
-              <div style={{ background: "rgba(14,165,160,0.07)", border: "1px solid rgba(14,165,160,0.18)", borderRadius: 8, padding: "14px 18px", marginBottom: 24, display: "flex", flexWrap: "wrap", gap: 14, alignItems: "flex-end" }}>
-                <label style={{ flex: "1 1 140px" }}>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: "#0EA5A0", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif", display: "block", marginBottom: 6 }}>Report Currency</span>
-                  <select value={reportCurrency} onChange={e => { setReportCurrency(e.target.value); setReportFxToUSD(e.target.value === "USD" ? 1 : ""); }}
-                    style={{ width: "100%", padding: "8px 10px", background: "#1a1728", border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }}>
-                    {["USD","EUR","GBP","CAD","AUD","JPY","CHF","CNY","HKD","SGD","MXN","BRL","INR","KRW","AED","THB","NOK","SEK","DKK","NZD"].map(c => (
-                      <option key={c} value={c} style={{ background: "#211e2e" }}>{c}</option>
-                    ))}
-                  </select>
-                </label>
-                {reportCurrency !== "USD" && (
-                  <label style={{ flex: "1 1 160px" }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: "#0EA5A0", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif", display: "block", marginBottom: 6 }}>1 USD = ? {reportCurrency}</span>
-                    <input type="number" min="0" step="0.0001" value={reportFxToUSD} onChange={e => setReportFxToUSD(e.target.value)} placeholder="e.g. 0.9200"
-                      style={{ width: "100%", padding: "8px 10px", background: "#1a1728", border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
-                  </label>
-                )}
-                <div style={{ flex: "2 1 200px", fontSize: 11, color: "#62666d", fontFamily: "Inter, sans-serif", lineHeight: 1.5, paddingBottom: 2 }}>
-                  {reportCurrency === "USD"
-                    ? "All expenses shown in USD using their entered FX rates."
-                    : reportFxToUSD
-                      ? `Each expense is converted to USD via its FX rate, then to ${reportCurrency} at 1 USD = ${reportFxToUSD} ${reportCurrency}.`
-                      : `Enter the 1 USD → ${reportCurrency} rate to see converted totals.`}
-                </div>
-              </div>
-
-              {/* Report Header */}
+                {/* Report Header */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
                 <div>
                   <div style={{ marginBottom: 6 }}>
@@ -3172,7 +3142,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                 <div style={{ textAlign: "right" }}>
                   <div style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>Generated {new Date().toLocaleDateString()}</div>
                   <div style={{ fontSize: 11, color: "#62666d", fontFamily: "Inter, sans-serif" }}>Report #{trip.id}-{Date.now().toString(36).slice(-4)}</div>
-                  <div style={{ marginTop: 6, fontSize: 11, fontWeight: 700, color: "#0EA5A0", fontFamily: "Inter, sans-serif" }}>Currency: {reportCurrency}</div>
+                  <div style={{ marginTop: 6, fontSize: 11, fontWeight: 700, color: "#0EA5A0", fontFamily: "Inter, sans-serif" }}>Total in USD</div>
                 </div>
               </div>
 
@@ -3191,8 +3161,8 @@ Start by introducing yourself briefly in-character with personality, and give an
               {/* Summary Stats */}
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: 12, marginBottom: 20 }}>
                 <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 8, padding: 14, textAlign: "center" }}>
-                  <div style={{ fontSize: 20, fontWeight: 800, color: "#0EA5A0", fontFamily: "Inter, sans-serif" }}>{fmtRpt(tripTotal)}</div>
-                  <div style={{ fontSize: 10, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>Total ({reportCurrency})</div>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: "#0EA5A0", fontFamily: "Inter, sans-serif" }}>${tripTotalUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                  <div style={{ fontSize: 10, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>Total (USD)</div>
                 </div>
                 <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 8, padding: 14, textAlign: "center" }}>
                   <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", fontFamily: "'Inter Tight', Inter, sans-serif" }}>{tripExps.length}</div>
@@ -3215,9 +3185,9 @@ Start by introducing yourself briefly in-character with personality, and give an
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                       <div style={{ width: 80, height: 5, borderRadius: 8, background: "#2a2640", overflow: "hidden" }}>
-                        <div style={{ width: `${tripTotal > 0 ? (cat.total / tripTotal) * 100 : 0}%`, height: "100%", background: cat.color, borderRadius: 8 }} />
+                        <div style={{ width: `${tripTotalUSD > 0 ? (cat.totalUSD / tripTotalUSD) * 100 : 0}%`, height: "100%", background: cat.color, borderRadius: 8 }} />
                       </div>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif", minWidth: 80, textAlign: "right" }}>{fmtRpt(cat.total)}</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif", minWidth: 80, textAlign: "right" }}>${cat.totalUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                   </div>
                 ))}
@@ -3232,35 +3202,42 @@ Start by introducing yourself briefly in-character with personality, and give an
                     <span style={{ fontSize: 10, fontWeight: 700, color: "#8a8f98", fontFamily: "Inter, sans-serif", textTransform: "uppercase" }}>Description</span>
                     {!isMobile && <span style={{ fontSize: 10, fontWeight: 700, color: "#8a8f98", fontFamily: "Inter, sans-serif", textTransform: "uppercase" }}>Date</span>}
                     {!isMobile && <span style={{ fontSize: 10, fontWeight: 700, color: "#8a8f98", fontFamily: "Inter, sans-serif", textTransform: "uppercase" }}>Payment</span>}
-                    <span style={{ fontSize: 10, fontWeight: 700, color: "#8a8f98", fontFamily: "Inter, sans-serif", textTransform: "uppercase", textAlign: "right" }}>{reportCurrency}</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: "#8a8f98", fontFamily: "Inter, sans-serif", textTransform: "uppercase", textAlign: "right" }}>Amount</span>
                     {!isMobile && <span style={{ fontSize: 10, fontWeight: 700, color: "#8a8f98", fontFamily: "Inter, sans-serif", textAlign: "center" }}>🧾</span>}
                   </div>
                   {/* Rows */}
                   {tripExps.map((exp, i) => {
                     const cat = EXPENSE_CATEGORIES.find(c => c.id === exp.category);
-                    const converted = toRpt(exp);
-                    const isForeign = exp.currency && exp.currency !== "USD";
+                    const cur = exp.currency || "USD";
+                    const isForeign = cur !== "USD";
+                    const usdAmt = toUSD(exp);
                     return (
                       <div key={exp.id} style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 80px" : "1fr 80px 90px 90px 28px", gap: 8, padding: "10px 14px", borderBottom: i < tripExps.length - 1 ? "1px solid rgba(0,0,0,0.02)" : "none", alignItems: "center" }}>
                         <div>
                           <span style={{ fontSize: 12, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{cat?.icon} {exp.description}</span>
                           {exp.notes && <div style={{ fontSize: 10, color: "#62666d", marginTop: 1 }}>{exp.notes}</div>}
-                          {isForeign && <div style={{ fontSize: 9, color: "#62666d", marginTop: 1, fontFamily: "Inter, sans-serif" }}>{exp.amount} {exp.currency} @ {exp.fxRate} → USD</div>}
                           {isMobile && <div style={{ fontSize: 10, color: "#62666d", marginTop: 1 }}>{exp.date?.slice(5)} {exp.receipt ? "🧾" : ""}</div>}
                         </div>
                         {!isMobile && <span style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>{exp.date?.slice(5)}</span>}
                         {!isMobile && <span style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.paymentMethod || "—"}</span>}
-                        <span style={{ fontSize: 12, fontWeight: 700, color: converted === 0 ? "#34d399" : "#FFFFFF", fontFamily: "Inter, sans-serif", textAlign: "right" }}>
-                          {fmtRpt(converted)}
-                        </span>
+                        <div style={{ textAlign: "right" }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: exp.amount === 0 ? "#34d399" : "#FFFFFF", fontFamily: "Inter, sans-serif" }}>
+                            {fmtAmt(exp.amount, cur)}
+                          </div>
+                          {isForeign && (
+                            <div style={{ fontSize: 9, color: "#62666d", fontFamily: "Inter, sans-serif", marginTop: 1 }}>
+                              ${usdAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+                            </div>
+                          )}
+                        </div>
                         {!isMobile && <span style={{ fontSize: 12, textAlign: "center" }}>{exp.receipt ? "✓" : "—"}</span>}
                       </div>
                     );
                   })}
                   {/* Total */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 90px", gap: 8, padding: "12px 14px", background: "rgba(14,165,160,0.06)", borderTop: "2px solid rgba(14,165,160,0.2)" }}>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: "#0EA5A0", fontFamily: "Inter, sans-serif" }}>TOTAL ({reportCurrency})</span>
-                    <span style={{ fontSize: 14, fontWeight: 800, color: "#0EA5A0", fontFamily: "Inter, sans-serif", textAlign: "right" }}>{fmtRpt(tripTotal)}</span>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 110px", gap: 8, padding: "12px 14px", background: "rgba(14,165,160,0.06)", borderTop: "2px solid rgba(14,165,160,0.2)" }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "#0EA5A0", fontFamily: "Inter, sans-serif" }}>TOTAL (USD)</span>
+                    <span style={{ fontSize: 14, fontWeight: 800, color: "#0EA5A0", fontFamily: "Inter, sans-serif", textAlign: "right" }}>${tripTotalUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                 </div>
               </div>
