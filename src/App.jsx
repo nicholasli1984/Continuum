@@ -1244,33 +1244,33 @@ Start by introducing yourself briefly in-character with personality, and give an
         {/* RIGHT PANEL — Login Form (full on mobile, 40% on desktop) */}
         <div style={{
           flex: isMobile ? 1 : "0 0 40%", display: "flex", flexDirection: "column", alignItems: "center",
-          padding: isMobile ? "24px 20px" : "40px 48px", position: "relative", overflowY: "auto",
-          background: "linear-gradient(180deg, #0a0b0d 0%, #0d0f12 50%, #0a0b0d 100%)",
+          justifyContent: "center", padding: isMobile ? "20px" : "24px 40px", position: "relative",
+          overflow: "hidden", background: "linear-gradient(180deg, #0a0b0d 0%, #0d0f12 50%, #0a0b0d 100%)",
         }}>
           {/* Subtle glow effect */}
-          <div style={{ position: "absolute", top: "30%", left: "50%", transform: "translate(-50%, -50%)", width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle, rgba(14,165,160,0.06) 0%, transparent 70%)", pointerEvents: "none" }} />
+          <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle, rgba(14,165,160,0.06) 0%, transparent 70%)", pointerEvents: "none" }} />
 
           <div style={{
-            width: "100%", maxWidth: 380, margin: "auto 0",
+            width: "100%", maxWidth: 380,
             opacity: animateIn ? 1 : 0, transform: animateIn ? "translateY(0)" : "translateY(24px)",
             transition: "all 0.8s cubic-bezier(0.16,1,0.3,1)", position: "relative", zIndex: 1,
           }}>
-            {/* Back button on mobile (since image panel is hidden) */}
+            {/* Back button on mobile */}
             {isMobile && (
               <button onClick={() => goTo("landing")} style={{
-                alignSelf: "flex-start", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8,
-                padding: "6px 14px", cursor: "pointer", marginBottom: 16, fontSize: 13, color: "#8a8f98", fontFamily: "Inter, sans-serif",
+                background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8,
+                padding: "5px 12px", cursor: "pointer", marginBottom: 12, fontSize: 12, color: "#8a8f98", fontFamily: "Inter, sans-serif",
               }}>← Back</button>
             )}
             {/* Logo + Header */}
-            <div style={{ textAlign: "center", marginBottom: isMobile ? 24 : 36 }}>
-              <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
-                <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: isMobile ? 80 : 160, display: "block" }} />
+            <div style={{ textAlign: "center", marginBottom: 16 }}>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
+                <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: isMobile ? 64 : 88, display: "block" }} />
               </div>
-              <h1 style={{ fontSize: 24, fontWeight: 700, color: "#f7f8f8", margin: "0 0 6px", fontFamily: "Inter, sans-serif", letterSpacing: -0.3 }}>
+              <h1 style={{ fontSize: 22, fontWeight: 700, color: "#f7f8f8", margin: "0 0 4px", fontFamily: "Inter, sans-serif", letterSpacing: -0.3 }}>
                 {isRegistering ? "Create Account" : "Welcome Back"}
               </h1>
-              <p style={{ color: "rgba(138,143,152,0.8)", fontSize: 13, margin: 0, fontFamily: "Inter, sans-serif" }}>
+              <p style={{ color: "rgba(138,143,152,0.8)", fontSize: 12, margin: 0, fontFamily: "Inter, sans-serif" }}>
                 {isRegistering ? "Join the Continuum experience" : "Sign in to your account"}
               </p>
             </div>
@@ -1278,16 +1278,16 @@ Start by introducing yourself briefly in-character with personality, and give an
             {/* Glassmorphism Card */}
             <div style={{
               background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)",
-              borderRadius: 16, padding: "28px 24px",
+              borderRadius: 16, padding: "20px 22px",
               backdropFilter: "blur(40px)", WebkitBackdropFilter: "blur(40px)",
               boxShadow: "0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)",
             }}>
               {/* Tab Toggle */}
-              <div style={{ display: "flex", marginBottom: 24, background: "rgba(255,255,255,0.04)", borderRadius: 10, padding: 3 }}>
+              <div style={{ display: "flex", marginBottom: 16, background: "rgba(255,255,255,0.04)", borderRadius: 10, padding: 3 }}>
                 {["Sign In", "Register"].map((tab, i) => (
                   <button key={tab} onClick={() => setIsRegistering(i === 1)} style={{
-                    flex: 1, padding: "10px 0", border: "none", borderRadius: 8, cursor: "pointer",
-                    fontSize: 13, fontWeight: 600, fontFamily: "Inter, sans-serif",
+                    flex: 1, padding: "8px 0", border: "none", borderRadius: 8, cursor: "pointer",
+                    fontSize: 12, fontWeight: 600, fontFamily: "Inter, sans-serif",
                     background: (i === 0 ? !isRegistering : isRegistering) ? "rgba(14,165,160,0.15)" : "transparent",
                     color: (i === 0 ? !isRegistering : isRegistering) ? "#0EA5A0" : "#62666d",
                     transition: "all 0.3s ease",
@@ -1297,50 +1297,50 @@ Start by introducing yourself briefly in-character with personality, and give an
 
               {!isRegistering ? (
                 <div>
-                  <label style={{ display: "block", marginBottom: 16 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1.2, fontFamily: "Inter, sans-serif" }}>Email</span>
+                  <label style={{ display: "block", marginBottom: 12 }}>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1.2, fontFamily: "Inter, sans-serif" }}>Email</span>
                     <input type="email" value={loginForm.email} onChange={e => setLoginForm(p => ({ ...p, email: e.target.value }))} placeholder="alex@example.com"
-                      style={{ display: "block", width: "100%", marginTop: 8, padding: "12px 16px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#f7f8f8", fontSize: 14, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box", transition: "border-color 0.3s" }} />
+                      style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box", transition: "border-color 0.3s" }} />
                   </label>
-                  <label style={{ display: "block", marginBottom: 24 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1.2, fontFamily: "Inter, sans-serif" }}>Password</span>
+                  <label style={{ display: "block", marginBottom: 16 }}>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1.2, fontFamily: "Inter, sans-serif" }}>Password</span>
                     <input type="password" value={loginForm.password} onChange={e => setLoginForm(p => ({ ...p, password: e.target.value }))} placeholder="••••••••"
-                      style={{ display: "block", width: "100%", marginTop: 8, padding: "12px 16px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#f7f8f8", fontSize: 14, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box", transition: "border-color 0.3s" }} />
+                      style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box", transition: "border-color 0.3s" }} />
                   </label>
                   <button onClick={handleLogin} style={{
-                    width: "100%", padding: "13px 0", border: "none", borderRadius: 10, cursor: "pointer",
-                    fontSize: 14, fontWeight: 700, fontFamily: "Inter, sans-serif", letterSpacing: 0.3,
+                    width: "100%", padding: "11px 0", border: "none", borderRadius: 10, cursor: "pointer",
+                    fontSize: 13, fontWeight: 700, fontFamily: "Inter, sans-serif", letterSpacing: 0.3,
                     background: "linear-gradient(135deg, #0EA5A0, #0c8e8a)", color: "#fff",
                     boxShadow: "0 4px 20px rgba(14,165,160,0.3), inset 0 1px 0 rgba(255,255,255,0.1)",
                     transition: "all 0.3s ease",
                   }}>Sign In</button>
                   <button onClick={() => { setLoginForm({ email: "alex@example.com", password: "demo" }); setTimeout(handleLogin, 100); }} style={{
-                    width: "100%", padding: "11px 0", border: "1px solid rgba(14,165,160,0.15)", borderRadius: 10, cursor: "pointer",
-                    fontSize: 13, fontWeight: 600, fontFamily: "Inter, sans-serif",
-                    background: "rgba(14,165,160,0.04)", color: "#0EA5A0", marginTop: 10,
+                    width: "100%", padding: "9px 0", border: "1px solid rgba(14,165,160,0.15)", borderRadius: 10, cursor: "pointer",
+                    fontSize: 12, fontWeight: 600, fontFamily: "Inter, sans-serif",
+                    background: "rgba(14,165,160,0.04)", color: "#0EA5A0", marginTop: 8,
                     transition: "all 0.3s ease",
                   }}>Try Demo Account →</button>
                 </div>
               ) : (
                 <div>
-                  <label style={{ display: "block", marginBottom: 14 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1.2, fontFamily: "Inter, sans-serif" }}>Full Name</span>
+                  <label style={{ display: "block", marginBottom: 10 }}>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1.2, fontFamily: "Inter, sans-serif" }}>Full Name</span>
                     <input value={registerForm.name} onChange={e => setRegisterForm(p => ({ ...p, name: e.target.value }))} placeholder="Your name"
-                      style={{ display: "block", width: "100%", marginTop: 8, padding: "12px 16px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#f7f8f8", fontSize: 14, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box", transition: "border-color 0.3s" }} />
+                      style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box", transition: "border-color 0.3s" }} />
+                  </label>
+                  <label style={{ display: "block", marginBottom: 10 }}>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1.2, fontFamily: "Inter, sans-serif" }}>Email</span>
+                    <input type="email" value={registerForm.email} onChange={e => setRegisterForm(p => ({ ...p, email: e.target.value }))} placeholder="you@email.com"
+                      style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box", transition: "border-color 0.3s" }} />
                   </label>
                   <label style={{ display: "block", marginBottom: 14 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1.2, fontFamily: "Inter, sans-serif" }}>Email</span>
-                    <input type="email" value={registerForm.email} onChange={e => setRegisterForm(p => ({ ...p, email: e.target.value }))} placeholder="you@email.com"
-                      style={{ display: "block", width: "100%", marginTop: 8, padding: "12px 16px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#f7f8f8", fontSize: 14, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box", transition: "border-color 0.3s" }} />
-                  </label>
-                  <label style={{ display: "block", marginBottom: 24 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1.2, fontFamily: "Inter, sans-serif" }}>Password</span>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1.2, fontFamily: "Inter, sans-serif" }}>Password</span>
                     <input type="password" value={registerForm.password} onChange={e => setRegisterForm(p => ({ ...p, password: e.target.value }))} placeholder="••••••••"
-                      style={{ display: "block", width: "100%", marginTop: 8, padding: "12px 16px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#f7f8f8", fontSize: 14, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box", transition: "border-color 0.3s" }} />
+                      style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box", transition: "border-color 0.3s" }} />
                   </label>
                   <button onClick={handleRegister} style={{
-                    width: "100%", padding: "13px 0", border: "none", borderRadius: 10, cursor: "pointer",
-                    fontSize: 14, fontWeight: 700, fontFamily: "Inter, sans-serif", letterSpacing: 0.3,
+                    width: "100%", padding: "11px 0", border: "none", borderRadius: 10, cursor: "pointer",
+                    fontSize: 13, fontWeight: 700, fontFamily: "Inter, sans-serif", letterSpacing: 0.3,
                     background: "linear-gradient(135deg, #0EA5A0, #0c8e8a)", color: "#fff",
                     boxShadow: "0 4px 20px rgba(14,165,160,0.3), inset 0 1px 0 rgba(255,255,255,0.1)",
                     transition: "all 0.3s ease",
@@ -1348,8 +1348,8 @@ Start by introducing yourself briefly in-character with personality, and give an
                 </div>
               )}
 
-              <div style={{ textAlign: "center", marginTop: 20, padding: "14px 0 0", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
-                <p style={{ color: "#52555c", fontSize: 11, fontFamily: "Inter, sans-serif", margin: 0 }}>By signing in, you agree to our Terms of Service</p>
+              <div style={{ textAlign: "center", marginTop: 12, padding: "10px 0 0", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+                <p style={{ color: "#52555c", fontSize: 10, fontFamily: "Inter, sans-serif", margin: 0 }}>By signing in, you agree to our Terms of Service</p>
               </div>
             </div>
           </div>
