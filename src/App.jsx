@@ -1144,13 +1144,12 @@ Start by introducing yourself briefly in-character with personality, and give an
                     <text x={880} y={664} fontSize={11} fill="#f0f0f0" textAnchor="middle" fontFamily="Space Mono, monospace" letterSpacing={2}>HOW IT WORKS</text>
                   </g>
                 </g>
-                {/* Blue → Log In  keyboard section x=766 y=855 w=230 h=133 */}
+                {/* Blue → Log In  top instrument panel */}
                 <g className="czg" onClick={() => goTo("login")} style={{ cursor: "pointer" }}>
-                  <rect className="cz" x={766} y={855} width={230} height={133} />
-                  <g className="ctt">
-                    <rect x={824} y={828} width={85} height={22} rx={4} fill="rgba(0,0,0,0.85)" />
-                    <text x={866} y={843} fontSize={11} fill="#f0f0f0" textAnchor="middle" fontFamily="Space Mono, monospace" letterSpacing={2}>LOG IN</text>
-                  </g>
+                  <rect className="cz" x={760} y={140} width={240} height={110} rx={6} />
+                  {/* Always-visible login badge */}
+                  <rect x={820} y={108} width={112} height={26} rx={5} fill="rgba(212,116,45,0.92)" />
+                  <text x={876} y={125} fontSize={11} fill="#fff" textAnchor="middle" fontFamily="Space Mono, monospace" letterSpacing={2} fontWeight="700">LOG IN →</text>
                 </g>
               </svg>
 
