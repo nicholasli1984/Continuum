@@ -1144,23 +1144,25 @@ Start by introducing yourself briefly in-character with personality, and give an
                     <text x={880} y={664} fontSize={11} fill="#f0f0f0" textAnchor="middle" fontFamily="Space Mono, monospace" letterSpacing={2}>HOW IT WORKS</text>
                   </g>
                 </g>
-                {/* Blue → Log In  top instrument panel */}
-                <g className="czg" onClick={() => goTo("login")} style={{ cursor: "pointer" }}>
-                  <rect className="cz" x={760} y={140} width={240} height={110} rx={6} />
-                  {/* Always-visible login badge */}
-                  <rect x={820} y={108} width={112} height={26} rx={5} fill="rgba(212,116,45,0.92)" />
-                  <text x={876} y={125} fontSize={11} fill="#fff" textAnchor="middle" fontFamily="Space Mono, monospace" letterSpacing={2} fontWeight="700">LOG IN →</text>
-                </g>
               </svg>
 
               {/* Logo top-left */}
-              <div style={{ position: "absolute", top: isMobile ? 8 : 12, left: isMobile ? 8 : 16, zIndex: 20 }}>
-                <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: isMobile ? 60 : 160, display: "block" }} />
+              <div style={{ position: "absolute", top: 0, left: 0, zIndex: 20 }}>
+                <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: isMobile ? 56 : 140, display: "block" }} />
               </div>
 
-              {/* Flight code */}
-              <div style={{ position: "absolute", top: 16, right: 20, zIndex: 20 }}>
+              {/* Top-right: flight code + log in */}
+              <div style={{ position: "absolute", top: 16, right: 20, zIndex: 20, display: "flex", alignItems: "center", gap: 16 }}>
                 <span style={{ fontSize: 9, fontFamily: "Space Mono, monospace", color: "#0EA5A0", letterSpacing: 2 }}>CTM-2026</span>
+                <button onClick={() => goTo("login")} style={{
+                  background: "none", border: "none", cursor: "pointer",
+                  fontSize: 9, fontFamily: "Space Mono, monospace", color: "rgba(255,255,255,0.6)",
+                  letterSpacing: 2, textTransform: "uppercase", padding: 0,
+                  transition: "color 0.15s",
+                }}
+                onMouseEnter={e => e.currentTarget.style.color = "#E8883A"}
+                onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.6)"}
+                >Log In →</button>
               </div>
 
               {/* Bottom gradient + headline */}
