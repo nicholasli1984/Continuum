@@ -1749,31 +1749,32 @@ Start by introducing yourself briefly in-character with personality, and give an
     );
   };
 
-  const renderTrips = () => (
+  const renderTrips = () => {
+    const grandTotal = expenses.reduce((s, e) => s + e.amount, 0);
+    return (
     <div>
       {/* Page header */}
       <div className="c-a1" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 28, gap: 16, flexWrap: "wrap" }}>
         <div>
           <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: css.text3, marginBottom: 8 }}>2026 Travel Plan</div>
           <h2 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: isMobile ? 28 : 36, fontWeight: 600, color: css.text, margin: 0, lineHeight: 1.1 }}>Your Trips</h2>
-          <p style={{ color: css.text2, fontSize: 13, margin: "8px 0 0" }}>{trips.length} trips · {trips.filter(t => t.status === "confirmed").length} confirmed</p>
+          <p style={{ color: css.text2, fontSize: 13, margin: "8px 0 0" }}>
+            {trips.length} trips · {trips.filter(t => t.status === "confirmed").length} confirmed
+            {grandTotal > 0 && <span style={{ marginLeft: 10, color: css.accent, fontFamily: "'JetBrains Mono', monospace" }}>${grandTotal.toLocaleString()} total spend</span>}
+          </p>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-          {/* Flighty / Calendar export — Premium feature */}
           <button onClick={exportToFlighty} style={{
             display: "flex", alignItems: "center", gap: 7, padding: "10px 16px", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 600,
             background: user?.tier === "premium" ? css.accentBg : css.surface2,
             border: user?.tier === "premium" ? `1px solid ${css.accentBorder}` : `1px solid ${css.border}`,
-            color: user?.tier === "premium" ? css.accent : css.text3,
-            transition: "all 0.15s",
+            color: user?.tier === "premium" ? css.accent : css.text3, transition: "all 0.15s",
           }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.67A2 2 0 012 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
             </svg>
-            Export to Flighty
-            {user?.tier !== "premium" && (
-              <span style={{ fontSize: 9, background: css.goldBg, color: css.gold, padding: "2px 6px", borderRadius: 6, fontWeight: 700, border: `1px solid ${css.gold}30` }}>PRO</span>
-            )}
+            Flighty Sync
+            {user?.tier !== "premium" && <span style={{ fontSize: 9, background: css.goldBg, color: css.gold, padding: "2px 6px", borderRadius: 6, fontWeight: 700, border: `1px solid ${css.gold}30` }}>PRO</span>}
           </button>
           <button onClick={() => setShowAddTrip(true)} className="c-btn-primary" style={{
             padding: "10px 20px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600,
@@ -1792,8 +1793,7 @@ Start by introducing yourself briefly in-character with personality, and give an
           <div>
             <div style={{ fontSize: 13, fontWeight: 600, color: css.text, marginBottom: 3 }}>Sync with Flighty</div>
             <div style={{ fontSize: 12, color: css.text2, lineHeight: 1.6 }}>
-              1. Click <strong style={{ color: css.accent }}>Export to Flighty</strong> to download{" "}
-              <code style={{ background: css.surface2, padding: "1px 5px", borderRadius: 4, fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>continuum-flights.ics</code>
+              1. Click <strong style={{ color: css.accent }}>Flighty Sync</strong> → download <code style={{ background: css.surface2, padding: "1px 5px", borderRadius: 4, fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>continuum-flights.ics</code>
               {"  "}2. Import into Apple/Google Calendar{"  "}3. Open Flighty → Settings → Calendar Sync
             </div>
           </div>
@@ -1824,46 +1824,144 @@ Start by introducing yourself briefly in-character with personality, and give an
           const prog = allPrograms.find(p => p.id === trip.program);
           const sColor = trip.status === "confirmed" ? css.success : trip.status === "planned" ? css.warning : css.accent;
           const sBg = trip.status === "confirmed" ? css.successBg : trip.status === "planned" ? css.warningBg : css.accentBg;
+          const tripExps = getTripExpenses(trip.id);
+          const tripTotal = getTripTotal(trip.id);
+          const isExpanded = expenseViewTrip === trip.id;
+          const catBreakdown = EXPENSE_CATEGORIES.map(cat => ({
+            ...cat, total: tripExps.filter(e => e.category === cat.id).reduce((s, e) => s + e.amount, 0),
+          })).filter(c => c.total > 0);
+
           return (
-            <div key={trip.id} className="c-row-hover" style={{
-              background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: "16px 20px",
-              display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12,
-              boxShadow: D ? "none" : "0 1px 4px rgba(26,21,18,0.04)",
+            <div key={trip.id} style={{
+              background: css.surface, border: `1px solid ${isExpanded ? css.accentBorder : css.border}`,
+              borderRadius: 14, overflow: "hidden",
+              boxShadow: D ? "none" : isExpanded ? "0 4px 20px rgba(212,116,45,0.1)" : "0 1px 4px rgba(26,21,18,0.04)",
+              transition: "border-color 0.2s, box-shadow 0.2s",
             }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                <div style={{
-                  width: 44, height: 44, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20,
-                  background: prog ? `${prog.color}15` : css.surface2, border: `1px solid ${prog ? prog.color + "25" : css.border}`,
-                  flexShrink: 0,
-                }}>{trip.type === "flight" ? "✈️" : trip.type === "hotel" ? "🏨" : "🚗"}</div>
-                <div>
-                  {trip.tripName && <div style={{ fontSize: 11, fontWeight: 600, color: css.accent, marginBottom: 2, textTransform: "uppercase", letterSpacing: "0.05em" }}>{trip.tripName}</div>}
-                  <div style={{ fontSize: 14, fontWeight: 600, color: css.text }}>{trip.route || trip.property || trip.location}</div>
-                  <div style={{ fontSize: 11, color: css.text3, marginTop: 2, fontFamily: "'JetBrains Mono', monospace" }}>
-                    {trip.date} · {prog?.name?.split(" ")[0] || "—"}{trip.nights ? ` · ${trip.nights}n` : ""}
+              {/* Trip header row */}
+              <div style={{
+                display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap",
+                gap: 12, padding: "16px 20px", cursor: "pointer",
+              }} onClick={() => setExpenseViewTrip(isExpanded ? null : trip.id)}>
+                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                  <div style={{
+                    width: 44, height: 44, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20,
+                    background: prog ? `${prog.color}15` : css.surface2, border: `1px solid ${prog ? prog.color + "25" : css.border}`,
+                    flexShrink: 0,
+                  }}>{trip.type === "flight" ? "✈️" : trip.type === "hotel" ? "🏨" : "🚗"}</div>
+                  <div>
+                    {trip.tripName && <div style={{ fontSize: 11, fontWeight: 600, color: css.accent, marginBottom: 2, textTransform: "uppercase", letterSpacing: "0.05em" }}>{trip.tripName}</div>}
+                    <div style={{ fontSize: 14, fontWeight: 600, color: css.text }}>{trip.route || trip.property || trip.location}</div>
+                    <div style={{ fontSize: 11, color: css.text3, marginTop: 2, fontFamily: "'JetBrains Mono', monospace" }}>
+                      {trip.date} · {prog?.name?.split(" ")[0] || "—"}{trip.nights ? ` · ${trip.nights}n` : ""}
+                    </div>
                   </div>
                 </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+                  {/* Expense total pill */}
+                  {tripTotal > 0 && (
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: css.text, fontFamily: "'JetBrains Mono', monospace" }}>${tripTotal.toLocaleString()}</div>
+                      <div style={{ fontSize: 9, color: css.text3 }}>{tripExps.length} exp.</div>
+                    </div>
+                  )}
+                  {trip.estimatedPoints > 0 && (
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: css.gold, fontFamily: "'JetBrains Mono', monospace" }}>+{trip.estimatedPoints.toLocaleString()}</div>
+                      <div style={{ fontSize: 9, color: css.text3 }}>pts</div>
+                    </div>
+                  )}
+                  <span style={{ fontSize: 10, fontWeight: 600, color: sColor, background: sBg, border: `1px solid ${sColor}30`, borderRadius: 20, padding: "3px 10px", textTransform: "capitalize" }}>{trip.status}</span>
+                  {/* Add Expense */}
+                  <button onClick={e => { e.stopPropagation(); setShowAddExpense(trip.id); }} style={{
+                    padding: "5px 11px", borderRadius: 8, border: `1px solid ${css.accentBorder}`,
+                    background: css.accentBg, color: css.accent, fontSize: 11, fontWeight: 600, cursor: "pointer",
+                  }}>+ Expense</button>
+                  {/* Chevron expand */}
+                  <span style={{ color: css.text3, fontSize: 12, transform: isExpanded ? "rotate(180deg)" : "none", transition: "transform 0.2s", display: "inline-block" }}>▾</span>
+                  {/* Delete trip */}
+                  <button onClick={e => { e.stopPropagation(); removeTrip(trip.id); }} style={{
+                    width: 28, height: 28, borderRadius: 8, border: `1px solid ${D ? "rgba(239,68,68,0.2)" : "rgba(239,68,68,0.15)"}`,
+                    background: "rgba(239,68,68,0.06)", color: "#ef4444",
+                    fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>×</button>
+                </div>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-                {trip.estimatedPoints > 0 && (
-                  <div style={{ textAlign: "right" }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: css.gold, fontFamily: "'JetBrains Mono', monospace" }}>+{trip.estimatedPoints.toLocaleString()}</div>
-                    <div style={{ fontSize: 9, color: css.text3 }}>pts</div>
+
+              {/* Expense drawer — expands inline */}
+              {isExpanded && (
+                <div style={{ borderTop: `1px solid ${css.border}`, background: css.surface2 }}>
+                  {/* Drawer header */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 20px", gap: 10 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: css.text2 }}>
+                      {tripExps.length > 0
+                        ? <><span style={{ color: css.text, fontFamily: "'JetBrains Mono', monospace" }}>${tripTotal.toLocaleString()}</span> · {tripExps.length} expense{tripExps.length !== 1 ? "s" : ""}</>
+                        : "No expenses yet"}
+                    </div>
+                    <button onClick={e => { e.stopPropagation(); setShowExpenseReport(trip.id); }} style={{
+                      padding: "5px 12px", borderRadius: 7, border: `1px solid ${css.border}`,
+                      background: "transparent", color: css.text2, fontSize: 11, fontWeight: 600, cursor: "pointer",
+                    }}>Export Report ↗</button>
                   </div>
-                )}
-                {trip.estimatedNights > 0 && (
-                  <div style={{ textAlign: "right" }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: css.success, fontFamily: "'JetBrains Mono', monospace" }}>+{trip.estimatedNights}</div>
-                    <div style={{ fontSize: 9, color: css.text3 }}>nts</div>
+
+                  {/* Category breakdown bar */}
+                  {tripTotal > 0 && (
+                    <div style={{ padding: "0 20px 10px" }}>
+                      <div style={{ display: "flex", height: 5, borderRadius: 4, overflow: "hidden", marginBottom: 8 }}>
+                        {catBreakdown.map((cat, i) => (
+                          <div key={i} style={{ width: `${(cat.total / tripTotal) * 100}%`, background: cat.color }} title={`${cat.label}: $${cat.total}`} />
+                        ))}
+                      </div>
+                      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                        {catBreakdown.map((cat, i) => (
+                          <span key={i} style={{ fontSize: 10, color: css.text3, display: "flex", alignItems: "center", gap: 4 }}>
+                            <span style={{ width: 6, height: 6, borderRadius: "50%", background: cat.color, flexShrink: 0, display: "inline-block" }} />
+                            {cat.label} <span style={{ fontFamily: "'JetBrains Mono', monospace", color: css.text2 }}>${cat.total.toLocaleString()}</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Expense rows */}
+                  <div style={{ padding: "0 20px 16px", display: "flex", flexDirection: "column", gap: 6 }}>
+                    {tripExps.sort((a, b) => new Date(a.date) - new Date(b.date)).map(exp => {
+                      const cat = EXPENSE_CATEGORIES.find(c => c.id === exp.category);
+                      return (
+                        <div key={exp.id} style={{
+                          display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10,
+                          background: css.surface, borderRadius: 8, padding: "9px 12px", border: `1px solid ${css.border}`,
+                        }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
+                            <span style={{ fontSize: 15, flexShrink: 0 }}>{cat?.icon || "📎"}</span>
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ fontSize: 12, fontWeight: 500, color: css.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.description}</div>
+                              <div style={{ fontSize: 10, color: css.text3, fontFamily: "'JetBrains Mono', monospace" }}>
+                                {exp.date}{exp.paymentMethod ? ` · ${exp.paymentMethod}` : ""}{exp.receipt ? " · 🧾" : ""}
+                              </div>
+                            </div>
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: exp.amount === 0 ? css.success : css.text, fontFamily: "'JetBrains Mono', monospace" }}>
+                              {exp.amount === 0 ? "Free" : `$${exp.amount.toLocaleString()}`}
+                            </span>
+                            <button onClick={() => removeExpense(exp.id)} style={{
+                              width: 22, height: 22, borderRadius: 6, border: "none",
+                              background: "rgba(239,68,68,0.08)", color: "#ef4444",
+                              fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                            }}>×</button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {/* Add expense CTA in drawer */}
+                    <button onClick={e => { e.stopPropagation(); setShowAddExpense(trip.id); }} style={{
+                      width: "100%", padding: "8px 0", borderRadius: 8, border: `1px dashed ${css.border}`,
+                      background: "transparent", color: css.text3, fontSize: 12, cursor: "pointer", marginTop: 4,
+                    }}>+ Add expense</button>
                   </div>
-                )}
-                <span style={{ fontSize: 10, fontWeight: 600, color: sColor, background: sBg, border: `1px solid ${sColor}30`, borderRadius: 20, padding: "3px 10px", textTransform: "capitalize" }}>{trip.status}</span>
-                <button onClick={() => removeTrip(trip.id)} style={{
-                  width: 28, height: 28, borderRadius: 8, border: `1px solid ${D ? "rgba(239,68,68,0.2)" : "rgba(239,68,68,0.15)"}`,
-                  background: "rgba(239,68,68,0.06)", color: "#ef4444",
-                  fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                }}>×</button>
-              </div>
+                </div>
+              )}
             </div>
           );
         })}
@@ -1879,251 +1977,10 @@ Start by introducing yourself briefly in-character with personality, and give an
       </div>
     </div>
   );
-
-  const renderExpenses = () => {
-    const grandTotal = expenses.reduce((s, e) => s + e.amount, 0);
-    const totalByCategory = EXPENSE_CATEGORIES.map(cat => ({
-      ...cat, total: expenses.filter(e => e.category === cat.id).reduce((s, e) => s + e.amount, 0),
-    })).filter(c => c.total > 0).sort((a, b) => b.total - a.total);
-
-    // Per-trip detail view
-    if (expenseViewTrip) {
-      const trip = trips.find(t => t.id === expenseViewTrip);
-      if (!trip) { setExpenseViewTrip(null); return null; }
-      const tripExps = getTripExpenses(trip.id);
-      const tripTotal = tripExps.reduce((s, e) => s + e.amount, 0);
-      const prog = allPrograms.find(p => p.id === trip.program);
-      const catBreakdown = EXPENSE_CATEGORIES.map(cat => ({
-        ...cat, total: tripExps.filter(e => e.category === cat.id).reduce((s, e) => s + e.amount, 0),
-        items: tripExps.filter(e => e.category === cat.id),
-      })).filter(c => c.total > 0);
-
-      return (
-        <div>
-          <button onClick={() => setExpenseViewTrip(null)} style={{
-            background: "none", border: "none", color: css.accent, fontSize: 12, fontWeight: 600,
-            cursor: "pointer", marginBottom: 20, padding: 0, display: "flex", alignItems: "center", gap: 4,
-          }}>← Back to Expenses</button>
-
-          <div className="c-a1" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: css.text3, marginBottom: 6 }}>Trip Expenses</div>
-              <h2 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 30, fontWeight: 600, color: css.text, margin: 0 }}>
-                {getTripName(trip)}
-              </h2>
-              <p style={{ color: css.text2, fontSize: 13, margin: "6px 0 0" }}>
-                {trip.date} · {prog?.name} · {tripExps.length} expenses
-              </p>
-            </div>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={() => setShowExpenseReport(trip.id)} style={{
-                padding: "9px 16px", borderRadius: 8, border: `1px solid ${css.accentBorder}`, background: css.accentBg,
-                color: css.accent, fontSize: 12, fontWeight: 600, cursor: "pointer",
-              }}>Export Report</button>
-              <button onClick={() => setShowAddExpense(trip.id)} className="c-btn-primary" style={{
-                padding: "9px 16px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600,
-                background: css.accent, color: "#fff",
-              }}>+ Add Expense</button>
-            </div>
-          </div>
-
-          {/* Stats row */}
-          <div className="c-a2" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12, marginBottom: 24 }}>
-            {[
-              { label: "Total Spend", value: `$${tripTotal.toLocaleString()}`, accent: true },
-              { label: "Expenses", value: tripExps.length },
-              { label: "With Receipts", value: tripExps.filter(e => e.receipt).length },
-            ].map((stat, i) => (
-              <div key={i} style={{
-                background: stat.accent ? css.accentBg : css.surface, border: `1px solid ${stat.accent ? css.accentBorder : css.border}`,
-                borderRadius: 12, padding: "16px 18px",
-              }}>
-                <div style={{ fontSize: 22, fontWeight: 600, color: stat.accent ? css.accent : css.text, fontFamily: "'JetBrains Mono', monospace" }}>{stat.value}</div>
-                <div style={{ fontSize: 11, color: css.text2, marginTop: 3 }}>{stat.label}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Category breakdown bar */}
-          {tripTotal > 0 && (
-            <div className="c-a3" style={{ marginBottom: 24, background: css.surface, border: `1px solid ${css.border}`, borderRadius: 12, padding: "16px 18px" }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: css.text2, marginBottom: 10 }}>Breakdown</div>
-              <div style={{ display: "flex", height: 8, borderRadius: 6, overflow: "hidden", marginBottom: 10 }}>
-                {catBreakdown.map((cat, i) => (
-                  <div key={i} style={{ width: `${(cat.total / tripTotal) * 100}%`, background: cat.color }} title={`${cat.label}: $${cat.total}`} />
-                ))}
-              </div>
-              <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
-                {catBreakdown.map((cat, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: css.text2 }}>
-                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: cat.color, flexShrink: 0 }} />
-                    {cat.label} <span style={{ fontFamily: "'JetBrains Mono', monospace", color: css.text }}>${cat.total.toLocaleString()}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Expense list */}
-          <div className="c-a4" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {tripExps.sort((a, b) => new Date(a.date) - new Date(b.date)).map(exp => {
-              const cat = EXPENSE_CATEGORIES.find(c => c.id === exp.category);
-              return (
-                <div key={exp.id} className="c-row-hover" style={{
-                  background: css.surface, border: `1px solid ${css.border}`, borderRadius: 10, padding: "13px 16px",
-                  display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12,
-                }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
-                    <div style={{
-                      width: 36, height: 36, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: 16, background: `${cat?.color || "#888"}15`, flexShrink: 0,
-                    }}>{cat?.icon || "📎"}</div>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: css.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.description}</div>
-                      <div style={{ fontSize: 10, color: css.text3, fontFamily: "'JetBrains Mono', monospace", marginTop: 2 }}>
-                        {exp.date} · {exp.paymentMethod || "—"}{exp.receipt ? " · 🧾" : ""}
-                      </div>
-                      {exp.receiptImage?.data && exp.receiptImage.type?.startsWith("image/") && (
-                        <img src={exp.receiptImage.data} alt="Receipt" style={{ width: 32, height: 32, objectFit: "cover", borderRadius: 6, marginTop: 4, border: `1px solid ${css.border}`, cursor: "pointer" }}
-                          onClick={(e) => { e.stopPropagation(); window.open(exp.receiptImage.data, "_blank"); }} />
-                      )}
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: exp.amount === 0 ? css.success : css.text, fontFamily: "'JetBrains Mono', monospace" }}>
-                      {exp.amount === 0 ? "Free" : `$${exp.amount.toLocaleString()}`}
-                    </div>
-                    <button onClick={() => removeExpense(exp.id)} style={{
-                      width: 26, height: 26, borderRadius: 6, border: `1px solid ${D ? "rgba(239,68,68,0.2)" : "rgba(239,68,68,0.15)"}`,
-                      background: "rgba(239,68,68,0.06)", color: "#ef4444",
-                      fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                    }}>×</button>
-                  </div>
-                </div>
-              );
-            })}
-            {tripExps.length === 0 && (
-              <div style={{ textAlign: "center", padding: 40, color: css.text3, fontSize: 13 }}>
-                No expenses yet. Click "+ Add Expense" to start tracking.
-              </div>
-            )}
-          </div>
-        </div>
-      );
-    }
-
-    // Overview: all trips with expense totals
-    return (
-      <div>
-        {/* Header */}
-        <div className="c-a1" style={{ marginBottom: 28 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: css.text3, marginBottom: 8 }}>Finance Tracker</div>
-          <h2 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: isMobile ? 28 : 36, fontWeight: 600, color: css.text, margin: 0, lineHeight: 1.1 }}>Trip Expenses</h2>
-          <p style={{ color: css.text2, fontSize: 13, margin: "8px 0 0" }}>Track and categorize spending across all your trips</p>
-        </div>
-
-        {/* Grand total hero */}
-        <div className="c-a2" style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: 14, marginBottom: 32 }}>
-          <div style={{ background: css.accentBg, border: `1px solid ${css.accentBorder}`, borderRadius: 14, padding: "22px 24px" }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: css.accent, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>Total Spend</div>
-            <div style={{ fontSize: 34, fontWeight: 700, color: css.accent, fontFamily: "'JetBrains Mono', monospace", lineHeight: 1 }}>${grandTotal.toLocaleString()}</div>
-            <div style={{ fontSize: 11, color: css.text2, marginTop: 6 }}>across all trips</div>
-          </div>
-          <div style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: "22px 24px" }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: css.text3, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>Expenses</div>
-            <div style={{ fontSize: 34, fontWeight: 700, color: css.text, fontFamily: "'JetBrains Mono', monospace", lineHeight: 1 }}>{expenses.length}</div>
-            <div style={{ fontSize: 11, color: css.text2, marginTop: 6 }}>items logged</div>
-          </div>
-          <div style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: "22px 24px" }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: css.text3, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>Active Trips</div>
-            <div style={{ fontSize: 34, fontWeight: 700, color: css.text, fontFamily: "'JetBrains Mono', monospace", lineHeight: 1 }}>{trips.filter(t => getTripTotal(t.id) > 0).length}</div>
-            <div style={{ fontSize: 11, color: css.text2, marginTop: 6 }}>trips with expenses</div>
-          </div>
-        </div>
-
-        {/* Spending by category */}
-        {totalByCategory.length > 0 && (
-          <div className="c-a3" style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: "20px 22px", marginBottom: 28 }}>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 16 }}>
-              <h3 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 20, fontWeight: 500, color: css.text, margin: 0 }}>By Category</h3>
-            </div>
-            <div style={{ display: "flex", height: 8, borderRadius: 6, overflow: "hidden", marginBottom: 16 }}>
-              {totalByCategory.map((cat, i) => (
-                <div key={i} style={{ width: `${(cat.total / grandTotal) * 100}%`, background: cat.color }} title={`${cat.label}: $${cat.total}`} />
-              ))}
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {totalByCategory.map((cat, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ fontSize: 14 }}>{cat.icon}</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-                      <span style={{ fontSize: 12, color: css.text2 }}>{cat.label}</span>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: css.text, fontFamily: "'JetBrains Mono', monospace" }}>${cat.total.toLocaleString()}</span>
-                    </div>
-                    <div style={{ width: "100%", height: 3, borderRadius: 2, background: css.surface2, overflow: "hidden" }}>
-                      <div style={{ width: `${(cat.total / grandTotal) * 100}%`, height: "100%", background: cat.color }} />
-                    </div>
-                  </div>
-                  <span style={{ fontSize: 10, color: css.text3, width: 30, textAlign: "right", fontFamily: "'JetBrains Mono', monospace" }}>{Math.round((cat.total / grandTotal) * 100)}%</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Trip-by-trip list */}
-        <div className="c-a4">
-          <h3 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 20, fontWeight: 500, color: css.text, margin: "0 0 14px" }}>By Trip</h3>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {trips.map(trip => {
-              const tripExps = getTripExpenses(trip.id);
-              const tripTotal = getTripTotal(trip.id);
-              const prog = allPrograms.find(p => p.id === trip.program);
-              return (
-                <div key={trip.id} className="c-row-hover" style={{
-                  background: css.surface, border: `1px solid ${css.border}`, borderRadius: 12, padding: "14px 18px",
-                  cursor: "pointer", transition: "all 0.15s",
-                  boxShadow: D ? "none" : "0 1px 3px rgba(26,21,18,0.04)",
-                }} onClick={() => setExpenseViewTrip(trip.id)}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1 }}>
-                      <div style={{
-                        width: 40, height: 40, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18,
-                        background: prog ? `${prog.color}15` : css.surface2, border: `1px solid ${prog ? prog.color + "25" : css.border}`, flexShrink: 0,
-                      }}>{trip.type === "flight" ? "✈️" : trip.type === "hotel" ? "🏨" : "🚗"}</div>
-                      <div>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: css.text }}>{getTripName(trip)}</div>
-                        <div style={{ fontSize: 11, color: css.text3, fontFamily: "'JetBrains Mono', monospace", marginTop: 2 }}>
-                          {trip.date} · {tripExps.length} expense{tripExps.length !== 1 ? "s" : ""}
-                        </div>
-                      </div>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-                      <div style={{ fontSize: 16, fontWeight: 700, color: tripTotal > 0 ? css.text : css.text3, fontFamily: "'JetBrains Mono', monospace" }}>
-                        {tripTotal > 0 ? `$${tripTotal.toLocaleString()}` : "—"}
-                      </div>
-                      <button onClick={(e) => { e.stopPropagation(); setShowAddExpense(trip.id); }} style={{
-                        width: 30, height: 30, borderRadius: 8, border: `1px solid ${css.accentBorder}`, background: css.accentBg,
-                        color: css.accent, fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                      }}>+</button>
-                      <span style={{ color: css.text3, fontSize: 14 }}>→</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-            {trips.length === 0 && (
-              <div style={{ textAlign: "center", padding: 48, color: css.text3, fontSize: 13 }}>
-                <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 18, color: css.text2, marginBottom: 6 }}>No trips yet</div>
-                Add trips first, then track expenses for each one.
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
   };
+
+  const renderExpenses = () => { setActiveView("trips"); return null; };
+
 
   const renderOptimizer = () => {
     const scenarioTrips = trips.filter(t => t.type === "flight");
@@ -2486,7 +2343,6 @@ Start by introducing yourself briefly in-character with personality, and give an
     { id: "dashboard", label: "Dashboard", icon: "📊" },
     { id: "programs", label: "Programs", icon: "🔗" },
     { id: "trips", label: "Trips", icon: "🗺️" },
-    { id: "expenses", label: "Expenses", icon: "🧾" },
     { id: "optimizer", label: "Optimizer", icon: "🧠" },
     { id: "reports", label: "Reports", icon: "📈" },
     { id: "premium", label: "Premium", icon: "💎" },
