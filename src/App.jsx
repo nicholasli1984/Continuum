@@ -325,10 +325,10 @@ const ProgramLogo = ({ prog, size = 32 }) => {
   if (domain && !err) {
     return (
       <img
-        src={`https://logo.clearbit.com/${domain}`}
+        src={`https://www.google.com/s2/favicons?domain=${domain}&sz=128`}
         alt={prog.name}
         onError={() => setErr(true)}
-        style={{ width: size, height: size, borderRadius: 6, objectFit: "contain", background: "#fff", padding: 3, flexShrink: 0 }}
+        style={{ width: size, height: size, objectFit: "contain", flexShrink: 0 }}
       />
     );
   }
@@ -2558,7 +2558,7 @@ Start by introducing yourself briefly in-character with personality, and give an
           </div>
 
           {/* Nav pills */}
-          <nav style={{ display: "flex", alignItems: "center", gap: 2, flex: 1 }}>
+          <nav style={{ display: "flex", alignItems: "center", gap: 2, flex: 1, minWidth: 0, overflow: "hidden" }}>
             {navItems.map(item => (
               <button key={item.id} onClick={() => setActiveView(item.id)} className="c-nav-btn" style={{
                 display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8,
@@ -2575,44 +2575,23 @@ Start by introducing yourself briefly in-character with personality, and give an
             ))}
           </nav>
 
-          {/* Right: clock, dark mode, notifs, user, sign out */}
-          <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-            <LiveClock />
-            <div style={{ width: 1, height: 18, background: css.border }} />
-            {/* Dark mode toggle */}
+          {/* Right: dark mode, avatar, sign out — compact, never wraps */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0, marginLeft: 8 }}>
             <button onClick={() => setDarkMode(d => !d)} title={D ? "Light mode" : "Dark mode"} style={{
-              width: 36, height: 36, borderRadius: 8, border: `1px solid ${css.border}`,
-              background: "transparent", cursor: "pointer", fontSize: 16,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              color: css.text2, transition: "all 0.15s",
-            }}>{D ? "☀️" : "🌙"}</button>
-            <button title="Notifications" style={{
-              width: 36, height: 36, borderRadius: 8, border: `1px solid ${css.border}`,
-              background: "transparent", cursor: "pointer", fontSize: 16, position: "relative",
+              width: 32, height: 32, borderRadius: 8, border: `1px solid ${css.border}`,
+              background: "transparent", cursor: "pointer", fontSize: 15,
               display: "flex", alignItems: "center", justifyContent: "center", color: css.text2,
-            }}>
-              🔔
-              <span style={{ position: "absolute", top: 6, right: 6, width: 7, height: 7, borderRadius: "50%", background: css.accent, border: `2px solid ${css.nav}` }} />
-            </button>
-            <div style={{ width: 1, height: 18, background: css.border }} />
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{
-                width: 32, height: 32, borderRadius: 8,
-                background: `linear-gradient(135deg, ${css.accent}, ${D ? "#C06020" : "#B85820"})`,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 12, fontWeight: 700, color: "#fff", flexShrink: 0,
-              }}>{user?.avatar || "U"}</div>
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: css.text, lineHeight: 1.2 }}>{user?.name?.split(" ")[0]}</div>
-                <div style={{ fontSize: 10, color: user?.tier === "premium" ? css.gold : css.text3, lineHeight: 1 }}>
-                  {user?.tier === "premium" ? "✦ Premium" : "Free"}
-                </div>
-              </div>
-            </div>
+            }}>{D ? "☀️" : "🌙"}</button>
+            <div style={{
+              width: 32, height: 32, borderRadius: 8,
+              background: `linear-gradient(135deg, ${css.accent}, ${D ? "#C06020" : "#B85820"})`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 12, fontWeight: 700, color: "#fff", flexShrink: 0,
+            }}>{user?.avatar || "U"}</div>
             <button onClick={handleLogout} style={{
-              padding: "6px 14px", borderRadius: 8, border: `1px solid ${css.border}`,
+              padding: "5px 12px", borderRadius: 8, border: `1px solid ${css.border}`,
               background: "transparent", color: css.text3, fontSize: 11, fontWeight: 500,
-              cursor: "pointer", transition: "all 0.15s",
+              cursor: "pointer", whiteSpace: "nowrap",
             }}>Sign out</button>
           </div>
         </>)}
