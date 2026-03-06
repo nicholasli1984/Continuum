@@ -388,7 +388,8 @@ export default function EliteStatusTracker() {
   const [animateIn, setAnimateIn] = useState(false);
   const [expenses, setExpenses] = useState([]);
   const [showAddExpense, setShowAddExpense] = useState(null); // null or tripId
-  const [newExpense, setNewExpense] = useState({ category: "flight", description: "", amount: "", currency: "USD", date: "", paymentMethod: "", receipt: false, receiptImage: null, notes: "" });
+  const [editExpenseId, setEditExpenseId] = useState(null); // null or expense id being edited
+  const [newExpense, setNewExpense] = useState({ category: "flight", description: "", amount: "", currency: "USD", fxRate: 1, date: "", paymentMethod: "", receipt: false, receiptImage: null, notes: "" });
   const [expenseViewTrip, setExpenseViewTrip] = useState(null); // null = overview, tripId = detail
   const [showExpenseReport, setShowExpenseReport] = useState(null); // tripId for report modal
   const [customPrograms, setCustomPrograms] = useState([]);
@@ -705,18 +706,24 @@ Start by introducing yourself briefly in-character with personality, and give an
 
   const removeTrip = (id) => setTrips(prev => prev.filter(t => t.id !== id));
 
+  const BLANK_EXPENSE = { category: "flight", description: "", amount: "", currency: "USD", fxRate: 1, date: "", paymentMethod: "", receipt: false, receiptImage: null, notes: "" };
+
   const handleAddExpense = () => {
-    const id = Date.now();
-    const exp = { ...newExpense, id, tripId: showAddExpense, amount: parseFloat(newExpense.amount) || 0 };
-    setExpenses(prev => [...prev, exp]);
+    const parsed = { ...newExpense, amount: parseFloat(newExpense.amount) || 0, fxRate: parseFloat(newExpense.fxRate) || 1 };
+    if (editExpenseId) {
+      setExpenses(prev => prev.map(e => e.id === editExpenseId ? { ...parsed, id: editExpenseId, tripId: e.tripId } : e));
+      setEditExpenseId(null);
+    } else {
+      setExpenses(prev => [...prev, { ...parsed, id: Date.now(), tripId: showAddExpense }]);
+    }
     setShowAddExpense(null);
-    setNewExpense({ category: "flight", description: "", amount: "", currency: "USD", date: "", paymentMethod: "", receipt: false, receiptImage: null, notes: "" });
+    setNewExpense(BLANK_EXPENSE);
   };
 
   const removeExpense = (id) => setExpenses(prev => prev.filter(e => e.id !== id));
 
   const getTripExpenses = (tripId) => expenses.filter(e => e.tripId === tripId);
-  const getTripTotal = (tripId) => getTripExpenses(tripId).reduce((sum, e) => sum + e.amount, 0);
+  const getTripTotal = (tripId) => getTripExpenses(tripId).reduce((sum, e) => sum + e.amount * (e.fxRate || 1), 0);
   const getTripName = (trip) => trip.tripName || trip.route || trip.property || trip.location || "Trip";
 
   // ── Flighty / Calendar ICS export ──────────────────────────────────────────
@@ -1927,6 +1934,8 @@ Start by introducing yourself briefly in-character with personality, and give an
                   <div style={{ padding: "0 20px 16px", display: "flex", flexDirection: "column", gap: 6 }}>
                     {tripExps.sort((a, b) => new Date(a.date) - new Date(b.date)).map(exp => {
                       const cat = EXPENSE_CATEGORIES.find(c => c.id === exp.category);
+                      const usdAmt = exp.amount * (exp.fxRate || 1);
+                      const isForeign = exp.currency && exp.currency !== "USD";
                       return (
                         <div key={exp.id} style={{
                           display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10,
@@ -1938,13 +1947,30 @@ Start by introducing yourself briefly in-character with personality, and give an
                               <div style={{ fontSize: 12, fontWeight: 500, color: css.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.description}</div>
                               <div style={{ fontSize: 10, color: css.text3, fontFamily: "'JetBrains Mono', monospace" }}>
                                 {exp.date}{exp.paymentMethod ? ` · ${exp.paymentMethod}` : ""}{exp.receipt ? " · 🧾" : ""}
+                                {isForeign ? ` · ${exp.currency} @ ${exp.fxRate}` : ""}
                               </div>
                             </div>
                           </div>
                           <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                            <span style={{ fontSize: 13, fontWeight: 700, color: exp.amount === 0 ? css.success : css.text, fontFamily: "'JetBrains Mono', monospace" }}>
-                              {exp.amount === 0 ? "Free" : `$${exp.amount.toLocaleString()}`}
-                            </span>
+                            <div style={{ textAlign: "right" }}>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: usdAmt === 0 ? css.success : css.text, fontFamily: "'JetBrains Mono', monospace" }}>
+                                {usdAmt === 0 ? "Free" : `$${usdAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                              </div>
+                              {isForeign && (
+                                <div style={{ fontSize: 9, color: css.text3, fontFamily: "'JetBrains Mono', monospace" }}>
+                                  {exp.amount.toLocaleString()} {exp.currency}
+                                </div>
+                              )}
+                            </div>
+                            <button onClick={() => {
+                              setNewExpense({ ...exp, amount: String(exp.amount), fxRate: exp.fxRate || 1 });
+                              setEditExpenseId(exp.id);
+                              setShowAddExpense(exp.tripId);
+                            }} style={{
+                              width: 22, height: 22, borderRadius: 6, border: "none",
+                              background: css.accentBg, color: css.accent,
+                              fontSize: 11, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                            }}>✎</button>
                             <button onClick={() => removeExpense(exp.id)} style={{
                               width: 22, height: 22, borderRadius: 6, border: "none",
                               background: "rgba(239,68,68,0.08)", color: "#ef4444",
@@ -2889,16 +2915,16 @@ Start by introducing yourself briefly in-character with personality, and give an
         </div>
       )}
 
-      {/* Add Expense Modal */}
+      {/* Add / Edit Expense Modal */}
       {showAddExpense && (
         <div style={{
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
-        }} onClick={() => setShowAddExpense(null)}>
+        }} onClick={() => { setShowAddExpense(null); setEditExpenseId(null); setNewExpense(BLANK_EXPENSE); }}>
           <div onClick={e => e.stopPropagation()} style={{
             background: "#211e2e", border: "1px solid #2a2640", borderRadius: 8, padding: 28, width: "100%", maxWidth: 480,
             maxHeight: "90vh", overflowY: "auto",
           }}>
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: "0 0 6px", fontFamily: "'Inter Tight', Inter, sans-serif" }}>Add Expense</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: "0 0 6px", fontFamily: "'Inter Tight', Inter, sans-serif" }}>{editExpenseId ? "Edit Expense" : "Add Expense"}</h3>
             <p style={{ color: "#8a8f98", fontSize: 12, margin: "0 0 20px", fontFamily: "Inter, sans-serif" }}>
               {(() => { const t = trips.find(t => t.id === showAddExpense); return t ? `${t.type === "flight" ? "✈️" : t.type === "hotel" ? "🏨" : "🚗"} ${getTripName(t)}` : ""; })()}
             </p>
@@ -2924,10 +2950,34 @@ Start by introducing yourself briefly in-character with personality, and give an
                   style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
               </label>
               <label style={{ flex: 1 }}>
-                <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Amount ($)</span>
+                <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Currency</span>
+                <select value={newExpense.currency} onChange={e => setNewExpense(p => ({ ...p, currency: e.target.value, fxRate: e.target.value === "USD" ? 1 : p.fxRate }))}
+                  style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "#1a1728", border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }}>
+                  {["USD","EUR","GBP","CAD","AUD","JPY","CHF","CNY","HKD","SGD","MXN","BRL","INR","KRW","AED","THB","NOK","SEK","DKK","NZD"].map(c => (
+                    <option key={c} value={c} style={{ background: "#211e2e" }}>{c}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
+              <label style={{ flex: 1 }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Amount ({newExpense.currency})</span>
                 <input type="number" min="0" step="0.01" value={newExpense.amount} onChange={e => setNewExpense(p => ({ ...p, amount: e.target.value }))} placeholder="0.00"
                   style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
               </label>
+              {newExpense.currency !== "USD" && (
+                <label style={{ flex: 1 }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>FX Rate → USD</span>
+                  <input type="number" min="0" step="0.0001" value={newExpense.fxRate} onChange={e => setNewExpense(p => ({ ...p, fxRate: e.target.value }))} placeholder="1.0000"
+                    style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
+                  {newExpense.amount && newExpense.fxRate && (
+                    <div style={{ marginTop: 4, fontSize: 10, color: "#0EA5A0", fontFamily: "Inter, sans-serif" }}>
+                      = ${(parseFloat(newExpense.amount) * parseFloat(newExpense.fxRate)).toFixed(2)} USD
+                    </div>
+                  )}
+                </label>
+              )}
             </div>
 
             <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
@@ -3037,14 +3087,14 @@ Start by introducing yourself briefly in-character with personality, and give an
             </div>
 
             <div style={{ display: "flex", gap: 10 }}>
-              <button onClick={() => setShowAddExpense(null)} style={{
+              <button onClick={() => { setShowAddExpense(null); setEditExpenseId(null); setNewExpense(BLANK_EXPENSE); }} style={{
                 flex: 1, padding: "11px 0", borderRadius: 8, border: "1px solid #2a2640", background: "rgba(255,255,255,0.03)",
                 color: "#8a8f98", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif",
               }}>Cancel</button>
               <button onClick={handleAddExpense} style={{
                 flex: 1, padding: "11px 0", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Inter, sans-serif",
                 background: "#0EA5A0", color: "#f7f8f8",
-              }}>Add Expense</button>
+              }}>{editExpenseId ? "Save Changes" : "Add Expense"}</button>
             </div>
           </div>
         </div>
