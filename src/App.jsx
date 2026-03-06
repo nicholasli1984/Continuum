@@ -1107,10 +1107,14 @@ Start by introducing yourself briefly in-character with personality, and give an
               {/* Clickable zone overlay — SVG matches cover scaling of the image */}
               <svg style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", overflow: "hidden", zIndex: 5 }} viewBox="0 0 1772 1181" preserveAspectRatio="xMidYMid slice">
                 <defs>
-                  <style>{isMobile
-                    ? `.cz{fill:rgba(255,255,255,0.06);stroke:rgba(255,255,255,0.35);stroke-width:2;stroke-dasharray:8 5;cursor:pointer;transition:fill .25s,stroke .25s}.czg:active .cz{fill:rgba(255,255,255,0.12);stroke:rgba(255,255,255,0.6)}.ctt{opacity:1;pointer-events:none}`
-                    : `.cz{fill:rgba(255,255,255,0);stroke:rgba(255,255,255,0);stroke-width:2;stroke-dasharray:8 5;cursor:pointer;transition:fill .25s,stroke .25s}.czg:hover .cz{fill:rgba(255,255,255,0.06);stroke:rgba(255,255,255,0.4)}.ctt{opacity:0;pointer-events:none;transition:opacity .2s}.czg:hover .ctt{opacity:1}`
-                  }</style>
+                  <style>{`
+                    @keyframes cz-flash { 0%,100%{stroke:rgba(255,255,255,0.07);fill:rgba(255,255,255,0)} 50%{stroke:rgba(255,255,255,0.32);fill:rgba(255,255,255,0.03)} }
+                    .cz{stroke-width:1.5;stroke-dasharray:8 5;cursor:pointer;animation:cz-flash 2.8s ease-in-out infinite;}
+                    ${isMobile
+                      ? `.czg:active .cz{fill:rgba(255,255,255,0.12);stroke:rgba(255,255,255,0.6);animation:none}.ctt{opacity:1;pointer-events:none}`
+                      : `.czg:hover .cz{fill:rgba(255,255,255,0.07);stroke:rgba(255,255,255,0.5);animation:none;transition:fill .2s,stroke .2s}.ctt{opacity:0;pointer-events:none;transition:opacity .2s}.czg:hover .ctt{opacity:1}`
+                    }
+                  `}</style>
                 </defs>
                 {/* Orange → Partners  x=787 y=565 w=180 h=66 */}
                 <g className="czg" onClick={() => setCockpitSection("partners")} style={{ cursor: "pointer" }}>
