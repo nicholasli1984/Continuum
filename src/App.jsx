@@ -289,6 +289,52 @@ const LOYALTY_PROGRAMS = {
   creditCards: PROGRAM_DIRECTORY.creditCards,
 };
 
+// Clearbit logo domains keyed by program id
+const PROGRAM_LOGO_DOMAINS = {
+  // Airlines
+  aa: "aa.com", dl: "delta.com", ua: "united.com", sw: "southwest.com",
+  b6: "jetblue.com", atmos: "alaskaair.com", frontier: "flyfrontier.com",
+  spirit: "spirit.com", flying_blue: "airfranceklm.com", ba_avios: "britishairways.com",
+  aeroplan: "aircanada.com", emirates_skywards: "emirates.com",
+  turkish_miles: "turkishairlines.com", qantas_ff: "qantas.com",
+  singapore_kf: "singaporeair.com", etihad_guest: "etihad.com",
+  virgin_fc: "virginatlantic.com", cathay_mp: "cathaypacific.com",
+  // Hotels
+  marriott: "marriott.com", hilton: "hilton.com", ihg: "ihg.com",
+  hyatt: "hyatt.com", choice: "choicehotels.com", wyndham: "wyndhamhotels.com",
+  accor: "accor.com", bestwestern: "bestwestern.com", radisson: "radissonhotels.com",
+  sonesta: "sonesta.com", omni: "omnihotels.com",
+  // Rentals
+  hertz: "hertz.com", national: "nationalcar.com", avis: "avis.com",
+  enterprise: "enterprise.com", budget: "budget.com", sixt: "sixt.com",
+  // Credit cards
+  amex_plat: "americanexpress.com", amex_gold: "americanexpress.com",
+  amex_green: "americanexpress.com", chase_sapphire: "chase.com",
+  chase_sapphire_pref: "chase.com", cap1_venturex: "capitalone.com",
+  cap1_venture: "capitalone.com", citi_premier: "citi.com",
+  bilt: "biltrewards.com", delta_reserve: "delta.com", delta_gold: "delta.com",
+  united_club: "united.com", united_explorer: "united.com", aa_exec: "aa.com",
+  marriott_boundless: "marriott.com", hilton_aspire: "hilton.com",
+  hilton_surpass: "hilton.com", hyatt_card: "hyatt.com", ihg_premier: "ihg.com",
+  sw_priority: "southwest.com", atmos_summit: "alaskaair.com",
+};
+
+const ProgramLogo = ({ prog, size = 32 }) => {
+  const [err, setErr] = useState(false);
+  const domain = PROGRAM_LOGO_DOMAINS[prog?.id];
+  if (domain && !err) {
+    return (
+      <img
+        src={`https://logo.clearbit.com/${domain}`}
+        alt={prog.name}
+        onError={() => setErr(true)}
+        style={{ width: size, height: size, borderRadius: 6, objectFit: "contain", background: "#fff", padding: 3, flexShrink: 0 }}
+      />
+    );
+  }
+  return <span style={{ fontSize: size * 0.7, flexShrink: 0 }}>{prog?.logo || "🔗"}</span>;
+};
+
 const SAMPLE_USER = {
   name: "Nicholas Li",
   email: "alex@example.com",
@@ -1657,7 +1703,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                     {/* Card header */}
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <span style={{ fontSize: 24 }}>{prog.logo}</span>
+                        <ProgramLogo prog={prog} size={32} />
                         <div>
                           <div style={{ fontSize: 13, fontWeight: 600, color: css.text, lineHeight: 1.3 }}>{prog.name}</div>
                           {isLinked && !isCard && (
@@ -2247,7 +2293,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                     display: "flex", alignItems: "center", gap: 12, padding: "12px 14px",
                     background: css.surface2, borderRadius: 10, border: `1px solid ${css.border}`,
                   }}>
-                    <span style={{ fontSize: 18, flexShrink: 0 }}>{prog.logo}</span>
+                    <ProgramLogo prog={prog} size={28} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 5 }}>
                         <div style={{ fontSize: 12, fontWeight: 600, color: css.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{prog.name}</div>
@@ -2761,7 +2807,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                       onMouseEnter={e => { if (!isLinked) e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
                       onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
                     >
-                      <span style={{ fontSize: 20, width: 28, textAlign: "center" }}>{prog.logo}</span>
+                      <ProgramLogo prog={prog} size={24} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 13, fontWeight: 600, color: "#f7f8f8", fontFamily: "Inter, sans-serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{prog.name}</div>
                         <div style={{ fontSize: 10, color: "#62666d", fontFamily: "Inter, sans-serif" }}>
@@ -2793,7 +2839,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                   border: `1px solid ${selectedProg.color}30`, borderRadius: 8, padding: 16, marginBottom: 14,
                 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                    <span style={{ fontSize: 28 }}>{selectedProg.logo}</span>
+                    <ProgramLogo prog={selectedProg} size={36} />
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 15, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{selectedProg.name}</div>
                       <div style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>
