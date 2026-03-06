@@ -352,18 +352,6 @@ const ProgressRing = ({ progress, size = 80, stroke = 6, color = "#0EA5A0", labe
   );
 };
 
-const Badge = ({ children, color = "#0EA5A0", small }) => (
-  <span style={{
-    display: "inline-block", padding: small ? "1px 6px" : "2px 10px", borderRadius: 8, fontSize: small ? 10 : 11,
-    fontWeight: 600, background: `${color}22`, color: color, border: `1px solid ${color}33`, letterSpacing: 0.3,
-  }}>{children}</span>
-);
-
-const MiniBar = ({ value, max, color, height = 6 }) => (
-  <div style={{ width: "100%", height, borderRadius: height, background: "#2a2640", overflow: "hidden" }}>
-    <div style={{ width: `${Math.min((value / max) * 100, 100)}%`, height: "100%", borderRadius: height, background: `linear-gradient(90deg, ${color}, ${color}99)`, transition: "width 1s ease" }} />
-  </div>
-);
 
 const IconBtn = ({ icon, label, active, onClick, badge }) => (
   <button onClick={onClick} title={label} style={{
@@ -379,6 +367,7 @@ const IconBtn = ({ icon, label, active, onClick, badge }) => (
 // MAIN APP
 // ============================================================
 export default function EliteStatusTracker() {
+  const [darkMode, setDarkMode] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [publicPage, setPublicPage] = useState("landing");
   const [user, setUser] = useState(null);
@@ -729,6 +718,91 @@ Start by introducing yourself briefly in-character with personality, and give an
   const getTripExpenses = (tripId) => expenses.filter(e => e.tripId === tripId);
   const getTripTotal = (tripId) => getTripExpenses(tripId).reduce((sum, e) => sum + e.amount, 0);
   const getTripName = (trip) => trip.tripName || trip.route || trip.property || trip.location || "Trip";
+
+  // ── Flighty / Calendar ICS export ──────────────────────────────────────────
+  const generateFlightyICS = () => {
+    const flightTrips = trips.filter(t => t.type === "flight");
+    if (flightTrips.length === 0) return null;
+
+    const pad = (n) => String(n).padStart(2, "0");
+    const toICSDate = (dateStr) => {
+      // dateStr is "YYYY-MM-DD"
+      const [y, m, d] = dateStr.split("-");
+      return `${y}${pad(m)}${pad(d)}`;
+    };
+    const toICSDatePlusOne = (dateStr) => {
+      const d = new Date(dateStr + "T12:00:00");
+      d.setDate(d.getDate() + 1);
+      return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
+    };
+    const escapeICS = (s) => String(s || "").replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
+    const foldLine = (line) => {
+      // ICS lines max 75 octets; fold with CRLF + space
+      const chunks = [];
+      while (line.length > 75) { chunks.push(line.slice(0, 75)); line = " " + line.slice(75); }
+      chunks.push(line);
+      return chunks.join("\r\n");
+    };
+
+    const events = flightTrips.map(trip => {
+      const prog = allPrograms.find(p => p.id === trip.program);
+      const route = trip.route || "";
+      // Parse "JFK → LAX" or "JFK - LAX"
+      const [origin = "", dest = ""] = route.split(/\s*[→\-–—>]+\s*/);
+      const summary = route ? `${route}${prog ? ` (${prog.name.split(" ")[0]})` : ""}` : getTripName(trip);
+      const descParts = [
+        prog ? `Airline: ${prog.name}` : "",
+        trip.class ? `Class: ${trip.class.charAt(0).toUpperCase() + trip.class.slice(1)}` : "",
+        trip.estimatedPoints ? `Est. Points: +${trip.estimatedPoints.toLocaleString()} ${prog?.unit || "pts"}` : "",
+        `Status: ${trip.status}`,
+        trip.tripName ? `Trip: ${trip.tripName}` : "",
+        "",
+        "Exported from Continuum — continuum.app",
+        "Tip: Add your flight number in Flighty for full tracking.",
+      ].filter(Boolean).join("\n");
+
+      return [
+        "BEGIN:VEVENT",
+        foldLine(`UID:continuum-trip-${trip.id}@continuum.app`),
+        foldLine(`DTSTART;VALUE=DATE:${toICSDate(trip.date)}`),
+        foldLine(`DTEND;VALUE=DATE:${toICSDatePlusOne(trip.date)}`),
+        foldLine(`SUMMARY:✈ ${escapeICS(summary)}`),
+        foldLine(`DESCRIPTION:${escapeICS(descParts)}`),
+        origin && dest ? foldLine(`LOCATION:${escapeICS(origin.trim())} to ${escapeICS(dest.trim())}`) : "",
+        "CATEGORIES:TRAVEL,FLIGHT",
+        `STATUS:${trip.status === "confirmed" ? "CONFIRMED" : "TENTATIVE"}`,
+        `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, "").slice(0, 15)}Z`,
+        "END:VEVENT",
+      ].filter(Boolean).join("\r\n");
+    });
+
+    return [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//Continuum//FlightExport//EN",
+      "CALSCALE:GREGORIAN",
+      "METHOD:PUBLISH",
+      "X-WR-CALNAME:Continuum Flights",
+      "X-WR-CALDESC:Flights exported from Continuum for Flighty import",
+      ...events,
+      "END:VCALENDAR",
+    ].join("\r\n");
+  };
+
+  const exportToFlighty = () => {
+    if (user?.tier !== "premium") { setShowUpgrade(true); return; }
+    const ics = generateFlightyICS();
+    if (!ics) { alert("No flight trips to export yet. Add some flights first!"); return; }
+    const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "continuum-flights.ics";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   const handleLinkAccount = (programId) => {
     const existing = SAMPLE_USER.linkedAccounts[programId];
@@ -1288,70 +1362,126 @@ Start by introducing yourself briefly in-character with personality, and give an
   });
 
   const renderDashboard = () => {
+    const D = darkMode;
     const airlineStatuses = LOYALTY_PROGRAMS.airlines.map(p => ({ ...p, status: getProjectedStatus(p.id) })).filter(p => p.status);
     const hotelStatuses = LOYALTY_PROGRAMS.hotels.map(p => ({ ...p, status: getProjectedStatus(p.id) })).filter(p => p.status);
     const totalTrips = trips.length;
     const confirmedTrips = trips.filter(t => t.status === "confirmed").length;
     const willAdvanceCount = [...airlineStatuses, ...hotelStatuses].filter(p => p.status?.willAdvance).length;
+    const today = new Date().toISOString().slice(0, 10);
+    const nextTrip = trips.filter(t => t.date >= today).sort((a, b) => a.date.localeCompare(b.date))[0];
+    const daysToNext = nextTrip ? Math.max(0, Math.ceil((new Date(nextTrip.date + "T12:00:00") - new Date()) / (1000 * 60 * 60 * 24))) : null;
+    const totalPointsValue = Object.entries(linkedAccounts).reduce((sum, [, acc]) => sum + (acc.pointsBalance || acc.currentPoints || acc.bonvoyPoints || acc.hhPoints || acc.ihgPoints || 0), 0);
+    const hour = new Date().getHours();
+    const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+
+    const SectionHead = ({ icon, title, count, action, actionLabel }) => (
+      <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 16 }}>
+        <h3 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 22, fontWeight: 500, color: css.text, margin: 0, letterSpacing: -0.3 }}>{icon} {title}</h3>
+        {count !== undefined && <span style={{ fontSize: 11, color: css.text3, fontFamily: "'JetBrains Mono', monospace" }}>{count}</span>}
+        <div style={{ flex: 1, height: 1, background: css.border, marginLeft: 4 }} />
+        {action && <button onClick={action} style={{ background: "none", border: `1px solid ${css.border}`, color: css.accent, fontSize: 11, fontWeight: 600, cursor: "pointer", padding: "4px 12px", borderRadius: 8, transition: "all 0.15s" }}>{actionLabel}</button>}
+      </div>
+    );
 
     return (
       <div>
-        {/* Stats Row */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14, marginBottom: 28 }}>
-          {[
-            { label: "Linked Programs", value: Object.keys(linkedAccounts).length, icon: "🔗", color: "#0EA5A0" },
-            { label: "Planned Trips", value: totalTrips, icon: "🗺️", color: "#34d399" },
-            { label: "Confirmed", value: confirmedTrips, icon: "✅", color: "#fbbf24" },
-            { label: "Status Advances", value: willAdvanceCount, icon: "🚀", color: "#f472b6" },
-          ].map((stat, i) => (
-            <div key={i} style={{
-              background: "#1a1725", border: "1px solid #2a2640", borderLeft: `3px solid ${stat.color}`,
-              borderRadius: 12, padding: "18px 20px",
-              display: "flex", alignItems: "center", gap: 14,
+        {/* Greeting */}
+        <div className="c-a1" style={{ marginBottom: 32 }}>
+          <h1 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: isMobile ? 36 : 52, fontWeight: 500, color: css.text, margin: "0 0 4px", letterSpacing: -1, lineHeight: 1.05 }}>
+            {greeting}, {user?.name?.split(" ")[0]}.
+          </h1>
+          <p style={{ fontSize: 14, color: css.text2, margin: 0, fontWeight: 400 }}>
+            {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })} &nbsp;·&nbsp; {Object.keys(linkedAccounts).length} programs tracked
+          </p>
+        </div>
+
+        {/* Next trip hero + stat pills row */}
+        <div className="c-a2" style={{ display: "grid", gridTemplateColumns: nextTrip ? (isMobile ? "1fr" : "1fr auto") : "1fr", gap: 12, marginBottom: 28 }}>
+          {/* Stat pills */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10 }}>
+            {[
+              { label: "Linked", value: Object.keys(linkedAccounts).length, sub: "programs", color: css.accent },
+              { label: "Portfolio", value: totalPointsValue >= 1000 ? `${Math.round(totalPointsValue/1000)}K` : String(totalPointsValue), sub: "total pts", color: css.gold },
+              { label: "Confirmed", value: confirmedTrips, sub: `of ${totalTrips} trips`, color: css.success },
+              { label: "Advancing", value: willAdvanceCount, sub: "status upgrades", color: "#9B6FD6" },
+            ].map((s, i) => (
+              <div key={i} className="c-card" style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 16, padding: "18px 20px", position: "relative", overflow: "hidden", boxShadow: D ? "none" : "0 1px 4px rgba(0,0,0,0.06)" }}>
+                <div style={{ fontSize: 28, fontWeight: 700, color: css.text, fontFamily: "'JetBrains Mono', monospace", letterSpacing: -1, lineHeight: 1, marginBottom: 4 }}>{s.value}</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: css.text2, marginBottom: 1 }}>{s.label}</div>
+                <div style={{ fontSize: 10, color: s.color, fontWeight: 500 }}>{s.sub}</div>
+                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, ${s.color}, transparent)`, opacity: 0.6 }} />
+              </div>
+            ))}
+          </div>
+
+          {/* Next trip countdown */}
+          {nextTrip && (
+            <div className="c-card" style={{
+              background: css.accentBg, border: `1px solid ${css.accentBorder}`,
+              borderRadius: 16, padding: "20px 24px", minWidth: isMobile ? "auto" : 220,
+              display: "flex", flexDirection: "column", justifyContent: "space-between",
+              boxShadow: D ? "none" : "0 2px 12px rgba(212,116,45,0.08)",
             }}>
-              <div style={{ fontSize: 28 }}>{stat.icon}</div>
               <div>
-                <div style={{ fontSize: 24, fontWeight: 700, color: "#fff", fontFamily: "'Inter Tight', Inter, sans-serif" }}>{stat.value}</div>
-                <div style={{ fontSize: 11, color: "#8a8f98", fontWeight: 500, fontFamily: "Inter, sans-serif" }}>{stat.label}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                  <div style={{ width: 6, height: 6, borderRadius: "50%", background: css.accent, animation: "c-pulse 2s infinite" }} />
+                  <span style={{ fontSize: 10, color: css.accent, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase" }}>Next trip</span>
+                </div>
+                <div style={{ fontSize: 17, fontWeight: 700, color: css.text, marginBottom: 3, lineHeight: 1.2 }}>{nextTrip.route || nextTrip.property || nextTrip.location}</div>
+                <div style={{ fontSize: 11, color: css.text2 }}>{new Date(nextTrip.date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</div>
+              </div>
+              <div style={{ marginTop: 14, display: "flex", alignItems: "baseline", gap: 4 }}>
+                <span style={{ fontSize: 42, fontWeight: 700, color: css.accent, fontFamily: "'JetBrains Mono', monospace", lineHeight: 1 }}>{daysToNext}</span>
+                <span style={{ fontSize: 11, color: css.text2, fontWeight: 500 }}>days</span>
               </div>
             </div>
+          )}
+        </div>
+
+        {/* Quick actions */}
+        <div className="c-a2" style={{ display: "flex", gap: 8, marginBottom: 36, flexWrap: "wrap" }}>
+          <button onClick={() => setShowAddTrip(true)} className="c-btn-primary" style={{ padding: "9px 20px", borderRadius: 10, border: "none", background: css.accent, color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>+ Add Trip</button>
+          {[["→ Optimizer","optimizer"],["Reports","reports"],["Programs","programs"]].map(([l,v]) => (
+            <button key={v} onClick={() => setActiveView(v)} className="c-nav-btn" style={{ padding: "9px 16px", borderRadius: 10, border: `1px solid ${css.border}`, background: "transparent", color: css.text2, fontSize: 13, fontWeight: 400, cursor: "pointer" }}>{l}</button>
           ))}
         </div>
 
-        {/* Airline Status Cards */}
+        {/* Airline Status */}
         {airlineStatuses.length > 0 && (
-          <div style={{ marginBottom: 28 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: "#d0d6e0", marginBottom: 14, fontFamily: "Inter, sans-serif" }}>✈️ Airline Elite Status</h3>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 14 }}>
+          <div className="c-a3" style={{ marginBottom: 32 }}>
+            <SectionHead icon="✈" title="Airline Elite Status" count={`${airlineStatuses.length} programs`} action={() => setActiveView("programs")} actionLabel="Manage →" />
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12 }}>
               {airlineStatuses.map(p => {
                 const s = p.status;
-                const progress = s.nextTier ? (s.projected / s.nextTier.threshold) * 100 : 100;
+                const progress = s.nextTier ? Math.min((s.projected / s.nextTier.threshold) * 100, 100) : 100;
                 return (
-                  <div key={p.id} onClick={() => { setSelectedProgram(p.id); setActiveView("programs"); }} style={{
-                    background: "#1a1725", border: "1px solid #2a2640", borderLeft: `3px solid ${p.color}`,
-                    borderRadius: 12, padding: 22, cursor: "pointer", transition: "all 0.15s",
+                  <div key={p.id} className="c-card" onClick={() => { setSelectedProgram(p.id); setActiveView("programs"); }} style={{
+                    background: css.surface, border: `1px solid ${css.border}`, borderRadius: 16, padding: "20px 22px",
+                    cursor: "pointer", position: "relative", overflow: "hidden",
+                    boxShadow: D ? "none" : "0 1px 4px rgba(0,0,0,0.05)",
                   }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+                    <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, ${p.color}, ${p.color}40)` }} />
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
                       <div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{p.name}</div>
-                        <div style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif", marginTop: 2 }}>
-                          {s.currentTier ? s.currentTier.name : "Member"} → {s.nextTier?.name || "Top Tier"}
+                        <div style={{ fontSize: 14, fontWeight: 600, color: css.text, marginBottom: 3 }}>{p.name}</div>
+                        <div style={{ fontSize: 11, color: css.text2 }}>
+                          <span style={{ fontWeight: 600, color: p.color }}>{s.currentTier?.name || "Member"}</span>
+                          <span style={{ margin: "0 6px", color: css.border }}>→</span>
+                          {s.nextTier?.name || "Top Tier"}
                         </div>
                       </div>
-                      {s.willAdvance && <Badge color="#34d399" small>↑ Advancing!</Badge>}
+                      {s.willAdvance
+                        ? <span style={{ background: css.successBg, color: css.success, border: `1px solid ${css.success}30`, borderRadius: 20, padding: "3px 10px", fontSize: 10, fontWeight: 700, flexShrink: 0 }}>↑ Advancing</span>
+                        : <div style={{ textAlign: "right" }}><div style={{ fontSize: 18, fontWeight: 700, color: css.text, fontFamily: "'JetBrains Mono', monospace" }}>{Math.round(progress)}%</div><div style={{ fontSize: 9, color: css.text3 }}>to next</div></div>
+                      }
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                      <ProgressRing progress={Math.min(progress, 100)} size={70} color={p.color} label={`${Math.round(progress)}%`} sublabel={p.unit} />
-                      <div style={{ flex: 1 }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#8a8f98", marginBottom: 4, fontFamily: "Inter, sans-serif" }}>
-                          <span>{s.projected.toLocaleString()} {p.unit}</span>
-                          <span>{s.nextTier?.threshold.toLocaleString()}</span>
-                        </div>
-                        <MiniBar value={s.projected} max={s.nextTier?.threshold || s.projected} color={p.color} height={8} />
-                        {s.tripBoosts > 0 && (
-                          <div style={{ fontSize: 10, color: "#34d399", marginTop: 6, fontFamily: "Inter, sans-serif" }}>+{s.tripBoosts.toLocaleString()} from upcoming trips</div>
-                        )}
-                      </div>
+                    <div style={{ width: "100%", height: 6, borderRadius: 3, background: css.surface2, overflow: "hidden", marginBottom: 8 }}>
+                      <div style={{ width: `${progress}%`, height: "100%", borderRadius: 3, background: `linear-gradient(90deg, ${p.color}, ${p.color}cc)`, transition: "width 1s ease" }} />
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: css.text3, fontFamily: "'JetBrains Mono', monospace" }}>
+                      <span>{s.projected.toLocaleString()}</span>
+                      <span>{s.tripBoosts > 0 && <span style={{ color: css.success, marginRight: 8 }}>+{s.tripBoosts.toLocaleString()} planned</span>}{s.nextTier?.threshold.toLocaleString()}</span>
                     </div>
                   </div>
                 );
@@ -1360,32 +1490,36 @@ Start by introducing yourself briefly in-character with personality, and give an
           </div>
         )}
 
-        {/* Hotel Status Cards */}
+        {/* Hotel Status */}
         {hotelStatuses.length > 0 && (
-          <div style={{ marginBottom: 28 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: "#d0d6e0", marginBottom: 14, fontFamily: "Inter, sans-serif" }}>🏨 Hotel Elite Status</h3>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 14 }}>
+          <div className="c-a4" style={{ marginBottom: 32 }}>
+            <SectionHead icon="🏨" title="Hotel Elite Status" count={`${hotelStatuses.length} programs`} action={() => setActiveView("programs")} actionLabel="Manage →" />
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12 }}>
               {hotelStatuses.map(p => {
                 const s = p.status;
-                const progress = s.nextTier ? (s.projected / s.nextTier.threshold) * 100 : 100;
+                const progress = s.nextTier ? Math.min((s.projected / s.nextTier.threshold) * 100, 100) : 100;
                 return (
-                  <div key={p.id} onClick={() => { setSelectedProgram(p.id); setActiveView("programs"); }} style={{
-                    background: "#1a1725", border: "1px solid #2a2640", borderLeft: `3px solid ${p.color}`,
-                    borderRadius: 12, padding: 22, cursor: "pointer", transition: "all 0.15s",
+                  <div key={p.id} className="c-card" onClick={() => { setSelectedProgram(p.id); setActiveView("programs"); }} style={{
+                    background: css.surface, border: `1px solid ${css.border}`, borderRadius: 16, padding: "20px 22px",
+                    cursor: "pointer", position: "relative", overflow: "hidden",
+                    boxShadow: D ? "none" : "0 1px 4px rgba(0,0,0,0.05)",
                   }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+                    <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, ${p.color}, ${p.color}40)` }} />
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
                       <div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: "Inter, sans-serif" }}>{p.name}</div>
-                        <div style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif", marginTop: 2 }}>
-                          {s.currentTier ? s.currentTier.name : "Member"} • {s.current} nights YTD
+                        <div style={{ fontSize: 14, fontWeight: 600, color: css.text, marginBottom: 3 }}>{p.name}</div>
+                        <div style={{ fontSize: 11, color: css.text2 }}>
+                          <span style={{ fontWeight: 600, color: p.color }}>{s.currentTier?.name || "Member"}</span> · {s.current} nights YTD
                         </div>
                       </div>
-                      {s.willAdvance && <Badge color="#34d399" small>↑ Tier Up!</Badge>}
+                      {s.willAdvance && <span style={{ background: css.successBg, color: css.success, border: `1px solid ${css.success}30`, borderRadius: 20, padding: "3px 10px", fontSize: 10, fontWeight: 700, flexShrink: 0 }}>↑ Tier Up</span>}
                     </div>
-                    <MiniBar value={s.projected} max={s.nextTier?.threshold || s.projected} color={p.color} height={8} />
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#62666d", marginTop: 6, fontFamily: "Inter, sans-serif" }}>
+                    <div style={{ width: "100%", height: 6, borderRadius: 3, background: css.surface2, overflow: "hidden", marginBottom: 8 }}>
+                      <div style={{ width: `${progress}%`, height: "100%", borderRadius: 3, background: `linear-gradient(90deg, ${p.color}, ${p.color}cc)`, transition: "width 1s ease" }} />
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: css.text3, fontFamily: "'JetBrains Mono', monospace" }}>
                       <span>{s.projected} / {s.nextTier?.threshold || "MAX"} nights</span>
-                      {s.tripBoosts > 0 && <span style={{ color: "#34d399" }}>+{s.tripBoosts} planned</span>}
+                      {s.tripBoosts > 0 && <span style={{ color: css.success }}>+{s.tripBoosts} planned</span>}
                     </div>
                   </div>
                 );
@@ -1394,67 +1528,59 @@ Start by introducing yourself briefly in-character with personality, and give an
           </div>
         )}
 
-        {/* Upcoming Trips Timeline */}
-        <div style={{ marginBottom: 28 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: "#d0d6e0", margin: 0, fontFamily: "Inter, sans-serif" }}>📅 Upcoming Trips</h3>
-            <button onClick={() => setActiveView("trips")} style={{
-              background: "none", border: "none", color: "#0EA5A0", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif",
-            }}>View All →</button>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {trips.slice(0, 4).map(trip => {
-              const prog = allPrograms.find(p => p.id === trip.program);
-              return (
-                <div key={trip.id} style={{
-                  background: "#1a1725", border: "1px solid #2a2640", borderRadius: 12, padding: "14px 18px",
-                  display: "flex", justifyContent: "space-between", alignItems: "center",
-                }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <span style={{ fontSize: 22 }}>{trip.type === "flight" ? "✈️" : trip.type === "hotel" ? "🏨" : "🚗"}</span>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{trip.route || trip.property || trip.location}</div>
-                      <div style={{ fontSize: 11, color: "#62666d", fontFamily: "Inter, sans-serif" }}>{trip.date} • {prog?.name}</div>
+        {/* Two-column: Trips + Cards */}
+        <div className="c-a5" style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 340px", gap: 24 }}>
+          {/* Upcoming Trips */}
+          <div>
+            <SectionHead icon="📅" title="Upcoming Trips" count={`${trips.length}`} action={() => setActiveView("trips")} actionLabel="View all →" />
+            <div style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 16, overflow: "hidden", boxShadow: D ? "none" : "0 1px 4px rgba(0,0,0,0.05)" }}>
+              {trips.slice(0, 5).map((trip, idx) => {
+                const prog = allPrograms.find(p => p.id === trip.program);
+                const sColor = trip.status === "confirmed" ? css.success : trip.status === "planned" ? css.warning : css.accent;
+                return (
+                  <div key={trip.id} className="c-row-hover" style={{
+                    display: "flex", alignItems: "center", gap: 12, padding: "13px 20px",
+                    borderBottom: idx < Math.min(trips.length, 5) - 1 ? `1px solid ${css.border}` : "none",
+                  }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 10, background: `${prog?.color || css.accent}18`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>
+                      {trip.type === "flight" ? "✈️" : trip.type === "hotel" ? "🏨" : "🚗"}
                     </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: css.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{trip.route || trip.property || trip.location}</div>
+                      <div style={{ fontSize: 11, color: css.text3, marginTop: 1, fontFamily: "'JetBrains Mono', monospace" }}>{trip.date} · {prog?.name?.split(" ")[0] || "—"}</div>
+                    </div>
+                    <span style={{ background: `${sColor}15`, color: sColor, border: `1px solid ${sColor}30`, borderRadius: 20, padding: "2px 9px", fontSize: 10, fontWeight: 600, textTransform: "capitalize", flexShrink: 0 }}>{trip.status}</span>
                   </div>
-                  <Badge color={trip.status === "confirmed" ? "#34d399" : trip.status === "planned" ? "#fbbf24" : "#0EA5A0"} small>
-                    {trip.status}
-                  </Badge>
+                );
+              })}
+              {trips.length === 0 && (
+                <div style={{ textAlign: "center", padding: "40px 20px", color: css.text3 }}>
+                  <div style={{ fontSize: 28, marginBottom: 8 }}>✈️</div>
+                  <button onClick={() => setShowAddTrip(true)} style={{ background: "none", border: "none", color: css.accent, cursor: "pointer", fontWeight: 600, fontSize: 13 }}>Add your first trip →</button>
                 </div>
-              );
-            })}
-            {trips.length === 0 && (
-              <div style={{ textAlign: "center", padding: 40, color: "#62666d", fontSize: 13, fontFamily: "Inter, sans-serif" }}>
-                No trips yet. Add your first trip to start tracking! ✈️
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
 
-        {/* Credit Card Recommendations - Monetization */}
-        <div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: "#d0d6e0", margin: 0, fontFamily: "Inter, sans-serif" }}>💳 Recommended Cards</h3>
-            <Badge color="#fbbf24" small>SPONSORED</Badge>
-          </div>
-          <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 8 }}>
-            {CREDIT_CARD_OFFERS.slice(0, 3).map((card, i) => (
-              <div key={i} style={{
-                minWidth: 220, background: "#1a1725", border: "1px solid #2a2640", borderTop: `3px solid ${card.color}`,
-                borderRadius: 12, padding: 18, flex: "0 0 auto",
-              }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif", marginBottom: 6 }}>{card.name}</div>
-                <div style={{ fontSize: 20, fontWeight: 800, color: "#fbbf24", fontFamily: "Inter, sans-serif", marginBottom: 4 }}>{card.bonus}</div>
-                <div style={{ fontSize: 10, color: "#8a8f98", fontFamily: "Inter, sans-serif", marginBottom: 10 }}>Spend {card.spend} • {card.fee}</div>
-                <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                  {card.tags.map((tag, j) => <Badge key={j} color={card.color || "#0EA5A0"} small>{tag}</Badge>)}
+          {/* Recommended Cards */}
+          <div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 16 }}>
+              <h3 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 22, fontWeight: 500, color: css.text, margin: 0 }}>💳 Cards</h3>
+              <span style={{ fontSize: 9, background: css.goldBg, color: css.gold, border: `1px solid ${css.gold}40`, borderRadius: 20, padding: "2px 8px", fontWeight: 700, letterSpacing: 1 }}>SPONSORED</span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {CREDIT_CARD_OFFERS.slice(0, 3).map((card, i) => (
+                <div key={i} className="c-card" style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: "16px 18px", position: "relative", overflow: "hidden", boxShadow: D ? "none" : "0 1px 4px rgba(0,0,0,0.05)" }}>
+                  <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: card.color }} />
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: css.text }}>{card.name}</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: css.warning, fontFamily: "'JetBrains Mono', monospace" }}>{card.bonus}</div>
+                  </div>
+                  <div style={{ fontSize: 10, color: css.text3, marginBottom: 8, fontFamily: "'JetBrains Mono', monospace" }}>Spend {card.spend} · {card.fee}</div>
+                  <button style={{ width: "100%", padding: "7px 0", borderRadius: 8, border: `1px solid ${css.border}`, background: "transparent", color: css.accent, fontSize: 11, fontWeight: 600, cursor: "pointer", transition: "all 0.15s" }}>Apply Now →</button>
                 </div>
-                <button style={{
-                  width: "100%", marginTop: 12, padding: "8px 0", borderRadius: 8, border: `1px solid ${card.color}40`, background: "rgba(255,255,255,0.03)",
-                  color: "#f7f8f8", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif",
-                }}>Apply Now →</button>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -1469,108 +1595,143 @@ Start by introducing yourself briefly in-character with personality, and give an
       card: customPrograms.filter(p => p.category === "card"),
     };
     const categories = [
-      { label: "Airlines", icon: "✈️", programs: [...LOYALTY_PROGRAMS.airlines, ...customByCategory.airline] },
-      { label: "Hotels", icon: "🏨", programs: [...LOYALTY_PROGRAMS.hotels, ...customByCategory.hotel] },
-      { label: "Rental Cars", icon: "🚗", programs: [...LOYALTY_PROGRAMS.rentals, ...customByCategory.rental] },
-      { label: "Credit Cards", icon: "💳", programs: [...LOYALTY_PROGRAMS.creditCards, ...customByCategory.card] },
+      { label: "Airlines", key: "air", programs: [...LOYALTY_PROGRAMS.airlines, ...customByCategory.airline] },
+      { label: "Hotels", key: "htl", programs: [...LOYALTY_PROGRAMS.hotels, ...customByCategory.hotel] },
+      { label: "Rental Cars", key: "car", programs: [...LOYALTY_PROGRAMS.rentals, ...customByCategory.rental] },
+      { label: "Credit Cards", key: "crd", programs: [...LOYALTY_PROGRAMS.creditCards, ...customByCategory.card] },
     ];
+    const linkedCount = Object.keys(linkedAccounts).length;
 
     return (
       <div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+        {/* Page header */}
+        <div className="c-a1" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32, gap: 16 }}>
           <div>
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: 0, fontFamily: "'Inter Tight', Inter, sans-serif" }}>Loyalty Programs</h2>
-            <p style={{ color: "#8a8f98", fontSize: 12, margin: "4px 0 0", fontFamily: "Inter, sans-serif" }}>Link and manage all your accounts</p>
+            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: css.text3, marginBottom: 8 }}>Loyalty Portfolio</div>
+            <h2 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: isMobile ? 28 : 36, fontWeight: 600, color: css.text, margin: 0, lineHeight: 1.1 }}>Your Programs</h2>
+            <p style={{ color: css.text2, fontSize: 13, margin: "8px 0 0", fontFamily: "'Outfit', sans-serif" }}>
+              {linkedCount} linked · {Object.values(customByCategory).flat().length} custom programs
+            </p>
           </div>
-          <button onClick={() => setShowAddProgram(true)} style={{
-            padding: "10px 20px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Inter, sans-serif",
-            background: "#0EA5A0", color: "#f7f8f8", boxShadow: "none",
+          <button onClick={() => setShowAddProgram(true)} className="c-btn-primary" style={{
+            padding: "10px 22px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600,
+            background: css.accent, color: "#fff", flexShrink: 0, fontFamily: "'Outfit', sans-serif",
           }}>+ Add Program</button>
         </div>
 
         {categories.map((cat, ci) => (
-          <div key={ci} style={{ marginBottom: 28 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: "#d0d6e0", marginBottom: 12, fontFamily: "Inter, sans-serif" }}>{cat.icon} {cat.label}</h3>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 14 }}>
+          <div key={cat.key} className={`c-a${ci + 2}`} style={{ marginBottom: 40 }}>
+            {/* Category header */}
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, paddingBottom: 12, borderBottom: `1px solid ${css.border}` }}>
+              <h3 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 22, fontWeight: 500, color: css.text, margin: 0 }}>{cat.label}</h3>
+              <span style={{ fontSize: 11, color: css.text3, fontFamily: "'JetBrains Mono', monospace" }}>
+                {cat.programs.filter(p => linkedAccounts[p.id]).length}/{cat.programs.length} linked
+              </span>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 14 }}>
               {cat.programs.map(prog => {
                 const isLinked = !!linkedAccounts[prog.id];
                 const status = isLinked ? getProjectedStatus(prog.id) : null;
-                const isCard = cat.label === "Credit Cards";
+                const isCard = cat.key === "crd";
 
                 return (
-                  <div key={prog.id} style={{
-                    background: "#1a1725",
-                    border: `1px solid #2a2640`, borderLeft: isLinked ? `3px solid ${prog.color}` : undefined,
-                    borderRadius: 12, padding: 22, transition: "all 0.15s",
+                  <div key={prog.id} className="c-card" style={{
+                    background: css.surface, border: `1px solid ${isLinked ? prog.color + "40" : css.border}`,
+                    borderTop: isLinked ? `3px solid ${prog.color}` : `3px solid transparent`,
+                    borderRadius: 14, padding: "20px 22px", transition: "all 0.2s",
+                    boxShadow: D ? "none" : "0 1px 4px rgba(26,21,18,0.05)",
                   }}>
+                    {/* Card header */}
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <span style={{ fontSize: 26 }}>{prog.logo}</span>
+                        <span style={{ fontSize: 24 }}>{prog.logo}</span>
                         <div>
-                          <div style={{ fontSize: 14, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{prog.name}</div>
-                          {isLinked && !isCard && <div style={{ fontSize: 11, color: "#62666d", fontFamily: "Inter, sans-serif" }}>
-                            ID: {linkedAccounts[prog.id].memberId}
-                          </div>}
-                          {isCard && <div style={{ fontSize: 11, color: "#62666d", fontFamily: "Inter, sans-serif" }}>{prog.annualFee ? `$${prog.annualFee}/yr` : ""}</div>}
+                          <div style={{ fontSize: 13, fontWeight: 600, color: css.text, lineHeight: 1.3 }}>{prog.name}</div>
+                          {isLinked && !isCard && (
+                            <div style={{ fontSize: 10, color: css.text3, fontFamily: "'JetBrains Mono', monospace", marginTop: 2 }}>
+                              #{linkedAccounts[prog.id].memberId}
+                            </div>
+                          )}
+                          {isCard && prog.annualFee && (
+                            <div style={{ fontSize: 10, color: css.text3, marginTop: 2 }}>${prog.annualFee}/yr</div>
+                          )}
                         </div>
                       </div>
-                      {isLinked ? <Badge color="#34d399" small>Linked</Badge> : <Badge color="rgba(0,0,0,0.2)" small>Not Linked</Badge>}
+                      {isLinked ? (
+                        <span style={{ fontSize: 10, fontWeight: 700, color: css.success, background: css.successBg, border: `1px solid ${css.success}30`, borderRadius: 20, padding: "3px 9px", flexShrink: 0 }}>Linked</span>
+                      ) : (
+                        <span style={{ fontSize: 10, fontWeight: 600, color: css.text3, background: css.surface2, borderRadius: 20, padding: "3px 9px", flexShrink: 0 }}>Not linked</span>
+                      )}
                     </div>
 
+                    {/* Status progress for airline/hotel */}
                     {isLinked && status && !isCard && (
                       <div style={{ marginBottom: 14 }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#8a8f98", marginBottom: 6, fontFamily: "Inter, sans-serif" }}>
-                          <span>Current: {status.currentTier?.name || "Member"}</span>
-                          <span>Next: {status.nextTier?.name}</span>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: css.text2, marginBottom: 6 }}>
+                          <span style={{ fontWeight: 600, color: prog.color }}>{status.currentTier?.name || "Member"}</span>
+                          {status.nextTier && <span style={{ color: css.text3 }}>→ {status.nextTier.name}</span>}
                         </div>
-                        <MiniBar value={status.projected} max={status.nextTier?.threshold || status.projected} color={prog.color} height={8} />
-                        <div style={{ fontSize: 10, color: "#62666d", marginTop: 4, fontFamily: "Inter, sans-serif" }}>
-                          {status.projected.toLocaleString()} / {(status.nextTier?.threshold || status.projected).toLocaleString()} {prog.unit}
-                          {status.willAdvance && <span style={{ color: "#34d399", marginLeft: 8 }}>🎉 On track to advance!</span>}
+                        <div style={{ width: "100%", height: 5, borderRadius: 3, background: css.surface2, overflow: "hidden" }}>
+                          <div style={{
+                            width: `${Math.min((status.projected / (status.nextTier?.threshold || status.projected)) * 100, 100)}%`,
+                            height: "100%", borderRadius: 3, background: prog.color, transition: "width 1s ease",
+                          }} />
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: css.text3, marginTop: 5, fontFamily: "'JetBrains Mono', monospace" }}>
+                          <span>{status.projected.toLocaleString()} {prog.unit?.split(" ")[0]}</span>
+                          {status.willAdvance && <span style={{ color: css.success, fontWeight: 600 }}>On track ↑</span>}
+                          {status.nextTier && !status.willAdvance && <span>{(status.nextTier.threshold - status.projected).toLocaleString()} to go</span>}
                         </div>
                       </div>
                     )}
 
+                    {/* Card balance */}
                     {isCard && isLinked && (
-                      <div style={{ marginBottom: 14 }}>
-                        <div style={{ fontSize: 18, fontWeight: 700, color: "#fff", fontFamily: "'Inter Tight', Inter, sans-serif" }}>
-                          {(linkedAccounts[prog.id]?.pointsBalance || 0).toLocaleString()} pts
+                      <div style={{ marginBottom: 14, padding: "10px 14px", background: css.surface2, borderRadius: 8 }}>
+                        <div style={{ fontSize: 20, fontWeight: 600, color: css.text, fontFamily: "'JetBrains Mono', monospace" }}>
+                          {(linkedAccounts[prog.id]?.pointsBalance || 0).toLocaleString()}
+                          <span style={{ fontSize: 12, fontWeight: 400, color: css.text2, marginLeft: 4 }}>pts</span>
                         </div>
-                        <div style={{ fontSize: 11, color: "#62666d", fontFamily: "Inter, sans-serif", marginTop: 2 }}>{prog.perks}</div>
+                        {prog.perks && <div style={{ fontSize: 10, color: css.text3, marginTop: 4 }}>{prog.perks}</div>}
                       </div>
                     )}
 
+                    {/* Tier badges */}
                     {!isCard && prog.tiers && (
                       <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 14 }}>
                         {prog.tiers.map((tier, ti) => (
-                          <Badge key={ti} color={status?.currentTier?.name === tier.name ? prog.color : "rgba(0,0,0,0.04)"} small>
-                            {tier.name}
-                          </Badge>
+                          <span key={ti} style={{
+                            fontSize: 9, fontWeight: 600, padding: "2px 8px", borderRadius: 20,
+                            background: status?.currentTier?.name === tier.name ? `${prog.color}20` : css.surface2,
+                            color: status?.currentTier?.name === tier.name ? prog.color : css.text3,
+                            border: status?.currentTier?.name === tier.name ? `1px solid ${prog.color}40` : `1px solid ${css.border}`,
+                          }}>{tier.name}</span>
                         ))}
                       </div>
                     )}
 
+                    {/* Actions */}
                     {isLinked ? (
-                      <div style={{ display: "flex", gap: 6 }}>
+                      <div style={{ display: "flex", gap: 8 }}>
                         <span style={{
-                          flex: 1, padding: "9px 0", borderRadius: 8, border: "1px solid #2a2640",
-                          background: "rgba(255,255,255,0.03)", color: "#8a8f98",
-                          fontSize: 12, fontWeight: 600, fontFamily: "Inter, sans-serif", textAlign: "center",
+                          flex: 1, padding: "8px 0", borderRadius: 8, border: `1px solid ${css.border}`,
+                          background: css.surface2, color: css.text3,
+                          fontSize: 11, fontWeight: 500, textAlign: "center",
                         }}>✓ Connected</span>
                         {prog.loginUrl && (
                           <a href={prog.loginUrl} target="_blank" rel="noopener noreferrer" style={{
-                            padding: "9px 14px", borderRadius: 8, border: `1px solid ${prog.color}40`,
-                            background: `${prog.color}15`, color: "#f7f8f8", textDecoration: "none",
-                            fontSize: 12, fontWeight: 600, fontFamily: "Inter, sans-serif", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 4,
+                            padding: "8px 14px", borderRadius: 8, border: `1px solid ${prog.color}40`,
+                            background: `${prog.color}12`, color: css.text, textDecoration: "none",
+                            fontSize: 11, fontWeight: 600, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 4,
                           }}>View ↗</a>
                         )}
                       </div>
                     ) : (
-                      <button onClick={() => (setShowLinkModal(prog.id), setLinkForm({ memberId: "" }))} style={{
-                        width: "100%", padding: "9px 0", borderRadius: 8, border: `1px solid ${prog.color + "40"}`,
-                        background: `${prog.color}15`, color: "#f7f8f8",
-                        fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif", transition: "all 0.3s",
-                      }}>Link Account</button>
+                      <button onClick={() => { setShowLinkModal(prog.id); setLinkForm({ memberId: "" }); }} style={{
+                        width: "100%", padding: "9px 0", borderRadius: 8, border: `1px solid ${css.accentBorder}`,
+                        background: css.accentBg, color: css.accent,
+                        fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all 0.15s",
+                      }}>Link Account →</button>
                     )}
                   </div>
                 );
@@ -1584,71 +1745,116 @@ Start by introducing yourself briefly in-character with personality, and give an
 
   const renderTrips = () => (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
+      {/* Page header */}
+      <div className="c-a1" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 28, gap: 16, flexWrap: "wrap" }}>
         <div>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: 0, fontFamily: "'Inter Tight', Inter, sans-serif" }}>Annual Travel Plan</h2>
-          <p style={{ color: "#8a8f98", fontSize: 12, margin: "4px 0 0", fontFamily: "Inter, sans-serif" }}>{trips.length} trips planned for 2026</p>
+          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: css.text3, marginBottom: 8 }}>2026 Travel Plan</div>
+          <h2 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: isMobile ? 28 : 36, fontWeight: 600, color: css.text, margin: 0, lineHeight: 1.1 }}>Your Trips</h2>
+          <p style={{ color: css.text2, fontSize: 13, margin: "8px 0 0" }}>{trips.length} trips · {trips.filter(t => t.status === "confirmed").length} confirmed</p>
         </div>
-        <button onClick={() => setShowAddTrip(true)} style={{
-          padding: "10px 20px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Inter, sans-serif",
-          background: "#0EA5A0", color: "#f7f8f8", boxShadow: "none",
-        }}>+ Add Trip</button>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          {/* Flighty / Calendar export — Premium feature */}
+          <button onClick={exportToFlighty} style={{
+            display: "flex", alignItems: "center", gap: 7, padding: "10px 16px", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 600,
+            background: user?.tier === "premium" ? css.accentBg : css.surface2,
+            border: user?.tier === "premium" ? `1px solid ${css.accentBorder}` : `1px solid ${css.border}`,
+            color: user?.tier === "premium" ? css.accent : css.text3,
+            transition: "all 0.15s",
+          }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.67A2 2 0 012 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
+            </svg>
+            Export to Flighty
+            {user?.tier !== "premium" && (
+              <span style={{ fontSize: 9, background: css.goldBg, color: css.gold, padding: "2px 6px", borderRadius: 6, fontWeight: 700, border: `1px solid ${css.gold}30` }}>PRO</span>
+            )}
+          </button>
+          <button onClick={() => setShowAddTrip(true)} className="c-btn-primary" style={{
+            padding: "10px 20px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600,
+            background: css.accent, color: "#fff",
+          }}>+ Add Trip</button>
+        </div>
       </div>
 
+      {/* Flighty instructions banner */}
+      {user?.tier === "premium" && trips.filter(t => t.type === "flight").length > 0 && (
+        <div className="c-a2" style={{
+          display: "flex", alignItems: "flex-start", gap: 14, padding: "14px 18px", marginBottom: 20,
+          background: css.accentBg, border: `1px solid ${css.accentBorder}`, borderRadius: 12,
+        }}>
+          <span style={{ fontSize: 18, flexShrink: 0 }}>✈️</span>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: css.text, marginBottom: 3 }}>Sync with Flighty</div>
+            <div style={{ fontSize: 12, color: css.text2, lineHeight: 1.6 }}>
+              1. Click <strong style={{ color: css.accent }}>Export to Flighty</strong> to download{" "}
+              <code style={{ background: css.surface2, padding: "1px 5px", borderRadius: 4, fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>continuum-flights.ics</code>
+              {"  "}2. Import into Apple/Google Calendar{"  "}3. Open Flighty → Settings → Calendar Sync
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Filters */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+      <div className="c-a2" style={{ display: "flex", gap: 8, marginBottom: 24, flexWrap: "wrap" }}>
         <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search trips..."
           style={{
-            padding: "8px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640",
-            borderRadius: 8, color: "#f7f8f8", fontSize: 12, fontFamily: "Inter, sans-serif", outline: "none", flex: 1, minWidth: 160,
+            padding: "8px 14px", background: css.surface, border: `1px solid ${css.border}`,
+            borderRadius: 8, color: css.text, fontSize: 12, outline: "none", flex: 1, minWidth: 160,
+            fontFamily: "'Outfit', sans-serif",
           }} />
         {["all", "confirmed", "planned", "wishlist"].map(s => (
           <button key={s} onClick={() => setFilterStatus(s)} style={{
-            padding: "8px 14px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600, fontFamily: "Inter, sans-serif",
-            background: filterStatus === s ? "rgba(14,165,160,0.2)" : "rgba(255,255,255,0.03)",
-            color: filterStatus === s ? "#0EA5A0" : "rgba(0,0,0,0.3)", textTransform: "capitalize",
+            padding: "8px 14px", borderRadius: 8, border: `1px solid ${filterStatus === s ? css.accentBorder : css.border}`,
+            cursor: "pointer", fontSize: 11, fontWeight: 600,
+            background: filterStatus === s ? css.accentBg : css.surface,
+            color: filterStatus === s ? css.accent : css.text2, textTransform: "capitalize",
           }}>{s}</button>
         ))}
       </div>
 
       {/* Trip Cards */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div className="c-a3" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {filteredTrips.map(trip => {
           const prog = allPrograms.find(p => p.id === trip.program);
+          const sColor = trip.status === "confirmed" ? css.success : trip.status === "planned" ? css.warning : css.accent;
+          const sBg = trip.status === "confirmed" ? css.successBg : trip.status === "planned" ? css.warningBg : css.accentBg;
           return (
-            <div key={trip.id} style={{
-              background: "#1a1725", border: "1px solid #2a2640", borderRadius: 12, padding: "16px 20px",
+            <div key={trip.id} className="c-row-hover" style={{
+              background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: "16px 20px",
               display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12,
+              boxShadow: D ? "none" : "0 1px 4px rgba(26,21,18,0.04)",
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                 <div style={{
-                  width: 44, height: 44, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22,
-                  background: prog ? `${prog.color}15` : "rgba(255,255,255,0.03)",
+                  width: 44, height: 44, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20,
+                  background: prog ? `${prog.color}15` : css.surface2, border: `1px solid ${prog ? prog.color + "25" : css.border}`,
+                  flexShrink: 0,
                 }}>{trip.type === "flight" ? "✈️" : trip.type === "hotel" ? "🏨" : "🚗"}</div>
                 <div>
-                  {trip.tripName && <div style={{ fontSize: 13, fontWeight: 700, color: "#0EA5A0", fontFamily: "Inter, sans-serif", marginBottom: 2 }}>{trip.tripName}</div>}
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{trip.route || trip.property || trip.location}</div>
-                  <div style={{ fontSize: 11, color: "#62666d", fontFamily: "Inter, sans-serif", marginTop: 2 }}>
-                    {trip.date} • {prog?.name || "Unknown"} {trip.nights ? `• ${trip.nights} nights` : ""}
+                  {trip.tripName && <div style={{ fontSize: 11, fontWeight: 600, color: css.accent, marginBottom: 2, textTransform: "uppercase", letterSpacing: "0.05em" }}>{trip.tripName}</div>}
+                  <div style={{ fontSize: 14, fontWeight: 600, color: css.text }}>{trip.route || trip.property || trip.location}</div>
+                  <div style={{ fontSize: 11, color: css.text3, marginTop: 2, fontFamily: "'JetBrains Mono', monospace" }}>
+                    {trip.date} · {prog?.name?.split(" ")[0] || "—"}{trip.nights ? ` · ${trip.nights}n` : ""}
                   </div>
                 </div>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
                 {trip.estimatedPoints > 0 && (
                   <div style={{ textAlign: "right" }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: "#fbbf24", fontFamily: "Inter, sans-serif" }}>+{trip.estimatedPoints.toLocaleString()}</div>
-                    <div style={{ fontSize: 10, color: "#62666d", fontFamily: "Inter, sans-serif" }}>points</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: css.gold, fontFamily: "'JetBrains Mono', monospace" }}>+{trip.estimatedPoints.toLocaleString()}</div>
+                    <div style={{ fontSize: 9, color: css.text3 }}>pts</div>
                   </div>
                 )}
                 {trip.estimatedNights > 0 && (
                   <div style={{ textAlign: "right" }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: "#34d399", fontFamily: "Inter, sans-serif" }}>+{trip.estimatedNights}</div>
-                    <div style={{ fontSize: 10, color: "#62666d", fontFamily: "Inter, sans-serif" }}>nights</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: css.success, fontFamily: "'JetBrains Mono', monospace" }}>+{trip.estimatedNights}</div>
+                    <div style={{ fontSize: 9, color: css.text3 }}>nts</div>
                   </div>
                 )}
-                <Badge color={trip.status === "confirmed" ? "#34d399" : trip.status === "planned" ? "#fbbf24" : "#0EA5A0"} small>{trip.status}</Badge>
+                <span style={{ fontSize: 10, fontWeight: 600, color: sColor, background: sBg, border: `1px solid ${sColor}30`, borderRadius: 20, padding: "3px 10px", textTransform: "capitalize" }}>{trip.status}</span>
                 <button onClick={() => removeTrip(trip.id)} style={{
-                  width: 28, height: 28, borderRadius: 8, border: "none", background: "rgba(239,68,68,0.1)", color: "#ef4444",
+                  width: 28, height: 28, borderRadius: 8, border: `1px solid ${D ? "rgba(239,68,68,0.2)" : "rgba(239,68,68,0.15)"}`,
+                  background: "rgba(239,68,68,0.06)", color: "#ef4444",
                   fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
                 }}>×</button>
               </div>
@@ -1656,8 +1862,12 @@ Start by introducing yourself briefly in-character with personality, and give an
           );
         })}
         {filteredTrips.length === 0 && (
-          <div style={{ textAlign: "center", padding: 50, color: "#62666d", fontSize: 13, fontFamily: "Inter, sans-serif" }}>
-            No trips match your filters
+          <div style={{ textAlign: "center", padding: "56px 20px", color: css.text3, fontSize: 13 }}>
+            <div style={{ fontSize: 32, marginBottom: 12, opacity: 0.4 }}>✈️</div>
+            {trips.length === 0 ? (
+              <><div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 20, color: css.text2, marginBottom: 8 }}>No trips yet</div>
+              <button onClick={() => setShowAddTrip(true)} style={{ background: "none", border: "none", color: css.accent, cursor: "pointer", fontWeight: 600, fontSize: 13 }}>Add your first trip →</button></>
+            ) : "No trips match your filters"}
           </div>
         )}
       </div>
@@ -1665,7 +1875,6 @@ Start by introducing yourself briefly in-character with personality, and give an
   );
 
   const renderExpenses = () => {
-    const tripsWithExpenses = trips.map(t => ({ ...t, expenses: getTripExpenses(t.id), total: getTripTotal(t.id) }));
     const grandTotal = expenses.reduce((s, e) => s + e.amount, 0);
     const totalByCategory = EXPENSE_CATEGORIES.map(cat => ({
       ...cat, total: expenses.filter(e => e.category === cat.id).reduce((s, e) => s + e.amount, 0),
@@ -1686,59 +1895,63 @@ Start by introducing yourself briefly in-character with personality, and give an
       return (
         <div>
           <button onClick={() => setExpenseViewTrip(null)} style={{
-            background: "none", border: "none", color: "#0EA5A0", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif", marginBottom: 16, padding: 0,
-          }}>← Back to All Trips</button>
+            background: "none", border: "none", color: css.accent, fontSize: 12, fontWeight: 600,
+            cursor: "pointer", marginBottom: 20, padding: 0, display: "flex", alignItems: "center", gap: 4,
+          }}>← Back to Expenses</button>
 
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
+          <div className="c-a1" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
             <div>
-              <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: 0, fontFamily: "'Inter Tight', Inter, sans-serif" }}>
-                {trip.type === "flight" ? "✈️" : trip.type === "hotel" ? "🏨" : "🚗"} {getTripName(trip)}
+              <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: css.text3, marginBottom: 6 }}>Trip Expenses</div>
+              <h2 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 30, fontWeight: 600, color: css.text, margin: 0 }}>
+                {getTripName(trip)}
               </h2>
-              <p style={{ color: "#8a8f98", fontSize: 12, margin: "4px 0 0", fontFamily: "Inter, sans-serif" }}>
-                {trip.date} • {prog?.name} • {tripExps.length} expenses
+              <p style={{ color: css.text2, fontSize: 13, margin: "6px 0 0" }}>
+                {trip.date} · {prog?.name} · {tripExps.length} expenses
               </p>
             </div>
             <div style={{ display: "flex", gap: 8 }}>
               <button onClick={() => setShowExpenseReport(trip.id)} style={{
-                padding: "9px 18px", borderRadius: 8, border: "1px solid rgba(14,165,160,0.3)", background: "rgba(14,165,160,0.08)",
-                color: "#0EA5A0", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif",
-              }}>📄 Generate Report</button>
-              <button onClick={() => setShowAddExpense(trip.id)} style={{
-                padding: "9px 18px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "Inter, sans-serif",
-                background: "#0EA5A0", color: "#f7f8f8",
+                padding: "9px 16px", borderRadius: 8, border: `1px solid ${css.accentBorder}`, background: css.accentBg,
+                color: css.accent, fontSize: 12, fontWeight: 600, cursor: "pointer",
+              }}>Export Report</button>
+              <button onClick={() => setShowAddExpense(trip.id)} className="c-btn-primary" style={{
+                padding: "9px 16px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600,
+                background: css.accent, color: "#fff",
               }}>+ Add Expense</button>
             </div>
           </div>
 
-          {/* Trip expense summary */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginBottom: 24 }}>
-            <div style={{ background: "rgba(14,165,160,0.08)", border: "1px solid rgba(14,165,160,0.2)", borderRadius: 8, padding: 18 }}>
-              <div style={{ fontSize: 22, fontWeight: 700, color: "#fff", fontFamily: "'Inter Tight', Inter, sans-serif" }}>${tripTotal.toLocaleString()}</div>
-              <div style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>Total Spend</div>
-            </div>
-            <div style={{ background: "#1a1725", border: "1px solid #2a2640", borderRadius: 8, padding: 18 }}>
-              <div style={{ fontSize: 22, fontWeight: 700, color: "#fff", fontFamily: "'Inter Tight', Inter, sans-serif" }}>{tripExps.length}</div>
-              <div style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>Expenses</div>
-            </div>
-            <div style={{ background: "#1a1725", border: "1px solid #2a2640", borderRadius: 8, padding: 18 }}>
-              <div style={{ fontSize: 22, fontWeight: 700, color: "#fff", fontFamily: "'Inter Tight', Inter, sans-serif" }}>{tripExps.filter(e => e.receipt).length}</div>
-              <div style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>With Receipts</div>
-            </div>
+          {/* Stats row */}
+          <div className="c-a2" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12, marginBottom: 24 }}>
+            {[
+              { label: "Total Spend", value: `$${tripTotal.toLocaleString()}`, accent: true },
+              { label: "Expenses", value: tripExps.length },
+              { label: "With Receipts", value: tripExps.filter(e => e.receipt).length },
+            ].map((stat, i) => (
+              <div key={i} style={{
+                background: stat.accent ? css.accentBg : css.surface, border: `1px solid ${stat.accent ? css.accentBorder : css.border}`,
+                borderRadius: 12, padding: "16px 18px",
+              }}>
+                <div style={{ fontSize: 22, fontWeight: 600, color: stat.accent ? css.accent : css.text, fontFamily: "'JetBrains Mono', monospace" }}>{stat.value}</div>
+                <div style={{ fontSize: 11, color: css.text2, marginTop: 3 }}>{stat.label}</div>
+              </div>
+            ))}
           </div>
 
           {/* Category breakdown bar */}
           {tripTotal > 0 && (
-            <div style={{ marginBottom: 24 }}>
-              <div style={{ display: "flex", height: 10, borderRadius: 8, overflow: "hidden", marginBottom: 10 }}>
+            <div className="c-a3" style={{ marginBottom: 24, background: css.surface, border: `1px solid ${css.border}`, borderRadius: 12, padding: "16px 18px" }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: css.text2, marginBottom: 10 }}>Breakdown</div>
+              <div style={{ display: "flex", height: 8, borderRadius: 6, overflow: "hidden", marginBottom: 10 }}>
                 {catBreakdown.map((cat, i) => (
-                  <div key={i} style={{ width: `${(cat.total / tripTotal) * 100}%`, background: cat.color, transition: "width 0.5s ease" }} title={`${cat.label}: $${cat.total}`} />
+                  <div key={i} style={{ width: `${(cat.total / tripTotal) * 100}%`, background: cat.color }} title={`${cat.label}: $${cat.total}`} />
                 ))}
               </div>
-              <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
                 {catBreakdown.map((cat, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: css.text2 }}>
                     <span style={{ width: 8, height: 8, borderRadius: "50%", background: cat.color, flexShrink: 0 }} />
-                    {cat.label}: ${cat.total.toLocaleString()} ({Math.round((cat.total / tripTotal) * 100)}%)
+                    {cat.label} <span style={{ fontFamily: "'JetBrains Mono', monospace", color: css.text }}>${cat.total.toLocaleString()}</span>
                   </div>
                 ))}
               </div>
@@ -1746,36 +1959,37 @@ Start by introducing yourself briefly in-character with personality, and give an
           )}
 
           {/* Expense list */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div className="c-a4" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {tripExps.sort((a, b) => new Date(a.date) - new Date(b.date)).map(exp => {
               const cat = EXPENSE_CATEGORIES.find(c => c.id === exp.category);
               return (
-                <div key={exp.id} style={{
-                  background: "#1a1725", border: "1px solid #2a2640", borderRadius: 8, padding: "14px 18px",
+                <div key={exp.id} className="c-row-hover" style={{
+                  background: css.surface, border: `1px solid ${css.border}`, borderRadius: 10, padding: "13px 16px",
                   display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12,
                 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
                     <div style={{
-                      width: 38, height: 38, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: 18, background: `${cat?.color || "#666"}15`, flexShrink: 0,
+                      width: 36, height: 36, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 16, background: `${cat?.color || "#888"}15`, flexShrink: 0,
                     }}>{cat?.icon || "📎"}</div>
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#f7f8f8", fontFamily: "Inter, sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.description}</div>
-                      <div style={{ fontSize: 11, color: "#62666d", fontFamily: "Inter, sans-serif" }}>
-                        {exp.date} • {exp.paymentMethod || "—"} {exp.receipt ? "• 🧾" : ""} {exp.notes ? `• ${exp.notes}` : ""}
+                      <div style={{ fontSize: 13, fontWeight: 600, color: css.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.description}</div>
+                      <div style={{ fontSize: 10, color: css.text3, fontFamily: "'JetBrains Mono', monospace", marginTop: 2 }}>
+                        {exp.date} · {exp.paymentMethod || "—"}{exp.receipt ? " · 🧾" : ""}
                       </div>
                       {exp.receiptImage?.data && exp.receiptImage.type?.startsWith("image/") && (
-                        <img src={exp.receiptImage.data} alt="Receipt" style={{ width: 32, height: 32, objectFit: "cover", borderRadius: 8, marginTop: 4, border: "1px solid #2a2640", cursor: "pointer" }}
-                          onClick={(e) => { e.stopPropagation(); window.open(exp.receiptImage.data, "_blank"); }} title="Click to view full receipt" />
+                        <img src={exp.receiptImage.data} alt="Receipt" style={{ width: 32, height: 32, objectFit: "cover", borderRadius: 6, marginTop: 4, border: `1px solid ${css.border}`, cursor: "pointer" }}
+                          onClick={(e) => { e.stopPropagation(); window.open(exp.receiptImage.data, "_blank"); }} />
                       )}
                     </div>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: exp.amount === 0 ? "#34d399" : "#FFFFFF", fontFamily: "Inter, sans-serif" }}>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: exp.amount === 0 ? css.success : css.text, fontFamily: "'JetBrains Mono', monospace" }}>
                       {exp.amount === 0 ? "Free" : `$${exp.amount.toLocaleString()}`}
                     </div>
                     <button onClick={() => removeExpense(exp.id)} style={{
-                      width: 26, height: 26, borderRadius: 7, border: "none", background: "rgba(239,68,68,0.1)", color: "#ef4444",
+                      width: 26, height: 26, borderRadius: 6, border: `1px solid ${D ? "rgba(239,68,68,0.2)" : "rgba(239,68,68,0.15)"}`,
+                      background: "rgba(239,68,68,0.06)", color: "#ef4444",
                       fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
                     }}>×</button>
                   </div>
@@ -1783,8 +1997,8 @@ Start by introducing yourself briefly in-character with personality, and give an
               );
             })}
             {tripExps.length === 0 && (
-              <div style={{ textAlign: "center", padding: 40, color: "#62666d", fontSize: 13, fontFamily: "Inter, sans-serif" }}>
-                No expenses yet for this trip. Click "+ Add Expense" to start tracking.
+              <div style={{ textAlign: "center", padding: 40, color: css.text3, fontSize: 13 }}>
+                No expenses yet. Click "+ Add Expense" to start tracking.
               </div>
             )}
           </div>
@@ -1795,39 +2009,57 @@ Start by introducing yourself briefly in-character with personality, and give an
     // Overview: all trips with expense totals
     return (
       <div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
-          <div>
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: 0, fontFamily: "'Inter Tight', Inter, sans-serif" }}>Trip Expenses</h2>
-            <p style={{ color: "#8a8f98", fontSize: 12, margin: "4px 0 0", fontFamily: "Inter, sans-serif" }}>Track spending across all your trips</p>
-          </div>
+        {/* Header */}
+        <div className="c-a1" style={{ marginBottom: 28 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: css.text3, marginBottom: 8 }}>Finance Tracker</div>
+          <h2 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: isMobile ? 28 : 36, fontWeight: 600, color: css.text, margin: 0, lineHeight: 1.1 }}>Trip Expenses</h2>
+          <p style={{ color: css.text2, fontSize: 13, margin: "8px 0 0" }}>Track and categorize spending across all your trips</p>
         </div>
 
-        {/* Grand total stats */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14, marginBottom: 28 }}>
-          <div style={{ background: "rgba(14,165,160,0.08)", border: "1px solid rgba(14,165,160,0.2)", borderRadius: 8, padding: 18 }}>
-            <div style={{ fontSize: 26, fontWeight: 700, color: "#fff", fontFamily: "'Inter Tight', Inter, sans-serif" }}>${grandTotal.toLocaleString()}</div>
-            <div style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>Total Across All Trips</div>
+        {/* Grand total hero */}
+        <div className="c-a2" style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: 14, marginBottom: 32 }}>
+          <div style={{ background: css.accentBg, border: `1px solid ${css.accentBorder}`, borderRadius: 14, padding: "22px 24px" }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: css.accent, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>Total Spend</div>
+            <div style={{ fontSize: 34, fontWeight: 700, color: css.accent, fontFamily: "'JetBrains Mono', monospace", lineHeight: 1 }}>${grandTotal.toLocaleString()}</div>
+            <div style={{ fontSize: 11, color: css.text2, marginTop: 6 }}>across all trips</div>
           </div>
-          <div style={{ background: "#1a1725", border: "1px solid #2a2640", borderRadius: 8, padding: 18 }}>
-            <div style={{ fontSize: 26, fontWeight: 700, color: "#fff", fontFamily: "'Inter Tight', Inter, sans-serif" }}>{expenses.length}</div>
-            <div style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>Total Expenses</div>
+          <div style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: "22px 24px" }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: css.text3, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>Expenses</div>
+            <div style={{ fontSize: 34, fontWeight: 700, color: css.text, fontFamily: "'JetBrains Mono', monospace", lineHeight: 1 }}>{expenses.length}</div>
+            <div style={{ fontSize: 11, color: css.text2, marginTop: 6 }}>items logged</div>
           </div>
-          <div style={{ background: "#1a1725", border: "1px solid #2a2640", borderRadius: 8, padding: 18 }}>
-            <div style={{ fontSize: 26, fontWeight: 700, color: "#fff", fontFamily: "'Inter Tight', Inter, sans-serif" }}>{tripsWithExpenses.filter(t => t.total > 0).length}</div>
-            <div style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>Trips With Expenses</div>
+          <div style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: "22px 24px" }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: css.text3, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>Active Trips</div>
+            <div style={{ fontSize: 34, fontWeight: 700, color: css.text, fontFamily: "'JetBrains Mono', monospace", lineHeight: 1 }}>{trips.filter(t => getTripTotal(t.id) > 0).length}</div>
+            <div style={{ fontSize: 11, color: css.text2, marginTop: 6 }}>trips with expenses</div>
           </div>
         </div>
 
         {/* Spending by category */}
         {totalByCategory.length > 0 && (
-          <div style={{ marginBottom: 28 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: "#d0d6e0", marginBottom: 12, fontFamily: "Inter, sans-serif" }}>Spending by Category</h3>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 10 }}>
+          <div className="c-a3" style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: "20px 22px", marginBottom: 28 }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 16 }}>
+              <h3 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 20, fontWeight: 500, color: css.text, margin: 0 }}>By Category</h3>
+            </div>
+            <div style={{ display: "flex", height: 8, borderRadius: 6, overflow: "hidden", marginBottom: 16 }}>
               {totalByCategory.map((cat, i) => (
-                <div key={i} style={{ background: `${cat.color}10`, border: `1px solid ${cat.color}25`, borderRadius: 8, padding: 14, textAlign: "center" }}>
-                  <div style={{ fontSize: 22, marginBottom: 4 }}>{cat.icon}</div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>${cat.total.toLocaleString()}</div>
-                  <div style={{ fontSize: 10, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>{cat.label}</div>
+                <div key={i} style={{ width: `${(cat.total / grandTotal) * 100}%`, background: cat.color }} title={`${cat.label}: $${cat.total}`} />
+              ))}
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {totalByCategory.map((cat, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ fontSize: 14 }}>{cat.icon}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+                      <span style={{ fontSize: 12, color: css.text2 }}>{cat.label}</span>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: css.text, fontFamily: "'JetBrains Mono', monospace" }}>${cat.total.toLocaleString()}</span>
+                    </div>
+                    <div style={{ width: "100%", height: 3, borderRadius: 2, background: css.surface2, overflow: "hidden" }}>
+                      <div style={{ width: `${(cat.total / grandTotal) * 100}%`, height: "100%", background: cat.color }} />
+                    </div>
+                  </div>
+                  <span style={{ fontSize: 10, color: css.text3, width: 30, textAlign: "right", fontFamily: "'JetBrains Mono', monospace" }}>{Math.round((cat.total / grandTotal) * 100)}%</span>
                 </div>
               ))}
             </div>
@@ -1835,51 +2067,53 @@ Start by introducing yourself briefly in-character with personality, and give an
         )}
 
         {/* Trip-by-trip list */}
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#d0d6e0", marginBottom: 12, fontFamily: "Inter, sans-serif" }}>Expenses by Trip</h3>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {trips.map(trip => {
-            const tripExps = getTripExpenses(trip.id);
-            const tripTotal = getTripTotal(trip.id);
-            const prog = allPrograms.find(p => p.id === trip.program);
-            return (
-              <div key={trip.id} style={{
-                background: "#1a1725", border: "1px solid #2a2640", borderRadius: 8, padding: "16px 20px",
-                cursor: "pointer", transition: "all 0.2s",
-              }} onClick={() => setExpenseViewTrip(trip.id)}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1 }}>
-                    <div style={{
-                      width: 42, height: 42, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20,
-                      background: prog ? `${prog.color}15` : "rgba(255,255,255,0.03)",
-                    }}>{trip.type === "flight" ? "✈️" : trip.type === "hotel" ? "🏨" : "🚗"}</div>
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{getTripName(trip)}</div>
-                      <div style={{ fontSize: 11, color: "#62666d", fontFamily: "Inter, sans-serif" }}>
-                        {trip.date} • {tripExps.length} expense{tripExps.length !== 1 ? "s" : ""}
+        <div className="c-a4">
+          <h3 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 20, fontWeight: 500, color: css.text, margin: "0 0 14px" }}>By Trip</h3>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {trips.map(trip => {
+              const tripExps = getTripExpenses(trip.id);
+              const tripTotal = getTripTotal(trip.id);
+              const prog = allPrograms.find(p => p.id === trip.program);
+              return (
+                <div key={trip.id} className="c-row-hover" style={{
+                  background: css.surface, border: `1px solid ${css.border}`, borderRadius: 12, padding: "14px 18px",
+                  cursor: "pointer", transition: "all 0.15s",
+                  boxShadow: D ? "none" : "0 1px 3px rgba(26,21,18,0.04)",
+                }} onClick={() => setExpenseViewTrip(trip.id)}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1 }}>
+                      <div style={{
+                        width: 40, height: 40, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18,
+                        background: prog ? `${prog.color}15` : css.surface2, border: `1px solid ${prog ? prog.color + "25" : css.border}`, flexShrink: 0,
+                      }}>{trip.type === "flight" ? "✈️" : trip.type === "hotel" ? "🏨" : "🚗"}</div>
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: css.text }}>{getTripName(trip)}</div>
+                        <div style={{ fontSize: 11, color: css.text3, fontFamily: "'JetBrains Mono', monospace", marginTop: 2 }}>
+                          {trip.date} · {tripExps.length} expense{tripExps.length !== 1 ? "s" : ""}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ textAlign: "right" }}>
-                      <div style={{ fontSize: 16, fontWeight: 700, color: tripTotal > 0 ? "#fff" : "rgba(0,0,0,0.15)", fontFamily: "Inter, sans-serif" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: tripTotal > 0 ? css.text : css.text3, fontFamily: "'JetBrains Mono', monospace" }}>
                         {tripTotal > 0 ? `$${tripTotal.toLocaleString()}` : "—"}
                       </div>
+                      <button onClick={(e) => { e.stopPropagation(); setShowAddExpense(trip.id); }} style={{
+                        width: 30, height: 30, borderRadius: 8, border: `1px solid ${css.accentBorder}`, background: css.accentBg,
+                        color: css.accent, fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                      }}>+</button>
+                      <span style={{ color: css.text3, fontSize: 14 }}>→</span>
                     </div>
-                    <button onClick={(e) => { e.stopPropagation(); setShowAddExpense(trip.id); }} style={{
-                      width: 32, height: 32, borderRadius: 8, border: "1px solid rgba(14,165,160,0.2)", background: "rgba(14,165,160,0.06)",
-                      color: "#0EA5A0", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                    }}>+</button>
-                    <span style={{ color: "rgba(0,0,0,0.08)", fontSize: 14 }}>→</span>
                   </div>
                 </div>
+              );
+            })}
+            {trips.length === 0 && (
+              <div style={{ textAlign: "center", padding: 48, color: css.text3, fontSize: 13 }}>
+                <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 18, color: css.text2, marginBottom: 6 }}>No trips yet</div>
+                Add trips first, then track expenses for each one.
               </div>
-            );
-          })}
-          {trips.length === 0 && (
-            <div style={{ textAlign: "center", padding: 40, color: "#62666d", fontSize: 13, fontFamily: "Inter, sans-serif" }}>
-              Add trips first, then track expenses for each one.
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     );
@@ -1887,84 +2121,136 @@ Start by introducing yourself briefly in-character with personality, and give an
 
   const renderOptimizer = () => {
     const scenarioTrips = trips.filter(t => t.type === "flight");
+    const isPremium = user?.tier === "premium";
     return (
       <div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
+        {/* Header */}
+        <div className="c-a1" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 28, gap: 16 }}>
           <div>
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: 0, fontFamily: "'Inter Tight', Inter, sans-serif" }}>Trip Optimizer</h2>
-            <p style={{ color: "#8a8f98", fontSize: 12, margin: "4px 0 0", fontFamily: "Inter, sans-serif" }}>See how crediting flights differently affects your status</p>
+            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: css.gold, marginBottom: 8 }}>Premium Feature</div>
+            <h2 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: isMobile ? 28 : 36, fontWeight: 600, color: css.text, margin: 0, lineHeight: 1.1 }}>Trip Optimizer</h2>
+            <p style={{ color: css.text2, fontSize: 13, margin: "8px 0 0" }}>Credit flights strategically to accelerate elite status</p>
           </div>
-          <Badge color="#f59e0b">★ PREMIUM</Badge>
+          <span style={{ fontSize: 10, fontWeight: 700, color: css.gold, background: css.goldBg, border: `1px solid ${css.gold}30`, borderRadius: 20, padding: "4px 12px", flexShrink: 0 }}>★ PREMIUM</span>
         </div>
 
-        {user?.tier !== "premium" ? (
-          <div style={{
-            background: "#1a1725", border: "1px solid #2a2640",
-            borderRadius: 12, padding: 40, textAlign: "center",
-          }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
-            <h3 style={{ fontSize: 20, fontWeight: 700, color: "#fff", fontFamily: "'Inter Tight', Inter, sans-serif", margin: "0 0 8px" }}>Unlock Trip Optimizer</h3>
-            <p style={{ color: "#8a8f98", fontSize: 13, fontFamily: "Inter, sans-serif", maxWidth: 400, margin: "0 auto 24px" }}>
-              See the optimal way to credit each flight across your airline programs. Find hidden status shortcuts and maximize every trip.
-            </p>
-            <button onClick={() => setShowUpgrade(true)} style={{
-              padding: "12px 32px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "Inter, sans-serif",
-              background: "#f59e0b", color: "#fff",
-            }}>Upgrade to Premium — $9.99/mo</button>
-          </div>
-        ) : (
-          <div>
-            <div style={{
-              background: "#1a1725", border: "1px solid #2a2640", borderRadius: 8, padding: 22, marginBottom: 20,
-            }}>
-              <h4 style={{ fontSize: 14, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif", marginBottom: 14 }}>Optimal Credit Strategy for 2026</h4>
-              <div style={{ fontSize: 12, color: "#8a8f98", fontFamily: "Inter, sans-serif", marginBottom: 16 }}>
-                Based on your {scenarioTrips.length} planned flights, here's the best way to allocate credits:
-              </div>
-              {LOYALTY_PROGRAMS.airlines.map(airline => {
-                const airlineTrips = trips.filter(t => t.program === airline.id && t.type === "flight");
-                const totalPts = airlineTrips.reduce((sum, t) => sum + (t.estimatedPoints || 0), 0);
-                const status = getProjectedStatus(airline.id);
-                return (
-                  <div key={airline.id} style={{
-                    background: `${airline.color}10`, border: `1px solid ${airline.color}20`, borderRadius: 8, padding: 16, marginBottom: 10,
-                  }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{airline.name}</div>
-                        <div style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>
-                          {airlineTrips.length} flights • +{totalPts.toLocaleString()} pts projected
-                        </div>
-                      </div>
-                      {status?.willAdvance && <Badge color="#34d399">Will advance to {status.projectedTier.name}!</Badge>}
-                      {status && !status.willAdvance && status.nextTier && (
-                        <div style={{ fontSize: 11, color: "#fbbf24", fontFamily: "Inter, sans-serif" }}>
-                          Need {(status.nextTier.threshold - status.projected).toLocaleString()} more for {status.nextTier.name}
-                        </div>
-                      )}
-                    </div>
+        {!isPremium ? (
+          /* Premium Gate */
+          <div className="c-a2">
+            {/* Blurred preview */}
+            <div style={{ position: "relative", borderRadius: 16, overflow: "hidden", marginBottom: 24 }}>
+              <div style={{ filter: "blur(4px)", pointerEvents: "none", opacity: 0.4 }}>
+                <div style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 16, padding: 24, marginBottom: 12 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
+                    <div style={{ width: "40%", height: 14, background: css.surface2, borderRadius: 4 }} />
+                    <div style={{ width: "20%", height: 14, background: css.successBg, borderRadius: 4 }} />
                   </div>
-                );
-              })}
+                  {[1,2,3].map(i => (
+                    <div key={i} style={{ background: css.surface2, borderRadius: 8, padding: 14, marginBottom: 8 }}>
+                      <div style={{ width: "60%", height: 12, background: css.border, borderRadius: 3, marginBottom: 6 }} />
+                      <div style={{ width: "40%", height: 10, background: css.border, borderRadius: 3 }} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {/* Overlay CTA */}
+              <div style={{
+                position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                background: D ? "rgba(17,16,9,0.75)" : "rgba(250,250,248,0.75)", backdropFilter: "blur(2px)",
+                padding: 32, textAlign: "center",
+              }}>
+                <div style={{ fontSize: 40, marginBottom: 16, opacity: 0.6 }}>🔐</div>
+                <h3 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 26, fontWeight: 600, color: css.text, margin: "0 0 10px" }}>Unlock the Optimizer</h3>
+                <p style={{ color: css.text2, fontSize: 14, maxWidth: 380, margin: "0 auto 24px", lineHeight: 1.6 }}>
+                  See the optimal way to credit every flight across your programs. Find hidden status shortcuts and maximize each trip.
+                </p>
+                <button onClick={() => setShowUpgrade(true)} className="c-btn-primary" style={{
+                  padding: "13px 36px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700,
+                  background: css.gold, color: "#1A1200",
+                }}>Upgrade to Premium — $9.99/mo</button>
+              </div>
             </div>
 
-            <div style={{
-              background: "#1a1725", border: "1px solid #2a2640", borderLeft: "3px solid #34d399",
-              borderRadius: 12, padding: 22,
+            {/* Feature list */}
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
+              {[
+                { title: "Credit Strategy AI", desc: "Know exactly which airline to credit each flight to for maximum status velocity" },
+                { title: "Gap Analysis", desc: "See exactly how many miles you need to hit the next tier across all programs" },
+                { title: "Mileage Run Calculator", desc: "Find the cheapest routes to earn the exact status miles you need" },
+                { title: "Hotel Qualifying Nights", desc: "Optimize your hotel stays across brands to hit elite thresholds efficiently" },
+              ].map((f, i) => (
+                <div key={i} style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 12, padding: "16px 18px" }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: css.text, marginBottom: 5 }}>
+                    <span style={{ color: css.gold, marginRight: 6 }}>★</span>{f.title}
+                  </div>
+                  <div style={{ fontSize: 12, color: css.text2, lineHeight: 1.5 }}>{f.desc}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          /* Premium content */
+          <div>
+            {/* Strategy cards */}
+            <div className="c-a2" style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 16, padding: "20px 22px", marginBottom: 20 }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 16 }}>
+                <h4 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 22, fontWeight: 500, color: css.text, margin: 0 }}>Credit Strategy · 2026</h4>
+                <span style={{ fontSize: 11, color: css.text3, fontFamily: "'JetBrains Mono', monospace" }}>{scenarioTrips.length} flights analyzed</span>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {LOYALTY_PROGRAMS.airlines.map(airline => {
+                  const airlineTrips = trips.filter(t => t.program === airline.id && t.type === "flight");
+                  const totalPts = airlineTrips.reduce((sum, t) => sum + (t.estimatedPoints || 0), 0);
+                  const status = getProjectedStatus(airline.id);
+                  return (
+                    <div key={airline.id} style={{
+                      background: css.surface2, border: `1px solid ${css.border}`,
+                      borderLeft: `3px solid ${airline.color}`, borderRadius: 10, padding: "14px 16px",
+                    }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: css.text }}>{airline.name}</div>
+                          <div style={{ fontSize: 11, color: css.text3, fontFamily: "'JetBrains Mono', monospace", marginTop: 2 }}>
+                            {airlineTrips.length} flights · +{totalPts.toLocaleString()} pts projected
+                          </div>
+                        </div>
+                        <div style={{ flexShrink: 0 }}>
+                          {status?.willAdvance ? (
+                            <span style={{ fontSize: 11, fontWeight: 700, color: css.success, background: css.successBg, border: `1px solid ${css.success}30`, borderRadius: 20, padding: "3px 10px" }}>
+                              ↑ {status.projectedTier.name}
+                            </span>
+                          ) : status?.nextTier ? (
+                            <span style={{ fontSize: 11, color: css.warning, fontFamily: "'JetBrains Mono', monospace" }}>
+                              {(status.nextTier.threshold - status.projected).toLocaleString()} more → {status.nextTier.name}
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* AI Recommendations */}
+            <div className="c-a3" style={{
+              background: css.surface, border: `1px solid ${css.border}`, borderLeft: `3px solid ${css.success}`,
+              borderRadius: 16, padding: "20px 22px",
             }}>
-              <h4 style={{ fontSize: 14, fontWeight: 700, color: "#34d399", fontFamily: "Inter, sans-serif", marginBottom: 10 }}>💡 Optimizer Recommendations</h4>
+              <h4 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 20, fontWeight: 500, color: css.success, margin: "0 0 14px" }}>Optimizer Recommendations</h4>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {[
-                  "Consider crediting your LAX→ATL flight to AA instead of Delta to push closer to Platinum Pro",
+                  "Credit your LAX→ATL flight to AA instead of Delta to push closer to Platinum Pro",
                   "Your Tokyo trip alone could earn 48 Marriott nights with the right booking strategy",
                   "Add one more Hilton stay (3+ nights) to lock in Diamond status for 2027",
                   "Your Amex Platinum earns 5x on flights — ensure all bookings use this card",
                 ].map((tip, i) => (
                   <div key={i} style={{
-                    background: "rgba(255,255,255,0.03)", borderRadius: 8, padding: "10px 14px", fontSize: 12,
-                    color: "#d0d6e0", fontFamily: "Inter, sans-serif", display: "flex", gap: 8,
+                    background: css.surface2, borderRadius: 8, padding: "10px 14px", fontSize: 12,
+                    color: css.text, display: "flex", gap: 10, alignItems: "flex-start",
                   }}>
-                    <span style={{ color: "#34d399", fontWeight: 700, flexShrink: 0 }}>→</span> {tip}
+                    <span style={{ color: css.success, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>→</span>
+                    {tip}
                   </div>
                 ))}
               </div>
@@ -1989,82 +2275,106 @@ Start by introducing yourself briefly in-character with personality, and give an
       };
     });
     const maxPts = Math.max(...monthlyData.map(d => d.points), 1);
+    const totalPoints = trips.reduce((s, t) => s + (t.estimatedPoints || 0), 0);
+    const totalNights = trips.reduce((s, t) => s + (t.estimatedNights || t.nights || 0), 0);
+    const totalFlights = trips.filter(t => t.type === "flight").length;
 
     return (
       <div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
+        {/* Header */}
+        <div className="c-a1" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 28, gap: 16, flexWrap: "wrap" }}>
           <div>
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: 0, fontFamily: "'Inter Tight', Inter, sans-serif" }}>Annual Reports</h2>
-            <p style={{ color: "#8a8f98", fontSize: 12, margin: "4px 0 0", fontFamily: "Inter, sans-serif" }}>Your 2026 travel year at a glance</p>
+            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: css.text3, marginBottom: 8 }}>Analytics</div>
+            <h2 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: isMobile ? 28 : 36, fontWeight: 600, color: css.text, margin: 0, lineHeight: 1.1 }}>Annual Reports</h2>
+            <p style={{ color: css.text2, fontSize: 13, margin: "8px 0 0" }}>Your 2026 travel year at a glance</p>
           </div>
           <button onClick={() => setShowUpgrade(true)} style={{
-            padding: "8px 16px", borderRadius: 8, border: "1px solid rgba(245,158,11,0.3)", background: "rgba(245,158,11,0.08)",
-            color: "#f59e0b", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif",
+            padding: "9px 16px", borderRadius: 8, border: `1px solid ${css.goldBg}`,
+            background: css.goldBg, color: css.gold, fontSize: 12, fontWeight: 600, cursor: "pointer",
+            display: "flex", alignItems: "center", gap: 6,
           }}>★ Export PDF — Premium</button>
         </div>
 
+        {/* Summary stats */}
+        <div className="c-a2" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginBottom: 28 }}>
+          {[
+            { label: "Points Projected", value: totalPoints.toLocaleString(), sub: "loyalty pts", color: css.gold },
+            { label: "Hotel Nights", value: totalNights, sub: "qualifying", color: css.accent },
+            { label: "Flights", value: totalFlights, sub: "planned", color: css.success },
+            { label: "Est. Spend", value: `$${(trips.length * 850).toLocaleString()}`, sub: "travel budget", color: css.text2 },
+          ].map((stat, i) => (
+            <div key={i} style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: "18px 20px", boxShadow: D ? "none" : "0 1px 4px rgba(26,21,18,0.05)" }}>
+              <div style={{ fontSize: 26, fontWeight: 700, color: stat.color, fontFamily: "'JetBrains Mono', monospace", lineHeight: 1 }}>{stat.value}</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: css.text, margin: "6px 0 2px" }}>{stat.label}</div>
+              <div style={{ fontSize: 10, color: css.text3 }}>{stat.sub}</div>
+            </div>
+          ))}
+        </div>
+
         {/* Bar Chart */}
-        <div style={{ background: "#1a1725", border: "1px solid #2a2640", borderRadius: 8, padding: 22, marginBottom: 20 }}>
-          <h4 style={{ fontSize: 14, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif", marginBottom: 18 }}>Points Earned by Month</h4>
-          <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 140 }}>
+        <div className="c-a3" style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 16, padding: "20px 22px", marginBottom: 24 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 20 }}>
+            <h4 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 20, fontWeight: 500, color: css.text, margin: 0 }}>Points by Month</h4>
+            <span style={{ fontSize: 11, color: css.text3, fontFamily: "'JetBrains Mono', monospace" }}>2026</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "flex-end", gap: isMobile ? 4 : 8, height: 140 }}>
             {monthlyData.map((d, i) => (
               <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                <div style={{ fontSize: 9, color: "#fbbf24", fontWeight: 600, fontFamily: "Inter, sans-serif" }}>
-                  {d.points > 0 ? `${(d.points / 1000).toFixed(1)}k` : ""}
-                </div>
+                {d.points > 0 && (
+                  <div style={{ fontSize: 8, color: css.accent, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>
+                    {(d.points / 1000).toFixed(0)}k
+                  </div>
+                )}
                 <div style={{
-                  width: "100%", maxWidth: 32, height: `${Math.max((d.points / maxPts) * 100, 3)}%`, minHeight: 3,
-                  borderRadius: "4px 4px 0 0", background: d.points > 0 ? "linear-gradient(180deg, #0EA5A0, #0EA5A0)" : "rgba(255,255,255,0.03)",
-                  transition: "height 1s ease",
+                  width: "100%", maxWidth: 28, height: `${Math.max((d.points / maxPts) * 110, 4)}px`, minHeight: 4,
+                  borderRadius: "4px 4px 0 0",
+                  background: d.points > 0
+                    ? `linear-gradient(180deg, ${css.accent}, ${css.accent}80)`
+                    : css.surface2,
+                  border: `1px solid ${d.points > 0 ? css.accentBorder : css.border}`,
+                  transition: "height 0.8s ease",
                 }} />
-                <span style={{ fontSize: 9, color: "#62666d", fontFamily: "Inter, sans-serif" }}>{d.month}</span>
+                <span style={{ fontSize: 8, color: css.text3, fontFamily: "'JetBrains Mono', monospace" }}>{d.month.slice(0, 3)}</span>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Summary Stats */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14, marginBottom: 20 }}>
-          {[
-            { label: "Total Points Projected", value: trips.reduce((s, t) => s + (t.estimatedPoints || 0), 0).toLocaleString(), icon: "⭐", color: "#fbbf24" },
-            { label: "Hotel Nights Planned", value: trips.reduce((s, t) => s + (t.estimatedNights || t.nights || 0), 0), icon: "🌙", color: "#0EA5A0" },
-            { label: "Flights Planned", value: trips.filter(t => t.type === "flight").length, icon: "✈️", color: "#34d399" },
-            { label: "Est. Travel Spend", value: "$" + (trips.length * 850).toLocaleString(), icon: "💰", color: "#f472b6" },
-          ].map((stat, i) => (
-            <div key={i} style={{
-              background: `${stat.color}08`, border: `1px solid ${stat.color}20`, borderRadius: 8, padding: 20,
-            }}>
-              <div style={{ fontSize: 24, marginBottom: 6 }}>{stat.icon}</div>
-              <div style={{ fontSize: 22, fontWeight: 700, color: "#fff", fontFamily: "'Inter Tight', Inter, sans-serif" }}>{stat.value}</div>
-              <div style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif", marginTop: 2 }}>{stat.label}</div>
-            </div>
-          ))}
-        </div>
-
         {/* Status Forecast */}
-        <div style={{ background: "#1a1725", border: "1px solid #2a2640", borderRadius: 8, padding: 22 }}>
-          <h4 style={{ fontSize: 14, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif", marginBottom: 14 }}>Year-End Status Forecast</h4>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: 10 }}>
-            {allPrograms.filter(p => linkedAccounts[p.id] && p.tiers).map(prog => {
-              const status = getProjectedStatus(prog.id);
-              if (!status) return null;
-              return (
-                <div key={prog.id} style={{
-                  display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderRadius: 8,
-                  background: "#1a1725", border: "1px solid rgba(0,0,0,0.02)",
-                }}>
-                  <span style={{ fontSize: 20 }}>{prog.logo}</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{prog.name}</div>
-                    <div style={{ fontSize: 10, color: "#62666d", fontFamily: "Inter, sans-serif" }}>
-                      {status.projectedTier?.name || "Member"} {status.willAdvance ? "🎉" : ""}
+        <div className="c-a4" style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 16, padding: "20px 22px" }}>
+          <h4 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 20, fontWeight: 500, color: css.text, margin: "0 0 16px" }}>Year-End Status Forecast</h4>
+          {allPrograms.filter(p => linkedAccounts[p.id] && p.tiers).length === 0 ? (
+            <div style={{ textAlign: "center", padding: "24px 0", color: css.text3, fontSize: 13 }}>
+              Link programs to see your status forecast
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {allPrograms.filter(p => linkedAccounts[p.id] && p.tiers).map(prog => {
+                const status = getProjectedStatus(prog.id);
+                if (!status) return null;
+                const pct = Math.min((status.projected / (status.nextTier?.threshold || status.projected)) * 100, 100);
+                return (
+                  <div key={prog.id} className="c-row-hover" style={{
+                    display: "flex", alignItems: "center", gap: 12, padding: "12px 14px",
+                    background: css.surface2, borderRadius: 10, border: `1px solid ${css.border}`,
+                  }}>
+                    <span style={{ fontSize: 18, flexShrink: 0 }}>{prog.logo}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 5 }}>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: css.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{prog.name}</div>
+                        <div style={{ fontSize: 10, color: status.willAdvance ? css.success : css.text3, flexShrink: 0, marginLeft: 8, fontFamily: "'JetBrains Mono', monospace" }}>
+                          {status.projectedTier?.name || "Member"}{status.willAdvance ? " ↑" : ""}
+                        </div>
+                      </div>
+                      <div style={{ width: "100%", height: 4, borderRadius: 2, background: css.border, overflow: "hidden" }}>
+                        <div style={{ width: `${pct}%`, height: "100%", borderRadius: 2, background: status.willAdvance ? css.success : prog.color, transition: "width 1s ease" }} />
+                      </div>
                     </div>
                   </div>
-                  <MiniBar value={status.projected} max={status.nextTier?.threshold || status.projected} color={prog.color} height={5} />
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -2072,70 +2382,90 @@ Start by introducing yourself briefly in-character with personality, and give an
 
   const renderPremium = () => (
     <div>
-      <div style={{ textAlign: "center", marginBottom: 40 }}>
-        <div style={{ marginBottom: 12, display: "flex", justifyContent: "center" }}><img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: 240, display: "block" }} /></div>
-        <h2 style={{ fontSize: 26, fontWeight: 700, color: "#fff", margin: 0, fontFamily: "'Inter Tight', Inter, sans-serif" }}>Continuum Premium</h2>
-        <p style={{ color: "#8a8f98", fontSize: 14, fontFamily: "Inter, sans-serif", marginTop: 6 }}>Maximize every mile, every night, every point.</p>
+      {/* Hero */}
+      <div className="c-a1" style={{ textAlign: "center", marginBottom: 40, paddingTop: 8 }}>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
+          <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: 160, display: "block", filter: D ? "brightness(0.9) saturate(0.9)" : "none" }} />
+        </div>
+        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.16em", textTransform: "uppercase", color: css.gold, marginBottom: 10 }}>Unlock the Full Journey</div>
+        <h2 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: isMobile ? 32 : 44, fontWeight: 600, color: css.text, margin: 0, lineHeight: 1.1 }}>Continuum Premium</h2>
+        <p style={{ color: css.text2, fontSize: 15, marginTop: 10, lineHeight: 1.6 }}>Maximize every mile, every night, every point.</p>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20, marginBottom: 36 }}>
+      {/* Pricing cards */}
+      <div className="c-a2" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16, marginBottom: 40 }}>
         {[
-          { name: "Free", price: "$0", period: "forever", color: "rgba(0,0,0,0.03)", features: ["3 linked programs", "Basic dashboard", "Manual trip entry", "Annual summary", "Community support"] },
-          { name: "Premium", price: "$9.99", period: "/month", color: "#0EA5A0", popular: true, features: ["Unlimited programs", "Trip Optimizer AI", "Status match alerts", "PDF reports & exports", "Credit card recommendations", "Mileage expiration alerts", "Priority support", "Ad-free experience"] },
-          { name: "Pro", price: "$24.99", period: "/month", color: "#f59e0b", features: ["Everything in Premium", "API access & integrations", "Multi-year status tracking", "Tax deduction reports", "Team/family accounts", "White-label option", "Dedicated account manager", "Custom analytics"] },
+          {
+            name: "Free", price: "$0", period: "forever",
+            accent: css.text3, accentBg: css.surface2, border: css.border,
+            features: ["3 linked programs", "Basic dashboard", "Manual trip entry", "Annual summary", "Community support"],
+            cta: "Current Plan", ctaStyle: { background: css.surface2, color: css.text2, border: `1px solid ${css.border}` },
+          },
+          {
+            name: "Premium", price: "$9.99", period: "/month", popular: true,
+            accent: css.accent, accentBg: css.accentBg, border: css.accentBorder,
+            features: ["Unlimited programs", "Trip Optimizer AI", "Status match alerts", "PDF reports & exports", "Card recommendations", "Mileage expiration alerts", "Flighty sync export", "Ad-free experience"],
+            cta: "Upgrade Now", ctaStyle: { background: css.accent, color: "#fff", border: "none" },
+          },
+          {
+            name: "Pro", price: "$24.99", period: "/month",
+            accent: css.gold, accentBg: css.goldBg, border: `${css.gold}40`,
+            features: ["Everything in Premium", "API access & integrations", "Multi-year status tracking", "Tax deduction reports", "Team/family accounts", "White-label option", "Dedicated account manager", "Custom analytics"],
+            cta: "Upgrade Now", ctaStyle: { background: css.gold, color: "#1A1200", border: "none" },
+          },
         ].map((plan, i) => (
-          <div key={i} style={{
-            background: plan.popular ? "#1a1725" : "rgba(255,255,255,0.03)",
-            border: `1px solid ${plan.popular ? plan.color + "40" : "#2a2640"}`,
-            borderRadius: 12, padding: 28, position: "relative", overflow: "hidden",
+          <div key={i} className="c-card" style={{
+            background: css.surface, border: `1px solid ${plan.border}`,
+            borderTop: plan.popular ? `3px solid ${plan.accent}` : `3px solid transparent`,
+            borderRadius: 16, padding: 28, position: "relative",
+            boxShadow: plan.popular ? (D ? "0 4px 24px rgba(212,116,45,0.15)" : "0 4px 24px rgba(212,116,45,0.12)") : (D ? "none" : "0 1px 4px rgba(26,21,18,0.05)"),
           }}>
             {plan.popular && (
               <div style={{
-                position: "absolute", top: 14, right: -28, background: plan.color, color: "#f7f8f8", fontSize: 10, fontWeight: 700,
-                padding: "4px 36px", transform: "rotate(45deg)", fontFamily: "Inter, sans-serif",
-              }}>POPULAR</div>
+                position: "absolute", top: -1, left: "50%", transform: "translateX(-50%)",
+                background: plan.accent, color: "#fff", fontSize: 9, fontWeight: 700,
+                padding: "3px 14px", borderRadius: "0 0 8px 8px", letterSpacing: "0.1em",
+              }}>MOST POPULAR</div>
             )}
-            <div style={{ fontSize: 16, fontWeight: 700, color: plan.popular ? "#0EA5A0" : "#FFFFFF", fontFamily: "Inter, sans-serif", marginBottom: 6 }}>{plan.name}</div>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 18 }}>
-              <span style={{ fontSize: 36, fontWeight: 700, color: "#fff", fontFamily: "'Inter Tight', Inter, sans-serif" }}>{plan.price}</span>
-              <span style={{ fontSize: 13, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>{plan.period}</span>
+            <div style={{ marginBottom: 6 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: plan.accent, letterSpacing: "0.06em", textTransform: "uppercase" }}>{plan.name}</span>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 22 }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 20 }}>
+              <span style={{ fontSize: 38, fontWeight: 700, color: css.text, fontFamily: "'Cormorant Garamond', Georgia, serif", lineHeight: 1 }}>{plan.price}</span>
+              <span style={{ fontSize: 12, color: css.text3 }}>{plan.period}</span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 9, marginBottom: 24 }}>
               {plan.features.map((f, fi) => (
-                <div key={fi} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#d0d6e0", fontFamily: "Inter, sans-serif" }}>
-                  <span style={{ color: plan.popular ? "#0EA5A0" : "#34d399", fontSize: 13 }}>✓</span> {f}
+                <div key={fi} style={{ display: "flex", alignItems: "center", gap: 9, fontSize: 12, color: css.text2 }}>
+                  <span style={{ color: plan.accent, fontWeight: 700, flexShrink: 0 }}>✓</span> {f}
                 </div>
               ))}
             </div>
-            <button style={{
-              width: "100%", padding: "12px 0", borderRadius: 8, border: plan.popular ? "none" : "1px solid #2a2640",
-              background: plan.popular ? "#0EA5A0" : "rgba(255,255,255,0.03)",
-              color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "Inter, sans-serif",
-            }}>{plan.price === "$0" ? "Current Plan" : "Upgrade Now"}</button>
+            <button onClick={() => plan.cta !== "Current Plan" && setShowUpgrade(true)} style={{
+              width: "100%", padding: "12px 0", borderRadius: 10,
+              fontSize: 13, fontWeight: 600, cursor: plan.cta === "Current Plan" ? "default" : "pointer",
+              transition: "all 0.15s", ...plan.ctaStyle,
+            }}>{plan.cta}</button>
           </div>
         ))}
       </div>
 
-      {/* Feature Highlights */}
-      <div style={{
-        background: "#1a1725", border: "1px solid #2a2640", borderRadius: 12, padding: 24,
-      }}>
-        <h3 style={{ fontSize: 16, fontWeight: 700, color: "#fff", fontFamily: "'Inter Tight', Inter, sans-serif", marginBottom: 16 }}>Why Go Premium?</h3>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
+      {/* Feature highlights grid */}
+      <div className="c-a3" style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 16, padding: "24px 22px" }}>
+        <h3 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 24, fontWeight: 500, color: css.text, margin: "0 0 20px" }}>Why upgrade?</h3>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
           {[
-            { icon: "🧠", title: "AI Trip Optimizer", desc: "Know exactly where to credit every flight for maximum status acceleration" },
-            { icon: "🔔", title: "Status Match Alerts", desc: "Get notified when airlines offer status challenges that match your profile" },
-            { icon: "📊", title: "Advanced Analytics", desc: "Multi-year tracking, spending analysis, and ROI on your loyalty investments" },
-            { icon: "💳", title: "Card Advisor", desc: "Personalized credit card recommendations based on your actual travel patterns" },
-            { icon: "📄", title: "Tax Reports", desc: "Export travel expenses for business deductions with categorized reports" },
-            { icon: "👨‍👩‍👧‍👦", title: "Family Accounts", desc: "Track status for your whole family and optimize household loyalty strategy" },
+            { icon: "🧠", title: "AI Trip Optimizer", desc: "Credit every flight to the right program for maximum status acceleration" },
+            { icon: "🔔", title: "Status Match Alerts", desc: "Get notified when airlines offer challenges that match your profile" },
+            { icon: "📊", title: "Advanced Analytics", desc: "Multi-year tracking, spend analysis, and loyalty ROI reporting" },
+            { icon: "💳", title: "Card Advisor", desc: "Personalized card recommendations based on your real travel patterns" },
+            { icon: "📄", title: "Tax Reports", desc: "Export categorized travel expenses for business deductions" },
+            { icon: "👨‍👩‍👧", title: "Family Accounts", desc: "Track the whole household and optimize your combined loyalty strategy" },
           ].map((f, i) => (
-            <div key={i} style={{
-              background: "#1a1725", borderRadius: 8, padding: 16,
-            }}>
-              <div style={{ fontSize: 24, marginBottom: 8 }}>{f.icon}</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#f7f8f8", fontFamily: "Inter, sans-serif", marginBottom: 4 }}>{f.title}</div>
-              <div style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif", lineHeight: 1.5 }}>{f.desc}</div>
+            <div key={i} style={{ padding: "16px 14px", borderRadius: 10, background: css.surface2, border: `1px solid ${css.border}` }}>
+              <div style={{ fontSize: 22, marginBottom: 8 }}>{f.icon}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: css.text, marginBottom: 5 }}>{f.title}</div>
+              <div style={{ fontSize: 11, color: css.text2, lineHeight: 1.55 }}>{f.desc}</div>
             </div>
           ))}
         </div>
@@ -2159,125 +2489,168 @@ Start by introducing yourself briefly in-character with personality, and give an
   const viewRenderers = { dashboard: renderDashboard, programs: renderPrograms, trips: renderTrips, expenses: renderExpenses, optimizer: renderOptimizer, reports: renderReports, premium: renderPremium };
 
   // ============================================================
-  // MAIN LAYOUT
+  // MAIN LAYOUT — Warm Editorial Design System
   // ============================================================
-  return (
-    <div style={{
-      minHeight: "100vh", background: "#13111C",
-      fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", color: "#fff", display: "flex", flexDirection: "column", position: "relative",
-    }}>
-      <TravelAtmosphere />
-      <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  const D = darkMode;
+  const css = {
+    bg: D ? "#111009" : "#FAFAF8",
+    surface: D ? "#1C1914" : "#FFFFFF",
+    surface2: D ? "#24201A" : "#F5F0EB",
+    surface3: D ? "#2E281F" : "#EDE6DC",
+    border: D ? "#38302A" : "#E4D9CE",
+    text: D ? "#F0E8DF" : "#1A1512",
+    text2: D ? "#A89080" : "#6B5444",
+    text3: D ? "#6B5248" : "#A8937E",
+    accent: D ? "#E8883A" : "#D4742D",
+    accentBg: D ? "rgba(232,136,58,0.12)" : "#FFF3E8",
+    accentBorder: D ? "rgba(232,136,58,0.25)" : "rgba(212,116,45,0.25)",
+    gold: "#C9A84C",
+    goldBg: D ? "rgba(201,168,76,0.1)" : "#FDF8EE",
+    success: D ? "#3DB87A" : "#1E7A4A",
+    successBg: D ? "rgba(61,184,122,0.1)" : "#EAF7F0",
+    warning: D ? "#E8B44A" : "#B07A15",
+    warningBg: D ? "rgba(232,180,74,0.1)" : "#FEF7E6",
+    nav: D ? "rgba(17,16,9,0.96)" : "rgba(255,252,249,0.97)",
+    shadow: D ? "0 2px 16px rgba(0,0,0,0.4)" : "0 2px 16px rgba(26,21,18,0.08)",
+    shadowHover: D ? "0 8px 32px rgba(232,136,58,0.15)" : "0 8px 32px rgba(212,116,45,0.12)",
+  };
 
-      {/* Railway-style Top Navigation */}
-      <nav style={{
+  return (
+    <div data-theme={D ? "dark" : "light"} style={{
+      minHeight: "100vh", background: css.bg, display: "flex", flexDirection: "column",
+      fontFamily: "'Outfit', 'DM Sans', sans-serif", color: css.text, position: "relative",
+      transition: "background 0.3s ease, color 0.3s ease",
+    }}>
+      <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+      <style>{`
+        * { box-sizing: border-box; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: ${D ? "#38302A" : "#D4C4B4"}; border-radius: 3px; }
+        .c-card { transition: transform 0.2s cubic-bezier(0.175,0.885,0.32,1.2), box-shadow 0.2s ease, border-color 0.2s ease; }
+        .c-card:hover { transform: translateY(-2px); box-shadow: ${D ? "0 8px 32px rgba(232,136,58,0.15)" : "0 8px 32px rgba(212,116,45,0.1)"}; border-color: ${D ? "rgba(232,136,58,0.35)" : "rgba(212,116,45,0.3)"} !important; }
+        .c-nav-btn { transition: all 0.15s ease; }
+        .c-nav-btn:hover { background: ${D ? "rgba(240,232,223,0.06)" : "rgba(26,21,18,0.05)"} !important; }
+        .c-row-hover { transition: background 0.12s ease; }
+        .c-row-hover:hover { background: ${D ? "rgba(240,232,223,0.04)" : "rgba(212,116,45,0.04)"} !important; }
+        .c-btn-primary { transition: all 0.15s ease; }
+        .c-btn-primary:hover { background: ${D ? "#F09040" : "#C06425"} !important; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(212,116,45,0.3); }
+        .c-tag { display:inline-flex; align-items:center; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; }
+        @keyframes c-fade-up { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes c-pulse { 0%,100% { opacity:0.6; transform:scale(1); } 50% { opacity:1; transform:scale(1.2); } }
+        .c-a1 { animation: c-fade-up 0.45s ease 0.05s backwards; }
+        .c-a2 { animation: c-fade-up 0.45s ease 0.1s backwards; }
+        .c-a3 { animation: c-fade-up 0.45s ease 0.15s backwards; }
+        .c-a4 { animation: c-fade-up 0.45s ease 0.2s backwards; }
+        .c-a5 { animation: c-fade-up 0.45s ease 0.25s backwards; }
+        .c-a6 { animation: c-fade-up 0.45s ease 0.3s backwards; }
+        .c-a7 { animation: c-fade-up 0.45s ease 0.35s backwards; }
+      `}</style>
+
+      {/* ── Top Navigation ── */}
+      <header style={{
         position: "sticky", top: 0, zIndex: 100, flexShrink: 0,
-        background: "rgba(19,17,28,0.92)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
-        borderBottom: "1px solid #2a2640",
-        ...(isMobile
-          ? { display: "flex", flexDirection: "column", padding: 0 }
-          : { height: 56, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px" }
-        ),
+        background: css.nav, backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
+        borderBottom: `1px solid ${css.border}`,
+        height: isMobile ? "auto" : 62,
+        display: "flex", flexDirection: isMobile ? "column" : "row",
+        alignItems: isMobile ? "stretch" : "center",
+        padding: isMobile ? 0 : "0 24px",
+        boxShadow: `0 1px 0 ${css.border}`,
       }}>
-        {/* Top row: Logo + user actions */}
-        <div style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: isMobile ? "8px 12px" : 0,
-          ...(isMobile ? {} : { width: "100%" }),
-        }}>
-          {/* Left: Logo */}
-          <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
-            <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: isMobile ? 28 : 36, display: "block" }} />
+        {/* Desktop nav */}
+        {!isMobile && (<>
+          {/* Logo */}
+          <div style={{ flexShrink: 0, marginRight: 32 }}>
+            <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: 36, display: "block", filter: D ? "brightness(0.9)" : "none" }} />
           </div>
 
-          {/* Center: Horizontal nav tabs (desktop only) */}
-          {!isMobile && (
-          <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+          {/* Nav pills */}
+          <nav style={{ display: "flex", alignItems: "center", gap: 2, flex: 1 }}>
             {navItems.map(item => (
-              <button key={item.id} onClick={() => setActiveView(item.id)} style={{
-                display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 8, border: "none", cursor: "pointer",
-                background: activeView === item.id ? "rgba(14,165,160,0.12)" : "transparent",
-                color: activeView === item.id ? "#0EA5A0" : "#8a8f98",
-                fontSize: 13, fontWeight: activeView === item.id ? 600 : 500, fontFamily: "Inter, sans-serif",
-                transition: "all 0.15s ease", whiteSpace: "nowrap",
+              <button key={item.id} onClick={() => setActiveView(item.id)} className="c-nav-btn" style={{
+                display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8,
+                border: "none", cursor: "pointer",
+                background: activeView === item.id ? css.accentBg : "transparent",
+                color: activeView === item.id ? css.accent : css.text2,
+                fontSize: 13, fontWeight: activeView === item.id ? 600 : 400,
+                fontFamily: "'Outfit', sans-serif",
               }}>
                 <span style={{ fontSize: 14 }}>{item.icon}</span>
                 {item.label}
-                {item.id === "premium" && <span style={{ fontSize: 9, background: "rgba(245,158,11,0.15)", color: "#f59e0b", padding: "1px 6px", borderRadius: 8, fontWeight: 700 }}>PRO</span>}
+                {item.id === "premium" && <span style={{ fontSize: 9, background: css.goldBg, color: css.gold, padding: "2px 6px", borderRadius: 6, fontWeight: 700, border: `1px solid ${D ? "rgba(201,168,76,0.2)" : "rgba(201,168,76,0.3)"}` }}>PRO</span>}
               </button>
             ))}
-          </div>
-          )}
+          </nav>
 
-          {/* Right: Notifications, Settings, User, Sign Out */}
-          <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 4 : 8, flexShrink: 0 }}>
-            <IconBtn icon="🔔" label="Notifications" badge />
-            {!isMobile && <IconBtn icon="⚙️" label="Settings" />}
-            <div style={{ width: 1, height: 24, background: "#2a2640", margin: "0 4px" }} />
-            {!isMobile && (
+          {/* Right: clock, dark mode, notifs, user, sign out */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+            <LiveClock />
+            <div style={{ width: 1, height: 18, background: css.border }} />
+            {/* Dark mode toggle */}
+            <button onClick={() => setDarkMode(d => !d)} title={D ? "Light mode" : "Dark mode"} style={{
+              width: 36, height: 36, borderRadius: 8, border: `1px solid ${css.border}`,
+              background: "transparent", cursor: "pointer", fontSize: 16,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: css.text2, transition: "all 0.15s",
+            }}>{D ? "☀️" : "🌙"}</button>
+            <button title="Notifications" style={{
+              width: 36, height: 36, borderRadius: 8, border: `1px solid ${css.border}`,
+              background: "transparent", cursor: "pointer", fontSize: 16, position: "relative",
+              display: "flex", alignItems: "center", justifyContent: "center", color: css.text2,
+            }}>
+              🔔
+              <span style={{ position: "absolute", top: 6, right: 6, width: 7, height: 7, borderRadius: "50%", background: css.accent, border: `2px solid ${css.nav}` }} />
+            </button>
+            <div style={{ width: 1, height: 18, background: css.border }} />
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div style={{
-                width: 30, height: 30, borderRadius: 8, background: "linear-gradient(135deg, #0EA5A0, #0c8e8a)",
-                display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff",
+                width: 32, height: 32, borderRadius: 8,
+                background: `linear-gradient(135deg, ${css.accent}, ${D ? "#C06020" : "#B85820"})`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 12, fontWeight: 700, color: "#fff", flexShrink: 0,
               }}>{user?.avatar || "U"}</div>
-              <div style={{ textAlign: "left" }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: "#fff" }}>{user?.name?.split(" ")[0]}</div>
-                <div style={{ fontSize: 10, color: "#62666d" }}>{user?.tier === "premium" ? "Premium" : "Free"}</div>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: css.text, lineHeight: 1.2 }}>{user?.name?.split(" ")[0]}</div>
+                <div style={{ fontSize: 10, color: user?.tier === "premium" ? css.gold : css.text3, lineHeight: 1 }}>
+                  {user?.tier === "premium" ? "✦ Premium" : "Free"}
+                </div>
               </div>
             </div>
-            )}
             <button onClick={handleLogout} style={{
-              padding: "6px 12px", borderRadius: 8, border: "1px solid #2a2640", background: "transparent",
-              color: "#8a8f98", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif", transition: "all 0.15s",
-            }}>Sign Out</button>
+              padding: "6px 14px", borderRadius: 8, border: `1px solid ${css.border}`,
+              background: "transparent", color: css.text3, fontSize: 11, fontWeight: 500,
+              cursor: "pointer", transition: "all 0.15s",
+            }}>Sign out</button>
           </div>
-        </div>
+        </>)}
 
-        {/* Mobile: Scrollable tab bar below header */}
-        {isMobile && (
-          <div style={{
-            display: "flex", alignItems: "center", gap: 0, overflowX: "auto", WebkitOverflowScrolling: "touch",
-            borderTop: "1px solid rgba(42,38,64,0.5)", padding: "0 8px",
-            scrollbarWidth: "none", msOverflowStyle: "none",
-          }}>
+        {/* Mobile nav */}
+        {isMobile && (<>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px" }}>
+            <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: 28 }} />
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => setDarkMode(d => !d)} style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${css.border}`, background: "transparent", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>{D ? "☀️" : "🌙"}</button>
+              <button onClick={handleLogout} style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${css.border}`, background: "transparent", color: css.text3, fontSize: 11, cursor: "pointer" }}>Out</button>
+            </div>
+          </div>
+          <div style={{ display: "flex", overflowX: "auto", borderTop: `1px solid ${css.border}`, padding: "0 8px", scrollbarWidth: "none" }}>
             {navItems.map(item => (
               <button key={item.id} onClick={() => setActiveView(item.id)} style={{
-                display: "flex", alignItems: "center", gap: 4, padding: "8px 10px", borderRadius: 0, border: "none", cursor: "pointer",
-                background: "transparent",
-                borderBottom: activeView === item.id ? "2px solid #0EA5A0" : "2px solid transparent",
-                color: activeView === item.id ? "#0EA5A0" : "#8a8f98",
-                fontSize: 11, fontWeight: activeView === item.id ? 600 : 500, fontFamily: "Inter, sans-serif",
-                transition: "all 0.15s ease", whiteSpace: "nowrap", flexShrink: 0,
-              }}>
-                <span style={{ fontSize: 13 }}>{item.icon}</span>
-                {item.label}
-              </button>
+                display: "flex", alignItems: "center", gap: 4, padding: "8px 10px", border: "none", cursor: "pointer",
+                background: "transparent", borderBottom: activeView === item.id ? `2px solid ${css.accent}` : "2px solid transparent",
+                color: activeView === item.id ? css.accent : css.text3,
+                fontSize: 11, fontWeight: activeView === item.id ? 600 : 400,
+                whiteSpace: "nowrap", flexShrink: 0, transition: "all 0.15s",
+              }}><span>{item.icon}</span> {item.label}</button>
             ))}
           </div>
-        )}
-      </nav>
+        </>)}
+      </header>
 
-      {/* Main Content — full width, centered */}
-      <main style={{ flex: 1, overflowY: "auto", minWidth: 0, position: "relative", zIndex: 1 }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", padding: isMobile ? "20px 16px 40px" : "32px 40px 60px" }}>
-
-          {/* Page Header */}
-          <div style={{ marginBottom: isMobile ? 20 : 32 }}>
-            <h1 style={{ fontSize: isMobile ? 22 : 28, fontWeight: 700, color: "#fff", margin: 0, fontFamily: "'Inter Tight', Inter, sans-serif", letterSpacing: -0.5 }}>
-              {activeView === "dashboard" ? `Welcome back, ${user?.name?.split(" ")[0]}` : navItems.find(n => n.id === activeView)?.label}
-            </h1>
-            <p style={{ fontSize: 14, color: "#8a8f98", fontFamily: "Inter, sans-serif", marginTop: 6, lineHeight: 1.5 }}>
-              {activeView === "dashboard" ? `${new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })} · ${Object.keys(linkedAccounts).length} programs tracked` :
-              activeView === "programs" ? "Link and manage all your loyalty accounts" :
-              activeView === "trips" ? "Plan, track, and optimize your upcoming travel" :
-              activeView === "expenses" ? "Track spending and receipts across every trip" :
-              activeView === "optimizer" ? "AI-powered recommendations to maximize your status" :
-              activeView === "reports" ? "Insights and analytics across all programs" :
-              activeView === "premium" ? "Unlock the full power of Continuum" : ""}
-            </p>
-          </div>
-
-          {/* View Content */}
+      {/* ── Main Content ── */}
+      <main style={{ flex: 1, overflowY: "auto", position: "relative" }}>
+        <div style={{ maxWidth: 1140, margin: "0 auto", padding: isMobile ? "24px 16px 60px" : "36px 40px 80px" }}>
           {viewRenderers[activeView]?.()}
         </div>
       </main>
