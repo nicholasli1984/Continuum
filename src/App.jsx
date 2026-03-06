@@ -335,6 +335,494 @@ const ProgramLogo = ({ prog, size = 32 }) => {
   return <span style={{ fontSize: size * 0.7, flexShrink: 0 }}>{prog?.logo || "🔗"}</span>;
 };
 
+// ============================================================
+// AIRLINE ALLIANCES DATA
+// ============================================================
+const ALLIANCE_MBR = {
+  ua:           { alliance:"star",     color:"#002244", tierMap:{ Silver:"sa_silver", Gold:"sa_gold", Platinum:"sa_gold", "1K":"sa_gold" }},
+  aeroplan:     { alliance:"star",     color:"#F01428", tierMap:{ "25K":"sa_silver","35K":"sa_gold","50K":"sa_gold","75K":"sa_gold","100K":"sa_gold" }},
+  singapore_kf: { alliance:"star",     color:"#003876", tierMap:{ "Elite Silver":"sa_silver","Elite Gold":"sa_gold" }},
+  turkish_miles:{ alliance:"star",     color:"#C8102E", tierMap:{ "Classic Plus":"sa_silver","Elite":"sa_gold","Elite Plus":"sa_gold" }},
+  aa:           { alliance:"oneworld", color:"#0078D2", tierMap:{ Gold:"ow_ruby",Platinum:"ow_sapphire","Platinum Pro":"ow_sapphire","Executive Platinum":"ow_emerald" }},
+  ba_avios:     { alliance:"oneworld", color:"#075AAA", tierMap:{ Bronze:"ow_ruby",Silver:"ow_sapphire",Gold:"ow_emerald" }},
+  qantas_ff:    { alliance:"oneworld", color:"#E0001B", tierMap:{ Silver:"ow_ruby",Gold:"ow_sapphire",Platinum:"ow_emerald" }},
+  cathay_mp:    { alliance:"oneworld", color:"#006564", tierMap:{ Silver:"ow_ruby",Gold:"ow_sapphire",Diamond:"ow_emerald" }},
+  dl:           { alliance:"skyteam",  color:"#003366", tierMap:{ "Silver Medallion":"st_elite","Gold Medallion":"st_elite_plus","Platinum Medallion":"st_elite_plus","Diamond Medallion":"st_elite_plus" }},
+  flying_blue:  { alliance:"skyteam",  color:"#002157", tierMap:{ Silver:"st_elite",Gold:"st_elite_plus",Platinum:"st_elite_plus",Ultimate:"st_elite_plus" }},
+};
+const ALLIANCE_LABELS = {
+  star:"Star Alliance", oneworld:"Oneworld", skyteam:"SkyTeam",
+};
+const ALLIANCE_TIER_LABELS = {
+  sa_silver:"Star Alliance Silver", sa_gold:"Star Alliance Gold",
+  ow_ruby:"Oneworld Ruby", ow_sapphire:"Oneworld Sapphire", ow_emerald:"Oneworld Emerald",
+  st_elite:"SkyTeam Elite", st_elite_plus:"SkyTeam Elite Plus",
+};
+const ALLIANCE_TIER_COLORS = {
+  sa_silver:"#C0C0C0", sa_gold:"#C9A84C",
+  ow_ruby:"#9B2335", ow_sapphire:"#0057A8", ow_emerald:"#006341",
+  st_elite:"#00B0F0", st_elite_plus:"#004A97",
+};
+
+// Benefit row definitions
+const BENEFIT_ROWS = [
+  { id:"free_bags",      cat:"Baggage",              label:"Free Checked Bags",          sub:"Number of free pieces in economy" },
+  { id:"bag_weight",     cat:"Baggage",              label:"Weight Per Bag",             sub:"kg / lbs max per piece" },
+  { id:"car_seat",       cat:"Baggage",              label:"Child Car Seat",             sub:"Is a child safety seat free & uncounted?" },
+  { id:"stroller",       cat:"Baggage",              label:"Stroller / Pram",            sub:"Collapsible stroller check-in policy" },
+  { id:"ski_bag",        cat:"Baggage",              label:"Ski / Snowboard Bag",        sub:"Is ski or snowboard bag free or at reduced fee?" },
+  { id:"golf_bag",       cat:"Baggage",              label:"Golf Bag",                   sub:"Golf equipment policy" },
+  { id:"sport_equip",    cat:"Baggage",              label:"Oversized Sports Equipment", sub:"Bicycles, surfboards, etc." },
+  { id:"overweight_fee", cat:"Baggage",              label:"Overweight Fee Waiver",      sub:"Is the overweight surcharge waived?" },
+  { id:"checkin",        cat:"Check-in & Boarding",  label:"Priority Check-in",          sub:"Dedicated counter or business class lane" },
+  { id:"security",       cat:"Check-in & Boarding",  label:"Priority Security",          sub:"Expedited security screening lane" },
+  { id:"boarding",       cat:"Check-in & Boarding",  label:"Boarding Group",             sub:"When in the boarding sequence" },
+  { id:"preboard",       cat:"Check-in & Boarding",  label:"Pre-Boarding",               sub:"Board before general boarding begins" },
+  { id:"seat_sel",       cat:"Seating",              label:"Free Seat Selection",        sub:"Choose seat at booking at no charge" },
+  { id:"exit_row",       cat:"Seating",              label:"Exit Row / Extra Legroom",   sub:"Complimentary access to exit row seats" },
+  { id:"lounge",         cat:"Lounge",               label:"Lounge Access",              sub:"Partner lounge when flying in economy" },
+  { id:"lounge_guest",   cat:"Lounge",               label:"Guest Lounge Pass",          sub:"Complimentary guest access" },
+  { id:"priority_bags",  cat:"In-flight & Other",    label:"Priority Baggage Delivery",  sub:"Bags arrive on belt before other passengers" },
+  { id:"upgrade",        cat:"In-flight & Other",    label:"Upgrade Eligibility",        sub:"Complimentary or discounted cabin upgrade" },
+  { id:"miles_bonus",    cat:"In-flight & Other",    label:"Miles / Points Bonus",       sub:"Earning bonus % on base miles" },
+  { id:"fee_waiver",     cat:"In-flight & Other",    label:"Change / Cancel Fee Waiver", sub:"Standard ticket modification fees waived" },
+];
+
+// b = {v: display, d: detail note, ok: true = positive highlight}
+const _b = (v, d, ok) => ({ v, d, ok: !!ok });
+
+// Home airline benefits: HOME_BENEFITS[programId][tierName][rowId]
+const HOME_BENEFITS = {
+  aa: {
+    Gold: {
+      free_bags:_b("1 free","1st bag free on domestic US flights"),
+      bag_weight:_b("23 kg / 50 lbs","Standard economy weight per piece"),
+      car_seat:_b("Free – uncounted","Car seat does not count toward allowance",true),
+      stroller:_b("Free","Gate-check or check-in, free of charge",true),
+      ski_bag:_b("Counts as bag","Uses 1 free piece if within 23 kg / 50 lbs"),
+      golf_bag:_b("Counts as bag","Uses 1 free piece if within weight"),
+      sport_equip:_b("Fees apply","Oversized items ~$150+ per leg"),
+      overweight_fee:_b("Not waived","Overweight/oversize fees still apply"),
+      checkin:_b("Priority counter","Dedicated priority check-in lane",true),
+      security:_b("Priority lane","Priority security at most AA hubs",true),
+      boarding:_b("Group 1","Boards immediately after F/J cabin",true),
+      preboard:_b("Yes","Pre-boards before general boarding",true),
+      seat_sel:_b("Yes","Free preferred seat selection at booking",true),
+      exit_row:_b("Yes – MCE","Free Main Cabin Extra seats incl. exit rows",true),
+      lounge:_b("No","No Admiral's Club in economy ticket"),
+      lounge_guest:_b("No","N/A"),
+      priority_bags:_b("Yes","Priority baggage tag, arrives first",true),
+      upgrade:_b("Comp. upgrades","Complimentary upgrades to F on AA metal",true),
+      miles_bonus:_b("40% bonus","40% bonus on Loyalty Points earned",true),
+      fee_waiver:_b("Yes","Same-day flight changes free",true),
+    },
+    Platinum: {
+      free_bags:_b("2 free","1st & 2nd bag free",true),
+      bag_weight:_b("23 kg / 50 lbs","Standard economy weight"),
+      car_seat:_b("Free – uncounted","Does not count toward allowance",true),
+      stroller:_b("Free","Gate or check-in, free",true),
+      ski_bag:_b("Counts as bag","Uses 1 of your 2 free pieces"),
+      golf_bag:_b("Counts as bag","Uses 1 of your 2 free pieces"),
+      sport_equip:_b("Fees apply","~$150+ per leg"),
+      overweight_fee:_b("Not waived","Oversize/overweight fees still apply"),
+      checkin:_b("Priority counter","Dedicated priority counter",true),
+      security:_b("Priority + Flagship","Flagship Access lanes at key hubs",true),
+      boarding:_b("Group 1","First boarding group after F/J",true),
+      preboard:_b("Yes","Pre-boards before general boarding",true),
+      seat_sel:_b("Yes","Free preferred seat at booking",true),
+      exit_row:_b("Yes – MCE","Free Main Cabin Extra + exit rows",true),
+      lounge:_b("No","No Admiral's Club (must buy or use credit card benefit)"),
+      lounge_guest:_b("No","N/A"),
+      priority_bags:_b("Yes","Priority baggage, arrives first",true),
+      upgrade:_b("Comp. upgrades","Higher priority than Gold; system upgrades",true),
+      miles_bonus:_b("60% bonus","60% bonus on Loyalty Points earned",true),
+      fee_waiver:_b("Yes","Same-day standby free; standard fee waivers",true),
+    },
+    "Platinum Pro": {
+      free_bags:_b("2 free","1st & 2nd bag free",true),
+      bag_weight:_b("32 kg / 70 lbs","Upgraded weight allowance",true),
+      car_seat:_b("Free – uncounted","Does not count toward allowance",true),
+      stroller:_b("Free","Gate or check-in, free",true),
+      ski_bag:_b("Free","Within 32 kg / 70 lbs weight limit",true),
+      golf_bag:_b("Free","Within weight limit",true),
+      sport_equip:_b("Often waived","Most standard sports equipment fees waived",true),
+      overweight_fee:_b("Waived ≤70 lbs","Overweight fee waived up to 70 lbs",true),
+      checkin:_b("Flagship check-in","Flagship First check-in at hubs",true),
+      security:_b("Flagship Access","Dedicated Flagship Access lanes at hubs",true),
+      boarding:_b("Group 1","Board after F/J cabin",true),
+      preboard:_b("Yes","First group to board after F/J pre-board",true),
+      seat_sel:_b("Yes – full","Full seat selection incl. MCE",true),
+      exit_row:_b("Yes – MCE","All MCE and exit row seats free",true),
+      lounge:_b("No","No Admiral's Club with economy ticket"),
+      lounge_guest:_b("No","N/A"),
+      priority_bags:_b("Yes","Priority baggage, first off belt",true),
+      upgrade:_b("Priority upgrades","Higher priority; instant upgrades on select fares",true),
+      miles_bonus:_b("80% bonus","80% bonus on Loyalty Points",true),
+      fee_waiver:_b("Full waiver","All standard change/cancel fees waived",true),
+    },
+    "Executive Platinum": {
+      free_bags:_b("3 free","1st, 2nd & 3rd bag free",true),
+      bag_weight:_b("32 kg / 70 lbs","Per bag",true),
+      car_seat:_b("Free – uncounted","Does not count toward allowance",true),
+      stroller:_b("Free","Gate or check-in, free",true),
+      ski_bag:_b("Free","Free within 32 kg / 70 lbs",true),
+      golf_bag:_b("Free","Free within weight limit",true),
+      sport_equip:_b("Waived","Standard sports equipment fees waived",true),
+      overweight_fee:_b("Waived ≤70 lbs","Overweight fee waived to 70 lbs",true),
+      checkin:_b("Flagship First","Flagship First check-in line at all AA hubs",true),
+      security:_b("Flagship Access","Dedicated lanes at all AA hubs",true),
+      boarding:_b("Group 1 (first)","First among Group 1 after F/J pre-board",true),
+      preboard:_b("Yes","Boards with First Class cabin",true),
+      seat_sel:_b("Yes – full","Any seat incl. premium on upgrade",true),
+      exit_row:_b("Yes – all MCE","All MCE & exit rows free at booking",true),
+      lounge:_b("Flagship Lounge (SWU)","Access via Systemwide Upgrade cert.",true),
+      lounge_guest:_b("With upgrade","Lounge access accompanies SWU upgrade"),
+      priority_bags:_b("Yes – first off","First class priority baggage delivery",true),
+      upgrade:_b("Systemwide upgrades","SWUs to Business/Flagship on most itineraries",true),
+      miles_bonus:_b("120% bonus","120% bonus on Loyalty Points",true),
+      fee_waiver:_b("Full waiver","All fees waived; last-seat award access",true),
+    },
+  },
+  dl: {
+    "Silver Medallion": {
+      free_bags:_b("1 free","1st bag free"),
+      bag_weight:_b("23 kg / 50 lbs","Standard economy weight"),
+      car_seat:_b("Free – uncounted","Does not count toward allowance",true),
+      stroller:_b("Free","Gate or check-in, free",true),
+      ski_bag:_b("Counts as bag","Uses 1 free piece if within weight"),
+      golf_bag:_b("Counts as bag","Uses 1 free piece"),
+      sport_equip:_b("Fees apply","~$150+ per leg"),
+      overweight_fee:_b("Not waived","Oversize/overweight fees apply"),
+      checkin:_b("Priority counter","Priority check-in access",true),
+      security:_b("Priority lane","Priority security at most hubs",true),
+      boarding:_b("Zone 1","Boards after First/Delta One",true),
+      preboard:_b("Yes","Pre-boards before general zones",true),
+      seat_sel:_b("Yes – Comfort+","Free Comfort+ seat selection",true),
+      exit_row:_b("Yes – Comfort+","Exit row Comfort+ seats included",true),
+      lounge:_b("No","No Sky Club access in economy"),
+      lounge_guest:_b("No","N/A"),
+      priority_bags:_b("Yes","Priority baggage tag",true),
+      upgrade:_b("Waitlist","Upgrade waitlist for Comfort+ / First",true),
+      miles_bonus:_b("40% bonus","40% bonus on base MQMs",true),
+      fee_waiver:_b("Yes","Same-day standby changes free",true),
+    },
+    "Gold Medallion": {
+      free_bags:_b("2 free","1st & 2nd bag free",true),
+      bag_weight:_b("23 kg / 50 lbs","Standard economy weight"),
+      car_seat:_b("Free – uncounted","Does not count toward allowance",true),
+      stroller:_b("Free","Gate or check-in, free",true),
+      ski_bag:_b("Counts as bag","Uses 1 of your free pieces"),
+      golf_bag:_b("Counts as bag","Uses 1 of your free pieces"),
+      sport_equip:_b("Fees apply","~$150+ per leg"),
+      overweight_fee:_b("Not waived","Oversize fees still apply"),
+      checkin:_b("Priority counter","Priority check-in with Delta",true),
+      security:_b("Priority lane","Priority security lane",true),
+      boarding:_b("Zone 1 (early)","First Zone 1 boarders with Medallion priority",true),
+      preboard:_b("Yes","Pre-boarding before Zone 1 opens",true),
+      seat_sel:_b("Yes – Comfort+","Free Comfort+ at booking",true),
+      exit_row:_b("Yes – Comfort+","Free Comfort+ exit rows",true),
+      lounge:_b("No","No Sky Club without card/upgrade benefit"),
+      lounge_guest:_b("No","N/A"),
+      priority_bags:_b("Yes","Priority tag, arrives first",true),
+      upgrade:_b("Comp. upgrades","Complimentary upgrades to First Class",true),
+      miles_bonus:_b("60% bonus","60% bonus MQMs",true),
+      fee_waiver:_b("Yes","Same-day confirmed changes free",true),
+    },
+    "Platinum Medallion": {
+      free_bags:_b("2 free","1st & 2nd bag free",true),
+      bag_weight:_b("32 kg / 70 lbs","Upgraded weight",true),
+      car_seat:_b("Free – uncounted","Does not count toward allowance",true),
+      stroller:_b("Free","Gate or check-in, free",true),
+      ski_bag:_b("Free","Free within 32 kg / 70 lbs",true),
+      golf_bag:_b("Free","Free within weight allowance",true),
+      sport_equip:_b("Often waived","Standard sports equipment fees reduced/waived",true),
+      overweight_fee:_b("Waived ≤70 lbs","Overweight waived up to 70 lbs",true),
+      checkin:_b("Priority counter","Priority check-in and kiosk",true),
+      security:_b("Priority lane","Delta Premium Select security lanes",true),
+      boarding:_b("Zone 1 (priority)","First Zone 1 boarding call",true),
+      preboard:_b("Yes","Boards with DL One at select airports"),
+      seat_sel:_b("Yes – Comfort+","Free Comfort+ & preferred seats",true),
+      exit_row:_b("Yes – Comfort+","Full Comfort+ incl. exit rows",true),
+      lounge:_b("Choice Benefit","Sky Club access selectable as Platinum Choice Benefit"),
+      lounge_guest:_b("With benefit","If Sky Club benefit is chosen"),
+      priority_bags:_b("Yes","Priority baggage, first off belt",true),
+      upgrade:_b("Comp. upgrades","Complimentary upgrades, higher priority",true),
+      miles_bonus:_b("80% bonus","80% bonus MQMs",true),
+      fee_waiver:_b("Yes","All standard fees waived",true),
+    },
+    "Diamond Medallion": {
+      free_bags:_b("3 free","1st, 2nd & 3rd bag free",true),
+      bag_weight:_b("32 kg / 70 lbs","Per bag",true),
+      car_seat:_b("Free – uncounted","Does not count toward allowance",true),
+      stroller:_b("Free","Gate or check-in, free",true),
+      ski_bag:_b("Free","Free within 32 kg / 70 lbs",true),
+      golf_bag:_b("Free","Free within weight allowance",true),
+      sport_equip:_b("Waived","Sports equipment fees waived",true),
+      overweight_fee:_b("Waived ≤70 lbs","Overweight waived to 70 lbs",true),
+      checkin:_b("Dedicated counter","Diamond counter at major hubs",true),
+      security:_b("Fastest lane","Dedicated fastest lanes at all Delta hubs",true),
+      boarding:_b("Zone 1 (first)","First Diamond boarding call",true),
+      preboard:_b("Yes","Boards with Delta One/First Class cabin",true),
+      seat_sel:_b("Yes – full","Any seat incl. Delta One on upgrade",true),
+      exit_row:_b("Yes – full","All premium seats access",true),
+      lounge:_b("Sky Club included","Complimentary Sky Club + Delta One Lounge",true),
+      lounge_guest:_b("3 guest passes/yr","Annual Sky Club guest passes",true),
+      priority_bags:_b("Yes – first off","Diamond priority tag, first off belt",true),
+      upgrade:_b("Global Upgrade Certs","Delta One GUCs included annually",true),
+      miles_bonus:_b("120% bonus","120% bonus MQMs",true),
+      fee_waiver:_b("Full waiver","All fees waived; confirmed same-day changes",true),
+    },
+  },
+  ua: {
+    Silver: {
+      free_bags:_b("1 free","1st bag free"),
+      bag_weight:_b("23 kg / 50 lbs","Standard economy weight"),
+      car_seat:_b("Free – uncounted","Does not count toward allowance",true),
+      stroller:_b("Free","Gate or check-in, free",true),
+      ski_bag:_b("Counts as bag","Uses 1 free piece"),
+      golf_bag:_b("Counts as bag","Uses 1 free piece"),
+      sport_equip:_b("Fees apply","Oversized/overweight fees apply"),
+      overweight_fee:_b("Not waived","Oversize fees still apply"),
+      checkin:_b("Priority counter","Priority check-in counter",true),
+      security:_b("Premier Access lane","At most United airports",true),
+      boarding:_b("Group 2","Boards after Group 1 Premier Access"),
+      preboard:_b("Yes","Before general boarding groups",true),
+      seat_sel:_b("At T−48h","Economy Plus at 48-hour check-in window",true),
+      exit_row:_b("At T−48h","Economy Plus exit rows at T-48h"),
+      lounge:_b("No","No United Club in economy"),
+      lounge_guest:_b("No","N/A"),
+      priority_bags:_b("Yes","Premier priority baggage",true),
+      upgrade:_b("Waitlist","Complimentary space-available upgrades waitlist"),
+      miles_bonus:_b("0%","No bonus miles for Silver"),
+      fee_waiver:_b("Partial","Award ticket change fee waived"),
+    },
+    Gold: {
+      free_bags:_b("2 free","1st & 2nd bag free",true),
+      bag_weight:_b("23 kg / 50 lbs","Standard economy weight"),
+      car_seat:_b("Free – uncounted","Does not count toward allowance",true),
+      stroller:_b("Free","Gate or check-in, free",true),
+      ski_bag:_b("Counts as bag","Uses 1 of your free pieces"),
+      golf_bag:_b("Counts as bag","Uses 1 of your free pieces"),
+      sport_equip:_b("Fees apply","Oversized/overweight fees apply"),
+      overweight_fee:_b("Not waived","Oversize fees apply"),
+      checkin:_b("Premier Access","Premier Access counter",true),
+      security:_b("Premier Access","Premier Access lane at all airports",true),
+      boarding:_b("Group 2","Premier Access boarding group"),
+      preboard:_b("Yes","Premier Access pre-boarding",true),
+      seat_sel:_b("Yes","Economy Plus free at booking",true),
+      exit_row:_b("Yes","Economy Plus exit rows at booking",true),
+      lounge:_b("No","No United Club without card benefit"),
+      lounge_guest:_b("No","N/A"),
+      priority_bags:_b("Yes","Premier priority baggage handling",true),
+      upgrade:_b("Comp. upgrades","Complimentary space-available upgrades on UA metal",true),
+      miles_bonus:_b("25% bonus","25% bonus PQPs",true),
+      fee_waiver:_b("Yes","Standard ticket change fees waived",true),
+    },
+    Platinum: {
+      free_bags:_b("2 free","1st & 2nd bag free",true),
+      bag_weight:_b("32 kg / 70 lbs","Upgraded weight",true),
+      car_seat:_b("Free – uncounted","Does not count toward allowance",true),
+      stroller:_b("Free","Gate or check-in, free",true),
+      ski_bag:_b("Free","Within 32 kg / 70 lbs",true),
+      golf_bag:_b("Free","Within weight limit",true),
+      sport_equip:_b("Often waived","Standard sports fees frequently waived",true),
+      overweight_fee:_b("Waived ≤70 lbs","Overweight waived to 70 lbs",true),
+      checkin:_b("Premier Access","Premier Access counter",true),
+      security:_b("Premier Access + Pre✓","Premier Access + TSA PreCheck lanes",true),
+      boarding:_b("Group 1","First Group 1 Premier boarding",true),
+      preboard:_b("Yes","Pre-board with Polaris at some airports"),
+      seat_sel:_b("Yes","Economy Plus at booking",true),
+      exit_row:_b("Yes","Economy Plus + UPP access when space avail"),
+      lounge:_b("2 passes/yr","2 United Club one-time passes per year"),
+      lounge_guest:_b("No","Passes are for member only"),
+      priority_bags:_b("Yes","Priority baggage, first off belt",true),
+      upgrade:_b("Comp. + 2 GPUs","Comp. upgrades + 2 Global Premier Upgrades/yr",true),
+      miles_bonus:_b("50% bonus","50% bonus PQPs",true),
+      fee_waiver:_b("Yes","All standard ticket fees waived",true),
+    },
+    "1K": {
+      free_bags:_b("3 free","1st, 2nd & 3rd bag free",true),
+      bag_weight:_b("32 kg / 70 lbs","Per bag",true),
+      car_seat:_b("Free – uncounted","Does not count toward allowance",true),
+      stroller:_b("Free","Gate or check-in, free",true),
+      ski_bag:_b("Free","Within weight allowance",true),
+      golf_bag:_b("Free","Within weight allowance",true),
+      sport_equip:_b("Waived","Standard sports equipment fees waived",true),
+      overweight_fee:_b("Waived ≤70 lbs","Overweight waived to 70 lbs",true),
+      checkin:_b("Dedicated 1K counter","Dedicated 1K counter at all United airports",true),
+      security:_b("Fastest lanes","Premier Access + dedicated 1K security lanes",true),
+      boarding:_b("Group 1 (first)","First 1K boarding, before other Premiers",true),
+      preboard:_b("Yes","Boards with Polaris cabin passengers",true),
+      seat_sel:_b("Yes – full","Economy Plus + Polaris on upgrade",true),
+      exit_row:_b("Yes","Full Economy Plus at booking",true),
+      lounge:_b("United Club member","Complimentary United Club membership",true),
+      lounge_guest:_b("2 guests/visit","2 comp. United Club guest passes per visit",true),
+      priority_bags:_b("Yes – first off","Premier 1K priority, first off belt",true),
+      upgrade:_b("PlusPoints + GPUs","PlusPoints for confirmed Polaris + GPUs",true),
+      miles_bonus:_b("100% bonus","100% bonus PQPs (double earn)",true),
+      fee_waiver:_b("Full waiver","All fees waived; last-seat partner award access",true),
+    },
+  },
+};
+
+// Reciprocal benefits received as a visiting elite at any partner airline
+const RECIP_BENEFITS = {
+  sa_silver: {
+    free_bags:_b("1 extra piece","1 additional piece beyond standard allowance"),
+    bag_weight:_b("23 kg / 50 lbs","Standard economy weight"),
+    car_seat:_b("Per carrier policy","Typically free; verify with operating carrier"),
+    stroller:_b("Free","Most SA carriers allow 1 stroller free",true),
+    ski_bag:_b("Uses free piece","Counts against your extra piece allowance"),
+    golf_bag:_b("Uses free piece","Counts against your extra piece allowance"),
+    sport_equip:_b("Fees apply","Alliance status does not waive sports equipment fees"),
+    overweight_fee:_b("Not waived","Standard oversize/overweight fees apply"),
+    checkin:_b("Priority counter","Priority check-in at all SA partner airports",true),
+    security:_b("Where available","Priority security where partner offers the lane"),
+    boarding:_b("Priority boarding","Board before general passengers",true),
+    preboard:_b("Yes","Priority boarding ahead of general zones",true),
+    seat_sel:_b("Partner policy","Varies by operating carrier"),
+    exit_row:_b("No guarantee","Exit row at partner's discretion"),
+    lounge:_b("No","Lounge access not included for SA Silver"),
+    lounge_guest:_b("No","N/A"),
+    priority_bags:_b("No","Priority baggage not included for SA Silver"),
+    upgrade:_b("No","Comp. upgrades not included"),
+    miles_bonus:_b("Per partner chart","Per partner's published elite earning rates"),
+    fee_waiver:_b("No","Fee waivers not part of SA Silver reciprocal benefits"),
+  },
+  sa_gold: {
+    free_bags:_b("1 extra piece","1 additional piece at business-class weight",true),
+    bag_weight:_b("Up to 32 kg / 70 lbs","Business class weight for extra piece",true),
+    car_seat:_b("Per carrier policy","Typically free; verify with operating carrier"),
+    stroller:_b("Free","Most SA carriers allow stroller free",true),
+    ski_bag:_b("Varies by carrier","May use extra piece allowance; check ahead"),
+    golf_bag:_b("Varies by carrier","May use extra piece allowance; check ahead"),
+    sport_equip:_b("Fees usually apply","Not universally waived by alliance status"),
+    overweight_fee:_b("Waived ≤70 lbs","Overweight waived within business-class weight",true),
+    checkin:_b("Business class counter","Business class check-in at all SA partners",true),
+    security:_b("Priority lane","Priority security at most SA partner airports",true),
+    boarding:_b("Priority – first group","Typically first boarding group",true),
+    preboard:_b("Yes","Pre-boards ahead of general boarding",true),
+    seat_sel:_b("Many partners offer","Premium seat selection at many SA Gold partners"),
+    exit_row:_b("Varies by partner","Exit row at partner's discretion"),
+    lounge:_b("Business class lounge","Business class lounge access at partner airports",true),
+    lounge_guest:_b("No","Guest not typically included for visiting SA Gold"),
+    priority_bags:_b("Yes","Priority baggage delivery at most SA partners",true),
+    upgrade:_b("No","Complimentary upgrades not included for visiting SA Gold"),
+    miles_bonus:_b("Per partner chart","Per partner's published SA Gold earning rates"),
+    fee_waiver:_b("No","Fee waivers not part of SA Gold reciprocal benefits"),
+  },
+  ow_ruby: {
+    free_bags:_b("1 extra piece","1 additional piece beyond standard economy allowance"),
+    bag_weight:_b("23 kg / 50 lbs","Standard economy weight"),
+    car_seat:_b("Per carrier policy","Most oneworld carriers allow car seat free"),
+    stroller:_b("Free","Stroller/pram free at all oneworld carriers",true),
+    ski_bag:_b("Uses free piece","Counts against your extra piece"),
+    golf_bag:_b("Uses free piece","Counts against your extra piece"),
+    sport_equip:_b("Fees apply","Not waived as Ruby"),
+    overweight_fee:_b("Not waived","Standard fees apply"),
+    checkin:_b("Priority counter","Priority check-in at oneworld partner airports",true),
+    security:_b("Where available","Priority security where partner provides lane"),
+    boarding:_b("Priority boarding","Board before general passengers",true),
+    preboard:_b("Yes","Priority boarding ahead of general boarding",true),
+    seat_sel:_b("Partner policy","Varies by partner airline"),
+    exit_row:_b("No guarantee","At partner's discretion"),
+    lounge:_b("No","No lounge access as Ruby visiting elite"),
+    lounge_guest:_b("No","N/A"),
+    priority_bags:_b("No","Priority bags not included for Ruby"),
+    upgrade:_b("No","Not included"),
+    miles_bonus:_b("Per partner chart","Per partner's published Ruby earning rates"),
+    fee_waiver:_b("No","Not included"),
+  },
+  ow_sapphire: {
+    free_bags:_b("2 extra pieces","2 additional pieces, or to business class allowance",true),
+    bag_weight:_b("32 kg / 70 lbs","Business class weight per piece",true),
+    car_seat:_b("Per carrier policy","Most oneworld carriers allow car seat free"),
+    stroller:_b("Free","Stroller free at all oneworld carriers",true),
+    ski_bag:_b("Varies by partner","Some partners include; check ahead"),
+    golf_bag:_b("Varies by partner","Some partners include; check ahead"),
+    sport_equip:_b("Varies by carrier","Some Sapphire carriers waive standard sports fees"),
+    overweight_fee:_b("Waived ≤70 lbs","Overweight waived within business-class weight",true),
+    checkin:_b("Business class counter","Business class check-in at all OW partners",true),
+    security:_b("Priority lane","Priority security at most oneworld airports",true),
+    boarding:_b("Early priority group","Early priority boarding group",true),
+    preboard:_b("Yes","Pre-boards ahead of general boarding",true),
+    seat_sel:_b("Many partners","Preferred seats at many OW partners at no charge"),
+    exit_row:_b("Many partners","Exit row / premium economy at some partners"),
+    lounge:_b("Business lounge + 1 guest","Business class lounge access + 1 guest",true),
+    lounge_guest:_b("1 guest","1 accompanying guest admitted to business lounge",true),
+    priority_bags:_b("Yes","Priority baggage delivery at most OW partners",true),
+    upgrade:_b("No","Not included for visiting Sapphire"),
+    miles_bonus:_b("Per partner chart","Per partner's published Sapphire earning rates"),
+    fee_waiver:_b("No","Not typically included for visiting Sapphire"),
+  },
+  ow_emerald: {
+    free_bags:_b("3 extra pieces","3 additional pieces or to First/Business allowance",true),
+    bag_weight:_b("32 kg / 70 lbs","First/Business class weight per piece",true),
+    car_seat:_b("Free – uncounted","Car seat free, does not count against allowance",true),
+    stroller:_b("Free","Stroller free, does not count",true),
+    ski_bag:_b("Counted as 1 piece","Counts as 1 of your 3 extra pieces (within weight)"),
+    golf_bag:_b("Counted as 1 piece","Counts as 1 of your 3 extra pieces (within weight)"),
+    sport_equip:_b("Often waived","Standard sports fees frequently waived at Emerald level",true),
+    overweight_fee:_b("Waived ≤70 lbs","Overweight waived within First/Business weight",true),
+    checkin:_b("First class counter","First class check-in counter at all OW partners",true),
+    security:_b("Priority lane","Priority security at all OW partner airports",true),
+    boarding:_b("First to board","Boards immediately after special needs passengers",true),
+    preboard:_b("Yes – First class","Boards with First Class cabin passengers",true),
+    seat_sel:_b("Yes","Premium economy / preferred seats free; F/J on upgrade",true),
+    exit_row:_b("Yes","Complimentary preferred & exit row seats",true),
+    lounge:_b("First class lounges + 1 guest","Access to First & business lounges + 1 guest",true),
+    lounge_guest:_b("1 guest","1 accompanying guest to First class lounge",true),
+    priority_bags:_b("Yes – first off","Priority baggage at all OW partners",true),
+    upgrade:_b("Varies by partner","Some OW partners offer comp. upgrades to Emerald elites"),
+    miles_bonus:_b("Per partner chart","Top-tier earning rates at all OW partners"),
+    fee_waiver:_b("Many partners","Many OW partners waive standard fees for Emerald",true),
+  },
+  st_elite: {
+    free_bags:_b("1 extra piece","1 additional piece beyond standard allowance"),
+    bag_weight:_b("23 kg / 50 lbs","Standard economy weight"),
+    car_seat:_b("Per carrier policy","Typically free at most SkyTeam carriers"),
+    stroller:_b("Free","Stroller free at most SkyTeam carriers",true),
+    ski_bag:_b("Uses free piece","Counts against extra piece allowance"),
+    golf_bag:_b("Uses free piece","Counts against extra piece allowance"),
+    sport_equip:_b("Fees apply","Sports equipment fees not waived"),
+    overweight_fee:_b("Not waived","Standard oversize fees apply"),
+    checkin:_b("Priority counter","Priority check-in at SkyTeam partner airports",true),
+    security:_b("Where available","Where partner airline provides priority lane"),
+    boarding:_b("Priority boarding","Board before general passengers",true),
+    preboard:_b("Yes","Priority boarding",true),
+    seat_sel:_b("Partner policy","Varies by partner"),
+    exit_row:_b("No guarantee","At partner's discretion"),
+    lounge:_b("No","No lounge access as SkyTeam Elite"),
+    lounge_guest:_b("No","N/A"),
+    priority_bags:_b("No","Not included for SkyTeam Elite"),
+    upgrade:_b("No","Not included"),
+    miles_bonus:_b("Per partner chart","Per partner's published elite earning chart"),
+    fee_waiver:_b("No","Not included"),
+  },
+  st_elite_plus: {
+    free_bags:_b("2 extra pieces","2 additional pieces or business class allowance",true),
+    bag_weight:_b("32 kg / 70 lbs","Business class weight per piece",true),
+    car_seat:_b("Per carrier policy","Typically free; verify with carrier"),
+    stroller:_b("Free","Stroller free at all SkyTeam carriers",true),
+    ski_bag:_b("Varies by carrier","Some carriers include as extra piece"),
+    golf_bag:_b("Varies by carrier","Some carriers include as extra piece"),
+    sport_equip:_b("Varies by carrier","Some Elite Plus carriers waive sports fees"),
+    overweight_fee:_b("Waived ≤70 lbs","Overweight waived within business-class weight",true),
+    checkin:_b("Business class counter","Business class check-in at all ST partners",true),
+    security:_b("Priority lane","Priority security at most SkyTeam airports",true),
+    boarding:_b("Early priority group","Early priority boarding group",true),
+    preboard:_b("Yes","Pre-boards ahead of general boarding",true),
+    seat_sel:_b("Many partners","Preferred/extra legroom seats at many ST partners"),
+    exit_row:_b("Many partners","Exit row at some SkyTeam partners"),
+    lounge:_b("Business lounge + 1 guest","Business class lounge + 1 guest at ST partners",true),
+    lounge_guest:_b("1 guest","1 accompanying guest to business lounge",true),
+    priority_bags:_b("Yes","Priority baggage at SkyTeam partners",true),
+    upgrade:_b("No","Not universally included"),
+    miles_bonus:_b("Per partner chart","Per partner's published Elite Plus earning rates"),
+    fee_waiver:_b("Some partners","Fee waivers at select SkyTeam partners"),
+  },
+};
+
 const SAMPLE_USER = {
   name: "Nicholas Li",
   email: "alex@example.com",
@@ -438,6 +926,10 @@ export default function EliteStatusTracker() {
   const [newExpense, setNewExpense] = useState({ category: "flight", description: "", amount: "", currency: "USD", fxRate: 1, date: "", paymentMethod: "", receipt: false, receiptImage: null, notes: "" });
   const [expenseViewTrip, setExpenseViewTrip] = useState(null); // null = overview, tripId = detail
   const [showExpenseReport, setShowExpenseReport] = useState(null); // tripId for report modal
+  const [allianceMyProgram, setAllianceMyProgram] = useState("aa");
+  const [allianceCompare, setAllianceCompare] = useState("ua");
+  const [programSubView, setProgramSubView] = useState("airlines");
+  const [programsHover, setProgramsHover] = useState(false);
   const [customPrograms, setCustomPrograms] = useState([]);
   const [showAddProgram, setShowAddProgram] = useState(false);
   const [newProgram, setNewProgram] = useState({ name: "", category: "airline", logo: "✈️", color: "#0EA5A0", memberId: "", unit: "Points", tiers: "", selectedId: "", search: "" });
@@ -1705,27 +2197,32 @@ Start by introducing yourself briefly in-character with personality, and give an
   };
 
   const renderPrograms = () => {
+    // Delegate alliance benefits sub-view to renderAlliances
+    if (programSubView === "alliances") return renderAlliances();
+
     const customByCategory = {
       airline: customPrograms.filter(p => p.category === "airline"),
       hotel: customPrograms.filter(p => p.category === "hotel"),
       rental: customPrograms.filter(p => p.category === "rental"),
       card: customPrograms.filter(p => p.category === "card"),
     };
-    const categories = [
-      { label: "Airlines", key: "air", programs: [...LOYALTY_PROGRAMS.airlines, ...customByCategory.airline] },
-      { label: "Hotels", key: "htl", programs: [...LOYALTY_PROGRAMS.hotels, ...customByCategory.hotel] },
-      { label: "Rental Cars", key: "car", programs: [...LOYALTY_PROGRAMS.rentals, ...customByCategory.rental] },
-      { label: "Credit Cards", key: "crd", programs: [...LOYALTY_PROGRAMS.creditCards, ...customByCategory.card] },
+
+    const SUB_TABS = [
+      { id: "airlines",     label: "Airlines",              programs: [...LOYALTY_PROGRAMS.airlines, ...customByCategory.airline],   isCard: false },
+      { id: "hotels",       label: "Hotels",                programs: [...LOYALTY_PROGRAMS.hotels, ...customByCategory.hotel],       isCard: false },
+      { id: "credit_cards", label: "Credit Cards",          programs: [...LOYALTY_PROGRAMS.creditCards, ...customByCategory.card],   isCard: true  },
+      { id: "rentals",      label: "Car Rental Programs",   programs: [...LOYALTY_PROGRAMS.rentals, ...customByCategory.rental],     isCard: false },
     ];
+    const activeSub = SUB_TABS.find(t => t.id === programSubView) || SUB_TABS[0];
     const linkedCount = Object.keys(linkedAccounts).length;
 
     return (
       <div>
         {/* Page header */}
-        <div className="c-a1" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32, gap: 16 }}>
+        <div className="c-a1" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24, gap: 16 }}>
           <div>
             <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: css.text3, marginBottom: 8 }}>Loyalty Portfolio</div>
-            <h2 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: isMobile ? 28 : 36, fontWeight: 600, color: css.text, margin: 0, lineHeight: 1.1 }}>Your Programs</h2>
+            <h2 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: isMobile ? 28 : 36, fontWeight: 600, color: css.text, margin: 0, lineHeight: 1.1 }}>{activeSub.label}</h2>
             <p style={{ color: css.text2, fontSize: 13, margin: "8px 0 0", fontFamily: "'Outfit', sans-serif" }}>
               {linkedCount} linked · {Object.values(customByCategory).flat().length} custom programs
             </p>
@@ -1736,11 +2233,28 @@ Start by introducing yourself briefly in-character with personality, and give an
           }}>+ Add Program</button>
         </div>
 
-        {categories.map((cat, ci) => (
-          <div key={cat.key} className={`c-a${ci + 2}`} style={{ marginBottom: 40 }}>
-            {/* Category header */}
+        {/* Sub-tabs — desktop only (mobile uses nav row) */}
+        {!isMobile && (
+          <div style={{ display: "flex", gap: 0, marginBottom: 28, borderBottom: `1px solid ${css.border}` }}>
+            {SUB_TABS.map(tab => (
+              <button key={tab.id} onClick={() => setProgramSubView(tab.id)} style={{
+                padding: "9px 20px", border: "none", cursor: "pointer", background: "transparent",
+                borderBottom: programSubView === tab.id ? `2px solid ${css.accent}` : "2px solid transparent",
+                color: programSubView === tab.id ? css.accent : css.text3,
+                fontSize: 13, fontWeight: programSubView === tab.id ? 600 : 400,
+                fontFamily: "'Outfit', sans-serif", transition: "all 0.15s",
+              }}>{tab.label}</button>
+            ))}
+          </div>
+        )}
+
+        {/* Program grid for active sub-tab */}
+        {(() => {
+          const cat = activeSub;
+          return (
+          <div style={{ marginBottom: 40 }}>
+            {/* Count row */}
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, paddingBottom: 12, borderBottom: `1px solid ${css.border}` }}>
-              <h3 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 22, fontWeight: 500, color: css.text, margin: 0 }}>{cat.label}</h3>
               <span style={{ fontSize: 11, color: css.text3, fontFamily: "'JetBrains Mono', monospace" }}>
                 {cat.programs.filter(p => linkedAccounts[p.id]).length}/{cat.programs.length} linked
               </span>
@@ -1749,7 +2263,7 @@ Start by introducing yourself briefly in-character with personality, and give an
               {cat.programs.map(prog => {
                 const isLinked = !!linkedAccounts[prog.id];
                 const status = isLinked ? getProjectedStatus(prog.id) : null;
-                const isCard = cat.key === "crd";
+                const isCard = cat.isCard;
 
                 return (
                   <div key={prog.id} className="c-card" style={{
@@ -1855,7 +2369,8 @@ Start by introducing yourself briefly in-character with personality, and give an
               })}
             </div>
           </div>
-        ))}
+        );
+        })()}
       </div>
     );
   };
@@ -2373,6 +2888,185 @@ Start by introducing yourself briefly in-character with personality, and give an
     );
   };
 
+  const renderAlliances = () => {
+    const lp = {
+      bg: "#08090a", surface: "#0f1012", surface2: "#17191d",
+      border: "#1e2028", border2: "#2a2640",
+      text: "#f7f8f8", text2: "#d0d6e0", dim: "#8a8f98",
+      teal: "#0EA5A0", tealDim: "rgba(14,165,160,0.10)", tealBord: "rgba(14,165,160,0.22)",
+      mono: "'Space Mono','JetBrains Mono',monospace", sans: "'DM Sans','Outfit',sans-serif",
+      red: "#e05252", green: "#3ecf8e", yellow: "#f5a623",
+    };
+    const st = { color: lp.text, fontFamily: lp.sans };
+
+    // Determine user's elite tier from selected program via projected status
+    const myStatus = getProjectedStatus(allianceMyProgram);
+    const myEliteLevel = myStatus?.currentTier?.name || null;
+    const myAllianceMeta = ALLIANCE_MBR[allianceMyProgram];
+    const myAllianceTierKey = myAllianceMeta && myEliteLevel ? myAllianceMeta.tierMap[myEliteLevel] : null;
+    const myHomeBenefits = HOME_BENEFITS[allianceMyProgram]?.[myEliteLevel] || null;
+
+    // Compare program reciprocal benefits
+    const cmpAllianceMeta = ALLIANCE_MBR[allianceCompare];
+    const cmpTierKey = myAllianceTierKey; // same alliance tier key used for reciprocal lookup
+    const cmpRecipBenefits = cmpTierKey ? RECIP_BENEFITS[cmpTierKey] : null;
+
+    // Alliance-aware compare partner list: same alliance as my program
+    const myAlliance = myAllianceMeta?.alliance;
+    const compareOptions = Object.entries(ALLIANCE_MBR)
+      .filter(([id]) => id !== allianceMyProgram)
+      .map(([id, meta]) => ({ id, meta }));
+
+    // Program display names
+    const PROG_NAMES = {
+      aa: "American Airlines AAdvantage", ua: "United MileagePlus", dl: "Delta SkyMiles",
+      aeroplan: "Air Canada Aeroplan", singapore_kf: "Singapore KrisFlyer",
+      turkish_miles: "Turkish Miles&Smiles", ba_avios: "British Airways Avios",
+      qantas_ff: "Qantas Frequent Flyer", cathay_mp: "Cathay Pacific Marco Polo",
+      flying_blue: "Air France/KLM Flying Blue",
+    };
+
+    // Group BENEFIT_ROWS by category
+    const cats = [...new Set(BENEFIT_ROWS.map(r => r.cat))];
+
+    const Cell = ({ ben }) => {
+      if (!ben) return (
+        <td style={{ padding: "10px 14px", borderBottom: `1px solid ${lp.border}`, color: lp.dim, fontFamily: lp.mono, fontSize: 12 }}>—</td>
+      );
+      return (
+        <td style={{ padding: "10px 14px", borderBottom: `1px solid ${lp.border}`, verticalAlign: "top" }}>
+          <div style={{ fontFamily: lp.mono, fontSize: 12, fontWeight: 700, color: ben.ok ? lp.green : lp.text2 }}>{ben.v}</div>
+          {ben.d && <div style={{ fontFamily: lp.sans, fontSize: 11, color: lp.dim, marginTop: 3, lineHeight: 1.4 }}>{ben.d}</div>}
+        </td>
+      );
+    };
+
+    const noStatus = !myHomeBenefits;
+
+    return (
+      <div style={{ ...st }}>
+        {/* Header */}
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ fontFamily: lp.mono, fontSize: 11, letterSpacing: 2, color: lp.teal, marginBottom: 8, textTransform: "uppercase" }}>Airline Alliances</div>
+          <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: lp.text, letterSpacing: -0.5 }}>Elite Status Comparison</h1>
+          <p style={{ margin: "6px 0 0", color: lp.dim, fontSize: 14 }}>Compare your current home-carrier benefits against reciprocal benefits on a partner airline.</p>
+        </div>
+
+        {/* Selectors row */}
+        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 28 }}>
+          {/* My Program */}
+          <div style={{ flex: 1, minWidth: 220, background: lp.surface, border: `1px solid ${lp.border}`, padding: "16px 20px" }}>
+            <div style={{ fontFamily: lp.mono, fontSize: 10, letterSpacing: 1.5, color: lp.teal, marginBottom: 8, textTransform: "uppercase" }}>My Program</div>
+            <select
+              value={allianceMyProgram}
+              onChange={e => setAllianceMyProgram(e.target.value)}
+              style={{ width: "100%", background: lp.surface2, border: `1px solid ${lp.border2}`, color: lp.text, padding: "8px 10px", fontFamily: lp.mono, fontSize: 12, outline: "none" }}
+            >
+              {Object.entries(PROG_NAMES).map(([id, name]) => (
+                <option key={id} value={id}>{name}</option>
+              ))}
+            </select>
+            {myEliteLevel && myAllianceTierKey && (
+              <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ width: 10, height: 10, background: ALLIANCE_TIER_COLORS[myAllianceTierKey] }} />
+                <span style={{ fontFamily: lp.mono, fontSize: 11, color: lp.text2 }}>{myEliteLevel} → {ALLIANCE_TIER_LABELS[myAllianceTierKey]}</span>
+              </div>
+            )}
+            {myEliteLevel && !myAllianceTierKey && (
+              <div style={{ marginTop: 10, fontFamily: lp.mono, fontSize: 11, color: lp.yellow }}>No alliance tier mapped for "{myEliteLevel}"</div>
+            )}
+            {!myEliteLevel && (
+              <div style={{ marginTop: 10, fontFamily: lp.mono, fontSize: 11, color: lp.dim }}>No elite status on file for this program</div>
+            )}
+          </div>
+
+          {/* Compare airline */}
+          <div style={{ flex: 1, minWidth: 220, background: lp.surface, border: `1px solid ${lp.border}`, padding: "16px 20px" }}>
+            <div style={{ fontFamily: lp.mono, fontSize: 10, letterSpacing: 1.5, color: lp.teal, marginBottom: 8, textTransform: "uppercase" }}>Compare Partner Airline</div>
+            <select
+              value={allianceCompare}
+              onChange={e => setAllianceCompare(e.target.value)}
+              style={{ width: "100%", background: lp.surface2, border: `1px solid ${lp.border2}`, color: lp.text, padding: "8px 10px", fontFamily: lp.mono, fontSize: 12, outline: "none" }}
+            >
+              {compareOptions.map(({ id }) => (
+                <option key={id} value={id}>{PROG_NAMES[id] || id}</option>
+              ))}
+            </select>
+            {cmpAllianceMeta && (
+              <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ width: 10, height: 10, background: cmpAllianceMeta.color }} />
+                <span style={{ fontFamily: lp.mono, fontSize: 11, color: lp.text2 }}>{ALLIANCE_LABELS[cmpAllianceMeta.alliance] || cmpAllianceMeta.alliance}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Alliance tier badge */}
+          {myAllianceTierKey && (
+            <div style={{ flex: 1, minWidth: 220, background: lp.surface, border: `1px solid ${lp.tealBord}`, padding: "16px 20px", borderLeft: `3px solid ${ALLIANCE_TIER_COLORS[myAllianceTierKey]}` }}>
+              <div style={{ fontFamily: lp.mono, fontSize: 10, letterSpacing: 1.5, color: lp.teal, marginBottom: 8, textTransform: "uppercase" }}>Reciprocal Tier</div>
+              <div style={{ fontFamily: lp.mono, fontSize: 14, fontWeight: 700, color: ALLIANCE_TIER_COLORS[myAllianceTierKey] }}>{ALLIANCE_TIER_LABELS[myAllianceTierKey]}</div>
+              <div style={{ fontFamily: lp.sans, fontSize: 12, color: lp.dim, marginTop: 4 }}>
+                {cmpAllianceMeta?.alliance === myAlliance
+                  ? `Same alliance — reciprocal benefits apply on ${PROG_NAMES[allianceCompare] || allianceCompare}`
+                  : `Different alliances — no standard reciprocal benefits`}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {noStatus && (
+          <div style={{ background: lp.surface, border: `1px solid ${lp.border}`, padding: "20px 24px", marginBottom: 24, fontFamily: lp.mono, fontSize: 13, color: lp.yellow }}>
+            No home benefits found for this program/tier combination. Link your loyalty account with an elite status level to see full comparison.
+          </div>
+        )}
+
+        {/* Benefit table */}
+        <div style={{ background: lp.surface, border: `1px solid ${lp.border}`, overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 640 }}>
+            <thead>
+              <tr style={{ background: lp.surface2, borderBottom: `2px solid ${lp.teal}` }}>
+                <th style={{ padding: "12px 14px", textAlign: "left", fontFamily: lp.mono, fontSize: 11, letterSpacing: 1, color: lp.dim, fontWeight: 600, width: "28%" }}>Benefit</th>
+                <th style={{ padding: "12px 14px", textAlign: "left", fontFamily: lp.mono, fontSize: 11, letterSpacing: 1, color: lp.teal, fontWeight: 700 }}>
+                  Your Status ({myEliteLevel || "—"})<br />
+                  <span style={{ color: lp.dim, fontWeight: 400, fontSize: 10 }}>{PROG_NAMES[allianceMyProgram] || allianceMyProgram}</span>
+                </th>
+                <th style={{ padding: "12px 14px", textAlign: "left", fontFamily: lp.mono, fontSize: 11, letterSpacing: 1, color: lp.yellow, fontWeight: 700 }}>
+                  Reciprocal ({ALLIANCE_TIER_LABELS[cmpTierKey] || "—"})<br />
+                  <span style={{ color: lp.dim, fontWeight: 400, fontSize: 10 }}>{PROG_NAMES[allianceCompare] || allianceCompare}</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {cats.map(cat => {
+                const rows = BENEFIT_ROWS.filter(r => r.cat === cat);
+                return [
+                  <tr key={`cat-${cat}`}>
+                    <td colSpan={3} style={{ padding: "8px 14px 4px", background: lp.bg, fontFamily: lp.mono, fontSize: 10, letterSpacing: 2, color: lp.teal, fontWeight: 700, textTransform: "uppercase", borderBottom: `1px solid ${lp.border}` }}>{cat}</td>
+                  </tr>,
+                  ...rows.map(row => (
+                    <tr key={row.id} style={{ background: lp.surface }}>
+                      <td style={{ padding: "10px 14px", borderBottom: `1px solid ${lp.border}`, verticalAlign: "top" }}>
+                        <div style={{ fontFamily: lp.sans, fontSize: 13, fontWeight: 600, color: lp.text2 }}>{row.label}</div>
+                        <div style={{ fontFamily: lp.sans, fontSize: 11, color: lp.dim, marginTop: 2 }}>{row.sub}</div>
+                      </td>
+                      <Cell ben={myHomeBenefits?.[row.id]} />
+                      <Cell ben={cmpRecipBenefits?.[row.id]} />
+                    </tr>
+                  ))
+                ];
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Footer note */}
+        <div style={{ marginTop: 16, padding: "12px 16px", background: lp.surface, border: `1px solid ${lp.border}`, fontFamily: lp.sans, fontSize: 12, color: lp.dim, lineHeight: 1.6 }}>
+          <strong style={{ color: lp.text2 }}>Disclaimer:</strong> Benefits shown are based on published alliance standards and typical carrier implementations. Actual benefits may vary by route, fare class, and carrier. Always verify with the operating carrier before travel.
+        </div>
+      </div>
+    );
+  };
+
   const renderPremium = () => (
     <div>
       {/* Hero */}
@@ -2478,7 +3172,7 @@ Start by introducing yourself briefly in-character with personality, and give an
     { id: "premium", label: "Premium", icon: "💎" },
   ];
 
-  const viewRenderers = { dashboard: renderDashboard, programs: renderPrograms, trips: renderTrips, expenses: renderExpenses, optimizer: renderOptimizer, reports: renderReports, premium: renderPremium };
+  const viewRenderers = { dashboard: renderDashboard, programs: renderPrograms, trips: renderTrips, expenses: renderExpenses, optimizer: renderOptimizer, reports: renderReports, alliances: renderAlliances, premium: renderPremium };
 
   // ============================================================
   // MAIN LAYOUT — Warm Editorial Design System
@@ -2558,22 +3252,74 @@ Start by introducing yourself briefly in-character with personality, and give an
           </div>
 
           {/* Nav pills */}
-          <nav style={{ display: "flex", alignItems: "center", gap: 2, flex: 1, minWidth: 0, overflow: "hidden" }}>
-            {navItems.map(item => (
-              <button key={item.id} onClick={() => setActiveView(item.id)} className="c-nav-btn" style={{
-                display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8,
-                border: "none", cursor: "pointer",
-                background: activeView === item.id ? css.accentBg : "transparent",
-                color: activeView === item.id ? css.accent : css.text2,
-                fontSize: 13, fontWeight: activeView === item.id ? 600 : 400,
-                fontFamily: "'Outfit', sans-serif",
-              }}>
-                <span style={{ fontSize: 14 }}>{item.icon}</span>
-                {item.label}
-                {item.id === "premium" && <span style={{ fontSize: 9, background: css.goldBg, color: css.gold, padding: "2px 6px", borderRadius: 6, fontWeight: 700, border: `1px solid ${D ? "rgba(201,168,76,0.2)" : "rgba(201,168,76,0.3)"}` }}>PRO</span>}
-              </button>
-            ))}
-          </nav>
+          {(() => {
+            const PROG_SUBS = [
+              { id: "airlines",     label: "Airlines" },
+              { id: "hotels",       label: "Hotels" },
+              { id: "credit_cards", label: "Credit Cards" },
+              { id: "rentals",      label: "Car Rental Programs" },
+              { id: "alliances",    label: "Airline Alliance Benefits" },
+            ];
+            return (
+              <nav style={{ display: "flex", alignItems: "center", gap: 2, flex: 1, minWidth: 0, overflow: "hidden" }}>
+                {navItems.map(item => {
+                  if (item.id === "programs") {
+                    return (
+                      <div key="programs" style={{ position: "relative" }}
+                        onMouseEnter={() => setProgramsHover(true)}
+                        onMouseLeave={() => setProgramsHover(false)}
+                      >
+                        <button onClick={() => setActiveView("programs")} className="c-nav-btn" style={{
+                          display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8,
+                          border: "none", cursor: "pointer",
+                          background: activeView === "programs" ? css.accentBg : "transparent",
+                          color: activeView === "programs" ? css.accent : css.text2,
+                          fontSize: 13, fontWeight: activeView === "programs" ? 600 : 400,
+                          fontFamily: "'Outfit', sans-serif",
+                        }}>
+                          <span style={{ fontSize: 14 }}>{item.icon}</span>
+                          {item.label}
+                          <span style={{ fontSize: 9, opacity: 0.6 }}>▾</span>
+                        </button>
+                        {programsHover && (
+                          <div style={{
+                            position: "absolute", top: "100%", left: 0, zIndex: 200,
+                            background: css.surface, border: `1px solid ${css.border}`,
+                            borderRadius: 10, padding: "6px 0", minWidth: 220,
+                            boxShadow: css.shadow, marginTop: 4,
+                          }}>
+                            {PROG_SUBS.map(sub => (
+                              <button key={sub.id} onClick={() => { setActiveView("programs"); setProgramSubView(sub.id); setProgramsHover(false); }} style={{
+                                display: "block", width: "100%", textAlign: "left",
+                                padding: "9px 18px", border: "none", cursor: "pointer",
+                                background: (activeView === "programs" && programSubView === sub.id) ? css.accentBg : "transparent",
+                                color: (activeView === "programs" && programSubView === sub.id) ? css.accent : css.text,
+                                fontSize: 13, fontFamily: "'Outfit', sans-serif",
+                              }}>{sub.label}</button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+                  return (
+                    <button key={item.id} onClick={() => setActiveView(item.id)} className="c-nav-btn" style={{
+                      display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8,
+                      border: "none", cursor: "pointer",
+                      background: activeView === item.id ? css.accentBg : "transparent",
+                      color: activeView === item.id ? css.accent : css.text2,
+                      fontSize: 13, fontWeight: activeView === item.id ? 600 : 400,
+                      fontFamily: "'Outfit', sans-serif",
+                    }}>
+                      <span style={{ fontSize: 14 }}>{item.icon}</span>
+                      {item.label}
+                      {item.id === "premium" && <span style={{ fontSize: 9, background: css.goldBg, color: css.gold, padding: "2px 6px", borderRadius: 6, fontWeight: 700, border: `1px solid ${D ? "rgba(201,168,76,0.2)" : "rgba(201,168,76,0.3)"}` }}>PRO</span>}
+                    </button>
+                  );
+                })}
+              </nav>
+            );
+          })()}
 
           {/* Right: dark mode, avatar, sign out — compact, never wraps */}
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0, marginLeft: 8 }}>
@@ -2616,6 +3362,25 @@ Start by introducing yourself briefly in-character with personality, and give an
               }}><span>{item.icon}</span> {item.label}</button>
             ))}
           </div>
+          {activeView === "programs" && (
+            <div style={{ display: "flex", overflowX: "auto", borderTop: `1px solid ${css.border}`, padding: "0 8px", scrollbarWidth: "none", background: css.surface2 }}>
+              {[
+                { id: "airlines", label: "Airlines" },
+                { id: "hotels", label: "Hotels" },
+                { id: "credit_cards", label: "Credit Cards" },
+                { id: "rentals", label: "Car Rentals" },
+                { id: "alliances", label: "Alliance Benefits" },
+              ].map(sub => (
+                <button key={sub.id} onClick={() => setProgramSubView(sub.id)} style={{
+                  padding: "6px 10px", border: "none", cursor: "pointer", background: "transparent",
+                  borderBottom: programSubView === sub.id ? `2px solid ${css.accent}` : "2px solid transparent",
+                  color: programSubView === sub.id ? css.accent : css.text3,
+                  fontSize: 10, fontWeight: programSubView === sub.id ? 600 : 400,
+                  whiteSpace: "nowrap", flexShrink: 0,
+                }}>{sub.label}</button>
+              ))}
+            </div>
+          )}
         </>)}
       </header>
 
