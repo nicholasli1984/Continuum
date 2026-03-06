@@ -2523,7 +2523,7 @@ Start by introducing yourself briefly in-character with personality, and give an
 
   return (
     <div data-theme={D ? "dark" : "light"} style={{
-      minHeight: "100vh", background: css.bg, display: "flex", flexDirection: "column",
+      height: "100vh", overflow: "hidden", background: css.bg, display: "flex", flexDirection: "column",
       fontFamily: "'Outfit', 'DM Sans', sans-serif", color: css.text, position: "relative",
       transition: "background 0.3s ease, color 0.3s ease",
     }}>
