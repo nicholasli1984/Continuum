@@ -417,16 +417,17 @@ const CC_TRANSFER_PARTNERS = {
   sw_priority:      { currency: "Rapid Rewards Points", directProgram: "sw" },
   atmos_summit:     { currency: "Atmos Points", directProgram: "atmos" },
 };
-// Expanded bonus categories for each card (adding groceries, gas, streaming, rent)
+// Expanded bonus categories — values are either a number (same direct & portal)
+// or { d: directRate, p: portalRate } when portal booking earns a higher multiplier
 const CC_BONUS_EXPANDED = {
-  amex_plat:        { dining: 1, flights: 5, hotels: 5, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
-  amex_gold:        { dining: 4, flights: 3, hotels: 1, groceries: 4, gas: 1, streaming: 1, rent: 0, other: 1 },
-  amex_green:       { dining: 3, flights: 3, hotels: 1, groceries: 1, gas: 3, streaming: 1, rent: 0, other: 1 },
-  chase_sapphire:   { dining: 3, flights: 3, hotels: 3, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
-  chase_sapphire_pref: { dining: 3, flights: 2, hotels: 5, groceries: 1, gas: 1, streaming: 3, rent: 0, other: 1 },
-  cap1_venturex:    { dining: 2, flights: 2, hotels: 10, groceries: 2, gas: 2, streaming: 2, rent: 2, other: 2 },
-  cap1_venture:     { dining: 2, flights: 2, hotels: 2, groceries: 2, gas: 2, streaming: 2, rent: 2, other: 2 },
-  citi_premier:     { dining: 3, flights: 3, hotels: 3, groceries: 3, gas: 3, streaming: 1, rent: 0, other: 1 },
+  amex_plat:        { dining: 1, flights: { d: 5, p: 5 }, hotels: { d: 1, p: 5 }, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
+  amex_gold:        { dining: 4, flights: { d: 3, p: 3 }, hotels: 1, groceries: 4, gas: 1, streaming: 1, rent: 0, other: 1 },
+  amex_green:       { dining: 3, flights: { d: 3, p: 3 }, hotels: 1, groceries: 1, gas: 3, streaming: 1, rent: 0, other: 1 },
+  chase_sapphire:   { dining: 3, flights: { d: 3, p: 5 }, hotels: { d: 3, p: 10 }, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
+  chase_sapphire_pref: { dining: 3, flights: { d: 2, p: 5 }, hotels: { d: 2, p: 5 }, groceries: 1, gas: 1, streaming: 3, rent: 0, other: 1 },
+  cap1_venturex:    { dining: 2, flights: { d: 2, p: 5 }, hotels: { d: 2, p: 10 }, groceries: 2, gas: 2, streaming: 2, rent: 2, other: 2 },
+  cap1_venture:     { dining: 2, flights: { d: 2, p: 5 }, hotels: { d: 2, p: 5 }, groceries: 2, gas: 2, streaming: 2, rent: 2, other: 2 },
+  citi_premier:     { dining: 3, flights: { d: 3, p: 3 }, hotels: { d: 3, p: 3 }, groceries: 3, gas: 3, streaming: 1, rent: 0, other: 1 },
   bilt:             { dining: 3, flights: 2, hotels: 2, groceries: 1, gas: 1, streaming: 1, rent: 1, other: 1 },
   delta_reserve:    { dining: 1, flights: 3, hotels: 1, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
   delta_gold:       { dining: 2, flights: 2, hotels: 1, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
@@ -437,10 +438,17 @@ const CC_BONUS_EXPANDED = {
   hilton_aspire:    { dining: 7, flights: 7, hotels: 14, groceries: 3, gas: 3, streaming: 3, rent: 0, other: 3 },
   hilton_surpass:   { dining: 6, flights: 6, hotels: 12, groceries: 3, gas: 3, streaming: 3, rent: 0, other: 3 },
   hyatt_card:       { dining: 2, flights: 2, hotels: 4, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
-  ihg_premier:      { dining: 2, flights: 2, hotels: 10, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
+  ihg_premier:      { dining: 2, flights: 2, hotels: { d: 5, p: 10 }, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
   sw_priority:      { dining: 2, flights: 3, hotels: 1, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
   atmos_summit:     { dining: 2, flights: 3, hotels: 1, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
 };
+// Helper: resolve a bonus entry to a number given booking mode ("direct" or "portal")
+const _ccRate = (entry, mode) => {
+  if (typeof entry === "number") return entry;
+  if (entry && typeof entry === "object") return mode === "portal" ? (entry.p || entry.d || 0) : (entry.d || 0);
+  return 0;
+};
+const _ccHasPortalBonus = (entry) => typeof entry === "object" && entry.p > entry.d;
 
 // ============================================================
 // AIRLINE ALLIANCES DATA
@@ -1043,6 +1051,7 @@ export default function EliteStatusTracker() {
   const [optimizerHover, setOptimizerHover] = useState(false);
   const [ccOptTarget, setCcOptTarget] = useState("max_points"); // "max_points" | airline/hotel program id
   const [ccOptAmount, setCcOptAmount] = useState("100"); // purchase amount for illustration
+  const [ccBookingMode, setCcBookingMode] = useState("direct"); // "direct" | "portal"
   const [customPrograms, setCustomPrograms] = useState([]);
   const [showAddProgram, setShowAddProgram] = useState(false);
   const [newProgram, setNewProgram] = useState({ name: "", category: "airline", logo: "✈️", color: "#0EA5A0", memberId: "", unit: "Points", tiers: "", selectedId: "", search: "" });
@@ -3391,29 +3400,42 @@ Start by introducing yourself briefly in-character with personality, and give an
           // For a given card and category, calculate effective points toward target
           const getEffectiveRate = (cardId, catId) => {
             const bonus = CC_BONUS_EXPANDED[cardId] || {};
-            const rate = bonus[catId] || bonus.other || 1;
+            const entry = bonus[catId] !== undefined ? bonus[catId] : (bonus.other || 1);
+            const rate = _ccRate(entry, ccBookingMode);
             if (ccOptTarget === "max_points") return rate;
-            // Check if card can transfer to target program
             const tp = CC_TRANSFER_PARTNERS[cardId];
             if (!tp) return 0;
             if (tp.directProgram === ccOptTarget) return rate;
             if (tp.partners && tp.partners.includes(ccOptTarget)) return rate;
-            return 0; // Card can't reach this target program
+            return 0;
+          };
+          // Check if a card/category combo has a portal bonus
+          const hasPortalBonus = (cardId, catId) => {
+            const bonus = CC_BONUS_EXPANDED[cardId] || {};
+            const entry = bonus[catId];
+            return _ccHasPortalBonus(entry);
           };
 
           // For each spending category, find the best card
           const categoryResults = CC_SPENDING_CATS.map(cat => {
-            const cardRanking = cards.map(card => ({
-              card,
-              rate: getEffectiveRate(card.id, cat.id),
-              currency: CC_TRANSFER_PARTNERS[card.id]?.currency || card.unit,
-              canReachTarget: ccOptTarget === "max_points" || (() => {
-                const tp = CC_TRANSFER_PARTNERS[card.id];
-                if (!tp) return false;
-                if (tp.directProgram === ccOptTarget) return true;
-                return tp.partners && tp.partners.includes(ccOptTarget);
-              })(),
-            })).filter(r => r.rate > 0).sort((a, b) => b.rate - a.rate);
+            const cardRanking = cards.map(card => {
+              const rate = getEffectiveRate(card.id, cat.id);
+              const portalBonus = hasPortalBonus(card.id, cat.id);
+              const bonus = CC_BONUS_EXPANDED[card.id] || {};
+              const entry = bonus[cat.id];
+              const directRate = _ccRate(entry, "direct");
+              const portalRate = _ccRate(entry, "portal");
+              return {
+                card, rate, directRate, portalRate, portalBonus,
+                currency: CC_TRANSFER_PARTNERS[card.id]?.currency || card.unit,
+                canReachTarget: ccOptTarget === "max_points" || (() => {
+                  const tp = CC_TRANSFER_PARTNERS[card.id];
+                  if (!tp) return false;
+                  if (tp.directProgram === ccOptTarget) return true;
+                  return tp.partners && tp.partners.includes(ccOptTarget);
+                })(),
+              };
+            }).filter(r => r.rate > 0).sort((a, b) => b.rate - a.rate);
             return { ...cat, ranking: cardRanking, best: cardRanking[0] || null };
           });
 
@@ -3467,6 +3489,28 @@ Start by introducing yourself briefly in-character with personality, and give an
                     </div>
                   </label>
                 </div>
+
+                {/* Booking mode toggle */}
+                <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: css.text3 }}>Booking Method</div>
+                  <div style={{ display: "flex", borderRadius: 8, overflow: "hidden", border: `1px solid ${css.border}` }}>
+                    {[
+                      { id: "direct", label: "Book Direct", desc: "Book on airline/hotel website" },
+                      { id: "portal", label: "Card Travel Portal", desc: "Book via card issuer portal" },
+                    ].map(mode => (
+                      <button key={mode.id} onClick={() => setCcBookingMode(mode.id)} style={{
+                        padding: "7px 16px", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600,
+                        background: ccBookingMode === mode.id ? css.accentBg : css.surface2,
+                        color: ccBookingMode === mode.id ? css.accent : css.text3,
+                        borderRight: mode.id === "direct" ? `1px solid ${css.border}` : "none",
+                      }}>{mode.label}</button>
+                    ))}
+                  </div>
+                  <span style={{ fontSize: 11, color: css.text3, fontStyle: "italic" }}>
+                    {ccBookingMode === "portal" ? "Rates reflect booking through Chase Travel, Amex Travel, Capital One Travel, etc." : "Rates reflect paying directly on airline/hotel websites with your card."}
+                  </span>
+                </div>
+
                 {targetProg && (
                   <div style={{ fontSize: 12, color: css.text2, marginTop: 10 }}>
                     Showing which card earns the most <strong style={{ color: targetProg.color }}>{targetProg.name}</strong> {targetProg.unit} via direct earning or transfer partners.
@@ -3511,6 +3555,8 @@ Start by introducing yourself briefly in-character with personality, and give an
                           {cat.best ? (
                             <div style={{ fontSize: 11, color: css.text3 }}>
                               Use <strong style={{ color: css.accent }}>{cat.best.card.name}</strong> — <span style={{ fontFamily: "'JetBrains Mono', monospace", color: css.gold }}>{cat.best.rate}x</span> {cat.best.currency}
+                              {cat.best.portalBonus && ccBookingMode === "portal" && <span style={{ fontSize: 9, fontWeight: 700, color: css.warning, background: css.warningBg, padding: "1px 6px", borderRadius: 6, marginLeft: 6, border: `1px solid ${css.warning}30` }}>PORTAL RATE</span>}
+                              {cat.best.portalBonus && ccBookingMode === "direct" && <span style={{ fontSize: 9, color: css.text3, marginLeft: 6 }}>({cat.best.portalRate}x via portal)</span>}
                             </div>
                           ) : (
                             <div style={{ fontSize: 11, color: css.text3 }}>No linked card earns toward this target</div>
@@ -3539,6 +3585,8 @@ Start by introducing yourself briefly in-character with personality, and give an
                             <ProgramLogo prog={r.card} size={14} />
                             <span style={{ fontWeight: i === 0 ? 600 : 400 }}>{r.card.name.split(" ")[0]}</span>
                             <span style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, color: i === 0 ? css.accent : css.text3 }}>{r.rate}x</span>
+                            {r.portalBonus && ccBookingMode === "portal" && <span style={{ fontSize: 8, color: css.warning, fontWeight: 700 }}>P</span>}
+                            {r.portalBonus && ccBookingMode === "direct" && r.portalRate > r.directRate && <span style={{ fontSize: 8, color: css.text3 }}>({r.portalRate}x P)</span>}
                           </div>
                         ))}
                       </div>
@@ -3620,14 +3668,22 @@ Start by introducing yourself briefly in-character with personality, and give an
                         {CC_SPENDING_CATS.map(cat => {
                           const rate = getEffectiveRate(card.id, cat.id);
                           const isBest = categoryResults.find(c => c.id === cat.id)?.best?.card.id === card.id;
+                          const isPortal = hasPortalBonus(card.id, cat.id);
                           return (
                             <td key={cat.id} style={{
                               padding: "8px", textAlign: "center", fontFamily: "'JetBrains Mono', monospace",
                               fontWeight: isBest ? 700 : 400,
                               color: rate === 0 ? css.text3 + "60" : isBest ? css.accent : css.text,
                               background: isBest ? css.accentBg : "transparent",
+                              position: "relative",
                             }}>
                               {rate === 0 ? "—" : `${rate}x`}
+                              {isPortal && ccBookingMode === "portal" && rate > 0 && <span style={{ position: "absolute", top: 2, right: 2, fontSize: 7, color: css.warning, fontWeight: 700 }}>P</span>}
+                              {isPortal && ccBookingMode === "direct" && rate > 0 && (() => {
+                                const bonus = CC_BONUS_EXPANDED[card.id] || {};
+                                const pRate = _ccRate(bonus[cat.id], "portal");
+                                return pRate > rate ? <div style={{ fontSize: 8, color: css.text3, fontWeight: 400 }}>{pRate}x via P</div> : null;
+                              })()}
                             </td>
                           );
                         })}
