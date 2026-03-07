@@ -2906,13 +2906,14 @@ Start by introducing yourself briefly in-character with personality, and give an
     const myAllianceTierKey = myAllianceMeta && myEliteLevel ? myAllianceMeta.tierMap[myEliteLevel] : null;
     const myHomeBenefits = HOME_BENEFITS[allianceMyProgram]?.[myEliteLevel] || null;
 
-    // Compare program reciprocal benefits
+    // Compare program — only show reciprocal benefits if same alliance
     const cmpAllianceMeta = ALLIANCE_MBR[allianceCompare];
-    const cmpTierKey = myAllianceTierKey; // same alliance tier key used for reciprocal lookup
+    const myAlliance = myAllianceMeta?.alliance;
+    const cmpAlliance = cmpAllianceMeta?.alliance;
+    const sameAlliance = !!(myAlliance && cmpAlliance && myAlliance === cmpAlliance);
+    const cmpTierKey = sameAlliance ? myAllianceTierKey : null;
     const cmpRecipBenefits = cmpTierKey ? RECIP_BENEFITS[cmpTierKey] : null;
 
-    // Alliance-aware compare partner list: same alliance as my program
-    const myAlliance = myAllianceMeta?.alliance;
     const compareOptions = Object.entries(ALLIANCE_MBR)
       .filter(([id]) => id !== allianceMyProgram)
       .map(([id, meta]) => ({ id, meta }));
@@ -3000,16 +3001,33 @@ Start by introducing yourself briefly in-character with personality, and give an
             )}
           </div>
 
-          {/* Alliance tier badge */}
+          {/* Alliance status badge */}
           {myAllianceTierKey && (
-            <div style={{ flex: 1, minWidth: 220, background: lp.surface, border: `1px solid ${lp.tealBord}`, padding: "16px 20px", borderLeft: `3px solid ${ALLIANCE_TIER_COLORS[myAllianceTierKey]}` }}>
-              <div style={{ fontFamily: lp.mono, fontSize: 10, letterSpacing: 1.5, color: lp.teal, marginBottom: 8, textTransform: "uppercase" }}>Reciprocal Tier</div>
-              <div style={{ fontFamily: lp.mono, fontSize: 14, fontWeight: 700, color: ALLIANCE_TIER_COLORS[myAllianceTierKey] }}>{ALLIANCE_TIER_LABELS[myAllianceTierKey]}</div>
-              <div style={{ fontFamily: lp.sans, fontSize: 12, color: lp.dim, marginTop: 4 }}>
-                {cmpAllianceMeta?.alliance === myAlliance
-                  ? `Same alliance — reciprocal benefits apply on ${PROG_NAMES[allianceCompare] || allianceCompare}`
-                  : `Different alliances — no standard reciprocal benefits`}
+            <div style={{
+              flex: 1, minWidth: 220, background: lp.surface, padding: "16px 20px",
+              border: `1px solid ${sameAlliance ? lp.tealBord : lp.border}`,
+              borderLeft: `3px solid ${sameAlliance ? ALLIANCE_TIER_COLORS[myAllianceTierKey] : lp.red}`,
+            }}>
+              <div style={{ fontFamily: lp.mono, fontSize: 10, letterSpacing: 1.5, color: sameAlliance ? lp.teal : lp.red, marginBottom: 8, textTransform: "uppercase" }}>
+                {sameAlliance ? "Reciprocal Tier" : "No Reciprocal Benefits"}
               </div>
+              {sameAlliance ? (
+                <>
+                  <div style={{ fontFamily: lp.mono, fontSize: 14, fontWeight: 700, color: ALLIANCE_TIER_COLORS[myAllianceTierKey] }}>{ALLIANCE_TIER_LABELS[myAllianceTierKey]}</div>
+                  <div style={{ fontFamily: lp.sans, fontSize: 12, color: lp.dim, marginTop: 4 }}>
+                    {PROG_NAMES[allianceCompare] || allianceCompare} will recognize you as <strong style={{ color: lp.text2 }}>{ALLIANCE_TIER_LABELS[myAllianceTierKey]}</strong>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ fontFamily: lp.mono, fontSize: 13, fontWeight: 700, color: lp.red }}>
+                    {ALLIANCE_LABELS[myAlliance]} ≠ {ALLIANCE_LABELS[cmpAlliance] || cmpAlliance}
+                  </div>
+                  <div style={{ fontFamily: lp.sans, fontSize: 12, color: lp.dim, marginTop: 4 }}>
+                    Your {ALLIANCE_LABELS[myAlliance]} status earns no reciprocal benefits on {PROG_NAMES[allianceCompare] || allianceCompare}. Select a {ALLIANCE_LABELS[myAlliance]} partner to see benefits.
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>
@@ -3020,7 +3038,40 @@ Start by introducing yourself briefly in-character with personality, and give an
           </div>
         )}
 
-        {/* Benefit table */}
+        {/* Different alliance — no reciprocal benefits panel */}
+        {!sameAlliance && myAlliance && cmpAlliance && (
+          <div style={{ background: lp.surface, border: `1px solid ${lp.border}`, borderLeft: `4px solid ${lp.red}`, padding: "28px 32px", textAlign: "center" }}>
+            <div style={{ fontFamily: lp.mono, fontSize: 28, marginBottom: 16 }}>✗</div>
+            <div style={{ fontFamily: lp.mono, fontSize: 15, fontWeight: 700, color: lp.text, marginBottom: 10 }}>
+              No Reciprocal Benefits
+            </div>
+            <div style={{ fontFamily: lp.sans, fontSize: 14, color: lp.dim, maxWidth: 480, margin: "0 auto", lineHeight: 1.7 }}>
+              <strong style={{ color: lp.text2 }}>{PROG_NAMES[allianceMyProgram]}</strong> is a <strong style={{ color: ALLIANCE_TIER_COLORS[myAllianceTierKey] || lp.teal }}>{ALLIANCE_LABELS[myAlliance]}</strong> member.
+              {" "}<strong style={{ color: lp.text2 }}>{PROG_NAMES[allianceCompare]}</strong> is a <strong style={{ color: lp.yellow }}>{ALLIANCE_LABELS[cmpAlliance]}</strong> member.
+            </div>
+            <div style={{ fontFamily: lp.sans, fontSize: 13, color: lp.dim, marginTop: 12, lineHeight: 1.6 }}>
+              Your {myEliteLevel} status on {ALLIANCE_LABELS[myAlliance]} does not grant any reciprocal elite benefits when flying {PROG_NAMES[allianceCompare]}.
+              To see reciprocal benefits, select a <strong style={{ color: lp.text2 }}>{ALLIANCE_LABELS[myAlliance]}</strong> partner airline.
+            </div>
+            {/* Show which programs ARE valid partners */}
+            <div style={{ marginTop: 20, display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
+              <span style={{ fontFamily: lp.mono, fontSize: 10, color: lp.dim, alignSelf: "center", letterSpacing: 1 }}>{ALLIANCE_LABELS[myAlliance]} PARTNERS:</span>
+              {Object.entries(ALLIANCE_MBR)
+                .filter(([id, meta]) => id !== allianceMyProgram && meta.alliance === myAlliance)
+                .map(([id]) => (
+                  <button key={id} onClick={() => setAllianceCompare(id)} style={{
+                    padding: "5px 12px", fontFamily: lp.mono, fontSize: 11, cursor: "pointer",
+                    background: lp.surface2, border: `1px solid ${lp.border2}`, color: lp.text2,
+                  }}>
+                    {PROG_NAMES[id] || id}
+                  </button>
+                ))}
+            </div>
+          </div>
+        )}
+
+        {/* Benefit table — only when same alliance */}
+        {sameAlliance && (
         <div style={{ background: lp.surface, border: `1px solid ${lp.border}`, overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 640 }}>
             <thead>
@@ -3031,8 +3082,8 @@ Start by introducing yourself briefly in-character with personality, and give an
                   <span style={{ color: lp.dim, fontWeight: 400, fontSize: 10 }}>{PROG_NAMES[allianceMyProgram] || allianceMyProgram}</span>
                 </th>
                 <th style={{ padding: "12px 14px", textAlign: "left", fontFamily: lp.mono, fontSize: 11, letterSpacing: 1, color: lp.yellow, fontWeight: 700 }}>
-                  Reciprocal ({ALLIANCE_TIER_LABELS[cmpTierKey] || "—"})<br />
-                  <span style={{ color: lp.dim, fontWeight: 400, fontSize: 10 }}>{PROG_NAMES[allianceCompare] || allianceCompare}</span>
+                  As {ALLIANCE_TIER_LABELS[cmpTierKey]} on {PROG_NAMES[allianceCompare] || allianceCompare}<br />
+                  <span style={{ color: ALLIANCE_TIER_COLORS[cmpTierKey], fontWeight: 600, fontSize: 10 }}>{ALLIANCE_LABELS[myAlliance]} Reciprocal</span>
                 </th>
               </tr>
             </thead>
@@ -3058,6 +3109,7 @@ Start by introducing yourself briefly in-character with personality, and give an
             </tbody>
           </table>
         </div>
+        )}
 
         {/* Footer note */}
         <div style={{ marginTop: 16, padding: "12px 16px", background: lp.surface, border: `1px solid ${lp.border}`, fontFamily: lp.sans, fontSize: 12, color: lp.dim, lineHeight: 1.6 }}>
