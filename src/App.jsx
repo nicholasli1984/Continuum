@@ -405,8 +405,8 @@ const HOME_BENEFITS = {
       overweight_fee:_b("Not waived","Overweight/oversize fees still apply"),
       checkin:_b("Priority counter","Dedicated priority check-in lane",true),
       security:_b("Priority lane","Priority security at most AA hubs",true),
-      boarding:_b("Group 1","Boards immediately after F/J cabin",true),
-      preboard:_b("Yes","Pre-boards before general boarding",true),
+      boarding:_b("Group 4","Boards in Group 4, after ExPlat, Plat Pro, and Platinum"),
+      preboard:_b("No","No pre-boarding; Group 4 is after general elite groups"),
       seat_sel:_b("Yes","Free preferred seat selection at booking",true),
       exit_row:_b("Yes – MCE","Free Main Cabin Extra seats incl. exit rows",true),
       lounge:_b("No","No Admiral's Club in economy ticket"),
@@ -427,8 +427,8 @@ const HOME_BENEFITS = {
       overweight_fee:_b("Not waived","Oversize/overweight fees still apply"),
       checkin:_b("Priority counter","Dedicated priority counter",true),
       security:_b("Priority + Flagship","Flagship Access lanes at key hubs",true),
-      boarding:_b("Group 1","First boarding group after F/J",true),
-      preboard:_b("Yes","Pre-boards before general boarding",true),
+      boarding:_b("Group 3","Boards in Group 3, after Executive Platinum and Platinum Pro",true),
+      preboard:_b("Yes","Boards before general cabin groups",true),
       seat_sel:_b("Yes","Free preferred seat at booking",true),
       exit_row:_b("Yes – MCE","Free Main Cabin Extra + exit rows",true),
       lounge:_b("No","No Admiral's Club (must buy or use credit card benefit)"),
@@ -449,8 +449,8 @@ const HOME_BENEFITS = {
       overweight_fee:_b("Waived ≤70 lbs","Overweight fee waived up to 70 lbs",true),
       checkin:_b("Flagship check-in","Flagship First check-in at hubs",true),
       security:_b("Flagship Access","Dedicated Flagship Access lanes at hubs",true),
-      boarding:_b("Group 1","Board after F/J cabin",true),
-      preboard:_b("Yes","First group to board after F/J pre-board",true),
+      boarding:_b("Group 2","Boards in Group 2, after Executive Platinum only",true),
+      preboard:_b("Yes","Boards well ahead of general cabin groups",true),
       seat_sel:_b("Yes – full","Full seat selection incl. MCE",true),
       exit_row:_b("Yes – MCE","All MCE and exit row seats free",true),
       lounge:_b("No","No Admiral's Club with economy ticket"),
@@ -3337,19 +3337,23 @@ Start by introducing yourself briefly in-character with personality, and give an
                         {programsHover && (
                           <div style={{
                             position: "absolute", top: "100%", left: 0, zIndex: 200,
-                            background: css.surface, border: `1px solid ${css.border}`,
-                            borderRadius: 10, padding: "6px 0", minWidth: 220,
-                            boxShadow: css.shadow, marginTop: 4,
+                            paddingTop: 6,
                           }}>
-                            {PROG_SUBS.map(sub => (
-                              <button key={sub.id} onClick={() => { setActiveView("programs"); setProgramSubView(sub.id); setProgramsHover(false); }} style={{
-                                display: "block", width: "100%", textAlign: "left",
-                                padding: "9px 18px", border: "none", cursor: "pointer",
-                                background: (activeView === "programs" && programSubView === sub.id) ? css.accentBg : "transparent",
-                                color: (activeView === "programs" && programSubView === sub.id) ? css.accent : css.text,
-                                fontSize: 13, fontFamily: "'Outfit', sans-serif",
-                              }}>{sub.label}</button>
-                            ))}
+                            <div style={{
+                              background: css.surface, border: `1px solid ${css.border}`,
+                              borderRadius: 10, padding: "6px 0", minWidth: 220,
+                              boxShadow: css.shadow,
+                            }}>
+                              {PROG_SUBS.map(sub => (
+                                <button key={sub.id} onClick={() => { setActiveView("programs"); setProgramSubView(sub.id); setProgramsHover(false); }} style={{
+                                  display: "block", width: "100%", textAlign: "left",
+                                  padding: "9px 18px", border: "none", cursor: "pointer",
+                                  background: (activeView === "programs" && programSubView === sub.id) ? css.accentBg : "transparent",
+                                  color: (activeView === "programs" && programSubView === sub.id) ? css.accent : css.text,
+                                  fontSize: 13, fontFamily: "'Outfit', sans-serif",
+                                }}>{sub.label}</button>
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>
