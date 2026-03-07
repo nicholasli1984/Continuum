@@ -380,6 +380,69 @@ const AIRCRAFT_TYPES = {
 };
 
 // ============================================================
+// CREDIT CARD TRANSFER PARTNERS & SPENDING CATEGORIES
+// ============================================================
+const CC_SPENDING_CATS = [
+  { id: "dining",    label: "Dining",         icon: "🍽️" },
+  { id: "flights",   label: "Flights",        icon: "✈️" },
+  { id: "hotels",    label: "Hotels",         icon: "🏨" },
+  { id: "groceries", label: "Groceries",      icon: "🛒" },
+  { id: "gas",       label: "Gas / Transit",  icon: "⛽" },
+  { id: "streaming", label: "Streaming",      icon: "📺" },
+  { id: "rent",      label: "Rent",           icon: "🏠" },
+  { id: "other",     label: "Everything Else", icon: "💳" },
+];
+// Transfer partner mapping: card currency → airline/hotel programs (1:1 unless noted)
+const CC_TRANSFER_PARTNERS = {
+  amex_plat:        { currency: "Membership Rewards", partners: ["dl","ba_avios","flying_blue","aeroplan","singapore_kf","emirates_skywards","cathay_mp","virgin_fc","marriott","hilton"] },
+  amex_gold:        { currency: "Membership Rewards", partners: ["dl","ba_avios","flying_blue","aeroplan","singapore_kf","emirates_skywards","cathay_mp","virgin_fc","marriott","hilton"] },
+  amex_green:       { currency: "Membership Rewards", partners: ["dl","ba_avios","flying_blue","aeroplan","singapore_kf","emirates_skywards","cathay_mp","virgin_fc","marriott","hilton"] },
+  chase_sapphire:   { currency: "Ultimate Rewards", partners: ["ua","sw","ba_avios","flying_blue","aeroplan","singapore_kf","emirates_skywards","virgin_fc","marriott","hyatt","ihg"] },
+  chase_sapphire_pref: { currency: "Ultimate Rewards", partners: ["ua","sw","ba_avios","flying_blue","aeroplan","singapore_kf","emirates_skywards","virgin_fc","marriott","hyatt","ihg"] },
+  cap1_venturex:    { currency: "Capital One Miles", partners: ["aa","dl","ua","b6","ba_avios","flying_blue","aeroplan","singapore_kf","emirates_skywards","turkish_miles","qantas_ff","cathay_mp","virgin_fc"] },
+  cap1_venture:     { currency: "Capital One Miles", partners: ["aa","dl","ua","b6","ba_avios","flying_blue","aeroplan","singapore_kf","emirates_skywards","turkish_miles","qantas_ff","cathay_mp","virgin_fc"] },
+  citi_premier:     { currency: "ThankYou Points", partners: ["aa","b6","flying_blue","singapore_kf","turkish_miles","qantas_ff","cathay_mp","virgin_fc"] },
+  bilt:             { currency: "Bilt Points", partners: ["aa","ua","ba_avios","flying_blue","aeroplan","turkish_miles","cathay_mp","virgin_fc","marriott","hyatt","ihg"] },
+  // Co-brand cards earn directly into the program, no transfer
+  delta_reserve:    { currency: "SkyMiles", directProgram: "dl" },
+  delta_gold:       { currency: "SkyMiles", directProgram: "dl" },
+  united_club:      { currency: "MileagePlus Miles", directProgram: "ua" },
+  united_explorer:  { currency: "MileagePlus Miles", directProgram: "ua" },
+  aa_exec:          { currency: "AAdvantage Miles", directProgram: "aa" },
+  marriott_boundless: { currency: "Bonvoy Points", directProgram: "marriott" },
+  hilton_aspire:    { currency: "Hilton Points", directProgram: "hilton" },
+  hilton_surpass:   { currency: "Hilton Points", directProgram: "hilton" },
+  hyatt_card:       { currency: "Hyatt Points", directProgram: "hyatt" },
+  ihg_premier:      { currency: "IHG Points", directProgram: "ihg" },
+  sw_priority:      { currency: "Rapid Rewards Points", directProgram: "sw" },
+  atmos_summit:     { currency: "Atmos Points", directProgram: "atmos" },
+};
+// Expanded bonus categories for each card (adding groceries, gas, streaming, rent)
+const CC_BONUS_EXPANDED = {
+  amex_plat:        { dining: 1, flights: 5, hotels: 5, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
+  amex_gold:        { dining: 4, flights: 3, hotels: 1, groceries: 4, gas: 1, streaming: 1, rent: 0, other: 1 },
+  amex_green:       { dining: 3, flights: 3, hotels: 1, groceries: 1, gas: 3, streaming: 1, rent: 0, other: 1 },
+  chase_sapphire:   { dining: 3, flights: 3, hotels: 3, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
+  chase_sapphire_pref: { dining: 3, flights: 2, hotels: 5, groceries: 1, gas: 1, streaming: 3, rent: 0, other: 1 },
+  cap1_venturex:    { dining: 2, flights: 2, hotels: 10, groceries: 2, gas: 2, streaming: 2, rent: 2, other: 2 },
+  cap1_venture:     { dining: 2, flights: 2, hotels: 2, groceries: 2, gas: 2, streaming: 2, rent: 2, other: 2 },
+  citi_premier:     { dining: 3, flights: 3, hotels: 3, groceries: 3, gas: 3, streaming: 1, rent: 0, other: 1 },
+  bilt:             { dining: 3, flights: 2, hotels: 2, groceries: 1, gas: 1, streaming: 1, rent: 1, other: 1 },
+  delta_reserve:    { dining: 1, flights: 3, hotels: 1, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
+  delta_gold:       { dining: 2, flights: 2, hotels: 1, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
+  united_club:      { dining: 2, flights: 4, hotels: 2, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
+  united_explorer:  { dining: 2, flights: 2, hotels: 2, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
+  aa_exec:          { dining: 1, flights: 4, hotels: 4, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
+  marriott_boundless: { dining: 2, flights: 2, hotels: 6, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
+  hilton_aspire:    { dining: 7, flights: 7, hotels: 14, groceries: 3, gas: 3, streaming: 3, rent: 0, other: 3 },
+  hilton_surpass:   { dining: 6, flights: 6, hotels: 12, groceries: 3, gas: 3, streaming: 3, rent: 0, other: 3 },
+  hyatt_card:       { dining: 2, flights: 2, hotels: 4, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
+  ihg_premier:      { dining: 2, flights: 2, hotels: 10, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
+  sw_priority:      { dining: 2, flights: 3, hotels: 1, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
+  atmos_summit:     { dining: 2, flights: 3, hotels: 1, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
+};
+
+// ============================================================
 // AIRLINE ALLIANCES DATA
 // ============================================================
 const ALLIANCE_MBR = {
@@ -978,6 +1041,8 @@ export default function EliteStatusTracker() {
   const [optimizerTripId, setOptimizerTripId] = useState(null);
   const [allianceGoal, setAllianceGoal] = useState("sa_gold");
   const [optimizerHover, setOptimizerHover] = useState(false);
+  const [ccOptTarget, setCcOptTarget] = useState("max_points"); // "max_points" | airline/hotel program id
+  const [ccOptAmount, setCcOptAmount] = useState("100"); // purchase amount for illustration
   const [customPrograms, setCustomPrograms] = useState([]);
   const [showAddProgram, setShowAddProgram] = useState(false);
   const [newProgram, setNewProgram] = useState({ name: "", category: "airline", logo: "✈️", color: "#0EA5A0", memberId: "", unit: "Points", tiers: "", selectedId: "", search: "" });
@@ -3079,7 +3144,7 @@ Start by introducing yourself briefly in-character with personality, and give an
       return candidates.sort((a, b) => a.remaining - b.remaining);
     })();
 
-    const OPT_TAB_LABELS = { global: "Global Status Optimizer", trip: "Trip-by-Trip Comparison", alliance: "Alliance Goal Optimizer" };
+    const OPT_TAB_LABELS = { global: "Global Status Optimizer", trip: "Trip-by-Trip Comparison", alliance: "Alliance Goal Optimizer", cards: "Credit Card Optimizer" };
 
     const BarFill = ({ pct, color }) => (
       <div style={{ width: "100%", height: 6, borderRadius: 3, background: css.surface2, overflow: "hidden" }}>
@@ -3307,6 +3372,273 @@ Start by introducing yourself briefly in-character with personality, and give an
             </div>
           </div>
         )}
+
+        {/* ── SECTION 4: Credit Card Optimizer ── */}
+        {optimizerTab === "cards" && (() => {
+          const allCards = LOYALTY_PROGRAMS.creditCards;
+          const linkedCards = allCards.filter(c => linkedAccounts[c.id]);
+          const cards = linkedCards.length > 0 ? linkedCards : allCards;
+          const usingAll = linkedCards.length === 0;
+
+          // Build target options: "max_points", plus all airline & hotel programs reachable via transfer
+          const targetOptions = [
+            { id: "max_points", label: "Highest Points (Any Program)", group: "General" },
+          ];
+          const airlineTargets = LOYALTY_PROGRAMS.airlines.map(a => ({ id: a.id, label: `${a.name} (${a.unit})`, group: "Airlines" }));
+          const hotelTargets = LOYALTY_PROGRAMS.hotels.map(h => ({ id: h.id, label: `${h.name} (${h.unit})`, group: "Hotels" }));
+          targetOptions.push(...airlineTargets, ...hotelTargets);
+
+          // For a given card and category, calculate effective points toward target
+          const getEffectiveRate = (cardId, catId) => {
+            const bonus = CC_BONUS_EXPANDED[cardId] || {};
+            const rate = bonus[catId] || bonus.other || 1;
+            if (ccOptTarget === "max_points") return rate;
+            // Check if card can transfer to target program
+            const tp = CC_TRANSFER_PARTNERS[cardId];
+            if (!tp) return 0;
+            if (tp.directProgram === ccOptTarget) return rate;
+            if (tp.partners && tp.partners.includes(ccOptTarget)) return rate;
+            return 0; // Card can't reach this target program
+          };
+
+          // For each spending category, find the best card
+          const categoryResults = CC_SPENDING_CATS.map(cat => {
+            const cardRanking = cards.map(card => ({
+              card,
+              rate: getEffectiveRate(card.id, cat.id),
+              currency: CC_TRANSFER_PARTNERS[card.id]?.currency || card.unit,
+              canReachTarget: ccOptTarget === "max_points" || (() => {
+                const tp = CC_TRANSFER_PARTNERS[card.id];
+                if (!tp) return false;
+                if (tp.directProgram === ccOptTarget) return true;
+                return tp.partners && tp.partners.includes(ccOptTarget);
+              })(),
+            })).filter(r => r.rate > 0).sort((a, b) => b.rate - a.rate);
+            return { ...cat, ranking: cardRanking, best: cardRanking[0] || null };
+          });
+
+          // Overall summary: which card is best across all categories
+          const cardWins = {};
+          categoryResults.forEach(cat => {
+            if (cat.best) {
+              cardWins[cat.best.card.id] = (cardWins[cat.best.card.id] || 0) + 1;
+            }
+          });
+          const topCardId = Object.entries(cardWins).sort((a, b) => b[1] - a[1])[0]?.[0];
+          const topCard = cards.find(c => c.id === topCardId);
+
+          // Target program info
+          const targetProg = ccOptTarget !== "max_points" ? [...LOYALTY_PROGRAMS.airlines, ...LOYALTY_PROGRAMS.hotels].find(p => p.id === ccOptTarget) : null;
+
+          // Sign-up bonus / min spend tracker (for linked cards)
+          const purchaseAmt = parseFloat(ccOptAmount) || 100;
+
+          return (
+            <div>
+              {/* Target selector */}
+              <div style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: "18px 22px", marginBottom: 20 }}>
+                <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "flex-end" }}>
+                  <label style={{ flex: 1, minWidth: 200 }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: css.text3, marginBottom: 6 }}>Optimize For</div>
+                    <select value={ccOptTarget} onChange={e => setCcOptTarget(e.target.value)} style={{
+                      width: "100%", background: css.surface2, border: `1px solid ${css.border}`,
+                      color: css.text, padding: "9px 12px", borderRadius: 8, fontSize: 13, fontFamily: "'Outfit', sans-serif",
+                    }}>
+                      <optgroup label="General">
+                        <option value="max_points">Highest Points (Any Program)</option>
+                      </optgroup>
+                      <optgroup label="Airline Miles">
+                        {airlineTargets.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+                      </optgroup>
+                      <optgroup label="Hotel Points">
+                        {hotelTargets.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+                      </optgroup>
+                    </select>
+                  </label>
+                  <label style={{ width: 140 }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: css.text3, marginBottom: 6 }}>Purchase Amount</div>
+                    <div style={{ position: "relative" }}>
+                      <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: css.text3, fontSize: 13 }}>$</span>
+                      <input type="number" value={ccOptAmount} onChange={e => setCcOptAmount(e.target.value)} min="1" style={{
+                        width: "100%", background: css.surface2, border: `1px solid ${css.border}`,
+                        color: css.text, padding: "9px 12px 9px 22px", borderRadius: 8, fontSize: 13,
+                        fontFamily: "'JetBrains Mono', monospace", boxSizing: "border-box", outline: "none",
+                      }} />
+                    </div>
+                  </label>
+                </div>
+                {targetProg && (
+                  <div style={{ fontSize: 12, color: css.text2, marginTop: 10 }}>
+                    Showing which card earns the most <strong style={{ color: targetProg.color }}>{targetProg.name}</strong> {targetProg.unit} via direct earning or transfer partners.
+                  </div>
+                )}
+                {usingAll && (
+                  <div style={{ fontSize: 11, color: css.warning, marginTop: 8 }}>
+                    No cards linked yet — showing all cards. Link your credit cards in Programs to personalize results.
+                  </div>
+                )}
+              </div>
+
+              {/* Top recommendation */}
+              {topCard && (
+                <div style={{
+                  background: css.surface, border: `1px solid ${css.accent}40`, borderLeft: `4px solid ${css.accent}`,
+                  borderRadius: 14, padding: "16px 20px", marginBottom: 20,
+                }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Top Card Overall</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <ProgramLogo prog={topCard} size={28} />
+                    <div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: css.text }}>{topCard.name}</div>
+                      <div style={{ fontSize: 11, color: css.text2 }}>Best card for {cardWins[topCardId]} of {CC_SPENDING_CATS.length} spending categories{ccOptTarget !== "max_points" && targetProg ? ` toward ${targetProg.name}` : ""}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Category-by-category breakdown */}
+              <div style={{ fontSize: 13, fontWeight: 700, color: css.text, marginBottom: 12 }}>Best Card by Spending Category</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
+                {categoryResults.map(cat => (
+                  <div key={cat.id} style={{
+                    background: css.surface, border: `1px solid ${css.border}`, borderRadius: 12, padding: "14px 18px",
+                  }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: cat.ranking.length > 1 ? 10 : 0, flexWrap: "wrap", gap: 8 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <span style={{ fontSize: 18 }}>{cat.icon}</span>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: css.text }}>{cat.label}</div>
+                          {cat.best ? (
+                            <div style={{ fontSize: 11, color: css.text3 }}>
+                              Use <strong style={{ color: css.accent }}>{cat.best.card.name}</strong> — <span style={{ fontFamily: "'JetBrains Mono', monospace", color: css.gold }}>{cat.best.rate}x</span> {cat.best.currency}
+                            </div>
+                          ) : (
+                            <div style={{ fontSize: 11, color: css.text3 }}>No linked card earns toward this target</div>
+                          )}
+                        </div>
+                      </div>
+                      {cat.best && (
+                        <div style={{ textAlign: "right" }}>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: css.gold, fontFamily: "'JetBrains Mono', monospace" }}>
+                            {(cat.best.rate * purchaseAmt).toLocaleString()}
+                          </div>
+                          <div style={{ fontSize: 9, color: css.text3 }}>pts per ${purchaseAmt.toLocaleString()}</div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Runner-ups */}
+                    {cat.ranking.length > 1 && (
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                        {cat.ranking.map((r, i) => (
+                          <div key={r.card.id} style={{
+                            display: "flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 8,
+                            background: i === 0 ? css.accentBg : css.surface2, border: `1px solid ${i === 0 ? css.accentBorder : css.border}`,
+                            fontSize: 11, color: i === 0 ? css.accent : css.text2,
+                          }}>
+                            <ProgramLogo prog={r.card} size={14} />
+                            <span style={{ fontWeight: i === 0 ? 600 : 400 }}>{r.card.name.split(" ")[0]}</span>
+                            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, color: i === 0 ? css.accent : css.text3 }}>{r.rate}x</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Transfer partner awareness panel */}
+              {ccOptTarget !== "max_points" && targetProg && (
+                <div style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: "18px 22px", marginBottom: 20 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: css.text, marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 15 }}>🔄</span> Cards That Transfer to {targetProg.name}
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {cards.filter(c => {
+                      const tp = CC_TRANSFER_PARTNERS[c.id];
+                      if (!tp) return false;
+                      if (tp.directProgram === ccOptTarget) return true;
+                      return tp.partners && tp.partners.includes(ccOptTarget);
+                    }).map(card => {
+                      const tp = CC_TRANSFER_PARTNERS[card.id];
+                      const isDirect = tp?.directProgram === ccOptTarget;
+                      return (
+                        <div key={card.id} style={{
+                          display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px",
+                          background: css.surface2, borderRadius: 10, border: `1px solid ${css.border}`,
+                        }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <ProgramLogo prog={card} size={22} />
+                            <div>
+                              <div style={{ fontSize: 12, fontWeight: 600, color: css.text }}>{card.name}</div>
+                              <div style={{ fontSize: 10, color: css.text3 }}>{tp?.currency}</div>
+                            </div>
+                          </div>
+                          <span style={{
+                            fontSize: 10, fontWeight: 600, padding: "3px 10px", borderRadius: 10,
+                            background: isDirect ? css.successBg : css.accentBg,
+                            color: isDirect ? css.success : css.accent,
+                            border: `1px solid ${isDirect ? css.success : css.accent}30`,
+                          }}>{isDirect ? "Direct Earn" : "1:1 Transfer"}</span>
+                        </div>
+                      );
+                    })}
+                    {cards.filter(c => {
+                      const tp = CC_TRANSFER_PARTNERS[c.id];
+                      if (!tp) return false;
+                      return tp.directProgram === ccOptTarget || (tp.partners && tp.partners.includes(ccOptTarget));
+                    }).length === 0 && (
+                      <div style={{ textAlign: "center", padding: "20px", color: css.text3, fontSize: 12 }}>
+                        None of your {usingAll ? "" : "linked "}cards transfer to {targetProg.name}.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Full card comparison table */}
+              <div style={{ fontSize: 13, fontWeight: 700, color: css.text, marginBottom: 12 }}>Full Earn Rate Comparison</div>
+              <div style={{ overflowX: "auto", borderRadius: 14, border: `1px solid ${css.border}` }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", background: css.surface, fontSize: 11 }}>
+                  <thead>
+                    <tr style={{ background: css.surface2 }}>
+                      <th style={{ padding: "10px 14px", textAlign: "left", color: css.text3, fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em", position: "sticky", left: 0, background: css.surface2, zIndex: 1 }}>Card</th>
+                      {CC_SPENDING_CATS.map(cat => (
+                        <th key={cat.id} style={{ padding: "10px 8px", textAlign: "center", color: css.text3, fontWeight: 600, fontSize: 10, whiteSpace: "nowrap" }}>
+                          <div>{cat.icon}</div>{cat.label}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cards.map(card => (
+                      <tr key={card.id} style={{ borderTop: `1px solid ${css.border}` }}>
+                        <td style={{ padding: "8px 14px", display: "flex", alignItems: "center", gap: 6, position: "sticky", left: 0, background: css.surface, zIndex: 1, whiteSpace: "nowrap" }}>
+                          <ProgramLogo prog={card} size={16} />
+                          <span style={{ fontWeight: 500, color: css.text, fontSize: 11 }}>{card.name.length > 18 ? card.name.slice(0, 16) + ".." : card.name}</span>
+                        </td>
+                        {CC_SPENDING_CATS.map(cat => {
+                          const rate = getEffectiveRate(card.id, cat.id);
+                          const isBest = categoryResults.find(c => c.id === cat.id)?.best?.card.id === card.id;
+                          return (
+                            <td key={cat.id} style={{
+                              padding: "8px", textAlign: "center", fontFamily: "'JetBrains Mono', monospace",
+                              fontWeight: isBest ? 700 : 400,
+                              color: rate === 0 ? css.text3 + "60" : isBest ? css.accent : css.text,
+                              background: isBest ? css.accentBg : "transparent",
+                            }}>
+                              {rate === 0 ? "—" : `${rate}x`}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          );
+        })()}
       </div>
     );
   };
@@ -3858,6 +4190,7 @@ Start by introducing yourself briefly in-character with personality, and give an
               { id: "global",   label: "Global Status Optimizer" },
               { id: "trip",     label: "Trip-by-Trip Comparison" },
               { id: "alliance", label: "Alliance Goal Optimizer" },
+              { id: "cards",    label: "Credit Card Optimizer" },
             ];
             return (
               <nav style={{ display: "flex", alignItems: "center", gap: 2, flex: 1, minWidth: 0, overflow: "visible", position: "relative" }}>
@@ -4033,6 +4366,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                 { id: "global", label: "Global Optimizer" },
                 { id: "trip", label: "Trip-by-Trip" },
                 { id: "alliance", label: "Alliance Goal" },
+                { id: "cards", label: "Card Optimizer" },
               ].map(sub => (
                 <button key={sub.id} onClick={() => setOptimizerTab(sub.id)} style={{
                   padding: "6px 10px", border: "none", cursor: "pointer", background: "transparent",
