@@ -418,29 +418,52 @@ const CC_TRANSFER_PARTNERS = {
   atmos_summit:     { currency: "Atmos Points", directProgram: "atmos" },
 };
 // Expanded bonus categories — values are either a number (same direct & portal)
-// or { d: directRate, p: portalRate } when portal booking earns a higher multiplier
+// or { d: directRate, p: portalRate } when portal booking earns a higher multiplier.
+// Rates per each issuer's official benefits page as of early 2025.
 const CC_BONUS_EXPANDED = {
-  amex_plat:        { dining: 1, flights: { d: 5, p: 5 }, hotels: { d: 1, p: 5 }, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
-  amex_gold:        { dining: 4, flights: { d: 3, p: 3 }, hotels: 1, groceries: 4, gas: 1, streaming: 1, rent: 0, other: 1 },
-  amex_green:       { dining: 3, flights: { d: 3, p: 3 }, hotels: 1, groceries: 1, gas: 3, streaming: 1, rent: 0, other: 1 },
-  chase_sapphire:   { dining: 3, flights: { d: 3, p: 5 }, hotels: { d: 3, p: 10 }, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
+  // Amex Platinum: 5x on flights booked directly with airlines OR via amextravel.com (no portal uplift for flights).
+  // Hotels: 1x direct, 5x prepaid via Amex Travel portal.
+  amex_plat:        { dining: 1, flights: 5, hotels: { d: 1, p: 5 }, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
+  // Amex Gold: 3x on flights booked directly with airlines OR via amextravel.com (same either way).
+  amex_gold:        { dining: 4, flights: 3, hotels: 1, groceries: 4, gas: 1, streaming: 1, rent: 0, other: 1 },
+  // Amex Green: 3x on travel & transit (flights, hotels, Uber, etc.) regardless of booking method.
+  amex_green:       { dining: 3, flights: 3, hotels: 3, groceries: 1, gas: 3, streaming: 1, rent: 0, other: 1 },
+  // Chase Sapphire Reserve: 3x direct travel & dining. Via Chase Travel portal: 8x flights, 10x hotels & cars.
+  chase_sapphire:   { dining: 3, flights: { d: 3, p: 8 }, hotels: { d: 3, p: 10 }, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
+  // Chase Sapphire Preferred: 2x direct travel. Via Chase Travel: 5x flights & hotels.
   chase_sapphire_pref: { dining: 3, flights: { d: 2, p: 5 }, hotels: { d: 2, p: 5 }, groceries: 1, gas: 1, streaming: 3, rent: 0, other: 1 },
+  // Capital One Venture X: 2x base. Via Capital One Travel portal: 5x flights, 10x hotels & car rentals.
   cap1_venturex:    { dining: 2, flights: { d: 2, p: 5 }, hotels: { d: 2, p: 10 }, groceries: 2, gas: 2, streaming: 2, rent: 2, other: 2 },
-  cap1_venture:     { dining: 2, flights: { d: 2, p: 5 }, hotels: { d: 2, p: 5 }, groceries: 2, gas: 2, streaming: 2, rent: 2, other: 2 },
-  citi_premier:     { dining: 3, flights: { d: 3, p: 3 }, hotels: { d: 3, p: 3 }, groceries: 3, gas: 3, streaming: 1, rent: 0, other: 1 },
+  // Capital One Venture (regular): 2x base everywhere. Via Capital One Travel: 5x hotels & cars only — flights stay 2x.
+  cap1_venture:     { dining: 2, flights: 2, hotels: { d: 2, p: 5 }, groceries: 2, gas: 2, streaming: 2, rent: 2, other: 2 },
+  // Citi Premier: flat 3x on flights, hotels, dining, groceries, gas. No issuer travel portal bonus.
+  citi_premier:     { dining: 3, flights: 3, hotels: 3, groceries: 3, gas: 3, streaming: 1, rent: 0, other: 1 },
+  // Bilt: 3x dining, 2x travel (flights & hotels), 1x rent & other. On Rent Day first of month: 6x/4x/2x.
   bilt:             { dining: 3, flights: 2, hotels: 2, groceries: 1, gas: 1, streaming: 1, rent: 1, other: 1 },
-  delta_reserve:    { dining: 1, flights: 3, hotels: 1, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
-  delta_gold:       { dining: 2, flights: 2, hotels: 1, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
+  // Delta Reserve Amex: 3x Delta purchases, 2x dining & U.S. supermarkets, 1x other. No hotel portal bonus.
+  delta_reserve:    { dining: 2, flights: 3, hotels: 1, groceries: 2, gas: 1, streaming: 1, rent: 0, other: 1 },
+  // Delta Gold Amex: 2x Delta & restaurants & U.S. supermarkets, 1x other.
+  delta_gold:       { dining: 2, flights: 2, hotels: 1, groceries: 2, gas: 1, streaming: 1, rent: 0, other: 1 },
+  // United Club Infinite: 4x United, 2x all other travel & dining, 1x other.
   united_club:      { dining: 2, flights: 4, hotels: 2, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
+  // United Explorer: 2x United, hotels & dining, 1x other.
   united_explorer:  { dining: 2, flights: 2, hotels: 2, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
+  // Citi AAdvantage Executive: 10x AA (includes base miles), 4x hotel & car, 1x other.
   aa_exec:          { dining: 1, flights: 4, hotels: 4, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
-  marriott_boundless: { dining: 2, flights: 2, hotels: 6, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
+  // Marriott Boundless: 6x Marriott hotels, 3x dining & gas, 2x everything else.
+  marriott_boundless: { dining: 3, flights: 2, hotels: 6, groceries: 1, gas: 3, streaming: 1, rent: 0, other: 2 },
+  // Hilton Aspire: 14x Hilton, 7x flights, dining & car rentals, 3x everything else.
   hilton_aspire:    { dining: 7, flights: 7, hotels: 14, groceries: 3, gas: 3, streaming: 3, rent: 0, other: 3 },
-  hilton_surpass:   { dining: 6, flights: 6, hotels: 12, groceries: 3, gas: 3, streaming: 3, rent: 0, other: 3 },
+  // Hilton Surpass: 12x Hilton, 6x U.S. restaurants, groceries & gas, 3x everything else.
+  hilton_surpass:   { dining: 6, flights: 3, hotels: 12, groceries: 6, gas: 6, streaming: 3, rent: 0, other: 3 },
+  // World of Hyatt Card: 4x Hyatt, 2x dining, airline tickets & local transit, 1x other.
   hyatt_card:       { dining: 2, flights: 2, hotels: 4, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
-  ihg_premier:      { dining: 2, flights: 2, hotels: { d: 5, p: 10 }, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
-  sw_priority:      { dining: 2, flights: 3, hotels: 1, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
-  atmos_summit:     { dining: 2, flights: 3, hotels: 1, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
+  // IHG Premier: 10x at IHG hotels (direct co-brand rate, no separate portal uplift), 2x dining & travel, 1x other.
+  ihg_premier:      { dining: 2, flights: 2, hotels: 10, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
+  // Southwest Priority: 3x Southwest flights, 2x hotel & car rental partners & dining, 1x other.
+  sw_priority:      { dining: 2, flights: 3, hotels: 2, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
+  // Alaska/Atmos Summit Visa Infinite: 3x Alaska & Hawaiian flights, 2x dining & gas, 1x other.
+  atmos_summit:     { dining: 2, flights: 3, hotels: 1, groceries: 1, gas: 2, streaming: 1, rent: 0, other: 1 },
 };
 // Helper: resolve a bonus entry to a number given booking mode ("direct" or "portal")
 const _ccRate = (entry, mode) => {
