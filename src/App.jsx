@@ -930,6 +930,9 @@ export default function EliteStatusTracker() {
   const [allianceCompare, setAllianceCompare] = useState("ua");
   const [programSubView, setProgramSubView] = useState("airlines");
   const [programsHover, setProgramsHover] = useState(false);
+  const [optimizerTab, setOptimizerTab] = useState("global");
+  const [optimizerTripId, setOptimizerTripId] = useState(null);
+  const [allianceGoal, setAllianceGoal] = useState("sa_gold");
   const [customPrograms, setCustomPrograms] = useState([]);
   const [showAddProgram, setShowAddProgram] = useState(false);
   const [newProgram, setNewProgram] = useState({ name: "", category: "airline", logo: "✈️", color: "#0EA5A0", memberId: "", unit: "Points", tiers: "", selectedId: "", search: "" });
@@ -2629,140 +2632,342 @@ Start by introducing yourself briefly in-character with personality, and give an
 
 
   const renderOptimizer = () => {
-    const scenarioTrips = trips.filter(t => t.type === "flight");
-    const isPremium = user?.tier === "premium";
+    const flightTrips = trips.filter(t => t.type === "flight");
+    const airlines = LOYALTY_PROGRAMS.airlines;
+
+    // Helper: estimate points a trip would earn if credited to a given airline
+    const estimatePts = (trip, airline) => {
+      const rate = airline.earnRate || {};
+      const cls = trip.class || "domestic";
+      const perMile = rate[cls] || rate.domestic || 5;
+      // Use estimatedPoints as base proxy for "miles flown × base rate" of original airline
+      const origAirline = airlines.find(a => a.id === trip.program);
+      const origRate = origAirline?.earnRate?.[cls] || origAirline?.earnRate?.domestic || 5;
+      const baseMiles = origRate > 0 ? (trip.estimatedPoints || 0) / origRate : 0;
+      return Math.round(baseMiles * perMile);
+    };
+
+    // Helper: given a program and total points, find current tier, next tier, % to next
+    const tierProgress = (airline, totalPts) => {
+      let currentTier = null, nextTier = null;
+      for (const tier of airline.tiers) {
+        if (totalPts >= tier.threshold) currentTier = tier;
+      }
+      nextTier = airline.tiers.find(t => t.threshold > totalPts) || null;
+      const topTier = airline.tiers[airline.tiers.length - 1];
+      const pctToNext = nextTier ? Math.min(100, Math.round((totalPts / nextTier.threshold) * 100)) : 100;
+      return { currentTier, nextTier, topTier, pctToNext, totalPts };
+    };
+
+    // ── SECTION 1: Global optimizer — credit ALL trips to one program ──
+    const globalResults = airlines.map(airline => {
+      const account = linkedAccounts[airline.id];
+      const existingPts = account?.currentPoints || account?.tierCredits || 0;
+      const totalFromTrips = flightTrips.reduce((sum, t) => sum + estimatePts(t, airline), 0);
+      const total = existingPts + totalFromTrips;
+      const prog = tierProgress(airline, total);
+      return { airline, existingPts, totalFromTrips, total, ...prog };
+    }).sort((a, b) => {
+      // Sort by: reached highest tier first, then by % to next tier
+      const aTierIdx = a.airline.tiers.indexOf(a.currentTier);
+      const bTierIdx = b.airline.tiers.indexOf(b.currentTier);
+      if (aTierIdx !== bTierIdx) return bTierIdx - aTierIdx;
+      return b.pctToNext - a.pctToNext;
+    });
+    const bestGlobal = globalResults[0];
+
+    // ── SECTION 2: Trip-by-trip comparison ──
+    const selectedTrip = flightTrips.find(t => t.id === optimizerTripId) || flightTrips[0];
+    const tripResults = selectedTrip ? airlines.map(airline => {
+      const account = linkedAccounts[airline.id];
+      const existingPts = account?.currentPoints || account?.tierCredits || 0;
+      const ptsFromTrip = estimatePts(selectedTrip, airline);
+      const beforeProg = tierProgress(airline, existingPts);
+      const afterProg = tierProgress(airline, existingPts + ptsFromTrip);
+      return { airline, ptsFromTrip, existingPts, before: beforeProg, after: afterProg };
+    }).filter(r => r.ptsFromTrip > 0).sort((a, b) => {
+      // Sort by biggest % jump
+      const aJump = a.after.pctToNext - a.before.pctToNext;
+      const bJump = b.after.pctToNext - b.before.pctToNext;
+      return bJump - aJump;
+    }) : [];
+
+    // ── SECTION 3: Alliance goal optimizer ──
+    // Map alliance tier keys to the airline programs that can reach them
+    const GOAL_OPTIONS = [
+      { key: "sa_silver", label: "Star Alliance Silver" },
+      { key: "sa_gold", label: "Star Alliance Gold" },
+      { key: "ow_ruby", label: "Oneworld Ruby" },
+      { key: "ow_sapphire", label: "Oneworld Sapphire" },
+      { key: "ow_emerald", label: "Oneworld Emerald" },
+      { key: "st_elite", label: "SkyTeam Elite" },
+      { key: "st_elite_plus", label: "SkyTeam Elite Plus" },
+    ];
+    const goalResults = (() => {
+      const goal = allianceGoal;
+      // Find all airline programs that map to this alliance tier
+      const candidates = Object.entries(ALLIANCE_MBR).map(([progId, meta]) => {
+        const airline = airlines.find(a => a.id === progId);
+        if (!airline) return null;
+        // Find the tier name in this program that maps to the goal alliance tier
+        const tierName = Object.entries(meta.tierMap).find(([, v]) => v === goal)?.[0];
+        if (!tierName) return null;
+        const tier = airline.tiers.find(t => t.name === tierName);
+        if (!tier) return null;
+        const account = linkedAccounts[progId];
+        const existingPts = account?.currentPoints || account?.tierCredits || 0;
+        const totalFromTrips = flightTrips.reduce((sum, t) => sum + estimatePts(t, airline), 0);
+        const total = existingPts + totalFromTrips;
+        const remaining = Math.max(0, tier.threshold - total);
+        const pct = Math.min(100, Math.round((total / tier.threshold) * 100));
+        const reached = total >= tier.threshold;
+        return { airline, tierName, threshold: tier.threshold, existingPts, totalFromTrips, total, remaining, pct, reached, color: meta.color };
+      }).filter(Boolean);
+      return candidates.sort((a, b) => a.remaining - b.remaining);
+    })();
+
+    const OPT_TABS = [
+      { id: "global", label: "Global Status Optimizer" },
+      { id: "trip", label: "Trip-by-Trip" },
+      { id: "alliance", label: "Alliance Goal" },
+    ];
+
+    const BarFill = ({ pct, color }) => (
+      <div style={{ width: "100%", height: 6, borderRadius: 3, background: css.surface2, overflow: "hidden" }}>
+        <div style={{ width: `${pct}%`, height: "100%", borderRadius: 3, background: color, transition: "width 0.6s ease" }} />
+      </div>
+    );
+
     return (
       <div>
         {/* Header */}
-        <div className="c-a1" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 28, gap: 16 }}>
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: css.gold, marginBottom: 8 }}>Premium Feature</div>
-            <h2 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: isMobile ? 28 : 36, fontWeight: 600, color: css.text, margin: 0, lineHeight: 1.1 }}>Trip Optimizer</h2>
-            <p style={{ color: css.text2, fontSize: 13, margin: "8px 0 0" }}>Credit flights strategically to accelerate elite status</p>
-          </div>
-          <span style={{ fontSize: 10, fontWeight: 700, color: css.gold, background: css.goldBg, border: `1px solid ${css.gold}30`, borderRadius: 20, padding: "4px 12px", flexShrink: 0 }}>★ PREMIUM</span>
+        <div className="c-a1" style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: css.text3, marginBottom: 8 }}>Strategy Engine</div>
+          <h2 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: isMobile ? 28 : 36, fontWeight: 600, color: css.text, margin: 0, lineHeight: 1.1 }}>Trip Optimizer</h2>
+          <p style={{ color: css.text2, fontSize: 13, margin: "8px 0 0" }}>Credit flights strategically to accelerate elite status across {airlines.length} airline programs</p>
         </div>
 
-        {!isPremium ? (
-          /* Premium Gate */
-          <div className="c-a2">
-            {/* Blurred preview */}
-            <div style={{ position: "relative", borderRadius: 16, overflow: "hidden", marginBottom: 24 }}>
-              <div style={{ filter: "blur(4px)", pointerEvents: "none", opacity: 0.4 }}>
-                <div style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 16, padding: 24, marginBottom: 12 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
-                    <div style={{ width: "40%", height: 14, background: css.surface2, borderRadius: 4 }} />
-                    <div style={{ width: "20%", height: 14, background: css.successBg, borderRadius: 4 }} />
-                  </div>
-                  {[1,2,3].map(i => (
-                    <div key={i} style={{ background: css.surface2, borderRadius: 8, padding: 14, marginBottom: 8 }}>
-                      <div style={{ width: "60%", height: 12, background: css.border, borderRadius: 3, marginBottom: 6 }} />
-                      <div style={{ width: "40%", height: 10, background: css.border, borderRadius: 3 }} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-              {/* Overlay CTA */}
-              <div style={{
-                position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                background: D ? "rgba(17,16,9,0.75)" : "rgba(250,250,248,0.75)", backdropFilter: "blur(2px)",
-                padding: 32, textAlign: "center",
-              }}>
-                <div style={{ fontSize: 40, marginBottom: 16, opacity: 0.6 }}>🔐</div>
-                <h3 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 26, fontWeight: 600, color: css.text, margin: "0 0 10px" }}>Unlock the Optimizer</h3>
-                <p style={{ color: css.text2, fontSize: 14, maxWidth: 380, margin: "0 auto 24px", lineHeight: 1.6 }}>
-                  See the optimal way to credit every flight across your programs. Find hidden status shortcuts and maximize each trip.
-                </p>
-                <button onClick={() => setShowUpgrade(true)} className="c-btn-primary" style={{
-                  padding: "13px 36px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700,
-                  background: css.gold, color: "#1A1200",
-                }}>Upgrade to Premium — $9.99/mo</button>
-              </div>
-            </div>
+        {/* Tab bar */}
+        <div style={{ display: "flex", gap: 0, marginBottom: 24, borderBottom: `1px solid ${css.border}` }}>
+          {OPT_TABS.map(tab => (
+            <button key={tab.id} onClick={() => setOptimizerTab(tab.id)} style={{
+              padding: "10px 20px", border: "none", cursor: "pointer", background: "transparent",
+              borderBottom: optimizerTab === tab.id ? `2px solid ${css.accent}` : "2px solid transparent",
+              color: optimizerTab === tab.id ? css.accent : css.text3,
+              fontSize: 13, fontWeight: optimizerTab === tab.id ? 600 : 400,
+              fontFamily: "'Outfit', sans-serif", transition: "all 0.15s",
+            }}>{tab.label}</button>
+          ))}
+        </div>
 
-            {/* Feature list */}
-            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
-              {[
-                { title: "Credit Strategy AI", desc: "Know exactly which airline to credit each flight to for maximum status velocity" },
-                { title: "Gap Analysis", desc: "See exactly how many miles you need to hit the next tier across all programs" },
-                { title: "Mileage Run Calculator", desc: "Find the cheapest routes to earn the exact status miles you need" },
-                { title: "Hotel Qualifying Nights", desc: "Optimize your hotel stays across brands to hit elite thresholds efficiently" },
-              ].map((f, i) => (
-                <div key={i} style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 12, padding: "16px 18px" }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: css.text, marginBottom: 5 }}>
-                    <span style={{ color: css.gold, marginRight: 6 }}>★</span>{f.title}
-                  </div>
-                  <div style={{ fontSize: 12, color: css.text2, lineHeight: 1.5 }}>{f.desc}</div>
-                </div>
-              ))}
-            </div>
+        {flightTrips.length === 0 && (
+          <div style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: "28px 24px", textAlign: "center" }}>
+            <div style={{ fontSize: 13, color: css.text2 }}>No flight trips found. Add flights in the Trips tab to use the optimizer.</div>
           </div>
-        ) : (
-          /* Premium content */
+        )}
+
+        {/* ── Tab 1: Global Status Optimizer ── */}
+        {optimizerTab === "global" && flightTrips.length > 0 && (
           <div>
-            {/* Strategy cards */}
-            <div className="c-a2" style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 16, padding: "20px 22px", marginBottom: 20 }}>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 16 }}>
-                <h4 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 22, fontWeight: 500, color: css.text, margin: 0 }}>Credit Strategy · 2026</h4>
-                <span style={{ fontSize: 11, color: css.text3, fontFamily: "'JetBrains Mono', monospace" }}>{scenarioTrips.length} flights analyzed</span>
+            {/* Recommendation banner */}
+            {bestGlobal && (
+              <div style={{
+                background: css.surface, border: `1px solid ${css.accentBorder}`, borderLeft: `4px solid ${css.accent}`,
+                borderRadius: 14, padding: "18px 22px", marginBottom: 20,
+              }}>
+                <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: css.accent, marginBottom: 6 }}>Recommended</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: css.text }}>
+                  Credit all {flightTrips.length} flights to <span style={{ color: bestGlobal.airline.color }}>{bestGlobal.airline.name}</span>
+                </div>
+                <div style={{ fontSize: 12, color: css.text2, marginTop: 4 }}>
+                  {bestGlobal.currentTier ? `Projected: ${bestGlobal.currentTier.name}` : "Projected: Base Member"}
+                  {bestGlobal.nextTier && ` — ${bestGlobal.pctToNext}% toward ${bestGlobal.nextTier.name}`}
+                  {!bestGlobal.nextTier && bestGlobal.currentTier && ` — Top tier reached!`}
+                  {` · ${bestGlobal.totalFromTrips.toLocaleString()} ${bestGlobal.airline.unit} from trips + ${bestGlobal.existingPts.toLocaleString()} existing`}
+                </div>
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {LOYALTY_PROGRAMS.airlines.map(airline => {
-                  const airlineTrips = trips.filter(t => t.program === airline.id && t.type === "flight");
-                  const totalPts = airlineTrips.reduce((sum, t) => sum + (t.estimatedPoints || 0), 0);
-                  const status = getProjectedStatus(airline.id);
-                  return (
-                    <div key={airline.id} style={{
-                      background: css.surface2, border: `1px solid ${css.border}`,
-                      borderLeft: `3px solid ${airline.color}`, borderRadius: 10, padding: "14px 16px",
-                    }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                        <div>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: css.text }}>{airline.name}</div>
-                          <div style={{ fontSize: 11, color: css.text3, fontFamily: "'JetBrains Mono', monospace", marginTop: 2 }}>
-                            {airlineTrips.length} flights · +{totalPts.toLocaleString()} pts projected
-                          </div>
-                        </div>
-                        <div style={{ flexShrink: 0 }}>
-                          {status?.willAdvance ? (
-                            <span style={{ fontSize: 11, fontWeight: 700, color: css.success, background: css.successBg, border: `1px solid ${css.success}30`, borderRadius: 20, padding: "3px 10px" }}>
-                              ↑ {status.projectedTier.name}
-                            </span>
-                          ) : status?.nextTier ? (
-                            <span style={{ fontSize: 11, color: css.warning, fontFamily: "'JetBrains Mono', monospace" }}>
-                              {(status.nextTier.threshold - status.projected).toLocaleString()} more → {status.nextTier.name}
-                            </span>
-                          ) : null}
-                        </div>
+            )}
+
+            {/* All airlines ranked */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {globalResults.map((r, i) => {
+                const isBest = i === 0;
+                return (
+                  <div key={r.airline.id} style={{
+                    background: css.surface, border: `1px solid ${isBest ? r.airline.color + "50" : css.border}`,
+                    borderLeft: `3px solid ${r.airline.color}`, borderRadius: 12, padding: "16px 20px",
+                  }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 8, flexWrap: "wrap" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: isBest ? css.accent : css.text3, fontFamily: "'JetBrains Mono', monospace", width: 20 }}>#{i + 1}</span>
+                        <ProgramLogo prog={r.airline} size={24} />
+                        <div style={{ fontSize: 13, fontWeight: 600, color: css.text }}>{r.airline.name}</div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        {r.currentTier && <span style={{ fontSize: 10, fontWeight: 600, color: r.airline.color, background: `${r.airline.color}15`, padding: "2px 8px", borderRadius: 12 }}>{r.currentTier.name}</span>}
+                        {!r.nextTier && r.currentTier && <span style={{ fontSize: 10, fontWeight: 700, color: css.success, background: css.successBg, padding: "2px 8px", borderRadius: 12 }}>MAX</span>}
                       </div>
                     </div>
-                  );
-                })}
+                    <BarFill pct={r.pctToNext} color={r.airline.color} />
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: css.text3, marginTop: 5, fontFamily: "'JetBrains Mono', monospace" }}>
+                      <span>{r.total.toLocaleString()} {r.airline.unit} total ({r.existingPts.toLocaleString()} existing + {r.totalFromTrips.toLocaleString()} from trips)</span>
+                      {r.nextTier && <span>{r.pctToNext}% → {r.nextTier.name} ({r.nextTier.threshold.toLocaleString()})</span>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── Tab 2: Trip-by-Trip Comparison ── */}
+        {optimizerTab === "trip" && flightTrips.length > 0 && (
+          <div>
+            {/* Trip selector */}
+            <div style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: "16px 20px", marginBottom: 20 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: css.text3, marginBottom: 8 }}>Select a Flight</div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {flightTrips.map(t => (
+                  <button key={t.id} onClick={() => setOptimizerTripId(t.id)} style={{
+                    padding: "8px 14px", borderRadius: 10, cursor: "pointer",
+                    border: `1px solid ${(selectedTrip?.id === t.id) ? css.accent : css.border}`,
+                    background: (selectedTrip?.id === t.id) ? css.accentBg : css.surface2,
+                    color: (selectedTrip?.id === t.id) ? css.accent : css.text,
+                    fontSize: 12, fontWeight: (selectedTrip?.id === t.id) ? 600 : 400,
+                  }}>
+                    {t.route} · {t.class} · {t.date}
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* AI Recommendations */}
-            <div className="c-a3" style={{
-              background: css.surface, border: `1px solid ${css.border}`, borderLeft: `3px solid ${css.success}`,
-              borderRadius: 16, padding: "20px 22px",
-            }}>
-              <h4 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 20, fontWeight: 500, color: css.success, margin: "0 0 14px" }}>Optimizer Recommendations</h4>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {[
-                  "Credit your LAX→ATL flight to AA instead of Delta to push closer to Platinum Pro",
-                  "Your Tokyo trip alone could earn 48 Marriott nights with the right booking strategy",
-                  "Add one more Hilton stay (3+ nights) to lock in Diamond status for 2027",
-                  "Your Amex Platinum earns 5x on flights — ensure all bookings use this card",
-                ].map((tip, i) => (
-                  <div key={i} style={{
-                    background: css.surface2, borderRadius: 8, padding: "10px 14px", fontSize: 12,
-                    color: css.text, display: "flex", gap: 10, alignItems: "flex-start",
-                  }}>
-                    <span style={{ color: css.success, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>→</span>
-                    {tip}
-                  </div>
-                ))}
+            {selectedTrip && (
+              <>
+                <div style={{ fontSize: 12, color: css.text2, marginBottom: 14 }}>
+                  Showing how <strong style={{ color: css.text }}>{selectedTrip.route}</strong> ({selectedTrip.class}, {(selectedTrip.estimatedPoints || 0).toLocaleString()} base pts) would affect status on each airline:
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {tripResults.map((r, i) => {
+                    const jump = r.after.pctToNext - r.before.pctToNext;
+                    const advanced = r.after.currentTier?.name !== r.before.currentTier?.name;
+                    return (
+                      <div key={r.airline.id} style={{
+                        background: css.surface, border: `1px solid ${advanced ? css.success + "50" : css.border}`,
+                        borderLeft: `3px solid ${r.airline.color}`, borderRadius: 12, padding: "14px 18px",
+                      }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6, flexWrap: "wrap", gap: 6 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <ProgramLogo prog={r.airline} size={22} />
+                            <span style={{ fontSize: 13, fontWeight: 600, color: css.text }}>{r.airline.name}</span>
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <span style={{ fontSize: 11, fontWeight: 600, fontFamily: "'JetBrains Mono', monospace", color: r.airline.color }}>+{r.ptsFromTrip.toLocaleString()} {r.airline.unit}</span>
+                            {advanced && <span style={{ fontSize: 10, fontWeight: 700, color: css.success, background: css.successBg, padding: "2px 8px", borderRadius: 12 }}>TIER UP</span>}
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+                          <span style={{ fontSize: 10, color: css.text3, width: 40, flexShrink: 0, fontFamily: "'JetBrains Mono', monospace" }}>{r.before.pctToNext}%</span>
+                          <BarFill pct={r.before.pctToNext} color={css.border} />
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <span style={{ fontSize: 10, color: css.accent, width: 40, flexShrink: 0, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700 }}>{r.after.pctToNext}%</span>
+                          <BarFill pct={r.after.pctToNext} color={r.airline.color} />
+                        </div>
+                        <div style={{ fontSize: 10, color: css.text3, marginTop: 5, fontFamily: "'JetBrains Mono', monospace" }}>
+                          {r.before.currentTier?.name || "Base"} → {r.after.currentTier?.name || "Base"}
+                          {r.after.nextTier && (() => { const gap = r.after.nextTier.threshold - r.existingPts - r.ptsFromTrip; return ` · ${gap > 0 ? gap.toLocaleString() + " to " + r.after.nextTier.name : r.after.nextTier.name + " reached!"}`; })()}
+                          {jump > 0 && <span style={{ color: css.accent, fontWeight: 600 }}> (+{jump}% jump)</span>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ── Tab 3: Alliance Goal Optimizer ── */}
+        {optimizerTab === "alliance" && flightTrips.length > 0 && (
+          <div>
+            {/* Goal selector */}
+            <div style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: "16px 20px", marginBottom: 20 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: css.text3, marginBottom: 8 }}>Target Alliance Status</div>
+              <select value={allianceGoal} onChange={e => setAllianceGoal(e.target.value)} style={{
+                width: "100%", maxWidth: 340, background: css.surface2, border: `1px solid ${css.border}`,
+                color: css.text, padding: "8px 12px", borderRadius: 8, fontSize: 13, fontFamily: "'Outfit', sans-serif",
+              }}>
+                {GOAL_OPTIONS.map(opt => <option key={opt.key} value={opt.key}>{opt.label}</option>)}
+              </select>
+              <div style={{ fontSize: 12, color: css.text2, marginTop: 8 }}>
+                Which airline program should you credit to in order to reach <strong style={{ color: ALLIANCE_TIER_COLORS[allianceGoal] }}>{ALLIANCE_TIER_LABELS[allianceGoal]}</strong>?
               </div>
+            </div>
+
+            {/* Recommendation */}
+            {goalResults.length > 0 && goalResults[0].reached && (
+              <div style={{
+                background: css.surface, border: `1px solid ${css.success}40`, borderLeft: `4px solid ${css.success}`,
+                borderRadius: 14, padding: "16px 20px", marginBottom: 16,
+              }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: css.success }}>
+                  You can reach {ALLIANCE_TIER_LABELS[allianceGoal]} by crediting to {goalResults[0].airline.name}!
+                </div>
+                <div style={{ fontSize: 12, color: css.text2, marginTop: 4 }}>
+                  Credit all trips to earn {goalResults[0].tierName} status ({goalResults[0].total.toLocaleString()} / {goalResults[0].threshold.toLocaleString()} {goalResults[0].airline.unit}).
+                </div>
+              </div>
+            )}
+            {goalResults.length > 0 && !goalResults[0].reached && (
+              <div style={{
+                background: css.surface, border: `1px solid ${css.warning}40`, borderLeft: `4px solid ${css.warning}`,
+                borderRadius: 14, padding: "16px 20px", marginBottom: 16,
+              }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: css.warning }}>
+                  Closest path to {ALLIANCE_TIER_LABELS[allianceGoal]}: credit to {goalResults[0].airline.name}
+                </div>
+                <div style={{ fontSize: 12, color: css.text2, marginTop: 4 }}>
+                  You'd reach {goalResults[0].pct}% of {goalResults[0].tierName} ({goalResults[0].total.toLocaleString()} / {goalResults[0].threshold.toLocaleString()} {goalResults[0].airline.unit}) — {goalResults[0].remaining.toLocaleString()} more needed.
+                </div>
+              </div>
+            )}
+            {goalResults.length === 0 && (
+              <div style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: "20px", textAlign: "center", fontSize: 13, color: css.text3 }}>
+                No airline programs in the system map to this alliance tier.
+              </div>
+            )}
+
+            {/* All candidates */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {goalResults.map((r, i) => (
+                <div key={r.airline.id} style={{
+                  background: css.surface, border: `1px solid ${r.reached ? css.success + "40" : css.border}`,
+                  borderLeft: `3px solid ${r.color}`, borderRadius: 12, padding: "16px 20px",
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 8, flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: i === 0 ? css.accent : css.text3, fontFamily: "'JetBrains Mono', monospace", width: 20 }}>#{i + 1}</span>
+                      <ProgramLogo prog={r.airline} size={24} />
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: css.text }}>{r.airline.name}</div>
+                        <div style={{ fontSize: 10, color: css.text3 }}>Target: {r.tierName} ({r.threshold.toLocaleString()} {r.airline.unit})</div>
+                      </div>
+                    </div>
+                    <div>
+                      {r.reached ? (
+                        <span style={{ fontSize: 10, fontWeight: 700, color: css.success, background: css.successBg, padding: "3px 10px", borderRadius: 12 }}>ACHIEVED</span>
+                      ) : (
+                        <span style={{ fontSize: 11, fontWeight: 600, fontFamily: "'JetBrains Mono', monospace", color: css.warning }}>{r.remaining.toLocaleString()} short</span>
+                      )}
+                    </div>
+                  </div>
+                  <BarFill pct={r.pct} color={r.reached ? css.success : r.color} />
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: css.text3, marginTop: 5, fontFamily: "'JetBrains Mono', monospace" }}>
+                    <span>{r.existingPts.toLocaleString()} existing + {r.totalFromTrips.toLocaleString()} from trips = {r.total.toLocaleString()}</span>
+                    <span>{r.pct}%</span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}
