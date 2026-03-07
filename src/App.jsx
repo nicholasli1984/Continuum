@@ -2208,10 +2208,11 @@ Start by introducing yourself briefly in-character with personality, and give an
     };
 
     const SUB_TABS = [
-      { id: "airlines",     label: "Airlines",              programs: [...LOYALTY_PROGRAMS.airlines, ...customByCategory.airline],   isCard: false },
-      { id: "hotels",       label: "Hotels",                programs: [...LOYALTY_PROGRAMS.hotels, ...customByCategory.hotel],       isCard: false },
-      { id: "credit_cards", label: "Credit Cards",          programs: [...LOYALTY_PROGRAMS.creditCards, ...customByCategory.card],   isCard: true  },
-      { id: "rentals",      label: "Car Rental Programs",   programs: [...LOYALTY_PROGRAMS.rentals, ...customByCategory.rental],     isCard: false },
+      { id: "airlines",     label: "Airlines",                 programs: [...LOYALTY_PROGRAMS.airlines, ...customByCategory.airline],   isCard: false },
+      { id: "hotels",       label: "Hotels",                   programs: [...LOYALTY_PROGRAMS.hotels, ...customByCategory.hotel],       isCard: false },
+      { id: "credit_cards", label: "Credit Cards",             programs: [...LOYALTY_PROGRAMS.creditCards, ...customByCategory.card],   isCard: true  },
+      { id: "rentals",      label: "Car Rental Programs",      programs: [...LOYALTY_PROGRAMS.rentals, ...customByCategory.rental],     isCard: false },
+      { id: "alliances",    label: "Airline Alliance Benefits", programs: [],                                                           isCard: false },
     ];
     const activeSub = SUB_TABS.find(t => t.id === programSubView) || SUB_TABS[0];
     const linkedCount = Object.keys(linkedAccounts).length;
