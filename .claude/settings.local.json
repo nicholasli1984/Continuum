@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git clone https://github.com/nicholasli1984/Continuum.git \"C:\\\\Users\\\\nicho\\\\Documents\\\\Continuum\")",
+      "Bash(npm install)",
+      "Bash(npm run dev)",
+      "WebFetch(domain:www.udx.com)"
+    ]
+  }
+}

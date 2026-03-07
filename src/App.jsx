@@ -336,6 +336,50 @@ const ProgramLogo = ({ prog, size = 32 }) => {
 };
 
 // ============================================================
+// AIRLINE & OTA CUSTOMER SERVICE DATA
+// ============================================================
+const AIRLINE_CS = {
+  aa: { name: "American Airlines", phone: "1-800-433-7300", manage: "https://www.aa.com/reservation/view/find-your-trip" },
+  dl: { name: "Delta Air Lines", phone: "1-800-221-1212", manage: "https://www.delta.com/mytrips/" },
+  ua: { name: "United Airlines", phone: "1-800-864-8331", manage: "https://www.united.com/en/us/managereservation" },
+  sw: { name: "Southwest Airlines", phone: "1-800-435-9792", manage: "https://www.southwest.com/air/manage-reservation/" },
+  b6: { name: "JetBlue", phone: "1-800-538-2583", manage: "https://www.jetblue.com/manage-trips" },
+  atmos: { name: "Alaska Airlines", phone: "1-800-252-7522", manage: "https://www.alaskaair.com/booking/manage-trip" },
+  frontier: { name: "Frontier Airlines", phone: "1-801-401-9000", manage: "https://www.flyfrontier.com/manage-trip/" },
+  spirit: { name: "Spirit Airlines", phone: "1-855-728-3555", manage: "https://www.spirit.com/my-trips" },
+  flying_blue: { name: "Air France / KLM", phone: "1-800-237-2747", manage: "https://www.airfrance.us/FR/en/local/process/standardbookingretrieve/RetrieveBookingAction.do" },
+  ba_avios: { name: "British Airways", phone: "1-800-247-9297", manage: "https://www.britishairways.com/travel/managebooking/public/en_us" },
+  aeroplan: { name: "Air Canada", phone: "1-888-247-2262", manage: "https://www.aircanada.com/ca/en/aco/home/book/manage-bookings.html" },
+  emirates_skywards: { name: "Emirates", phone: "1-800-777-3999", manage: "https://www.emirates.com/us/english/manage-booking/" },
+  turkish_miles: { name: "Turkish Airlines", phone: "1-800-874-8875", manage: "https://www.turkishairlines.com/en-int/any-content/manage-booking/" },
+  qantas_ff: { name: "Qantas", phone: "1-800-227-4500", manage: "https://www.qantas.com/au/en/manage-booking.html" },
+  singapore_kf: { name: "Singapore Airlines", phone: "1-800-742-3333", manage: "https://www.singaporeair.com/en_UK/ppsclub-krisflyer/manage-booking/" },
+  cathay_mp: { name: "Cathay Pacific", phone: "1-800-233-2742", manage: "https://www.cathaypacific.com/cx/en_US/manage-trip/manage-booking.html" },
+};
+const OTA_CS = {
+  expedia: { name: "Expedia", phone: "1-866-310-5768", manage: "https://www.expedia.com/trips" },
+  booking: { name: "Booking.com", phone: "1-888-850-3958", manage: "https://secure.booking.com/mysettings.html" },
+  kayak: { name: "Kayak", phone: "1-855-529-2501", manage: "https://www.kayak.com/trips" },
+  google_flights: { name: "Google Flights", phone: null, manage: null },
+  hopper: { name: "Hopper", phone: "1-833-933-4674", manage: null },
+  priceline: { name: "Priceline", phone: "1-877-477-5807", manage: "https://www.priceline.com/account/trips" },
+  orbitz: { name: "Orbitz", phone: "1-844-674-4891", manage: "https://www.orbitz.com/trips" },
+  travelocity: { name: "Travelocity", phone: "1-888-709-5983", manage: "https://www.travelocity.com/trips" },
+  cheapoair: { name: "CheapOair", phone: "1-800-566-2345", manage: "https://www.cheapoair.com/myaccount/mytrips" },
+  tripcom: { name: "Trip.com", phone: "1-833-896-0077", manage: "https://www.trip.com/account/manage" },
+};
+// Common aircraft types for display
+const AIRCRAFT_TYPES = {
+  "738": "Boeing 737-800", "73H": "Boeing 737-800", "739": "Boeing 737-900",
+  "7M8": "Boeing 737 MAX 8", "7M9": "Boeing 737 MAX 9",
+  "319": "Airbus A319", "320": "Airbus A320", "321": "Airbus A321", "32Q": "Airbus A321neo",
+  "332": "Airbus A330-200", "333": "Airbus A330-300", "339": "Airbus A330-900neo",
+  "359": "Airbus A350-900", "35K": "Airbus A350-1000",
+  "772": "Boeing 777-200", "77W": "Boeing 777-300ER", "789": "Boeing 787-9", "788": "Boeing 787-8",
+  "E75": "Embraer E175", "E90": "Embraer E190", "CR9": "Bombardier CRJ-900", "CRJ": "Bombardier CRJ",
+};
+
+// ============================================================
 // AIRLINE ALLIANCES DATA
 // ============================================================
 const ALLIANCE_MBR = {
@@ -953,6 +997,11 @@ export default function EliteStatusTracker() {
   const [cockpitSection, setCockpitSection] = useState(null);
   const [selectedPartner, setSelectedPartner] = useState(null);
 
+  // ── Itinerary import & trip detail state ──
+  const [showImportItinerary, setShowImportItinerary] = useState(false);
+  const [itineraryText, setItineraryText] = useState("");
+  const [tripDetailId, setTripDetailId] = useState(null); // trip id to show detail view
+
   // ── Mobile detection ──
   const [isMobile, setIsMobile] = useState(typeof window !== "undefined" && window.innerWidth < 768);
   useEffect(() => {
@@ -1247,6 +1296,158 @@ Start by introducing yourself briefly in-character with personality, and give an
   };
 
   const removeTrip = (id) => setTrips(prev => prev.filter(t => t.id !== id));
+
+  // ── Itinerary parser ──
+  const parseItinerary = (text) => {
+    const segments = [];
+    let tripName = "";
+    let bookingSource = null;
+    let confirmationCode = "";
+
+    // Detect booking source (OTA or airline)
+    const textLower = text.toLowerCase();
+    for (const [key, ota] of Object.entries(OTA_CS)) {
+      if (textLower.includes(ota.name.toLowerCase()) || textLower.includes(key)) {
+        bookingSource = { type: "ota", key, ...ota };
+        break;
+      }
+    }
+    if (!bookingSource) {
+      for (const [key, air] of Object.entries(AIRLINE_CS)) {
+        if (textLower.includes(air.name.toLowerCase())) {
+          bookingSource = { type: "airline", key, ...air };
+          break;
+        }
+      }
+    }
+
+    // Extract confirmation / PNR code
+    const confMatch = text.match(/(?:confirmation|booking|record locator|pnr|ref)[:\s#]*([A-Z0-9]{5,8})/i);
+    if (confMatch) confirmationCode = confMatch[1].toUpperCase();
+
+    // Extract flight segments: look for patterns like "AA 123", "DL 456", airport codes, dates, times
+    const flightPattern = /(?:(?:flight|flt)[:\s]*)?([A-Z]{2})\s*(\d{1,4})\b/gi;
+    const airportPattern = /\b([A-Z]{3})\s*(?:→|->|to|–|—|-)\s*([A-Z]{3})\b/g;
+    const datePattern = /\b(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}|\w{3,9}\s+\d{1,2},?\s*\d{4}|\d{4}-\d{2}-\d{2})\b/gi;
+    const timePattern = /\b(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)?)\b/g;
+    const seatPattern = /(?:seat|ste?)[:\s]*(\d{1,2}[A-K])/gi;
+    const fareClassPattern = /(?:fare\s*(?:class|basis|code)|booking\s*class)[:\s]*([A-Z][A-Z0-9]{0,7})/gi;
+    const aircraftPattern = /(?:aircraft|plane|equipment|acft)[:\s]*([A-Z0-9]{2,4}(?:\s*[-/]\s*\d{3,4})?)/gi;
+    const durationPattern = /(?:duration|travel\s*time|flight\s*time)[:\s]*(\d+h\s*\d*m?|\d+\s*hr[s]?\s*\d*\s*min[s]?)/gi;
+    const distancePattern = /(?:distance|miles)[:\s]*([\d,]+)\s*(?:mi|miles|km)/gi;
+    const layoverPattern = /(?:layover|connection|stopover)[:\s]*(?:(\d+h\s*\d*m?)|([\d.]+)\s*(?:hr|hour))/gi;
+
+    // Collect all dates and times
+    const dates = [];
+    let dm;
+    while ((dm = datePattern.exec(text)) !== null) dates.push(dm[1]);
+    const times = [];
+    let tm;
+    while ((tm = timePattern.exec(text)) !== null) times.push(tm[1]);
+
+    // Collect flight numbers
+    const flights = [];
+    let fm;
+    while ((fm = flightPattern.exec(text)) !== null) flights.push({ carrier: fm[1], number: fm[2] });
+
+    // Collect routes
+    const routes = [];
+    let rm;
+    while ((rm = airportPattern.exec(text)) !== null) routes.push({ from: rm[1], to: rm[2] });
+
+    // Collect seats
+    const seats = [];
+    let sm;
+    while ((sm = seatPattern.exec(text)) !== null) seats.push(sm[1].toUpperCase());
+
+    // Collect fare class
+    const fareClasses = [];
+    let fcm;
+    while ((fcm = fareClassPattern.exec(text)) !== null) fareClasses.push(fcm[1].toUpperCase());
+
+    // Collect aircraft
+    const aircrafts = [];
+    let am;
+    while ((am = aircraftPattern.exec(text)) !== null) {
+      const code = am[1].trim().replace(/\s+/g, "");
+      aircrafts.push(AIRCRAFT_TYPES[code] || code);
+    }
+
+    // Collect durations
+    const durations = [];
+    let drm;
+    while ((drm = durationPattern.exec(text)) !== null) durations.push(drm[1]);
+
+    // Collect distances
+    const distances = [];
+    let dim;
+    while ((dim = distancePattern.exec(text)) !== null) distances.push(dim[1].replace(/,/g, ""));
+
+    // Collect layovers
+    const layovers = [];
+    let lm;
+    while ((lm = layoverPattern.exec(text)) !== null) layovers.push(lm[1] || lm[2] + "hr");
+
+    // Determine airline program from flight carrier codes
+    const carrierToProgram = { AA: "aa", DL: "dl", UA: "ua", WN: "sw", B6: "b6", AS: "atmos", F9: "frontier", NK: "spirit", AF: "flying_blue", KL: "flying_blue", BA: "ba_avios", AC: "aeroplan", EK: "emirates_skywards", TK: "turkish_miles", QF: "qantas_ff", SQ: "singapore_kf", CX: "cathay_mp" };
+
+    // Build segments
+    const numSegments = Math.max(1, routes.length, flights.length);
+    for (let i = 0; i < numSegments; i++) {
+      const route = routes[i];
+      const flight = flights[i];
+      const programId = flight ? (carrierToProgram[flight.carrier] || "aa") : (bookingSource?.type === "airline" ? bookingSource.key : "aa");
+      const prog = LOYALTY_PROGRAMS.airlines.find(p => p.id === programId);
+
+      // Determine fare class category
+      let fareClass = fareClasses[i] || fareClasses[0] || "";
+      let classCategory = "domestic";
+      const fcUpper = fareClass.charAt(0);
+      if ("FJAP".includes(fcUpper)) classCategory = "premium";
+      else if ("CDIYZ".includes(fcUpper)) classCategory = "international";
+
+      const routeStr = route ? `${route.from} → ${route.to}` : (flight ? `${flight.carrier}${flight.number}` : "Unknown Route");
+
+      segments.push({
+        id: Date.now() + i,
+        type: "flight",
+        program: programId,
+        route: routeStr,
+        date: dates[i] || dates[0] || new Date().toISOString().slice(0, 10),
+        class: classCategory,
+        status: "confirmed",
+        tripName: tripName || (confirmationCode ? `Booking ${confirmationCode}` : "Imported Trip"),
+        estimatedPoints: prog ? prog.earnRate[classCategory] * 500 : 3000,
+        estimatedNights: 0,
+        estimatedRentals: 0,
+        // Extended fields
+        flightNumber: flight ? `${flight.carrier}${flight.number}` : "",
+        seat: seats[i] || seats[0] || "",
+        fareClass: fareClass,
+        aircraft: aircrafts[i] || aircrafts[0] || "",
+        distance: distances[i] || distances[0] || "",
+        travelTime: durations[i] || durations[0] || "",
+        layover: layovers[i] || "",
+        departureTime: times[i * 2] || times[0] || "",
+        arrivalTime: times[i * 2 + 1] || times[1] || "",
+        confirmationCode,
+        bookingSource: bookingSource ? { name: bookingSource.name, phone: bookingSource.phone, manage: bookingSource.manage, type: bookingSource.type } : null,
+        airlineCS: AIRLINE_CS[programId] || null,
+      });
+    }
+
+    return segments;
+  };
+
+  const handleImportItinerary = () => {
+    if (!itineraryText.trim()) return;
+    const segments = parseItinerary(itineraryText);
+    if (segments.length > 0) {
+      setTrips(prev => [...prev, ...segments]);
+    }
+    setShowImportItinerary(false);
+    setItineraryText("");
+  };
 
   const BLANK_EXPENSE = { category: "flight", description: "", amount: "", currency: "USD", fxRate: 1, date: "", paymentMethod: "", receipt: false, receiptImage: null, notes: "" };
 
@@ -2382,6 +2583,146 @@ Start by introducing yourself briefly in-character with personality, and give an
 
   const renderTrips = () => {
     const grandTotal = expenses.reduce((s, e) => s + e.amount, 0);
+
+    // ── Trip Detail View ──
+    if (tripDetailId) {
+      const trip = trips.find(t => t.id === tripDetailId);
+      if (!trip) { setTripDetailId(null); return null; }
+      const prog = allPrograms.find(p => p.id === trip.program);
+      const sColor = trip.status === "confirmed" ? css.success : trip.status === "planned" ? css.warning : css.accent;
+      const sBg = trip.status === "confirmed" ? css.successBg : trip.status === "planned" ? css.warningBg : css.accentBg;
+      const tripExps = expenses.filter(e => e.tripId === trip.id);
+      const tripTotal = tripExps.reduce((s, e) => s + e.amount, 0);
+      // Customer service: booking source (OTA) takes priority, fallback to airline
+      const csInfo = trip.bookingSource || trip.airlineCS || (AIRLINE_CS[trip.program] ? { ...AIRLINE_CS[trip.program], type: "airline" } : null);
+      const manageUrl = trip.bookingSource?.manage || trip.airlineCS?.manage || AIRLINE_CS[trip.program]?.manage || null;
+
+      const DetailRow = ({ label, value, mono, accent, link }) => {
+        if (!value) return null;
+        return (
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: `1px solid ${css.border}` }}>
+            <span style={{ fontSize: 12, color: css.text3, fontWeight: 500 }}>{label}</span>
+            {link ? (
+              <a href={link} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, fontWeight: 600, color: css.accent, textDecoration: "none", fontFamily: mono ? "'JetBrains Mono', monospace" : "inherit" }}>{value} ↗</a>
+            ) : (
+              <span style={{ fontSize: 13, fontWeight: 600, color: accent ? css.accent : css.text, fontFamily: mono ? "'JetBrains Mono', monospace" : "inherit" }}>{value}</span>
+            )}
+          </div>
+        );
+      };
+
+      return (
+        <div>
+          {/* Back button */}
+          <button onClick={() => setTripDetailId(null)} style={{
+            display: "flex", alignItems: "center", gap: 6, padding: "8px 0", marginBottom: 16,
+            background: "none", border: "none", color: css.accent, cursor: "pointer", fontSize: 13, fontWeight: 600,
+          }}>
+            <span style={{ fontSize: 16 }}>←</span> Back to Trips
+          </button>
+
+          {/* Trip header card */}
+          <div style={{
+            background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: "24px 28px", marginBottom: 20,
+            borderTop: `3px solid ${prog?.color || css.accent}`,
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                <div style={{
+                  width: 52, height: 52, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24,
+                  background: prog ? `${prog.color}15` : css.surface2, border: `1px solid ${prog ? prog.color + "25" : css.border}`,
+                }}>✈️</div>
+                <div>
+                  {trip.tripName && <div style={{ fontSize: 12, fontWeight: 600, color: css.accent, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>{trip.tripName}</div>}
+                  <div style={{ fontSize: 22, fontWeight: 700, color: css.text, fontFamily: "'Cormorant Garamond', Georgia, serif" }}>{trip.route}</div>
+                  <div style={{ fontSize: 12, color: css.text3, marginTop: 4, fontFamily: "'JetBrains Mono', monospace" }}>
+                    {trip.date} · {prog?.name || "—"}{trip.flightNumber ? ` · Flight ${trip.flightNumber}` : ""}
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                {trip.estimatedPoints > 0 && (
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: css.gold, fontFamily: "'JetBrains Mono', monospace" }}>+{trip.estimatedPoints.toLocaleString()}</div>
+                    <div style={{ fontSize: 10, color: css.text3 }}>est. points</div>
+                  </div>
+                )}
+                <span style={{ fontSize: 11, fontWeight: 600, color: sColor, background: sBg, border: `1px solid ${sColor}30`, borderRadius: 20, padding: "4px 12px", textTransform: "capitalize" }}>{trip.status}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Flight Details card */}
+          <div style={{
+            background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: "20px 24px", marginBottom: 20,
+          }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: css.text, marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 15 }}>🛫</span> Flight Details
+            </div>
+            <DetailRow label="Flight Number" value={trip.flightNumber} mono />
+            <DetailRow label="Route" value={trip.route} />
+            <DetailRow label="Date" value={trip.date} mono />
+            <DetailRow label="Departure" value={trip.departureTime} mono />
+            <DetailRow label="Arrival" value={trip.arrivalTime} mono />
+            <DetailRow label="Aircraft" value={trip.aircraft} />
+            <DetailRow label="Seat" value={trip.seat} mono />
+            <DetailRow label="Fare Class" value={trip.fareClass} mono accent />
+            <DetailRow label="Cabin" value={trip.class === "premium" ? "Premium / Business" : trip.class === "international" ? "International Economy" : "Domestic Economy"} />
+            <DetailRow label="Distance" value={trip.distance ? `${Number(trip.distance).toLocaleString()} mi` : ""} mono />
+            <DetailRow label="Travel Time" value={trip.travelTime} mono />
+            {trip.layover && <DetailRow label="Layover" value={trip.layover} mono />}
+          </div>
+
+          {/* Booking Management card */}
+          <div style={{
+            background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: "20px 24px", marginBottom: 20,
+          }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: css.text, marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 15 }}>📋</span> Booking Management
+            </div>
+            <DetailRow label="Confirmation Code" value={trip.confirmationCode} mono accent />
+            {manageUrl && <DetailRow label="Manage Reservation" value={csInfo?.name || "Manage Online"} link={manageUrl} />}
+
+            {/* Customer service */}
+            {csInfo && (
+              <div style={{ marginTop: 14, padding: "14px 16px", background: css.surface2, borderRadius: 10, border: `1px solid ${css.border}` }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Customer Service</div>
+                {trip.bookingSource && trip.bookingSource.type === "ota" && (
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: `1px solid ${css.border}` }}>
+                    <span style={{ fontSize: 12, color: css.text2 }}>{trip.bookingSource.name} (Booking Source)</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: css.accent, fontFamily: "'JetBrains Mono', monospace" }}>{trip.bookingSource.phone || "N/A"}</span>
+                  </div>
+                )}
+                {(trip.airlineCS || AIRLINE_CS[trip.program]) && (
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0" }}>
+                    <span style={{ fontSize: 12, color: css.text2 }}>{(trip.airlineCS || AIRLINE_CS[trip.program])?.name} (Airline)</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: css.text, fontFamily: "'JetBrains Mono', monospace" }}>{(trip.airlineCS || AIRLINE_CS[trip.program])?.phone}</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Expenses for this trip */}
+          {tripExps.length > 0 && (
+            <div style={{
+              background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: "20px 24px",
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: css.text, marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 15 }}>💰</span> Expenses · <span style={{ fontFamily: "'JetBrains Mono', monospace", color: css.accent }}>${tripTotal.toLocaleString()}</span>
+              </div>
+              {tripExps.map(exp => (
+                <div key={exp.id} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${css.border}` }}>
+                  <span style={{ fontSize: 12, color: css.text2 }}>{exp.description || exp.category}</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: css.text, fontFamily: "'JetBrains Mono', monospace" }}>${exp.amount.toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
     return (
     <div>
       {/* Page header */}
@@ -2406,6 +2747,15 @@ Start by introducing yourself briefly in-character with personality, and give an
             </svg>
             Flighty Sync
             {user?.tier !== "premium" && <span style={{ fontSize: 9, background: css.goldBg, color: css.gold, padding: "2px 6px", borderRadius: 6, fontWeight: 700, border: `1px solid ${css.gold}30` }}>PRO</span>}
+          </button>
+          <button onClick={() => setShowImportItinerary(true)} style={{
+            display: "flex", alignItems: "center", gap: 7, padding: "10px 16px", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 600,
+            background: css.accentBg, border: `1px solid ${css.accentBorder}`, color: css.accent, transition: "all 0.15s",
+          }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+            </svg>
+            Import Itinerary
           </button>
           <button onClick={() => setShowAddTrip(true)} className="c-btn-primary" style={{
             padding: "10px 20px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600,
@@ -2474,7 +2824,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                 display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap",
                 gap: 12, padding: "16px 20px", cursor: "pointer",
               }} onClick={() => setExpenseViewTrip(isExpanded ? null : trip.id)}>
-                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 14, cursor: "pointer" }} onClick={e => { e.stopPropagation(); setTripDetailId(trip.id); }}>
                   <div style={{
                     width: 44, height: 44, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20,
                     background: prog ? `${prog.color}15` : css.surface2, border: `1px solid ${prog ? prog.color + "25" : css.border}`,
@@ -2485,8 +2835,10 @@ Start by introducing yourself briefly in-character with personality, and give an
                     <div style={{ fontSize: 14, fontWeight: 600, color: css.text }}>{trip.route || trip.property || trip.location}</div>
                     <div style={{ fontSize: 11, color: css.text3, marginTop: 2, fontFamily: "'JetBrains Mono', monospace" }}>
                       {trip.date} · {prog?.name?.split(" ")[0] || "—"}{trip.nights ? ` · ${trip.nights}n` : ""}
+                      {trip.flightNumber ? ` · ${trip.flightNumber}` : ""}
                     </div>
                   </div>
+                  <span style={{ fontSize: 10, color: css.accent, fontWeight: 600, opacity: 0.6 }}>View →</span>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
                   {/* Expense total pill */}
@@ -3814,6 +4166,56 @@ Start by introducing yourself briefly in-character with personality, and give an
                 flex: 1, padding: "11px 0", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Inter, sans-serif",
                 background: "#0EA5A0", color: "#f7f8f8",
               }}>Add Trip</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Import Itinerary Modal */}
+      {showImportItinerary && (
+        <div style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
+        }} onClick={() => setShowImportItinerary(false)}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: "#211e2e", border: "1px solid #2a2640", borderRadius: 8, padding: 28, width: "100%", maxWidth: 560,
+          }}>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: "0 0 6px", fontFamily: "'Inter Tight', Inter, sans-serif" }}>Import Itinerary</h3>
+            <p style={{ fontSize: 12, color: "#8a8f98", margin: "0 0 20px", lineHeight: 1.6 }}>
+              Paste your booking confirmation email below. We'll extract flight details, seat assignments, fare class, and more automatically.
+            </p>
+
+            {/* Example hint */}
+            <div style={{
+              padding: "10px 14px", marginBottom: 16, borderRadius: 8, border: "1px solid #2a2640",
+              background: "rgba(14,165,160,0.05)", fontSize: 11, color: "#8a8f98", lineHeight: 1.7,
+            }}>
+              <strong style={{ color: "#0EA5A0" }}>Tip:</strong> Works with confirmations from airlines (AA, Delta, United, etc.) and OTAs (Expedia, Booking.com, etc.). Include the full email text for best results.
+              <br /><strong style={{ color: "#0EA5A0" }}>Detected fields:</strong> Flight number, route, date, times, seat, fare class, aircraft, confirmation code, distance, layovers
+            </div>
+
+            <textarea
+              value={itineraryText}
+              onChange={e => setItineraryText(e.target.value)}
+              placeholder={"Paste booking confirmation here...\n\nExample:\nConfirmation: ABCDEF\nAmerican Airlines\nAA 123  JFK → LAX\nMar 15, 2026  8:30 AM → 11:45 AM\nSeat: 12A  Fare Class: Y\nAircraft: 738  Distance: 2,475 miles\nDuration: 5h 15m"}
+              rows={12}
+              style={{
+                display: "block", width: "100%", padding: "14px 16px", background: "rgba(255,255,255,0.03)",
+                border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13,
+                fontFamily: "'JetBrains Mono', monospace", outline: "none", resize: "vertical",
+                boxSizing: "border-box", lineHeight: 1.6,
+              }}
+            />
+
+            <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
+              <button onClick={() => { setShowImportItinerary(false); setItineraryText(""); }} style={{
+                flex: 1, padding: "11px 0", borderRadius: 8, border: "1px solid #2a2640", background: "rgba(255,255,255,0.03)",
+                color: "#8a8f98", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif",
+              }}>Cancel</button>
+              <button onClick={handleImportItinerary} style={{
+                flex: 1, padding: "11px 0", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Inter, sans-serif",
+                background: itineraryText.trim() ? "#0EA5A0" : "rgba(14,165,160,0.3)", color: "#f7f8f8",
+                opacity: itineraryText.trim() ? 1 : 0.6,
+              }}>Import Flights</button>
             </div>
           </div>
         </div>
