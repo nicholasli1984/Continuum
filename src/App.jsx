@@ -933,6 +933,7 @@ export default function EliteStatusTracker() {
   const [optimizerTab, setOptimizerTab] = useState("global");
   const [optimizerTripId, setOptimizerTripId] = useState(null);
   const [allianceGoal, setAllianceGoal] = useState("sa_gold");
+  const [optimizerHover, setOptimizerHover] = useState(false);
   const [customPrograms, setCustomPrograms] = useState([]);
   const [showAddProgram, setShowAddProgram] = useState(false);
   const [newProgram, setNewProgram] = useState({ name: "", category: "airline", logo: "✈️", color: "#0EA5A0", memberId: "", unit: "Points", tiers: "", selectedId: "", search: "" });
@@ -2726,11 +2727,7 @@ Start by introducing yourself briefly in-character with personality, and give an
       return candidates.sort((a, b) => a.remaining - b.remaining);
     })();
 
-    const OPT_TABS = [
-      { id: "global", label: "Global Status Optimizer" },
-      { id: "trip", label: "Trip-by-Trip" },
-      { id: "alliance", label: "Alliance Goal" },
-    ];
+    const OPT_TAB_LABELS = { global: "Global Status Optimizer", trip: "Trip-by-Trip Comparison", alliance: "Alliance Goal Optimizer" };
 
     const BarFill = ({ pct, color }) => (
       <div style={{ width: "100%", height: 6, borderRadius: 3, background: css.surface2, overflow: "hidden" }}>
@@ -2743,21 +2740,8 @@ Start by introducing yourself briefly in-character with personality, and give an
         {/* Header */}
         <div className="c-a1" style={{ marginBottom: 24 }}>
           <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: css.text3, marginBottom: 8 }}>Strategy Engine</div>
-          <h2 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: isMobile ? 28 : 36, fontWeight: 600, color: css.text, margin: 0, lineHeight: 1.1 }}>Trip Optimizer</h2>
+          <h2 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: isMobile ? 28 : 36, fontWeight: 600, color: css.text, margin: 0, lineHeight: 1.1 }}>{OPT_TAB_LABELS[optimizerTab] || "Trip Optimizer"}</h2>
           <p style={{ color: css.text2, fontSize: 13, margin: "8px 0 0" }}>Credit flights strategically to accelerate elite status across {airlines.length} airline programs</p>
-        </div>
-
-        {/* Tab bar */}
-        <div style={{ display: "flex", gap: 0, marginBottom: 24, borderBottom: `1px solid ${css.border}` }}>
-          {OPT_TABS.map(tab => (
-            <button key={tab.id} onClick={() => setOptimizerTab(tab.id)} style={{
-              padding: "10px 20px", border: "none", cursor: "pointer", background: "transparent",
-              borderBottom: optimizerTab === tab.id ? `2px solid ${css.accent}` : "2px solid transparent",
-              color: optimizerTab === tab.id ? css.accent : css.text3,
-              fontSize: 13, fontWeight: optimizerTab === tab.id ? 600 : 400,
-              fontFamily: "'Outfit', sans-serif", transition: "all 0.15s",
-            }}>{tab.label}</button>
-          ))}
         </div>
 
         {flightTrips.length === 0 && (
@@ -3518,6 +3502,11 @@ Start by introducing yourself briefly in-character with personality, and give an
               { id: "rentals",      label: "Car Rental Programs" },
               { id: "alliances",    label: "Airline Alliance Benefits" },
             ];
+            const OPT_SUBS = [
+              { id: "global",   label: "Global Status Optimizer" },
+              { id: "trip",     label: "Trip-by-Trip Comparison" },
+              { id: "alliance", label: "Alliance Goal Optimizer" },
+            ];
             return (
               <nav style={{ display: "flex", alignItems: "center", gap: 2, flex: 1, minWidth: 0, overflow: "visible", position: "relative" }}>
                 {navItems.map(item => {
@@ -3555,6 +3544,49 @@ Start by introducing yourself briefly in-character with personality, and give an
                                   padding: "9px 18px", border: "none", cursor: "pointer",
                                   background: (activeView === "programs" && programSubView === sub.id) ? css.accentBg : "transparent",
                                   color: (activeView === "programs" && programSubView === sub.id) ? css.accent : css.text,
+                                  fontSize: 13, fontFamily: "'Outfit', sans-serif",
+                                }}>{sub.label}</button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+                  if (item.id === "optimizer") {
+                    return (
+                      <div key="optimizer" style={{ position: "relative" }}
+                        onMouseEnter={() => setOptimizerHover(true)}
+                        onMouseLeave={() => setOptimizerHover(false)}
+                      >
+                        <button onClick={() => setActiveView("optimizer")} className="c-nav-btn" style={{
+                          display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8,
+                          border: "none", cursor: "pointer",
+                          background: activeView === "optimizer" ? css.accentBg : "transparent",
+                          color: activeView === "optimizer" ? css.accent : css.text2,
+                          fontSize: 13, fontWeight: activeView === "optimizer" ? 600 : 400,
+                          fontFamily: "'Outfit', sans-serif",
+                        }}>
+                          <span style={{ fontSize: 14 }}>{item.icon}</span>
+                          {item.label}
+                          <span style={{ fontSize: 9, opacity: 0.6 }}>▾</span>
+                        </button>
+                        {optimizerHover && (
+                          <div style={{
+                            position: "absolute", top: "100%", left: 0, zIndex: 200,
+                            paddingTop: 6,
+                          }}>
+                            <div style={{
+                              background: css.surface, border: `1px solid ${css.border}`,
+                              borderRadius: 10, padding: "6px 0", minWidth: 220,
+                              boxShadow: css.shadow,
+                            }}>
+                              {OPT_SUBS.map(sub => (
+                                <button key={sub.id} onClick={() => { setActiveView("optimizer"); setOptimizerTab(sub.id); setOptimizerHover(false); }} style={{
+                                  display: "block", width: "100%", textAlign: "left",
+                                  padding: "9px 18px", border: "none", cursor: "pointer",
+                                  background: (activeView === "optimizer" && optimizerTab === sub.id) ? css.accentBg : "transparent",
+                                  color: (activeView === "optimizer" && optimizerTab === sub.id) ? css.accent : css.text,
                                   fontSize: 13, fontFamily: "'Outfit', sans-serif",
                                 }}>{sub.label}</button>
                               ))}
@@ -3638,6 +3670,23 @@ Start by introducing yourself briefly in-character with personality, and give an
                   borderBottom: programSubView === sub.id ? `2px solid ${css.accent}` : "2px solid transparent",
                   color: programSubView === sub.id ? css.accent : css.text3,
                   fontSize: 10, fontWeight: programSubView === sub.id ? 600 : 400,
+                  whiteSpace: "nowrap", flexShrink: 0,
+                }}>{sub.label}</button>
+              ))}
+            </div>
+          )}
+          {activeView === "optimizer" && (
+            <div style={{ display: "flex", overflowX: "auto", borderTop: `1px solid ${css.border}`, padding: "0 8px", scrollbarWidth: "none", background: css.surface2 }}>
+              {[
+                { id: "global", label: "Global Optimizer" },
+                { id: "trip", label: "Trip-by-Trip" },
+                { id: "alliance", label: "Alliance Goal" },
+              ].map(sub => (
+                <button key={sub.id} onClick={() => setOptimizerTab(sub.id)} style={{
+                  padding: "6px 10px", border: "none", cursor: "pointer", background: "transparent",
+                  borderBottom: optimizerTab === sub.id ? `2px solid ${css.accent}` : "2px solid transparent",
+                  color: optimizerTab === sub.id ? css.accent : css.text3,
+                  fontSize: 10, fontWeight: optimizerTab === sub.id ? 600 : 400,
                   whiteSpace: "nowrap", flexShrink: 0,
                 }}>{sub.label}</button>
               ))}
