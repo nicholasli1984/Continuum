@@ -1146,7 +1146,7 @@ export default function EliteStatusTracker() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [registerForm, setRegisterForm] = useState({ name: "", email: "", password: "" });
   const [showAddTrip, setShowAddTrip] = useState(false);
-  const [newTrip, setNewTrip] = useState({ type: "flight", program: "aa", route: "", date: "", class: "domestic", nights: 1, status: "planned", tripName: "", departureTerminal: "", arrivalTerminal: "" });
+  const [newTrip, setNewTrip] = useState({ type: "flight", program: "aa", route: "", date: "", class: "domestic", nights: 1, status: "planned", tripName: "", flightNumber: "", departureTime: "", arrivalTime: "", departureTerminal: "", arrivalTerminal: "" });
   const [trips, setTrips] = useState([]);
   const [linkedAccounts, setLinkedAccounts] = useState({});
   const [showLinkModal, setShowLinkModal] = useState(null);
@@ -1500,7 +1500,7 @@ Start by introducing yourself briefly in-character with personality, and give an
     }
     setTrips(prev => [...prev, { ...newTrip, id, estimatedPoints, estimatedNights, estimatedRentals }]);
     setShowAddTrip(false);
-    setNewTrip({ type: "flight", program: "aa", route: "", date: "", class: "domestic", nights: 1, status: "planned", tripName: "", departureTerminal: "", arrivalTerminal: "" });
+    setNewTrip({ type: "flight", program: "aa", route: "", date: "", class: "domestic", nights: 1, status: "planned", tripName: "", flightNumber: "", departureTime: "", arrivalTime: "", departureTerminal: "", arrivalTerminal: "" });
   };
 
   const removeTrip = (id) => setTrips(prev => prev.filter(t => t.id !== id));
@@ -3079,7 +3079,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                   {trip.tripName && <div style={{ fontSize: 12, fontWeight: 600, color: css.accent, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>{trip.tripName}</div>}
                   <div style={{ fontSize: 22, fontWeight: 700, color: css.text, fontFamily: "'Cormorant Garamond', Georgia, serif" }}>{trip.route}</div>
                   <div style={{ fontSize: 12, color: css.text3, marginTop: 4, fontFamily: "'JetBrains Mono', monospace" }}>
-                    {trip.date} · {prog?.name || "—"}{trip.flightNumber ? ` · Flight ${trip.flightNumber}` : ""}
+                    {trip.date} · {prog?.name || "—"}{trip.flightNumber ? ` · ${trip.flightNumber}` : ""}{trip.departureTime ? ` · ${trip.departureTime}` : ""}{trip.arrivalTime ? ` – ${trip.arrivalTime}` : ""}
                   </div>
                 </div>
               </div>
@@ -3413,8 +3413,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                     {trip.tripName && <div style={{ fontSize: 11, fontWeight: 600, color: css.accent, marginBottom: 2, textTransform: "uppercase", letterSpacing: "0.05em" }}>{trip.tripName}</div>}
                     <div style={{ fontSize: 14, fontWeight: 600, color: css.text }}>{trip.route || trip.property || trip.location}</div>
                     <div style={{ fontSize: 11, color: css.text3, marginTop: 2, fontFamily: "'JetBrains Mono', monospace" }}>
-                      {trip.date} · {prog?.name?.split(" ")[0] || "—"}{trip.nights ? ` · ${trip.nights}n` : ""}
-                      {trip.flightNumber ? ` · ${trip.flightNumber}` : ""}
+                      {trip.date} · {prog?.name?.split(" ")[0] || "—"}{trip.nights ? ` · ${trip.nights}n` : ""}{trip.flightNumber ? ` · ${trip.flightNumber}` : ""}{trip.departureTime ? ` · ${trip.departureTime}` : ""}{trip.arrivalTime ? ` – ${trip.arrivalTime}` : ""}
                     </div>
                   </div>
                   <span style={{ fontSize: 10, color: css.accent, fontWeight: 600, opacity: 0.6 }}>View →</span>
@@ -5845,22 +5844,42 @@ Start by introducing yourself briefly in-character with personality, and give an
                 }} />
             </label>
 
-            {newTrip.type === "flight" && (
+            {newTrip.type === "flight" && (<>
+              {/* Flight number + dep/arr times */}
+              <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
+                <label style={{ flex: 1 }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Flight Number</span>
+                  <input value={newTrip.flightNumber} onChange={e => setNewTrip(p => ({ ...p, flightNumber: e.target.value.toUpperCase() }))}
+                    placeholder="e.g. AA1289"
+                    style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
+                </label>
+                <label style={{ flex: 1 }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Dep. Time</span>
+                  <input type="time" value={newTrip.departureTime} onChange={e => setNewTrip(p => ({ ...p, departureTime: e.target.value }))}
+                    style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
+                </label>
+                <label style={{ flex: 1 }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Arr. Time</span>
+                  <input type="time" value={newTrip.arrivalTime} onChange={e => setNewTrip(p => ({ ...p, arrivalTime: e.target.value }))}
+                    style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
+                </label>
+              </div>
+              {/* Terminals */}
               <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
                 <label style={{ flex: 1 }}>
                   <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Dep. Terminal</span>
                   <input value={newTrip.departureTerminal} onChange={e => setNewTrip(p => ({ ...p, departureTerminal: e.target.value.toUpperCase() }))}
-                    placeholder="e.g. B, 4, T2"
+                    placeholder="e.g. B, 4"
                     style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
                 </label>
                 <label style={{ flex: 1 }}>
                   <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Arr. Terminal</span>
                   <input value={newTrip.arrivalTerminal} onChange={e => setNewTrip(p => ({ ...p, arrivalTerminal: e.target.value.toUpperCase() }))}
-                    placeholder="e.g. C, 1, T4"
+                    placeholder="e.g. C, 1"
                     style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
                 </label>
               </div>
-            )}
+            </>)}
 
             <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
               <label style={{ flex: 1 }}>
