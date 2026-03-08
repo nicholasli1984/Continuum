@@ -5459,8 +5459,11 @@ Start by introducing yourself briefly in-character with personality, and give an
                           padding: "6px 14px", border: "none", cursor: "pointer", background: "transparent",
                           borderRadius: 9999, fontFamily: "'Outfit', sans-serif",
                         }}>
-                          {(navCursor ?? activeView) === "programs" && (
-                            <motion.div layoutId="navCursor" transition={{ type: "tween", duration: 0.18, ease: "easeOut" }} style={{ position: "absolute", inset: 0, borderRadius: 9999, background: css.accent, zIndex: 0 }} />
+                          {navCursor === "programs" && (
+                            <motion.div layoutId="navCursor" transition={{ type: "tween", duration: 0.15, ease: "easeOut" }} style={{ position: "absolute", inset: 0, borderRadius: 9999, background: css.accent, zIndex: 0 }} />
+                          )}
+                          {navCursor === null && activeView === "programs" && (
+                            <div style={{ position: "absolute", inset: 0, borderRadius: 9999, background: css.accent, zIndex: 0 }} />
                           )}
                           <span style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", gap: 5, color: (navCursor ?? activeView) === "programs" ? "#fff" : css.text2, fontSize: 13, fontWeight: (navCursor ?? activeView) === "programs" ? 600 : 400 }}>
                             {item.label}
@@ -5527,8 +5530,11 @@ Start by introducing yourself briefly in-character with personality, and give an
                           padding: "6px 14px", border: "none", cursor: "pointer", background: "transparent",
                           borderRadius: 9999, fontFamily: "'Outfit', sans-serif",
                         }}>
-                          {(navCursor ?? activeView) === "insights" && (
-                            <motion.div layoutId="navCursor" transition={{ type: "tween", duration: 0.18, ease: "easeOut" }} style={{ position: "absolute", inset: 0, borderRadius: 9999, background: css.accent, zIndex: 0 }} />
+                          {navCursor === "insights" && (
+                            <motion.div layoutId="navCursor" transition={{ type: "tween", duration: 0.15, ease: "easeOut" }} style={{ position: "absolute", inset: 0, borderRadius: 9999, background: css.accent, zIndex: 0 }} />
+                          )}
+                          {navCursor === null && activeView === "insights" && (
+                            <div style={{ position: "absolute", inset: 0, borderRadius: 9999, background: css.accent, zIndex: 0 }} />
                           )}
                           <span style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", gap: 5, color: (navCursor ?? activeView) === "insights" ? "#fff" : css.text2, fontSize: 13, fontWeight: (navCursor ?? activeView) === "insights" ? 600 : 400 }}>
                             {item.label}
@@ -5588,8 +5594,11 @@ Start by introducing yourself briefly in-character with personality, and give an
                           padding: "6px 14px", border: "none", cursor: "pointer", background: "transparent",
                           borderRadius: 9999, fontFamily: "'Outfit', sans-serif",
                         }}>
-                          {(navCursor ?? activeView) === "optimizer" && (
-                            <motion.div layoutId="navCursor" transition={{ type: "tween", duration: 0.18, ease: "easeOut" }} style={{ position: "absolute", inset: 0, borderRadius: 9999, background: css.accent, zIndex: 0 }} />
+                          {navCursor === "optimizer" && (
+                            <motion.div layoutId="navCursor" transition={{ type: "tween", duration: 0.15, ease: "easeOut" }} style={{ position: "absolute", inset: 0, borderRadius: 9999, background: css.accent, zIndex: 0 }} />
+                          )}
+                          {navCursor === null && activeView === "optimizer" && (
+                            <div style={{ position: "absolute", inset: 0, borderRadius: 9999, background: css.accent, zIndex: 0 }} />
                           )}
                           <span style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", gap: 5, color: (navCursor ?? activeView) === "optimizer" ? "#fff" : css.text2, fontSize: 13, fontWeight: (navCursor ?? activeView) === "optimizer" ? 600 : 400 }}>
                             {item.label}
@@ -5644,8 +5653,11 @@ Start by introducing yourself briefly in-character with personality, and give an
                       padding: "6px 14px", border: "none", cursor: "pointer", background: "transparent",
                       borderRadius: 9999, fontFamily: "'Outfit', sans-serif",
                     }}>
-                      {(navCursor ?? activeView) === item.id && (
-                        <motion.div layoutId="navCursor" transition={{ type: "tween", duration: 0.18, ease: "easeOut" }} style={{ position: "absolute", inset: 0, borderRadius: 9999, background: css.accent, zIndex: 0 }} />
+                      {navCursor === item.id && (
+                        <motion.div layoutId="navCursor" transition={{ type: "tween", duration: 0.15, ease: "easeOut" }} style={{ position: "absolute", inset: 0, borderRadius: 9999, background: css.accent, zIndex: 0 }} />
+                      )}
+                      {navCursor === null && activeView === item.id && (
+                        <div style={{ position: "absolute", inset: 0, borderRadius: 9999, background: css.accent, zIndex: 0 }} />
                       )}
                       <span style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", gap: 5, color: (navCursor ?? activeView) === item.id ? "#fff" : css.text2, fontSize: 13, fontWeight: (navCursor ?? activeView) === item.id ? 600 : 400 }}>
                         {item.label}
