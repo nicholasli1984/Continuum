@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 // ============================================================
 // LOGO COMPONENT — Geometric travel icon in Neuron brand style
@@ -1003,6 +1004,103 @@ const CREDIT_CARD_OFFERS = [
 ];
 
 // ============================================================
+// INSIGHTS DATA
+// ============================================================
+const EXPIRATION_RULES = {
+  aa:               { months: 18, note: "Any earning or redemption activity resets the clock", neverExpire: false },
+  dl:               { months: 0,  note: "SkyMiles never expire", neverExpire: true },
+  ua:               { months: 18, note: "Account activity (earning or redeeming) resets clock", neverExpire: false },
+  sw:               { months: 24, note: "Any Rapid Rewards activity resets the clock", neverExpire: false },
+  b6:               { months: 12, note: "Any TrueBlue earning or redemption activity", neverExpire: false },
+  atmos:            { months: 24, note: "Any earning or redemption activity", neverExpire: false },
+  flying_blue:      { months: 24, note: "Any earning or redemption activity", neverExpire: false },
+  ba_avios:         { months: 36, note: "Any Avios activity in the account within 36 months", neverExpire: false },
+  aeroplan:         { months: 12, note: "Any earning or redemption activity", neverExpire: false },
+  singapore_kf:     { months: 36, note: "Miles expire 3 years from date earned", neverExpire: false },
+  emirates_skywards:{ months: 36, note: "Miles expire after 3 years of inactivity", neverExpire: false },
+  marriott:         { months: 24, note: "Any qualifying stay or points-earning activity", neverExpire: false },
+  hilton:           { months: 24, note: "Any qualifying earning or redemption activity", neverExpire: false },
+  ihg:              { months: 12, note: "Any points-earning or redemption activity", neverExpire: false },
+  hyatt:            { months: 24, note: "Any qualifying activity (stay, purchase, transfer)", neverExpire: false },
+  amex_plat:        { months: 0,  note: "Points never expire while card is open", neverExpire: true },
+  amex_gold:        { months: 0,  note: "Points never expire while card is open", neverExpire: true },
+  chase_sapphire:   { months: 0,  note: "Points never expire while card is open", neverExpire: true },
+  chase_sapphire_pref: { months: 0, note: "Points never expire while card is open", neverExpire: true },
+  cap1_venturex:    { months: 0,  note: "Miles never expire while card is open", neverExpire: true },
+  bilt:             { months: 0,  note: "Points never expire while card is open", neverExpire: true },
+};
+
+const REDEMPTION_VALUES = {
+  aa:             { cpp: 1.5, best: "Business/First class intl awards via partner airlines (Cathay, JAL)", avoid: "Short domestic economy (dynamic pricing)", partners: ["ba_avios","cathay_mp","aeroplan","singapore_kf"] },
+  dl:             { cpp: 1.2, best: "Delta One transcontinental, select partner awards", avoid: "Last-minute domestic (heavily inflated pricing)", partners: ["flying_blue","virgin_fc","korean_air"] },
+  ua:             { cpp: 1.5, best: "Star Alliance Saver awards (ANA, Singapore, Lufthansa)", avoid: "United revenue redemptions at face value", partners: ["singapore_kf","aeroplan","turkish_miles"] },
+  sw:             { cpp: 1.5, best: "Business Select fares, Companion Pass activation travel", avoid: "Wanna Get Away fares under $100 (low value)", partners: [] },
+  marriott:       { cpp: 0.7, best: "Peak award nights at Category 8 properties, Points+Cash", avoid: "Low-category properties (cash rates are often cheaper)", partners: ["ua","dl","aa","ba_avios"] },
+  hilton:         { cpp: 0.5, best: "Aspirational luxury properties, 5th night free on 5-night stays", avoid: "Mid-range properties (cash rates similar or better)", partners: [] },
+  ihg:            { cpp: 0.5, best: "Flagship InterContinental hotels, PointBreaks sales", avoid: "Budget Holiday Inn / Staybridge (poor redemption value)", partners: [] },
+  hyatt:          { cpp: 1.7, best: "Category 7–8 luxury (Park Hyatt, Alila), Points+Cash deals", avoid: "Low-category standard rooms at limited-service properties", partners: ["amex_plat","chase_sapphire","bilt"] },
+  amex_plat:      { cpp: 2.0, best: "Transfer to Aeroplan/Singapore for biz class, or Virgin for PE", avoid: "Statement credits (0.6¢/pt) or gift cards", partners: ["dl","ba_avios","flying_blue","aeroplan","singapore_kf","emirates_skywards","cathay_mp","virgin_fc","marriott","hilton"] },
+  chase_sapphire: { cpp: 2.0, best: "Transfer to Hyatt for luxury hotels, or Aeroplan for biz class", avoid: "Cash back via Pay Yourself Back (1–1.5¢/pt max)", partners: ["ua","sw","ba_avios","flying_blue","aeroplan","singapore_kf","emirates_skywards","virgin_fc","marriott","hyatt","ihg"] },
+};
+
+const CARD_BENEFITS_DATA = {
+  amex_plat: {
+    annualFee: 695,
+    benefits: [
+      { id: "airline_fee",    name: "$200 Airline Fee Credit",        value: 200, cat: "travel",    note: "Incidental fees on one selected U.S. airline" },
+      { id: "hotel_credit",   name: "$200 Fine Hotels & Resorts",     value: 200, cat: "travel",    note: "Via Amex Travel on eligible bookings" },
+      { id: "entertainment",  name: "$240 Digital Entertainment",     value: 240, cat: "lifestyle", note: "Peacock, Disney+, ESPN+, Hulu, NYT ($20/mo)" },
+      { id: "walmart",        name: "$155 Walmart+ Credit",           value: 155, cat: "lifestyle", note: "Monthly $12.95 Walmart+ membership" },
+      { id: "uber",           name: "$200 Uber Cash",                 value: 200, cat: "lifestyle", note: "$15/month + $35 in December" },
+      { id: "equinox",        name: "$300 Equinox Credit",            value: 300, cat: "lifestyle", note: "Equinox gym or digital Equinox+ membership" },
+      { id: "clear",          name: "$189 CLEAR Plus Credit",         value: 189, cat: "travel",    note: "Annual CLEAR airport biometric membership" },
+      { id: "global_entry",   name: "Global Entry / TSA PreCheck",    value: 100, cat: "travel",    note: "One application fee credit every 4.5 years" },
+      { id: "marriott_gold",  name: "Marriott Bonvoy Gold Status",    value: 150, cat: "status",    note: "Automatic Gold Elite without stays" },
+      { id: "hilton_gold",    name: "Hilton Honors Gold Status",      value: 150, cat: "status",    note: "Automatic Gold status without nights" },
+      { id: "centurion",      name: "Centurion Lounge Access",        value: 500, cat: "lounge",    note: "Unlimited visits (guest fees apply over 2)" },
+      { id: "priority_pass",  name: "Priority Pass Select",           value: 450, cat: "lounge",    note: "1,300+ lounges worldwide (no guest fee limit)" },
+    ],
+  },
+  chase_sapphire: {
+    annualFee: 550,
+    benefits: [
+      { id: "travel_credit",  name: "$300 Annual Travel Credit",      value: 300, cat: "travel",    note: "Auto-applied to all travel category purchases" },
+      { id: "priority_pass",  name: "Priority Pass Select",           value: 429, cat: "lounge",    note: "1,300+ lounges + $35/person restaurant credit" },
+      { id: "global_entry",   name: "Global Entry / TSA PreCheck",    value: 100, cat: "travel",    note: "Application fee credit every 4 years" },
+      { id: "dashpass",       name: "DashPass by DoorDash",           value: 96,  cat: "lifestyle", note: "$0 delivery fees + 5%+ off eligible orders" },
+      { id: "lyft_pink",      name: "Lyft Pink All Access",           value: 99,  cat: "lifestyle", note: "15% off Lyft rides + complimentary upgrades" },
+    ],
+  },
+  cap1_venturex: {
+    annualFee: 395,
+    benefits: [
+      { id: "travel_credit",  name: "$300 Capital One Travel Credit", value: 300, cat: "travel",    note: "Bookings via Capital One Travel portal only" },
+      { id: "anniversary",    name: "10,000 Anniversary Bonus Miles", value: 100, cat: "rewards",   note: "Awarded each year on card anniversary (~$100 in travel)" },
+      { id: "priority_pass",  name: "Priority Pass (Unlimited Guests)",value: 450, cat: "lounge",   note: "Unlimited guest access included at no extra charge" },
+      { id: "capital_lounge", name: "Capital One Lounge Access",      value: 200, cat: "lounge",    note: "DFW, DEN, IAD Capital One proprietary lounges" },
+      { id: "global_entry",   name: "Global Entry / TSA PreCheck",    value: 100, cat: "travel",    note: "Application fee credit every 4 years" },
+    ],
+  },
+  amex_gold: {
+    annualFee: 325,
+    benefits: [
+      { id: "dining",         name: "$120 Dining Credit",             value: 120, cat: "lifestyle", note: "$10/mo at Grubhub, Cheesecake Factory, Goldbelly, Wine.com" },
+      { id: "uber",           name: "$120 Uber Cash",                 value: 120, cat: "lifestyle", note: "$10/month in Uber Cash for rides and Uber Eats" },
+      { id: "resy",           name: "$100 Resy Credit",               value: 100, cat: "lifestyle", note: "$50 semi-annually on dining via Resy" },
+      { id: "dunkin",         name: "$84 Dunkin' Credit",             value: 84,  cat: "lifestyle", note: "$7/month at participating U.S. Dunkin' locations" },
+    ],
+  },
+  bilt: {
+    annualFee: 0,
+    benefits: [
+      { id: "rent_points",    name: "Points on Rent (no transaction fee)", value: 120, cat: "rewards", note: "Earn 1x on rent up to $50k/year — unique to Bilt" },
+      { id: "transfer",       name: "Transfer to 14+ Travel Partners",     value: 200, cat: "rewards", note: "Hyatt, AA, United, Alaska, Air Canada at 1:1" },
+      { id: "rent_day",       name: "Double Points on Rent Day (1st)",     value: 60,  cat: "rewards", note: "2x on all categories (except rent) on the 1st of every month" },
+    ],
+  },
+};
+
+// ============================================================
 // UTILITY COMPONENTS
 // ============================================================
 const ProgressRing = ({ progress, size = 80, stroke = 6, color = "#0EA5A0", label, sublabel }) => {
@@ -1048,7 +1146,7 @@ export default function EliteStatusTracker() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [registerForm, setRegisterForm] = useState({ name: "", email: "", password: "" });
   const [showAddTrip, setShowAddTrip] = useState(false);
-  const [newTrip, setNewTrip] = useState({ type: "flight", program: "aa", route: "", date: "", class: "domestic", nights: 1, status: "planned", tripName: "" });
+  const [newTrip, setNewTrip] = useState({ type: "flight", program: "aa", route: "", date: "", class: "domestic", nights: 1, status: "planned", tripName: "", departureTerminal: "", arrivalTerminal: "" });
   const [trips, setTrips] = useState([]);
   const [linkedAccounts, setLinkedAccounts] = useState({});
   const [showLinkModal, setShowLinkModal] = useState(null);
@@ -1072,6 +1170,11 @@ export default function EliteStatusTracker() {
   const [optimizerTripId, setOptimizerTripId] = useState(null);
   const [allianceGoal, setAllianceGoal] = useState("sa_gold");
   const [optimizerHover, setOptimizerHover] = useState(false);
+  const [progDropItem, setProgDropItem] = useState("airlines");   // sub-item currently previewed in Programs dropdown
+  const [optDropItem, setOptDropItem] = useState("global");        // sub-item currently previewed in Optimizer dropdown
+  const [insDropItem, setInsDropItem] = useState("countdown");     // sub-item currently previewed in Insights dropdown
+  const [insightsHover, setInsightsHover] = useState(false);
+  const [navCursor, setNavCursor] = useState(null);               // slide-tabs animated cursor position
   const [ccOptTarget, setCcOptTarget] = useState("max_points"); // "max_points" | airline/hotel program id
   const [ccOptAmount, setCcOptAmount] = useState("100"); // purchase amount for illustration
   const [ccBookingMode, setCcBookingMode] = useState("direct"); // "direct" | "portal"
@@ -1093,6 +1196,14 @@ export default function EliteStatusTracker() {
   const paPlayedRef = React.useRef(false);
   const [cockpitSection, setCockpitSection] = useState(null);
   const [selectedPartner, setSelectedPartner] = useState(null);
+  const [insightTab, setInsightTab] = useState("countdown");
+  const [annualFeeCard, setAnnualFeeCard] = useState("amex_plat");
+  const [checkedBenefits, setCheckedBenefits] = useState({});
+  const [customBenefitValues, setCustomBenefitValues] = useState({}); // { "cardId:benefitId": number }
+  const [transferGoal, setTransferGoal] = useState("");
+  const [calendarPopover, setCalendarPopover] = useState(null); // { id, top, right } for fixed-position dropdown
+  const [tripsView, setTripsView] = useState("list"); // "list" | "calendar"
+  const [calViewMonth, setCalViewMonth] = useState(() => ({ year: new Date().getFullYear(), month: new Date().getMonth() }));
 
   // ── Itinerary import & trip detail state ──
   const [showImportItinerary, setShowImportItinerary] = useState(false);
@@ -1389,7 +1500,7 @@ Start by introducing yourself briefly in-character with personality, and give an
     }
     setTrips(prev => [...prev, { ...newTrip, id, estimatedPoints, estimatedNights, estimatedRentals }]);
     setShowAddTrip(false);
-    setNewTrip({ type: "flight", program: "aa", route: "", date: "", class: "domestic", nights: 1, status: "planned", tripName: "" });
+    setNewTrip({ type: "flight", program: "aa", route: "", date: "", class: "domestic", nights: 1, status: "planned", tripName: "", departureTerminal: "", arrivalTerminal: "" });
   };
 
   const removeTrip = (id) => setTrips(prev => prev.filter(t => t.id !== id));
@@ -1433,6 +1544,11 @@ Start by introducing yourself briefly in-character with personality, and give an
     const durationPattern = /(?:duration|travel\s*time|flight\s*time)[:\s]*(\d+h\s*\d*m?|\d+\s*hr[s]?\s*\d*\s*min[s]?)/gi;
     const distancePattern = /(?:distance|miles)[:\s]*([\d,]+)\s*(?:mi|miles|km)/gi;
     const layoverPattern = /(?:layover|connection|stopover)[:\s]*(?:(\d+h\s*\d*m?)|([\d.]+)\s*(?:hr|hour))/gi;
+    // Terminal patterns — "Terminal B", "Terminal 4", "Departs Terminal 2", "T3"
+    const depTerminalPattern = /(?:dep(?:arture|arting|arts?)?\.?\s*terminal|terminal\s*(?:for\s*)?dep(?:arture)?)[:\s]*([A-Z]?\d+[A-Z]?|[A-Z]{1,2})(?=\b)/gi;
+    const arrTerminalPattern = /(?:arr(?:ival|iving|ives?)?\.?\s*terminal|terminal\s*(?:for\s*)?arr(?:ival)?)[:\s]*([A-Z]?\d+[A-Z]?|[A-Z]{1,2})(?=\b)/gi;
+    // Fallback: generic "Terminal X" ordered list when no dep/arr qualifier
+    const genericTerminalPattern = /\bterminal[:\s]+([A-Z]?\d+[A-Z]?|[A-Z]{1,2})\b/gi;
 
     // Collect all dates and times
     const dates = [];
@@ -1485,6 +1601,22 @@ Start by introducing yourself briefly in-character with personality, and give an
     let lm;
     while ((lm = layoverPattern.exec(text)) !== null) layovers.push(lm[1] || lm[2] + "hr");
 
+    // Collect terminals — try specific dep/arr patterns first, fall back to generic order
+    const depTerminals = [];
+    let dtm;
+    while ((dtm = depTerminalPattern.exec(text)) !== null) depTerminals.push(dtm[1].toUpperCase());
+    const arrTerminals = [];
+    let atm;
+    while ((atm = arrTerminalPattern.exec(text)) !== null) arrTerminals.push(atm[1].toUpperCase());
+    // If no labeled terminals found, use generic "Terminal X" occurrences in order
+    if (depTerminals.length === 0 && arrTerminals.length === 0) {
+      const generic = [];
+      let gtm;
+      while ((gtm = genericTerminalPattern.exec(text)) !== null) generic.push(gtm[1].toUpperCase());
+      if (generic.length >= 1) depTerminals.push(generic[0]);
+      if (generic.length >= 2) arrTerminals.push(generic[1]);
+    }
+
     // Determine airline program from flight carrier codes
     const carrierToProgram = { AA: "aa", DL: "dl", UA: "ua", WN: "sw", B6: "b6", AS: "atmos", F9: "frontier", NK: "spirit", AF: "flying_blue", KL: "flying_blue", BA: "ba_avios", AC: "aeroplan", EK: "emirates_skywards", TK: "turkish_miles", QF: "qantas_ff", SQ: "singapore_kf", CX: "cathay_mp" };
 
@@ -1527,6 +1659,8 @@ Start by introducing yourself briefly in-character with personality, and give an
         layover: layovers[i] || "",
         departureTime: times[i * 2] || times[0] || "",
         arrivalTime: times[i * 2 + 1] || times[1] || "",
+        departureTerminal: depTerminals[i] || depTerminals[0] || "",
+        arrivalTerminal: arrTerminals[i] || arrTerminals[0] || "",
         confirmationCode,
         bookingSource: bookingSource ? { name: bookingSource.name, phone: bookingSource.phone, manage: bookingSource.manage, type: bookingSource.type } : null,
         airlineCS: AIRLINE_CS[programId] || null,
@@ -1649,6 +1783,151 @@ Start by introducing yourself briefly in-character with personality, and give an
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  // ── Calendar export helpers ──
+  const buildTripICSEvent = (trip) => {
+    const prog = allPrograms.find(p => p.id === trip.program);
+    const name = trip.tripName || trip.route || trip.property || trip.location || "Trip";
+    const icon = trip.type === "flight" ? "✈" : trip.type === "hotel" ? "🏨" : "🚗";
+    const desc = [
+      prog ? `Program: ${prog.name}` : "",
+      trip.class ? `Class: ${trip.class.charAt(0).toUpperCase() + trip.class.slice(1)}` : "",
+      trip.estimatedPoints ? `Est. Points: +${trip.estimatedPoints.toLocaleString()} ${prog?.unit || "pts"}` : "",
+      `Status: ${trip.status}`,
+      "",
+      "Exported from Continuum",
+    ].filter(Boolean).join("\n");
+    const pad = (n) => String(n).padStart(2, "0");
+    const toDate = (dateStr) => { const [y, m, d] = dateStr.split("-"); return `${y}${pad(m)}${pad(d)}`; };
+    const toDatePlusN = (dateStr, n) => {
+      const d = new Date(dateStr + "T12:00:00");
+      d.setDate(d.getDate() + (n || 1));
+      return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
+    };
+    const esc = (s) => String(s || "").replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
+    return [
+      "BEGIN:VEVENT",
+      `UID:continuum-trip-${trip.id}@continuum.app`,
+      `DTSTART;VALUE=DATE:${toDate(trip.date)}`,
+      `DTEND;VALUE=DATE:${toDatePlusN(trip.date, trip.nights)}`,
+      `SUMMARY:${esc(`${icon} ${name}`)}`,
+      `DESCRIPTION:${esc(desc)}`,
+      (trip.route || trip.location) ? `LOCATION:${esc(trip.route || trip.location)}` : "",
+      "CATEGORIES:TRAVEL",
+      `STATUS:${trip.status === "confirmed" ? "CONFIRMED" : "TENTATIVE"}`,
+      `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, "").slice(0, 15)}Z`,
+      "END:VEVENT",
+    ].filter(Boolean).join("\r\n");
+  };
+
+  const downloadTripICS = (trip) => {
+    const event = buildTripICSEvent(trip);
+    const name = trip.tripName || trip.route || trip.property || trip.location || "trip";
+    const ics = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Continuum//TripExport//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH", event, "END:VCALENDAR"].join("\r\n");
+    const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `continuum-${name.replace(/[^a-z0-9]/gi, "-").toLowerCase()}.ics`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const getTripGoogleCalUrl = (trip) => {
+    const prog = allPrograms.find(p => p.id === trip.program);
+    const name = trip.tripName || trip.route || trip.property || trip.location || "Trip";
+    const icon = trip.type === "flight" ? "✈ " : trip.type === "hotel" ? "🏨 " : "🚗 ";
+    const pad = (n) => String(n).padStart(2, "0");
+    const [y, m, d] = trip.date.split("-");
+    const start = `${y}${pad(m)}${pad(d)}`;
+    const endDate = new Date(trip.date + "T12:00:00");
+    endDate.setDate(endDate.getDate() + (trip.nights || 1));
+    const end = `${endDate.getFullYear()}${pad(endDate.getMonth() + 1)}${pad(endDate.getDate())}`;
+    const details = [
+      prog ? `Program: ${prog.name}` : "",
+      trip.class ? `Class: ${trip.class}` : "",
+      trip.estimatedPoints ? `Est. Points: +${trip.estimatedPoints.toLocaleString()}` : "",
+    ].filter(Boolean).join("\n");
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(icon + name)}&dates=${start}/${end}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(trip.route || trip.location || "")}`;
+  };
+
+  const getTripOutlookUrl = (trip) => {
+    const prog = allPrograms.find(p => p.id === trip.program);
+    const name = trip.tripName || trip.route || trip.property || trip.location || "Trip";
+    const icon = trip.type === "flight" ? "✈ " : trip.type === "hotel" ? "🏨 " : "🚗 ";
+    const pad = (n) => String(n).padStart(2, "0");
+    const [y, m, d] = trip.date.split("-");
+    const endDate = new Date(trip.date + "T12:00:00");
+    endDate.setDate(endDate.getDate() + (trip.nights || 1));
+    const endStr = `${endDate.getFullYear()}-${pad(endDate.getMonth() + 1)}-${pad(endDate.getDate())}`;
+    const body = [prog ? `Program: ${prog.name}` : "", trip.class ? `Class: ${trip.class}` : ""].filter(Boolean).join("\n");
+    return `https://outlook.live.com/calendar/0/deeplink/compose?subject=${encodeURIComponent(icon + name)}&startdt=${y}-${m}-${d}&enddt=${endStr}&body=${encodeURIComponent(body)}&location=${encodeURIComponent(trip.route || trip.location || "")}&allday=true`;
+  };
+
+  const exportMonthICS = (monthStr) => {
+    const monthTrips = trips.filter(t => t.date && t.date.startsWith(monthStr));
+    if (monthTrips.length === 0) { alert(`No trips found for ${monthStr}.`); return; }
+    const events = monthTrips.map(buildTripICSEvent);
+    const ics = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Continuum//MonthExport//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH", `X-WR-CALNAME:Continuum Trips — ${monthStr}`, ...events, "END:VCALENDAR"].join("\r\n");
+    const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `continuum-trips-${monthStr}.ics`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const exportMonthPDF = (monthStr) => {
+    const [y, m] = monthStr.split("-");
+    const monthName = new Date(parseInt(y), parseInt(m) - 1, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+    const monthTrips = trips.filter(t => t.date && t.date.startsWith(monthStr)).sort((a, b) => a.date.localeCompare(b.date));
+    if (monthTrips.length === 0) { alert(`No trips found for ${monthName}.`); return; }
+    const rows = monthTrips.map(trip => {
+      const prog = allPrograms.find(p => p.id === trip.program);
+      const name = trip.tripName || trip.route || trip.property || trip.location || "—";
+      const icon = trip.type === "flight" ? "✈" : trip.type === "hotel" ? "🏨" : "🚗";
+      const statusColor = trip.status === "confirmed" ? "#22c55e" : trip.status === "planned" ? "#f59e0b" : "#E8883A";
+      const nights = trip.nights ? `${trip.nights}n` : "—";
+      return `<tr>
+        <td>${trip.date}</td>
+        <td>${icon} ${name}</td>
+        <td>${prog?.name || "—"}</td>
+        <td style="color:${statusColor};font-weight:600;text-transform:capitalize">${trip.status}</td>
+        <td>${nights}</td>
+        <td>${trip.estimatedPoints ? trip.estimatedPoints.toLocaleString() + " pts" : "—"}</td>
+      </tr>`;
+    }).join("");
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Continuum Trips — ${monthName}</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #111; padding: 48px; background: #fff; }
+      .logo { font-size: 11px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: #999; margin-bottom: 32px; }
+      h1 { font-size: 30px; font-weight: 700; margin-bottom: 4px; }
+      .sub { color: #666; font-size: 14px; margin-bottom: 36px; }
+      table { width: 100%; border-collapse: collapse; }
+      th { text-align: left; padding: 10px 14px; background: #f5f5f5; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #666; border-bottom: 2px solid #e5e5e5; }
+      td { padding: 13px 14px; font-size: 13px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+      tr:last-child td { border-bottom: none; }
+      .footer { margin-top: 40px; font-size: 11px; color: #bbb; border-top: 1px solid #eee; padding-top: 16px; }
+      @media print { body { padding: 24px; } }
+    </style></head><body>
+    <div class="logo">Continuum Travel Intelligence</div>
+    <h1>${monthName}</h1>
+    <div class="sub">${monthTrips.length} trip${monthTrips.length !== 1 ? "s" : ""} scheduled</div>
+    <table>
+      <thead><tr><th>Date</th><th>Trip</th><th>Program</th><th>Status</th><th>Nights</th><th>Est. Points</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="footer">Exported from Continuum · ${new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</div>
+    </body></html>`;
+    const win = window.open("", "_blank");
+    if (!win) { alert("Please allow popups to export PDF."); return; }
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); }, 400);
   };
 
   const handleLinkAccount = (programId) => {
@@ -2049,10 +2328,46 @@ Start by introducing yourself briefly in-character with personality, and give an
       );
     }
 
-    // ==================== LOGIN PAGE (Split-Screen Glassmorphism) ====================
+    // ==================== LOGIN PAGE (Full-screen Paris BG + Centered Card) ====================
+    const inputStyle = {
+      display: "block", width: "100%", padding: "9px 12px", boxSizing: "border-box",
+      background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)",
+      borderRadius: 8, color: "#f7f8f8", fontSize: 12, fontFamily: "Inter, DM Sans, sans-serif",
+      outline: "none", transition: "border-color 0.2s",
+    };
+    const socialBtn = (icon, label, onClick) => (
+      <button
+        key={label}
+        onClick={onClick || (() => handleLogin())}
+        onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.12)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.22)"; }}
+        onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)"; }}
+        style={{
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+          width: "100%", padding: "8px 0", border: "1px solid rgba(255,255,255,0.12)",
+          borderRadius: 8, background: "rgba(255,255,255,0.06)", cursor: "pointer",
+          fontSize: 12, fontWeight: 500, color: "#f0f0f0", fontFamily: "Inter, DM Sans, sans-serif",
+          transition: "background 0.2s, border-color 0.2s",
+        }}
+      >
+        {icon}
+        <span>{label}</span>
+      </button>
+    );
+
     return (
-      <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", height: "100vh", overflow: "hidden", background: "#08090a" }}>
-        {/* Mute button */}
+      <div style={{ position: "fixed", inset: 0, overflow: "hidden", fontFamily: "Inter, DM Sans, sans-serif" }}>
+        {fontLink}
+
+        {/* Full-bleed Paris background, faded */}
+        <img
+          src="/login-bg.jpg"
+          alt=""
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center", filter: "brightness(0.35) saturate(0.8)" }}
+        />
+        {/* Subtle vignette */}
+        <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.55) 100%)" }} />
+
+        {/* PA mute button */}
         {audioPlayed && !paEnded && (
           <button
             onClick={() => { if (paMuted) { window.speechSynthesis?.resume(); setPaMuted(false); } else { window.speechSynthesis?.pause(); setPaMuted(true); } }}
@@ -2063,142 +2378,171 @@ Start by introducing yourself briefly in-character with personality, and give an
           </button>
         )}
 
-        {/* LEFT PANEL — Image (hidden on mobile, 60% on desktop) */}
-        {!isMobile && (
-        <div style={{ flex: "0 0 60%", position: "relative", overflow: "hidden" }}>
-          <img src="/login-bg.jpg" alt="Airport Lounge" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }} />
-          {/* Gradient overlay */}
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(8,9,10,0.3) 0%, rgba(14,165,160,0.08) 50%, rgba(8,9,10,0.5) 100%)" }} />
-          {/* Bottom text overlay */}
-          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "60px 48px 40px", background: "linear-gradient(to top, rgba(8,9,10,0.9) 0%, transparent 100%)" }}>
-            <h2 style={{ fontSize: 32, fontWeight: 800, color: "#f7f8f8", margin: "0 0 10px", fontFamily: "Inter, sans-serif", lineHeight: 1.2 }}>
-              Travel Without<br />Boundaries
-            </h2>
-            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", margin: 0, fontFamily: "Inter, sans-serif", maxWidth: 380, lineHeight: 1.6 }}>
-              Track your elite status, plan smarter trips, and unlock premium experiences across 30+ airline and hotel partners.
-            </p>
-          </div>
-          {/* Back button */}
-          <button onClick={() => goTo("landing")} style={{
-            position: "absolute", top: 28, left: 28, background: "rgba(8,8,12,0.6)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10,
-            padding: "8px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, backdropFilter: "blur(12px)", zIndex: 10,
-          }}>
-            <span style={{ fontSize: 13, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>← Back</span>
-          </button>
-        </div>
-        )}
+        {/* Back to home */}
+        <button
+          onClick={() => goTo("landing")}
+          onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.12)"}
+          onMouseLeave={e => e.currentTarget.style.background = "rgba(0,0,0,0.35)"}
+          style={{ position: "absolute", top: 24, left: 24, zIndex: 10, display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, cursor: "pointer", color: "#d0d0d0", fontSize: 12, fontFamily: "Inter, sans-serif", backdropFilter: "blur(8px)", transition: "background 0.2s" }}
+        >
+          ← Back
+        </button>
 
-        {/* RIGHT PANEL — Login Form (full on mobile, 40% on desktop) */}
+        {/* Left-anchored card — starts below back button */}
         <div style={{
-          flex: isMobile ? 1 : "0 0 40%", display: "flex", flexDirection: "column", alignItems: "center",
-          justifyContent: "center", padding: isMobile ? "20px" : "24px 40px", position: "relative",
-          overflow: "hidden", background: "linear-gradient(180deg, #0a0b0d 0%, #0d0f12 50%, #0a0b0d 100%)",
+          position: "absolute", inset: 0, display: "flex", alignItems: "flex-start", justifyContent: "flex-start",
+          padding: isMobile ? "76px 20px 20px" : "76px 0 20px 60px", overflowY: "auto",
         }}>
-          {/* Subtle glow effect */}
-          <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle, rgba(14,165,160,0.06) 0%, transparent 70%)", pointerEvents: "none" }} />
-
           <div style={{
-            width: "100%", maxWidth: 380,
-            opacity: animateIn ? 1 : 0, transform: animateIn ? "translateY(0)" : "translateY(24px)",
-            transition: "all 0.8s cubic-bezier(0.16,1,0.3,1)", position: "relative", zIndex: 1,
+            width: "100%", maxWidth: 360,
+            opacity: animateIn ? 1 : 0, transform: animateIn ? "translateY(0)" : "translateY(20px)",
+            transition: "all 0.7s cubic-bezier(0.16,1,0.3,1)",
           }}>
-            {/* Back button on mobile */}
-            {isMobile && (
-              <button onClick={() => goTo("landing")} style={{
-                background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8,
-                padding: "5px 12px", cursor: "pointer", marginBottom: 12, fontSize: 12, color: "#8a8f98", fontFamily: "Inter, sans-serif",
-              }}>← Back</button>
-            )}
-            {/* Logo + Header */}
-            <div style={{ textAlign: "center", marginBottom: 16 }}>
-              <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
-                <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: isMobile ? 64 : 88, display: "block" }} />
-              </div>
-              <h1 style={{ fontSize: 22, fontWeight: 700, color: "#f7f8f8", margin: "0 0 4px", fontFamily: "Inter, sans-serif", letterSpacing: -0.3 }}>
-                {isRegistering ? "Create Account" : "Welcome Back"}
-              </h1>
-              <p style={{ color: "rgba(138,143,152,0.8)", fontSize: 12, margin: 0, fontFamily: "Inter, sans-serif" }}>
-                {isRegistering ? "Join the Continuum experience" : "Sign in to your account"}
-              </p>
+            {/* Logo */}
+            <div style={{ textAlign: "center", marginBottom: 14 }}>
+              <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: isMobile ? 44 : 52, display: "inline-block" }} />
             </div>
 
-            {/* Glassmorphism Card */}
+            {/* Card */}
             <div style={{
-              background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)",
-              borderRadius: 16, padding: "20px 22px",
-              backdropFilter: "blur(40px)", WebkitBackdropFilter: "blur(40px)",
-              boxShadow: "0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)",
+              background: "rgba(12,13,16,0.76)",
+              backdropFilter: "blur(32px)", WebkitBackdropFilter: "blur(32px)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 16,
+              padding: isMobile ? "20px 18px" : "22px 24px 20px",
+              boxShadow: "0 24px 64px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06)",
             }}>
-              {/* Tab Toggle */}
-              <div style={{ display: "flex", marginBottom: 16, background: "rgba(255,255,255,0.04)", borderRadius: 10, padding: 3 }}>
-                {["Sign In", "Register"].map((tab, i) => (
-                  <button key={tab} onClick={() => setIsRegistering(i === 1)} style={{
-                    flex: 1, padding: "8px 0", border: "none", borderRadius: 8, cursor: "pointer",
-                    fontSize: 12, fontWeight: 600, fontFamily: "Inter, sans-serif",
-                    background: (i === 0 ? !isRegistering : isRegistering) ? "rgba(14,165,160,0.15)" : "transparent",
-                    color: (i === 0 ? !isRegistering : isRegistering) ? "#0EA5A0" : "#62666d",
-                    transition: "all 0.3s ease",
-                  }}>{tab}</button>
-                ))}
+              {/* Heading */}
+              <div style={{ marginBottom: 14 }}>
+                <h1 style={{ fontSize: 18, fontWeight: 700, color: "#f7f8f8", margin: "0 0 3px", letterSpacing: -0.3, lineHeight: 1.2 }}>
+                  {isRegistering ? "Create your account" : "Welcome back"}
+                </h1>
+                <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, margin: 0 }}>
+                  {isRegistering ? "Start tracking your elite status today" : "Sign in to continue your journey"}
+                </p>
               </div>
 
+              {/* Social login buttons */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 7, marginBottom: 14 }}>
+                {socialBtn(
+                  <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>,
+                  "Continue with Google"
+                )}
+                {socialBtn(
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="#f7f8f8"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>,
+                  "Continue with Apple"
+                )}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  {socialBtn(
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="#f7f8f8"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>,
+                    "GitHub"
+                  )}
+                  {socialBtn(
+                    <svg width="18" height="18" viewBox="0 0 24 24"><path d="M21.35 11.1H12.18V13.83H18.69C18.36 17.64 15.19 19.27 12.19 19.27C8.36 19.27 5 16.25 5 12C5 7.9 8.2 4.73 12.2 4.73C15.29 4.73 17.1 6.7 17.1 6.7L19 4.72C19 4.72 16.56 2 12.1 2C6.42 2 2.03 6.8 2.03 12C2.03 17.05 6.16 22 12.25 22C17.6 22 21.5 18.33 21.5 12.91C21.5 11.76 21.35 11.1 21.35 11.1Z" fill="#4285F4"/></svg>,
+                    "Microsoft"
+                  )}
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+                <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.1)" }} />
+                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", fontWeight: 500, letterSpacing: "0.05em" }}>or continue with email</span>
+                <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.1)" }} />
+              </div>
+
+              {/* Form */}
               {!isRegistering ? (
-                <div>
-                  <label style={{ display: "block", marginBottom: 12 }}>
-                    <span style={{ fontSize: 10, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1.2, fontFamily: "Inter, sans-serif" }}>Email</span>
-                    <input type="email" value={loginForm.email} onChange={e => setLoginForm(p => ({ ...p, email: e.target.value }))} placeholder="alex@example.com"
-                      style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box", transition: "border-color 0.3s" }} />
-                  </label>
-                  <label style={{ display: "block", marginBottom: 16 }}>
-                    <span style={{ fontSize: 10, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1.2, fontFamily: "Inter, sans-serif" }}>Password</span>
-                    <input type="password" value={loginForm.password} onChange={e => setLoginForm(p => ({ ...p, password: e.target.value }))} placeholder="••••••••"
-                      style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box", transition: "border-color 0.3s" }} />
-                  </label>
-                  <button onClick={handleLogin} style={{
-                    width: "100%", padding: "11px 0", border: "none", borderRadius: 10, cursor: "pointer",
-                    fontSize: 13, fontWeight: 700, fontFamily: "Inter, sans-serif", letterSpacing: 0.3,
-                    background: "linear-gradient(135deg, #0EA5A0, #0c8e8a)", color: "#fff",
-                    boxShadow: "0 4px 20px rgba(14,165,160,0.3), inset 0 1px 0 rgba(255,255,255,0.1)",
-                    transition: "all 0.3s ease",
-                  }}>Sign In</button>
-                  <button onClick={() => { setLoginForm({ email: "alex@example.com", password: "demo" }); setTimeout(handleLogin, 100); }} style={{
-                    width: "100%", padding: "9px 0", border: "1px solid rgba(14,165,160,0.15)", borderRadius: 10, cursor: "pointer",
-                    fontSize: 12, fontWeight: 600, fontFamily: "Inter, sans-serif",
-                    background: "rgba(14,165,160,0.04)", color: "#0EA5A0", marginTop: 8,
-                    transition: "all 0.3s ease",
-                  }}>Try Demo Account →</button>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <input
+                    type="email" placeholder="Email address"
+                    value={loginForm.email} onChange={e => setLoginForm(p => ({ ...p, email: e.target.value }))}
+                    onFocus={e => e.target.style.borderColor = "rgba(14,165,160,0.6)"}
+                    onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.12)"}
+                    style={inputStyle}
+                  />
+                  <div>
+                    <input
+                      type="password" placeholder="Password"
+                      value={loginForm.password} onChange={e => setLoginForm(p => ({ ...p, password: e.target.value }))}
+                      onFocus={e => e.target.style.borderColor = "rgba(14,165,160,0.6)"}
+                      onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.12)"}
+                      style={inputStyle}
+                    />
+                    <div style={{ textAlign: "right", marginTop: 6 }}>
+                      <button style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", background: "none", border: "none", cursor: "pointer", fontFamily: "Inter, sans-serif", padding: 0 }}>Forgot password?</button>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleLogin}
+                    onMouseEnter={e => e.currentTarget.style.background = "#0cb8b2"}
+                    onMouseLeave={e => e.currentTarget.style.background = "#0EA5A0"}
+                    style={{ width: "100%", padding: "10px 0", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: "Inter, sans-serif", background: "#0EA5A0", color: "#fff", letterSpacing: 0.2, boxShadow: "0 4px 16px rgba(14,165,160,0.35)", transition: "background 0.2s" }}
+                  >
+                    Sign in
+                  </button>
+                  <button
+                    onClick={() => { setLoginForm({ email: "alex@example.com", password: "demo" }); setTimeout(handleLogin, 100); }}
+                    onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(14,165,160,0.4)"}
+                    onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"}
+                    style={{ width: "100%", padding: "9px 0", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, cursor: "pointer", fontSize: 11, fontWeight: 500, fontFamily: "Inter, sans-serif", background: "transparent", color: "rgba(255,255,255,0.5)", transition: "border-color 0.2s" }}
+                  >
+                    Try demo account →
+                  </button>
                 </div>
               ) : (
-                <div>
-                  <label style={{ display: "block", marginBottom: 10 }}>
-                    <span style={{ fontSize: 10, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1.2, fontFamily: "Inter, sans-serif" }}>Full Name</span>
-                    <input value={registerForm.name} onChange={e => setRegisterForm(p => ({ ...p, name: e.target.value }))} placeholder="Your name"
-                      style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box", transition: "border-color 0.3s" }} />
-                  </label>
-                  <label style={{ display: "block", marginBottom: 10 }}>
-                    <span style={{ fontSize: 10, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1.2, fontFamily: "Inter, sans-serif" }}>Email</span>
-                    <input type="email" value={registerForm.email} onChange={e => setRegisterForm(p => ({ ...p, email: e.target.value }))} placeholder="you@email.com"
-                      style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box", transition: "border-color 0.3s" }} />
-                  </label>
-                  <label style={{ display: "block", marginBottom: 14 }}>
-                    <span style={{ fontSize: 10, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1.2, fontFamily: "Inter, sans-serif" }}>Password</span>
-                    <input type="password" value={registerForm.password} onChange={e => setRegisterForm(p => ({ ...p, password: e.target.value }))} placeholder="••••••••"
-                      style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box", transition: "border-color 0.3s" }} />
-                  </label>
-                  <button onClick={handleRegister} style={{
-                    width: "100%", padding: "11px 0", border: "none", borderRadius: 10, cursor: "pointer",
-                    fontSize: 13, fontWeight: 700, fontFamily: "Inter, sans-serif", letterSpacing: 0.3,
-                    background: "linear-gradient(135deg, #0EA5A0, #0c8e8a)", color: "#fff",
-                    boxShadow: "0 4px 20px rgba(14,165,160,0.3), inset 0 1px 0 rgba(255,255,255,0.1)",
-                    transition: "all 0.3s ease",
-                  }}>Create Account</button>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <input
+                    placeholder="Full name"
+                    value={registerForm.name} onChange={e => setRegisterForm(p => ({ ...p, name: e.target.value }))}
+                    onFocus={e => e.target.style.borderColor = "rgba(14,165,160,0.6)"}
+                    onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.12)"}
+                    style={inputStyle}
+                  />
+                  <input
+                    type="email" placeholder="Email address"
+                    value={registerForm.email} onChange={e => setRegisterForm(p => ({ ...p, email: e.target.value }))}
+                    onFocus={e => e.target.style.borderColor = "rgba(14,165,160,0.6)"}
+                    onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.12)"}
+                    style={inputStyle}
+                  />
+                  <input
+                    type="password" placeholder="Create a password"
+                    value={registerForm.password} onChange={e => setRegisterForm(p => ({ ...p, password: e.target.value }))}
+                    onFocus={e => e.target.style.borderColor = "rgba(14,165,160,0.6)"}
+                    onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.12)"}
+                    style={inputStyle}
+                  />
+                  <button
+                    onClick={handleRegister}
+                    onMouseEnter={e => e.currentTarget.style.background = "#0cb8b2"}
+                    onMouseLeave={e => e.currentTarget.style.background = "#0EA5A0"}
+                    style={{ width: "100%", padding: "10px 0", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: "Inter, sans-serif", background: "#0EA5A0", color: "#fff", letterSpacing: 0.2, boxShadow: "0 4px 16px rgba(14,165,160,0.35)", transition: "background 0.2s" }}
+                  >
+                    Create account
+                  </button>
                 </div>
               )}
 
-              <div style={{ textAlign: "center", marginTop: 12, padding: "10px 0 0", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
-                <p style={{ color: "#52555c", fontSize: 10, fontFamily: "Inter, sans-serif", margin: 0 }}>By signing in, you agree to our Terms of Service</p>
-              </div>
+              {/* Toggle sign in / register */}
+              <p style={{ textAlign: "center", marginTop: 12, marginBottom: 0, fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: "Inter, sans-serif" }}>
+                {isRegistering ? "Already have an account? " : "Don't have an account? "}
+                <button
+                  onClick={() => setIsRegistering(r => !r)}
+                  style={{ background: "none", border: "none", cursor: "pointer", color: "#0EA5A0", fontWeight: 600, fontSize: 12, fontFamily: "Inter, sans-serif", padding: 0 }}
+                >
+                  {isRegistering ? "Sign in" : "Sign up"}
+                </button>
+              </p>
             </div>
+
+            {/* Terms */}
+            <p style={{ textAlign: "center", marginTop: 10, fontSize: 10, color: "rgba(255,255,255,0.25)", fontFamily: "Inter, sans-serif", lineHeight: 1.5 }}>
+              By continuing, you agree to our{" "}
+              <span style={{ color: "rgba(255,255,255,0.4)", cursor: "pointer" }}>Terms of Service</span>
+              {" "}and{" "}
+              <span style={{ color: "rgba(255,255,255,0.4)", cursor: "pointer" }}>Privacy Policy</span>
+            </p>
           </div>
         </div>
       </div>
@@ -2498,9 +2842,11 @@ Start by introducing yourself briefly in-character with personality, and give an
     );
   };
 
-  const renderPrograms = () => {
+  const renderPrograms = (_previewSub = null) => {
+    // _previewSub is used by the nav dropdown live preview to force a specific sub-view
+    const _subView = _previewSub || programSubView;
     // Delegate alliance benefits sub-view to renderAlliances
-    if (programSubView === "alliances") return renderAlliances();
+    if (_subView === "alliances") return renderAlliances();
 
     const customByCategory = {
       airline: customPrograms.filter(p => p.category === "airline"),
@@ -2516,7 +2862,7 @@ Start by introducing yourself briefly in-character with personality, and give an
       { id: "rentals",      label: "Car Rental Programs",      programs: [...LOYALTY_PROGRAMS.rentals, ...customByCategory.rental],     isCard: false },
       { id: "alliances",    label: "Airline Alliance Benefits", programs: [],                                                           isCard: false },
     ];
-    const activeSub = SUB_TABS.find(t => t.id === programSubView) || SUB_TABS[0];
+    const activeSub = SUB_TABS.find(t => t.id === _subView) || SUB_TABS[0];
     const linkedCount = Object.keys(linkedAccounts).length;
 
     return (
@@ -2542,9 +2888,9 @@ Start by introducing yourself briefly in-character with personality, and give an
             {SUB_TABS.map(tab => (
               <button key={tab.id} onClick={() => setProgramSubView(tab.id)} style={{
                 padding: "9px 20px", border: "none", cursor: "pointer", background: "transparent",
-                borderBottom: programSubView === tab.id ? `2px solid ${css.accent}` : "2px solid transparent",
-                color: programSubView === tab.id ? css.accent : css.text3,
-                fontSize: 13, fontWeight: programSubView === tab.id ? 600 : 400,
+                borderBottom: _subView === tab.id ? `2px solid ${css.accent}` : "2px solid transparent",
+                color: _subView === tab.id ? css.accent : css.text3,
+                fontSize: 13, fontWeight: _subView === tab.id ? 600 : 400,
                 fontFamily: "'Outfit', sans-serif", transition: "all 0.15s",
               }}>{tab.label}</button>
             ))}
@@ -2760,7 +3106,9 @@ Start by introducing yourself briefly in-character with personality, and give an
             <DetailRow label="Route" value={trip.route} />
             <DetailRow label="Date" value={trip.date} mono />
             <DetailRow label="Departure" value={trip.departureTime} mono />
+            {trip.departureTerminal && <DetailRow label="Dep. Terminal" value={`Terminal ${trip.departureTerminal}`} mono />}
             <DetailRow label="Arrival" value={trip.arrivalTime} mono />
+            {trip.arrivalTerminal && <DetailRow label="Arr. Terminal" value={`Terminal ${trip.arrivalTerminal}`} mono />}
             <DetailRow label="Aircraft" value={trip.aircraft} />
             <DetailRow label="Seat" value={trip.seat} mono />
             <DetailRow label="Fare Class" value={trip.fareClass} mono accent />
@@ -2845,6 +3193,34 @@ Start by introducing yourself briefly in-character with personality, and give an
             Flighty Sync
             {user?.tier !== "premium" && <span style={{ fontSize: 9, background: css.goldBg, color: css.gold, padding: "2px 6px", borderRadius: 6, fontWeight: 700, border: `1px solid ${css.gold}30` }}>PRO</span>}
           </button>
+          {/* Export Month PDF button */}
+          <div style={{ position: "relative" }}>
+            <button onClick={() => document.getElementById("cal-month-picker").showPicker?.()} style={{
+              display: "flex", alignItems: "center", gap: 7, padding: "10px 16px", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 600,
+              background: css.surface2, border: `1px solid ${css.border}`, color: css.text2, transition: "all 0.15s",
+            }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+              </svg>
+              Export PDF
+            </button>
+            <input id="cal-month-picker" type="month" defaultValue={new Date().toISOString().slice(0, 7)}
+              onChange={e => { if (e.target.value) exportMonthPDF(e.target.value); }}
+              style={{ position: "absolute", top: 0, left: 0, opacity: 0, pointerEvents: "none", width: "100%", height: "100%" }}
+            />
+          </div>
+          {/* View toggle */}
+          <div style={{ display: "flex", background: css.surface2, border: `1px solid ${css.border}`, borderRadius: 8, padding: 3, gap: 2 }}>
+            {[{ v: "list", icon: "≡" }, { v: "calendar", icon: "▦" }].map(({ v, icon }) => (
+              <button key={v} onClick={() => setTripsView(v)} style={{
+                padding: "5px 10px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600,
+                background: tripsView === v ? css.surface : "transparent",
+                color: tripsView === v ? css.text : css.text3,
+                boxShadow: tripsView === v ? "0 1px 3px rgba(0,0,0,0.15)" : "none",
+                transition: "all 0.15s",
+              }}>{icon}</button>
+            ))}
+          </div>
           <button onClick={() => setShowImportItinerary(true)} style={{
             display: "flex", alignItems: "center", gap: 7, padding: "10px 16px", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 600,
             background: css.accentBg, border: `1px solid ${css.accentBorder}`, color: css.accent, transition: "all 0.15s",
@@ -2878,7 +3254,121 @@ Start by introducing yourself briefly in-character with personality, and give an
         </div>
       )}
 
-      {/* Filters */}
+      {/* Calendar view */}
+      {tripsView === "calendar" && (() => {
+        const pad = (n) => String(n).padStart(2, "0");
+        const { year, month } = calViewMonth;
+        const monthLabel = new Date(year, month, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const cells = [];
+        for (let i = 0; i < firstDay; i++) cells.push(null);
+        for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+        while (cells.length % 7 !== 0) cells.push(null);
+        const today = new Date();
+        const isToday = (d) => d && year === today.getFullYear() && month === today.getMonth() && d === today.getDate();
+        const getTripsForDay = (d) => {
+          if (!d) return [];
+          const dateStr = `${year}-${pad(month + 1)}-${pad(d)}`;
+          return trips.filter(t => {
+            if (!t.date) return false;
+            if (t.date === dateStr) return true;
+            if (t.nights && t.nights > 1) {
+              const start = new Date(t.date + "T12:00:00");
+              const end = new Date(t.date + "T12:00:00");
+              end.setDate(end.getDate() + t.nights - 1);
+              const check = new Date(dateStr + "T12:00:00");
+              return check > start && check <= end;
+            }
+            return false;
+          });
+        };
+        const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        return (
+          <div>
+            {/* Month navigator */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+              <button onClick={() => setCalViewMonth(p => { const d = new Date(p.year, p.month - 1, 1); return { year: d.getFullYear(), month: d.getMonth() }; })} style={{ width: 36, height: 36, borderRadius: 8, border: `1px solid ${css.border}`, background: css.surface, color: css.text, fontSize: 16, cursor: "pointer" }}>‹</button>
+              <span style={{ fontSize: 16, fontWeight: 700, color: css.text, fontFamily: "'Cormorant Garamond', serif", letterSpacing: "0.02em" }}>{monthLabel}</span>
+              <button onClick={() => setCalViewMonth(p => { const d = new Date(p.year, p.month + 1, 1); return { year: d.getFullYear(), month: d.getMonth() }; })} style={{ width: 36, height: 36, borderRadius: 8, border: `1px solid ${css.border}`, background: css.surface, color: css.text, fontSize: 16, cursor: "pointer" }}>›</button>
+            </div>
+            {/* Day headers */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", marginBottom: 2 }}>
+              {DAY_LABELS.map(d => (
+                <div key={d} style={{ textAlign: "center", padding: "6px 0", fontSize: 10, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.1em" }}>{d}</div>
+              ))}
+            </div>
+            {/* Day grid */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2 }}>
+              {cells.map((d, i) => {
+                const dayTrips = getTripsForDay(d);
+                return (
+                  <div key={i} style={{ background: d ? css.surface : "transparent", border: `1px solid ${d ? css.border : "transparent"}`, borderRadius: 8, minHeight: isMobile ? 80 : 120, padding: "6px 6px 5px" }}>
+                    {d && (
+                      <>
+                        <div style={{ width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: isToday(d) ? 700 : 400, background: isToday(d) ? css.accent : "transparent", color: isToday(d) ? "#fff" : css.text2, marginBottom: 4 }}>{d}</div>
+                        {dayTrips.slice(0, isMobile ? 1 : 3).map((trip, ti) => {
+                          const prog = allPrograms.find(p => p.id === trip.program);
+                          const color = prog?.color || css.accent;
+                          const isFlight = trip.type === "flight";
+                          const isHotel = trip.type === "hotel";
+                          const icon = isFlight ? "✈" : isHotel ? "🏨" : "🚗";
+                          // Parse airports from route "JFK → LAX"
+                          const routeParts = (trip.route || "").split(/\s*[→\-–—>]+\s*/);
+                          const origin = routeParts[0]?.trim();
+                          const dest = routeParts[1]?.trim();
+                          // Line 1: for flights always show route (with terminals); hotels show property name
+                          const originLabel = origin ? `${origin}${trip.departureTerminal ? `/T${trip.departureTerminal}` : ""}` : "";
+                          const destLabel   = dest   ? `${dest}${trip.arrivalTerminal   ? `/T${trip.arrivalTerminal}`   : ""}` : "";
+                          const chipLine1 = isFlight
+                            ? (originLabel && destLabel ? `${originLabel} – ${destLabel}` : trip.route || trip.flightNumber || "Flight")
+                            : (trip.property || trip.location || "Hotel");
+                          // Line 2: "AA 1289"  |  hotel nights
+                          const flightLabel = (() => {
+                            if (!trip.flightNumber) return "";
+                            const m = trip.flightNumber.match(/^([A-Z]{1,3})\s*(\d+)$/);
+                            return m ? `${m[1]} ${m[2]}` : trip.flightNumber;
+                          })();
+                          // Line 3 (flights only): departure – arrival time
+                          const timesLine = [trip.departureTime, trip.arrivalTime].filter(Boolean).join(" – ");
+                          return (
+                            <div key={ti} onClick={() => setTripDetailId(trip.id)}
+                              title={[trip.route || trip.property, trip.flightNumber, trip.departureTime, trip.arrivalTime].filter(Boolean).join(" · ")}
+                              style={{ background: `${color}18`, borderLeft: `2px solid ${color}`, borderRadius: 3, padding: "3px 6px", marginBottom: 3, cursor: "pointer" }}>
+                              {/* Line 1: route (flights) or hotel name */}
+                              <div style={{ fontSize: 9, fontWeight: 600, color: css.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {icon} {chipLine1}
+                              </div>
+                              {/* Line 2: "AA 1289"  |  hotel nights */}
+                              {(isFlight ? flightLabel : isHotel && trip.nights ? `${trip.nights} nights` : null) && (
+                                <div style={{ fontSize: 8, color: css.text2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 1 }}>
+                                  {isFlight ? flightLabel : `${trip.nights} nights`}
+                                </div>
+                              )}
+                              {/* Line 3 (flights): departure – arrival time */}
+                              {isFlight && timesLine && (
+                                <div style={{ fontSize: 8, color: css.text3, fontFamily: "'JetBrains Mono', monospace", marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                  {timesLine}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                        {dayTrips.length > (isMobile ? 1 : 3) && (
+                          <div style={{ fontSize: 9, color: css.text3, paddingLeft: 3 }}>+{dayTrips.length - (isMobile ? 1 : 3)} more</div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Filters + List (only in list view) */}
+      {tripsView === "list" && <>
       <div className="c-a2" style={{ display: "flex", gap: 8, marginBottom: 24, flexWrap: "wrap" }}>
         <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search trips..."
           style={{
@@ -2957,6 +3447,17 @@ Start by introducing yourself briefly in-character with personality, and give an
                     padding: "5px 11px", borderRadius: 8, border: `1px solid ${css.accentBorder}`,
                     background: css.accentBg, color: css.accent, fontSize: 11, fontWeight: 600, cursor: "pointer",
                   }}>+ Expense</button>
+                  {/* Add to Calendar */}
+                  <button onClick={e => { e.stopPropagation(); const r = e.currentTarget.getBoundingClientRect(); setCalendarPopover(calendarPopover?.id === trip.id ? null : { id: trip.id, top: r.bottom + 6, right: window.innerWidth - r.right }); }} style={{
+                    padding: "5px 10px", borderRadius: 8, border: `1px solid ${css.border}`,
+                    background: calendarPopover?.id === trip.id ? css.surface2 : "transparent",
+                    color: css.text2, fontSize: 11, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5,
+                  }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                    <span style={{ display: isMobile ? "none" : "inline" }}>Calendar</span>
+                  </button>
                   {/* Chevron expand */}
                   <span style={{ color: css.text3, fontSize: 12, transform: isExpanded ? "rotate(180deg)" : "none", transition: "transform 0.2s", display: "inline-block" }}>▾</span>
                   {/* Delete trip */}
@@ -3074,6 +3575,59 @@ Start by introducing yourself briefly in-character with personality, and give an
           </div>
         )}
       </div>
+      </>}
+
+      {/* Global calendar popover — fixed position so it escapes overflow:hidden cards */}
+      {calendarPopover && (() => {
+        const trip = trips.find(t => t.id === calendarPopover.id);
+        if (!trip) return null;
+        return (
+          <>
+            <div style={{ position: "fixed", inset: 0, zIndex: 199 }} onClick={() => setCalendarPopover(null)} />
+            <div style={{ position: "fixed", top: calendarPopover.top, right: calendarPopover.right, zIndex: 200, background: css.surface, border: `1px solid ${css.border}`, borderRadius: 10, padding: 6, minWidth: 175, boxShadow: "0 8px 28px rgba(0,0,0,0.35)" }}>
+              <a href={getTripGoogleCalUrl(trip)} target="_blank" rel="noopener noreferrer" onClick={() => setCalendarPopover(null)}
+                style={{ display: "flex", alignItems: "center", gap: 9, padding: "8px 10px", borderRadius: 7, fontSize: 12, fontWeight: 500, color: css.text, textDecoration: "none" }}
+                onMouseEnter={e => e.currentTarget.style.background = css.surface2}
+                onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+              >
+                <svg width="14" height="14" viewBox="0 0 48 48" style={{ flexShrink: 0 }}>
+                  <path fill="#4285F4" d="M43.6 20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11 0 20-9 20-20 0-1.3-.1-2.7-.4-4z"/>
+                  <path fill="#34A853" d="M6.3 14.7l6.6 4.8C14.5 16 19 12 24 12c3 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4c-7.7 0-14.3 4.4-17.7 10.7z"/>
+                  <path fill="#FBBC05" d="M24 44c5.2 0 9.9-1.8 13.6-4.7l-6.3-5.2C29.4 35.7 26.8 36 24 36c-5.3 0-9.7-3.3-11.3-8l-6.6 5.1C9.7 39.6 16.4 44 24 44z"/>
+                  <path fill="#EA4335" d="M43.6 20H24v8h11.3c-.7 2.1-2 3.9-3.7 5.1l6.3 5.2C41.4 34.9 44 29.8 44 24c0-1.3-.1-2.7-.4-4z"/>
+                </svg>
+                Google Calendar
+              </a>
+              <a href={getTripOutlookUrl(trip)} target="_blank" rel="noopener noreferrer" onClick={() => setCalendarPopover(null)}
+                style={{ display: "flex", alignItems: "center", gap: 9, padding: "8px 10px", borderRadius: 7, fontSize: 12, fontWeight: 500, color: css.text, textDecoration: "none" }}
+                onMouseEnter={e => e.currentTarget.style.background = css.surface2}
+                onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+              >
+                <svg width="14" height="14" viewBox="0 0 48 48" style={{ flexShrink: 0 }}>
+                  <rect width="48" height="48" rx="4" fill="#0078D4"/>
+                  <rect x="6" y="10" width="22" height="28" rx="2" fill="white" opacity="0.95"/>
+                  <rect x="28" y="18" width="14" height="20" rx="1" fill="white" opacity="0.7"/>
+                  <line x1="10" y1="18" x2="24" y2="18" stroke="#0078D4" strokeWidth="2"/>
+                  <line x1="10" y1="23" x2="24" y2="23" stroke="#0078D4" strokeWidth="2"/>
+                  <line x1="10" y1="28" x2="24" y2="28" stroke="#0078D4" strokeWidth="2"/>
+                </svg>
+                Outlook
+              </a>
+              <div style={{ height: 1, background: css.border, margin: "4px 6px" }} />
+              <button onClick={() => { downloadTripICS(trip); setCalendarPopover(null); }}
+                style={{ display: "flex", alignItems: "center", gap: 9, padding: "8px 10px", borderRadius: 7, fontSize: 12, fontWeight: 500, color: css.text, width: "100%", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}
+                onMouseEnter={e => e.currentTarget.style.background = css.surface2}
+                onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Download .ics
+              </button>
+            </div>
+          </>
+        );
+      })()}
     </div>
   );
   };
@@ -3081,7 +3635,8 @@ Start by introducing yourself briefly in-character with personality, and give an
   const renderExpenses = () => { setActiveView("trips"); return null; };
 
 
-  const renderOptimizer = () => {
+  const renderOptimizer = (_previewTab = null) => {
+    const _tab = _previewTab || optimizerTab;
     const flightTrips = trips.filter(t => t.type === "flight");
     const airlines = LOYALTY_PROGRAMS.airlines;
 
@@ -3189,7 +3744,7 @@ Start by introducing yourself briefly in-character with personality, and give an
         {/* Header */}
         <div className="c-a1" style={{ marginBottom: 24 }}>
           <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: css.text3, marginBottom: 8 }}>Strategy Engine</div>
-          <h2 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: isMobile ? 28 : 36, fontWeight: 600, color: css.text, margin: 0, lineHeight: 1.1 }}>{OPT_TAB_LABELS[optimizerTab] || "Trip Optimizer"}</h2>
+          <h2 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: isMobile ? 28 : 36, fontWeight: 600, color: css.text, margin: 0, lineHeight: 1.1 }}>{OPT_TAB_LABELS[_tab] || "Trip Optimizer"}</h2>
           <p style={{ color: css.text2, fontSize: 13, margin: "8px 0 0" }}>Credit flights strategically to accelerate elite status across {airlines.length} airline programs</p>
         </div>
 
@@ -3200,7 +3755,7 @@ Start by introducing yourself briefly in-character with personality, and give an
         )}
 
         {/* ── Tab 1: Global Status Optimizer ── */}
-        {optimizerTab === "global" && flightTrips.length > 0 && (
+        {_tab === "global" && flightTrips.length > 0 && (
           <div>
             {/* Recommendation banner */}
             {bestGlobal && (
@@ -3254,7 +3809,7 @@ Start by introducing yourself briefly in-character with personality, and give an
         )}
 
         {/* ── Tab 2: Trip-by-Trip Comparison ── */}
-        {optimizerTab === "trip" && flightTrips.length > 0 && (
+        {_tab === "trip" && flightTrips.length > 0 && (
           <div>
             {/* Trip selector */}
             <div style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: "16px 20px", marginBottom: 20 }}>
@@ -3321,7 +3876,7 @@ Start by introducing yourself briefly in-character with personality, and give an
         )}
 
         {/* ── Tab 3: Alliance Goal Optimizer ── */}
-        {optimizerTab === "alliance" && flightTrips.length > 0 && (
+        {_tab === "alliance" && flightTrips.length > 0 && (
           <div>
             {/* Goal selector */}
             <div style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: "16px 20px", marginBottom: 20 }}>
@@ -3406,7 +3961,7 @@ Start by introducing yourself briefly in-character with personality, and give an
         )}
 
         {/* ── SECTION 4: Credit Card Optimizer ── */}
-        {optimizerTab === "cards" && (() => {
+        {_tab === "cards" && (() => {
           const allCards = LOYALTY_PROGRAMS.creditCards;
           const linkedCards = allCards.filter(c => linkedAccounts[c.id]);
           const cards = linkedCards.length > 0 ? linkedCards : allCards;
@@ -4072,6 +4627,631 @@ Start by introducing yourself briefly in-character with personality, and give an
     );
   };
 
+  const renderInsights = (_previewTab = null) => {
+    const INSIGHT_TABS = [
+      { id: "countdown",  label: "Status Countdown", tier: "free" },
+      { id: "expiration", label: "Expiration Tracker", tier: "free" },
+      { id: "redemption", label: "Redemption Value",   tier: "premium" },
+      { id: "transfer",   label: "Transfer Matrix",    tier: "premium" },
+      { id: "annual_fee", label: "Annual Fee Calc",    tier: "premium" },
+    ];
+    const isPremium = user?.tier === "premium" || user?.tier === "pro";
+
+    // ── Helpers ──────────────────────────────────────────────────
+    const allPrograms = [
+      ...LOYALTY_PROGRAMS.airlines,
+      ...LOYALTY_PROGRAMS.hotels,
+      ...LOYALTY_PROGRAMS.creditCards,
+    ];
+    const findProg = (id) => allPrograms.find(p => p.id === id);
+
+    // Infer last-activity date from trips
+    const lastActivityByProg = {};
+    const allTrips = [...(user?.upcomingTrips || []), ...trips];
+    allTrips.forEach(t => {
+      const d = t.date ? new Date(t.date) : null;
+      if (!d || isNaN(d)) return;
+      if (!lastActivityByProg[t.program] || d > lastActivityByProg[t.program]) {
+        lastActivityByProg[t.program] = d;
+      }
+    });
+
+    const today = new Date("2026-03-08");
+    const daysBetween = (a, b) => Math.round((b - a) / 86400000);
+
+    // ── Sub-tab: Status Countdown ─────────────────────────────────
+    const renderCountdown = () => {
+      const progsSorted = Object.entries(linkedAccounts)
+        .map(([id, acct]) => {
+          const prog = findProg(id);
+          if (!prog || !prog.tiers) return null;
+          const current = acct.tierCredits ?? acct.currentNights ?? acct.currentRentals ?? 0;
+          const nextTier = prog.tiers.find(t => t.threshold > current);
+          const currentTierObj = [...prog.tiers].reverse().find(t => t.threshold <= current);
+          const deficit = nextTier ? nextTier.threshold - current : 0;
+          const pct = nextTier ? Math.min((current / nextTier.threshold) * 100, 100) : 100;
+          const yearEnd = new Date("2026-12-31");
+          const daysLeft = daysBetween(today, yearEnd);
+          return { id, prog, acct, current, nextTier, currentTierObj, deficit, pct, daysLeft };
+        })
+        .filter(Boolean);
+
+      if (progsSorted.length === 0) {
+        return (
+          <div style={{ textAlign: "center", padding: "60px 20px", color: css.text3 }}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>🔗</div>
+            <div style={{ fontSize: 15, fontWeight: 500 }}>No linked accounts yet</div>
+            <div style={{ fontSize: 13, marginTop: 6 }}>Link your loyalty programs in the Programs tab to see your status countdown.</div>
+          </div>
+        );
+      }
+
+      return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ fontSize: 13, color: css.text3, marginBottom: 4 }}>
+            Qualification year ends <strong style={{ color: css.text }}>Dec 31, 2026</strong> · {Math.round(daysBetween(today, new Date("2026-12-31")) / 30.5)} months remaining
+          </div>
+          {progsSorted.map(({ id, prog, current, nextTier, currentTierObj, deficit, pct, daysLeft }) => (
+            <div key={id} className="c-card" style={{ background: css.surface, border: `1px solid ${css.border}`, padding: "18px 20px", display: "flex", flexDirection: "column", gap: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <ProgramLogo prog={prog} size={28} />
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: css.text }}>{prog.name}</div>
+                    <div style={{ fontSize: 12, color: css.text3 }}>
+                      {currentTierObj ? <span style={{ color: css.gold, fontWeight: 600 }}>{currentTierObj.name}</span> : "No status yet"}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  {nextTier ? (
+                    <>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: css.accent }}>{deficit.toLocaleString()} to go</div>
+                      <div style={{ fontSize: 11, color: css.text3 }}>for {nextTier.name}</div>
+                    </>
+                  ) : (
+                    <div style={{ fontSize: 13, fontWeight: 700, color: css.success }}>Top tier ✓</div>
+                  )}
+                </div>
+              </div>
+              {/* Progress bar */}
+              <div style={{ position: "relative", height: 6, background: css.surface3, borderRadius: 0 }}>
+                <motion.div
+                  initial={{ width: 0 }} animate={{ width: `${pct}%` }}
+                  transition={{ duration: 1, ease: "easeOut" }}
+                  style={{ position: "absolute", top: 0, left: 0, height: "100%", background: pct >= 100 ? css.success : css.accent, borderRadius: 0 }}
+                />
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: css.text3 }}>
+                <span>{current.toLocaleString()} {prog.unit}</span>
+                {nextTier && <span>{nextTier.threshold.toLocaleString()} {prog.unit}</span>}
+              </div>
+              {nextTier && (
+                <div style={{ fontSize: 12, color: css.text3, background: css.surface2, padding: "8px 12px", borderLeft: `2px solid ${css.accentBorder}` }}>
+                  At current pace: <strong style={{ color: css.text }}>{Math.round(deficit / (daysLeft / 30.5))}</strong> {prog.unit}/month needed in {daysLeft} days remaining
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      );
+    };
+
+    // ── Sub-tab: Expiration Tracker ───────────────────────────────
+    const renderExpiration = () => {
+      const rows = Object.entries(linkedAccounts).map(([id, acct]) => {
+        const prog = findProg(id);
+        if (!prog) return null;
+        const rule = EXPIRATION_RULES[id];
+        if (!rule) return null;
+        const balance = acct.currentPoints ?? acct.bonvoyPoints ?? acct.hhPoints ?? acct.ihgPoints ?? acct.pointsBalance ?? acct.currentNights ?? 0;
+        const lastActivity = lastActivityByProg[id];
+        let expiresIn = null, risk = "safe";
+        if (!rule.neverExpire && rule.months > 0) {
+          const expirationDate = lastActivity ? new Date(lastActivity.getTime() + rule.months * 30.5 * 86400000) : null;
+          expiresIn = expirationDate ? daysBetween(today, expirationDate) : null;
+          if (expiresIn !== null) {
+            if (expiresIn < 90) risk = "high";
+            else if (expiresIn < 180) risk = "medium";
+            else risk = "safe";
+          } else {
+            risk = "unknown";
+          }
+        }
+        return { id, prog, acct, rule, balance, expiresIn, risk };
+      }).filter(Boolean);
+
+      const riskColor = { safe: css.success, medium: css.warning, high: "#ef4444", unknown: css.text3 };
+      const riskLabel = { safe: "Safe", medium: "Monitor", high: "At Risk", unknown: "Unknown" };
+
+      if (rows.length === 0) {
+        return (
+          <div style={{ textAlign: "center", padding: "60px 20px", color: css.text3 }}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>⏱️</div>
+            <div style={{ fontSize: 15, fontWeight: 500 }}>No linked accounts</div>
+          </div>
+        );
+      }
+
+      return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {rows.sort((a, b) => {
+            const order = { high: 0, medium: 1, unknown: 2, safe: 3 };
+            return order[a.risk] - order[b.risk];
+          }).map(({ id, prog, rule, balance, expiresIn, risk }) => (
+            <div key={id} className="c-card" style={{ background: css.surface, border: `1px solid ${css.border}`, padding: "16px 20px", display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+              <ProgramLogo prog={prog} size={26} />
+              <div style={{ flex: 1, minWidth: 140 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: css.text }}>{prog.name}</div>
+                <div style={{ fontSize: 11, color: css.text3, marginTop: 2 }}>{balance.toLocaleString()} {prog.unit}</div>
+              </div>
+              <div style={{ flex: 2, minWidth: 160 }}>
+                {rule.neverExpire ? (
+                  <div style={{ fontSize: 12, color: css.success }}>✓ Never expire</div>
+                ) : (
+                  <>
+                    <div style={{ fontSize: 12, color: css.text2 }}>
+                      {expiresIn !== null
+                        ? expiresIn > 0
+                          ? `Expires in ${expiresIn} days`
+                          : "⚠️ May have expired"
+                        : "No recent activity found"}
+                    </div>
+                    <div style={{ fontSize: 11, color: css.text3, marginTop: 2 }}>{rule.note}</div>
+                  </>
+                )}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: riskColor[risk] }} />
+                <span style={{ fontSize: 12, fontWeight: 600, color: riskColor[risk] }}>
+                  {rule.neverExpire ? "Safe" : riskLabel[risk]}
+                </span>
+              </div>
+            </div>
+          ))}
+          <div style={{ fontSize: 11, color: css.text3, marginTop: 4, paddingLeft: 2 }}>
+            * Activity dates inferred from logged trips. Link your accounts for real-time data.
+          </div>
+        </div>
+      );
+    };
+
+    // ── Sub-tab: Redemption Value Engine ─────────────────────────
+    const renderRedemption = () => {
+      if (!isPremium) {
+        return (
+          <div className="c-a1" style={{ textAlign: "center", padding: "60px 20px", background: css.surface, border: `1px solid ${css.border}` }}>
+            <div style={{ fontSize: 36, marginBottom: 16 }}>💎</div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: css.gold, marginBottom: 8 }}>Premium Feature</div>
+            <h3 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 28, fontWeight: 600, color: css.text, margin: "0 0 12px" }}>Redemption Value Engine</h3>
+            <p style={{ color: css.text2, fontSize: 14, maxWidth: 380, margin: "0 auto 24px", lineHeight: 1.6 }}>See the real dollar value of your miles and points, plus where to get the most out of each balance.</p>
+            <button onClick={() => setActiveView("premium")} className="c-btn-primary" style={{ padding: "10px 24px", background: css.accent, color: "#fff", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, borderRadius: 0 }}>Upgrade to Premium</button>
+          </div>
+        );
+      }
+
+      const entries = Object.entries(linkedAccounts).map(([id, acct]) => {
+        const prog = findProg(id);
+        const rdv = REDEMPTION_VALUES[id];
+        if (!prog || !rdv) return null;
+        const balance = acct.currentPoints ?? acct.bonvoyPoints ?? acct.hhPoints ?? acct.ihgPoints ?? acct.pointsBalance ?? 0;
+        const dollarValue = (balance * rdv.cpp / 100).toFixed(0);
+        return { id, prog, rdv, balance, dollarValue };
+      }).filter(Boolean).sort((a, b) => b.dollarValue - a.dollarValue);
+
+      const totalValue = entries.reduce((s, e) => s + parseFloat(e.dollarValue), 0);
+
+      return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {/* Total value banner */}
+          <div style={{ background: css.accentBg, border: `1px solid ${css.accentBorder}`, padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: css.accent, marginBottom: 4 }}>Portfolio Value (at peak redemption)</div>
+              <div style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 42, fontWeight: 600, color: css.text, lineHeight: 1 }}>
+                ${totalValue.toLocaleString()}
+              </div>
+            </div>
+            <div style={{ fontSize: 12, color: css.text2, maxWidth: 240, lineHeight: 1.5 }}>
+              Based on best achievable cents-per-point (CPP) values, not average. Actual value depends on how you redeem.
+            </div>
+          </div>
+
+          {entries.map(({ id, prog, rdv, balance, dollarValue }) => (
+            <div key={id} className="c-card" style={{ background: css.surface, border: `1px solid ${css.border}`, padding: "18px 20px" }}>
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <ProgramLogo prog={prog} size={28} />
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: css.text }}>{prog.name}</div>
+                    <div style={{ fontSize: 12, color: css.text3 }}>{balance.toLocaleString()} {prog.unit} · <span style={{ color: css.accent, fontWeight: 700 }}>{rdv.cpp}¢/pt peak CPP</span></div>
+                  </div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 28, fontWeight: 600, color: css.text }}>${parseFloat(dollarValue).toLocaleString()}</div>
+                  <div style={{ fontSize: 11, color: css.text3 }}>peak value</div>
+                </div>
+              </div>
+              <div style={{ marginTop: 14, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div style={{ background: css.surface2, padding: "10px 12px", borderLeft: `2px solid ${css.success}` }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: css.success, marginBottom: 4 }}>Best Use</div>
+                  <div style={{ fontSize: 12, color: css.text2, lineHeight: 1.4 }}>{rdv.best}</div>
+                </div>
+                <div style={{ background: css.surface2, padding: "10px 12px", borderLeft: `2px solid #ef4444` }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#ef4444", marginBottom: 4 }}>Avoid</div>
+                  <div style={{ fontSize: 12, color: css.text2, lineHeight: 1.4 }}>{rdv.avoid}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    };
+
+    // ── Sub-tab: Transfer Partner Matrix ─────────────────────────
+    const renderTransfer = () => {
+      if (!isPremium) {
+        return (
+          <div className="c-a1" style={{ textAlign: "center", padding: "60px 20px", background: css.surface, border: `1px solid ${css.border}` }}>
+            <div style={{ fontSize: 36, marginBottom: 16 }}>🔀</div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: css.gold, marginBottom: 8 }}>Premium Feature</div>
+            <h3 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 28, fontWeight: 600, color: css.text, margin: "0 0 12px" }}>Transfer Partner Matrix</h3>
+            <p style={{ color: css.text2, fontSize: 14, maxWidth: 380, margin: "0 auto 24px", lineHeight: 1.6 }}>Explore which credit card currencies can reach your target airline or hotel program, and chart the optimal transfer path.</p>
+            <button onClick={() => setActiveView("premium")} className="c-btn-primary" style={{ padding: "10px 24px", background: css.accent, color: "#fff", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, borderRadius: 0 }}>Upgrade to Premium</button>
+          </div>
+        );
+      }
+
+      // Build matrix: all linked credit cards that have transfer partners
+      const linkedCards = Object.keys(linkedAccounts).filter(id => CC_TRANSFER_PARTNERS[id]?.partners);
+      const allTargets = [...new Set(linkedCards.flatMap(id => CC_TRANSFER_PARTNERS[id].partners))];
+
+      // Goal finder
+      const goalMatches = transferGoal
+        ? linkedCards.filter(id => CC_TRANSFER_PARTNERS[id]?.partners?.includes(transferGoal))
+        : [];
+
+      const targetProg = transferGoal ? findProg(transferGoal) : null;
+
+      return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          {/* Goal finder */}
+          <div style={{ background: css.surface, border: `1px solid ${css.border}`, padding: "20px" }}>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: css.text3, marginBottom: 12 }}>Transfer Path Advisor</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+              <div style={{ flex: 1, minWidth: 200 }}>
+                <div style={{ fontSize: 12, color: css.text2, marginBottom: 6 }}>I want to earn points in...</div>
+                <select
+                  value={transferGoal}
+                  onChange={e => setTransferGoal(e.target.value)}
+                  style={{ width: "100%", padding: "9px 12px", background: css.surface2, border: `1px solid ${css.border}`, color: css.text, fontSize: 13, borderRadius: 0, cursor: "pointer" }}
+                >
+                  <option value="">Select a target program</option>
+                  {allTargets.map(tid => {
+                    const tp = findProg(tid);
+                    return tp ? <option key={tid} value={tid}>{tp.name}</option> : null;
+                  })}
+                </select>
+              </div>
+            </div>
+            {transferGoal && (
+              <div style={{ marginTop: 16 }}>
+                {goalMatches.length > 0 ? (
+                  <>
+                    <div style={{ fontSize: 12, color: css.success, fontWeight: 600, marginBottom: 10 }}>
+                      ✓ {goalMatches.length} card{goalMatches.length > 1 ? "s" : ""} can transfer to {targetProg?.name}
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {goalMatches.map(cardId => {
+                        const cardProg = findProg(cardId);
+                        const tp = CC_TRANSFER_PARTNERS[cardId];
+                        const balance = linkedAccounts[cardId]?.pointsBalance ?? 0;
+                        return (
+                          <div key={cardId} style={{ display: "flex", alignItems: "center", gap: 12, background: css.surface2, padding: "10px 14px", borderLeft: `2px solid ${css.accent}` }}>
+                            <ProgramLogo prog={cardProg} size={22} />
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: css.text }}>{cardProg?.name}</div>
+                              <div style={{ fontSize: 11, color: css.text3 }}>{tp.currency}</div>
+                            </div>
+                            <div style={{ textAlign: "right" }}>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: css.accent }}>{balance.toLocaleString()} pts</div>
+                              <div style={{ fontSize: 11, color: css.text3 }}>available to transfer</div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ fontSize: 13, color: "#ef4444" }}>
+                    None of your linked cards can transfer to {targetProg?.name}. Consider adding a card that does.
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Full matrix */}
+          <div style={{ background: css.surface, border: `1px solid ${css.border}`, padding: "20px" }}>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: css.text3, marginBottom: 16 }}>Your Transfer Matrix</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {linkedCards.map(cardId => {
+                const cardProg = findProg(cardId);
+                const tp = CC_TRANSFER_PARTNERS[cardId];
+                const balance = linkedAccounts[cardId]?.pointsBalance ?? 0;
+                return (
+                  <div key={cardId}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                      <ProgramLogo prog={cardProg} size={22} />
+                      <div style={{ fontSize: 13, fontWeight: 600, color: css.text }}>{cardProg?.name}</div>
+                      <div style={{ fontSize: 11, color: css.accent, fontWeight: 600, marginLeft: "auto" }}>{balance.toLocaleString()} {tp.currency}</div>
+                    </div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, paddingLeft: 32 }}>
+                      {tp.partners.map(pid => {
+                        const pp = findProg(pid);
+                        const isGoal = pid === transferGoal;
+                        return pp ? (
+                          <button
+                            key={pid}
+                            onClick={() => setTransferGoal(pid)}
+                            style={{
+                              display: "inline-flex", alignItems: "center", gap: 5,
+                              padding: "4px 10px", border: `1px solid ${isGoal ? css.accent : css.border}`,
+                              background: isGoal ? css.accentBg : "transparent",
+                              color: isGoal ? css.accent : css.text2,
+                              fontSize: 11, fontWeight: isGoal ? 600 : 400, cursor: "pointer", borderRadius: 0,
+                            }}
+                          >
+                            <ProgramLogo prog={pp} size={14} />
+                            {pp.name.split(" ")[0]}
+                          </button>
+                        ) : null;
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // ── Sub-tab: Annual Fee Calculator ────────────────────────────
+    const renderAnnualFee = () => {
+      if (!isPremium) {
+        return (
+          <div className="c-a1" style={{ textAlign: "center", padding: "60px 20px", background: css.surface, border: `1px solid ${css.border}` }}>
+            <div style={{ fontSize: 36, marginBottom: 16 }}>🧮</div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: css.gold, marginBottom: 8 }}>Premium Feature</div>
+            <h3 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 28, fontWeight: 600, color: css.text, margin: "0 0 12px" }}>Annual Fee Calculator</h3>
+            <p style={{ color: css.text2, fontSize: 14, maxWidth: 380, margin: "0 auto 24px", lineHeight: 1.6 }}>Tally the dollar value of benefits you actually use and see whether your card is truly worth the fee.</p>
+            <button onClick={() => setActiveView("premium")} className="c-btn-primary" style={{ padding: "10px 24px", background: css.accent, color: "#fff", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, borderRadius: 0 }}>Upgrade to Premium</button>
+          </div>
+        );
+      }
+
+      const cardData = CARD_BENEFITS_DATA[annualFeeCard];
+      const catColors = { travel: css.accent, lifestyle: css.gold, lounge: "#8B6CF6", status: css.success, rewards: css.text2 };
+
+      const getEffectiveValue = (b) => {
+        const key = `${annualFeeCard}:${b.id}`;
+        const custom = customBenefitValues[key];
+        return (custom !== undefined && custom !== "") ? Number(custom) : b.value;
+      };
+      const usedValue = cardData
+        ? cardData.benefits.reduce((sum, b) => {
+            const key = `${annualFeeCard}:${b.id}`;
+            return sum + (checkedBenefits[key] ? getEffectiveValue(b) : 0);
+          }, 0)
+        : 0;
+      const netValue = usedValue - (cardData?.annualFee || 0);
+
+      return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          {/* Card selector */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {Object.keys(CARD_BENEFITS_DATA).map(cid => {
+              const cp = findProg(cid);
+              return (
+                <button
+                  key={cid}
+                  onClick={() => setAnnualFeeCard(cid)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 8,
+                    padding: "8px 14px", border: `1px solid ${annualFeeCard === cid ? css.accent : css.border}`,
+                    background: annualFeeCard === cid ? css.accentBg : css.surface,
+                    color: annualFeeCard === cid ? css.accent : css.text2,
+                    fontSize: 12, fontWeight: annualFeeCard === cid ? 700 : 400,
+                    cursor: "pointer", borderRadius: 0,
+                  }}
+                >
+                  {cp && <ProgramLogo prog={cp} size={16} />}
+                  {cp?.name || cid}
+                </button>
+              );
+            })}
+          </div>
+
+          {cardData && (
+            <>
+              {/* Net value summary */}
+              <div style={{ background: netValue >= 0 ? css.successBg : css.warningBg, border: `1px solid ${netValue >= 0 ? css.success : css.warning}`, padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: netValue >= 0 ? css.success : css.warning, marginBottom: 6 }}>
+                    {netValue >= 0 ? "Card is paying for itself" : "Card is costing you"}
+                  </div>
+                  <div style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 38, fontWeight: 600, color: css.text, lineHeight: 1 }}>
+                    {netValue >= 0 ? "+" : ""}{netValue < 0 ? `-$${Math.abs(netValue).toLocaleString()}` : `$${netValue.toLocaleString()}`}
+                    <span style={{ fontSize: 16, color: css.text3, marginLeft: 8, fontFamily: "'Outfit', sans-serif", fontWeight: 400 }}>net value</span>
+                  </div>
+                </div>
+                <div style={{ fontSize: 13, color: css.text2, textAlign: "right" }}>
+                  <div>Benefits used: <strong style={{ color: css.text }}>${usedValue.toLocaleString()}</strong></div>
+                  <div>Annual fee: <strong style={{ color: css.text }}>−${cardData.annualFee.toLocaleString()}</strong></div>
+                </div>
+              </div>
+
+              {/* Benefits checklist */}
+              <div style={{ background: css.surface, border: `1px solid ${css.border}`, padding: "20px" }}>
+                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 6 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: css.text3 }}>
+                    Check off benefits you use · edit value to match what you actually get
+                  </div>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                  {cardData.benefits.map(benefit => {
+                    const key = `${annualFeeCard}:${benefit.id}`;
+                    const checked = !!checkedBenefits[key];
+                    const customVal = customBenefitValues[key];
+                    const isCustomized = customVal !== undefined && customVal !== "" && Number(customVal) !== benefit.value;
+                    return (
+                      <div
+                        key={benefit.id}
+                        className="c-row-hover"
+                        onClick={() => setCheckedBenefits(prev => ({ ...prev, [key]: !prev[key] }))}
+                        style={{
+                          display: "flex", alignItems: "center", gap: 14, padding: "12px 10px",
+                          cursor: "pointer", borderBottom: `1px solid ${css.surface2}`,
+                          background: checked ? (D ? "rgba(61,184,122,0.05)" : "rgba(61,184,122,0.04)") : "transparent",
+                        }}
+                      >
+                        {/* Checkbox */}
+                        <div style={{
+                          width: 18, height: 18, border: `2px solid ${checked ? css.success : css.border}`,
+                          background: checked ? css.success : "transparent", display: "flex",
+                          alignItems: "center", justifyContent: "center", flexShrink: 0,
+                          transition: "all 0.15s ease",
+                        }}>
+                          {checked && <span style={{ color: "#fff", fontSize: 11, lineHeight: 1 }}>✓</span>}
+                        </div>
+                        {/* Label + note */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                            <span style={{ fontSize: 13, fontWeight: 500, color: css.text }}>{benefit.name}</span>
+                            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: catColors[benefit.cat] || css.text3, opacity: 0.8 }}>{benefit.cat}</span>
+                          </div>
+                          <div style={{ fontSize: 11, color: css.text3, marginTop: 2, lineHeight: 1.4 }}>{benefit.note}</div>
+                        </div>
+                        {/* Editable value */}
+                        <div
+                          onClick={e => e.stopPropagation()}
+                          style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", flexShrink: 0, gap: 2 }}
+                        >
+                          <div style={{ display: "flex", alignItems: "center", border: `1px solid ${isCustomized ? css.accent : css.border}`, background: css.surface2, transition: "border-color 0.15s" }}>
+                            <span style={{ padding: "4px 0 4px 8px", fontSize: 13, fontWeight: 600, color: checked ? css.success : css.text3 }}>$</span>
+                            <input
+                              type="number"
+                              min="0"
+                              value={customVal !== undefined ? customVal : benefit.value}
+                              onChange={e => setCustomBenefitValues(prev => ({ ...prev, [key]: e.target.value }))}
+                              style={{
+                                width: 64, padding: "4px 8px 4px 2px", border: "none", outline: "none",
+                                background: "transparent", fontSize: 13, fontWeight: 600,
+                                color: checked ? css.success : css.text3,
+                                fontFamily: "'Outfit', sans-serif", textAlign: "right",
+                              }}
+                            />
+                          </div>
+                          {isCustomized && (
+                            <button
+                              onClick={() => setCustomBenefitValues(prev => { const n = { ...prev }; delete n[key]; return n; })}
+                              style={{ fontSize: 10, color: css.text3, background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "'Outfit', sans-serif", lineHeight: 1 }}
+                            >
+                              reset (${benefit.value})
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px solid ${css.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <button
+                    onClick={() => {
+                      const allKeys = cardData.benefits.reduce((acc, b) => {
+                        acc[`${annualFeeCard}:${b.id}`] = true;
+                        return acc;
+                      }, {});
+                      setCheckedBenefits(prev => ({ ...prev, ...allKeys }));
+                    }}
+                    style={{ fontSize: 12, color: css.accent, background: "none", border: "none", cursor: "pointer", fontFamily: "'Outfit', sans-serif", padding: 0 }}
+                  >
+                    Check all
+                  </button>
+                  <button
+                    onClick={() => {
+                      const cleared = cardData.benefits.reduce((acc, b) => {
+                        acc[`${annualFeeCard}:${b.id}`] = false;
+                        return acc;
+                      }, {});
+                      setCheckedBenefits(prev => ({ ...prev, ...cleared }));
+                    }}
+                    style={{ fontSize: 12, color: css.text3, background: "none", border: "none", cursor: "pointer", fontFamily: "'Outfit', sans-serif", padding: 0 }}
+                  >
+                    Clear all
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      );
+    };
+
+    // ── Main Insights layout ──────────────────────────────────────
+    const activeTab = _previewTab ?? insightTab;
+    const subContent =
+      activeTab === "countdown"  ? renderCountdown()  :
+      activeTab === "expiration" ? renderExpiration() :
+      activeTab === "redemption" ? renderRedemption() :
+      activeTab === "transfer"   ? renderTransfer()   :
+                                   renderAnnualFee();
+
+    // Preview mode: return raw sub-content for nav thumbnail
+    if (_previewTab !== null) return subContent;
+
+    return (
+      <div>
+        {/* Header */}
+        <div className="c-a1" style={{ marginBottom: 28 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: css.accent, marginBottom: 8 }}>Intelligence Layer</div>
+          <h2 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: isMobile ? 28 : 38, fontWeight: 600, color: css.text, margin: 0, lineHeight: 1.1 }}>Insights</h2>
+          <p style={{ color: css.text2, fontSize: 14, marginTop: 8, lineHeight: 1.6 }}>Track your qualification runway, protect expiring miles, and maximize every point you have.</p>
+        </div>
+
+        {/* Sub-tab bar — desktop only (mobile uses header strip) */}
+        {!isMobile && (
+          <div style={{ display: "flex", gap: 0, borderBottom: `1px solid ${css.border}`, marginBottom: 24 }}>
+            {INSIGHT_TABS.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setInsightTab(tab.id)}
+                style={{
+                  padding: "10px 18px", border: "none", cursor: "pointer", background: "transparent",
+                  borderBottom: activeTab === tab.id ? `2px solid ${css.accent}` : "2px solid transparent",
+                  color: activeTab === tab.id ? css.accent : css.text3,
+                  fontSize: 13, fontWeight: activeTab === tab.id ? 600 : 400,
+                  fontFamily: "'Outfit', sans-serif",
+                  display: "flex", alignItems: "center", gap: 6, marginBottom: -1,
+                }}
+              >
+                {tab.label}
+                {tab.tier === "premium" && !isPremium && (
+                  <span style={{ fontSize: 9, background: css.goldBg, color: css.gold, padding: "1px 5px", fontWeight: 700, border: `1px solid ${D ? "rgba(201,168,76,0.2)" : "rgba(201,168,76,0.3)"}` }}>PRO</span>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Content */}
+        <div className="c-a2">
+          {subContent}
+        </div>
+      </div>
+    );
+  };
+
   const renderPremium = () => (
     <div>
       {/* Hero */}
@@ -4173,11 +5353,12 @@ Start by introducing yourself briefly in-character with personality, and give an
     { id: "programs", label: "Programs", icon: "🔗" },
     { id: "trips", label: "Trips", icon: "🗺️" },
     { id: "optimizer", label: "Optimizer", icon: "🧠" },
+    { id: "insights", label: "Insights", icon: "💡" },
     { id: "reports", label: "Reports", icon: "📈" },
     { id: "premium", label: "Premium", icon: "💎" },
   ];
 
-  const viewRenderers = { dashboard: renderDashboard, programs: renderPrograms, trips: renderTrips, expenses: renderExpenses, optimizer: renderOptimizer, reports: renderReports, alliances: renderAlliances, premium: renderPremium };
+  const viewRenderers = { dashboard: renderDashboard, programs: renderPrograms, trips: renderTrips, expenses: renderExpenses, optimizer: renderOptimizer, insights: renderInsights, reports: renderReports, alliances: renderAlliances, premium: renderPremium };
 
   // ============================================================
   // MAIN LAYOUT — Warm Editorial Design System
@@ -4228,6 +5409,8 @@ Start by introducing yourself briefly in-character with personality, and give an
         .c-btn-primary:hover { background: ${D ? "#F09040" : "#C06425"} !important; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(212,116,45,0.3); }
         .c-tag { display:inline-flex; align-items:center; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; }
         @keyframes c-fade-up { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
         @keyframes c-pulse { 0%,100% { opacity:0.6; transform:scale(1); } 50% { opacity:1; transform:scale(1.2); } }
         .c-a1 { animation: c-fade-up 0.45s ease 0.05s backwards; }
         .c-a2 { animation: c-fade-up 0.45s ease 0.1s backwards; }
@@ -4272,106 +5455,211 @@ Start by introducing yourself briefly in-character with personality, and give an
               { id: "cards",    label: "Credit Card Optimizer" },
             ];
             return (
-              <nav style={{ display: "flex", alignItems: "center", gap: 2, flex: 1, minWidth: 0, overflow: "visible", position: "relative" }}>
+              <nav onMouseLeave={() => setNavCursor(null)} style={{ display: "flex", alignItems: "center", border: `1.5px solid ${css.border}`, borderRadius: 9999, padding: 3, overflow: "visible", position: "relative", gap: 0 }}>
                 {navItems.map(item => {
                   if (item.id === "programs") {
                     return (
                       <div key="programs" style={{ position: "relative" }}
-                        onMouseEnter={() => setProgramsHover(true)}
+                        onMouseEnter={() => { setProgramsHover(true); setNavCursor("programs"); }}
                         onMouseLeave={() => setProgramsHover(false)}
                       >
-                        <button onClick={() => setActiveView("programs")} className="c-nav-btn" style={{
-                          display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8,
-                          border: "none", cursor: "pointer",
-                          background: activeView === "programs" ? css.accentBg : "transparent",
-                          color: activeView === "programs" ? css.accent : css.text2,
-                          fontSize: 13, fontWeight: activeView === "programs" ? 600 : 400,
-                          fontFamily: "'Outfit', sans-serif",
+                        <button onClick={() => setActiveView("programs")} style={{
+                          position: "relative", display: "flex", alignItems: "center",
+                          padding: "6px 14px", border: "none", cursor: "pointer", background: "transparent",
+                          borderRadius: 9999, fontFamily: "'Outfit', sans-serif",
                         }}>
-                          <span style={{ fontSize: 14 }}>{item.icon}</span>
-                          {item.label}
-                          <span style={{ fontSize: 9, opacity: 0.6 }}>▾</span>
+                          {(navCursor ?? activeView) === "programs" && (
+                            <motion.div layoutId="navCursor" transition={{ type: "spring", mass: 0.5, damping: 11.5, stiffness: 100 }} style={{ position: "absolute", inset: 0, borderRadius: 9999, background: css.accent, zIndex: 0 }} />
+                          )}
+                          <span style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", gap: 5, color: (navCursor ?? activeView) === "programs" ? "#fff" : css.text2, fontSize: 13, fontWeight: (navCursor ?? activeView) === "programs" ? 600 : 400 }}>
+                            {item.label}
+                            <span style={{ fontSize: 9, opacity: 0.7 }}>▾</span>
+                          </span>
                         </button>
-                        {programsHover && (
-                          <div style={{
-                            position: "absolute", top: "100%", left: 0, zIndex: 200,
-                            paddingTop: 6,
-                          }}>
-                            <div style={{
-                              background: css.surface, border: `1px solid ${css.border}`,
-                              borderRadius: 10, padding: "6px 0", minWidth: 220,
-                              boxShadow: css.shadow,
-                            }}>
-                              {PROG_SUBS.map(sub => (
-                                <button key={sub.id} onClick={() => { setActiveView("programs"); setProgramSubView(sub.id); setProgramsHover(false); }} style={{
-                                  display: "block", width: "100%", textAlign: "left",
-                                  padding: "9px 18px", border: "none", cursor: "pointer",
-                                  background: (activeView === "programs" && programSubView === sub.id) ? css.accentBg : "transparent",
-                                  color: (activeView === "programs" && programSubView === sub.id) ? css.accent : css.text,
-                                  fontSize: 13, fontFamily: "'Outfit', sans-serif",
-                                }}>{sub.label}</button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                        <AnimatePresence>
+                          {programsHover && (
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.95, y: 8 }}
+                              animate={{ opacity: 1, scale: 1, y: 0 }}
+                              exit={{ opacity: 0, scale: 0.95, y: 8 }}
+                              transition={{ type: "spring", mass: 0.5, damping: 11.5, stiffness: 100, restDelta: 0.001, restSpeed: 0.001 }}
+                              style={{ position: "absolute", top: "100%", left: 0, zIndex: 200, paddingTop: 6, transformOrigin: "top left" }}
+                            >
+                              <div style={{
+                                background: css.surface, border: `1px solid ${css.border}`,
+                                borderRadius: 0, padding: 12, boxShadow: css.shadow,
+                                display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8,
+                              }}>
+                                {PROG_SUBS.map(sub => (
+                                  <div key={sub.id} style={{ position: "relative" }}>
+                                    {progDropItem === sub.id && (
+                                      <motion.div layoutId="progActive" style={{ position: "absolute", inset: 0, borderRadius: 0, background: css.accentBg }} />
+                                    )}
+                                    <div
+                                      onMouseEnter={() => setProgDropItem(sub.id)}
+                                      onClick={() => { setActiveView("programs"); setProgramSubView(sub.id); setProgramsHover(false); }}
+                                      style={{ position: "relative", zIndex: 1, cursor: "pointer", borderRadius: 0, padding: "8px 8px 6px", width: 138 }}
+                                    >
+                                      <div style={{ width: "100%", height: 90, overflow: "hidden", borderRadius: 0, border: `1px solid ${css.border}`, background: css.bg, marginBottom: 8 }}>
+                                        <div style={{ transform: "scale(0.09)", transformOrigin: "top left", width: 1533, pointerEvents: "none" }}>
+                                          {renderPrograms(sub.id)}
+                                        </div>
+                                      </div>
+                                      <div style={{ fontSize: 11, fontWeight: progDropItem === sub.id ? 600 : 400, color: progDropItem === sub.id ? css.accent : css.text2, textAlign: "center", lineHeight: 1.3 }}>
+                                        {sub.label}
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    );
+                  }
+                  if (item.id === "insights") {
+                    const INS_SUBS = [
+                      { id: "countdown",  label: "Status Countdown" },
+                      { id: "expiration", label: "Expiration Tracker" },
+                      { id: "redemption", label: "Redemption Value" },
+                      { id: "transfer",   label: "Transfer Matrix" },
+                      { id: "annual_fee", label: "Annual Fee Calc" },
+                    ];
+                    return (
+                      <div key="insights" style={{ position: "relative" }}
+                        onMouseEnter={() => { setInsightsHover(true); setNavCursor("insights"); }}
+                        onMouseLeave={() => setInsightsHover(false)}
+                      >
+                        <button onClick={() => setActiveView("insights")} style={{
+                          position: "relative", display: "flex", alignItems: "center",
+                          padding: "6px 14px", border: "none", cursor: "pointer", background: "transparent",
+                          borderRadius: 9999, fontFamily: "'Outfit', sans-serif",
+                        }}>
+                          {(navCursor ?? activeView) === "insights" && (
+                            <motion.div layoutId="navCursor" transition={{ type: "spring", mass: 0.5, damping: 11.5, stiffness: 100 }} style={{ position: "absolute", inset: 0, borderRadius: 9999, background: css.accent, zIndex: 0 }} />
+                          )}
+                          <span style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", gap: 5, color: (navCursor ?? activeView) === "insights" ? "#fff" : css.text2, fontSize: 13, fontWeight: (navCursor ?? activeView) === "insights" ? 600 : 400 }}>
+                            {item.label}
+                            <span style={{ fontSize: 9, opacity: 0.7 }}>▾</span>
+                          </span>
+                        </button>
+                        <AnimatePresence>
+                          {insightsHover && (
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.95, y: 8 }}
+                              animate={{ opacity: 1, scale: 1, y: 0 }}
+                              exit={{ opacity: 0, scale: 0.95, y: 8 }}
+                              transition={{ type: "spring", mass: 0.5, damping: 11.5, stiffness: 100, restDelta: 0.001, restSpeed: 0.001 }}
+                              style={{ position: "absolute", top: "100%", left: 0, zIndex: 200, paddingTop: 6, transformOrigin: "top left" }}
+                            >
+                              <div style={{
+                                background: css.surface, border: `1px solid ${css.border}`,
+                                borderRadius: 0, padding: 12, boxShadow: css.shadow,
+                                display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8,
+                              }}>
+                                {INS_SUBS.map(sub => (
+                                  <div key={sub.id} style={{ position: "relative" }}>
+                                    {insDropItem === sub.id && (
+                                      <motion.div layoutId="insActive" style={{ position: "absolute", inset: 0, borderRadius: 0, background: css.accentBg }} />
+                                    )}
+                                    <div
+                                      onMouseEnter={() => setInsDropItem(sub.id)}
+                                      onClick={() => { setActiveView("insights"); setInsightTab(sub.id); setInsightsHover(false); }}
+                                      style={{ position: "relative", zIndex: 1, cursor: "pointer", borderRadius: 0, padding: "8px 8px 6px", width: 138 }}
+                                    >
+                                      <div style={{ width: "100%", height: 90, overflow: "hidden", borderRadius: 0, border: `1px solid ${css.border}`, background: css.bg, marginBottom: 8 }}>
+                                        <div style={{ transform: "scale(0.09)", transformOrigin: "top left", width: 1533, pointerEvents: "none" }}>
+                                          {renderInsights(sub.id)}
+                                        </div>
+                                      </div>
+                                      <div style={{ fontSize: 11, fontWeight: insDropItem === sub.id ? 600 : 400, color: insDropItem === sub.id ? css.accent : css.text2, textAlign: "center", lineHeight: 1.3 }}>
+                                        {sub.label}
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
                     );
                   }
                   if (item.id === "optimizer") {
                     return (
                       <div key="optimizer" style={{ position: "relative" }}
-                        onMouseEnter={() => setOptimizerHover(true)}
+                        onMouseEnter={() => { setOptimizerHover(true); setNavCursor("optimizer"); }}
                         onMouseLeave={() => setOptimizerHover(false)}
                       >
-                        <button onClick={() => setActiveView("optimizer")} className="c-nav-btn" style={{
-                          display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8,
-                          border: "none", cursor: "pointer",
-                          background: activeView === "optimizer" ? css.accentBg : "transparent",
-                          color: activeView === "optimizer" ? css.accent : css.text2,
-                          fontSize: 13, fontWeight: activeView === "optimizer" ? 600 : 400,
-                          fontFamily: "'Outfit', sans-serif",
+                        <button onClick={() => setActiveView("optimizer")} style={{
+                          position: "relative", display: "flex", alignItems: "center",
+                          padding: "6px 14px", border: "none", cursor: "pointer", background: "transparent",
+                          borderRadius: 9999, fontFamily: "'Outfit', sans-serif",
                         }}>
-                          <span style={{ fontSize: 14 }}>{item.icon}</span>
-                          {item.label}
-                          <span style={{ fontSize: 9, opacity: 0.6 }}>▾</span>
+                          {(navCursor ?? activeView) === "optimizer" && (
+                            <motion.div layoutId="navCursor" transition={{ type: "spring", mass: 0.5, damping: 11.5, stiffness: 100 }} style={{ position: "absolute", inset: 0, borderRadius: 9999, background: css.accent, zIndex: 0 }} />
+                          )}
+                          <span style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", gap: 5, color: (navCursor ?? activeView) === "optimizer" ? "#fff" : css.text2, fontSize: 13, fontWeight: (navCursor ?? activeView) === "optimizer" ? 600 : 400 }}>
+                            {item.label}
+                            <span style={{ fontSize: 9, opacity: 0.7 }}>▾</span>
+                          </span>
                         </button>
-                        {optimizerHover && (
-                          <div style={{
-                            position: "absolute", top: "100%", left: 0, zIndex: 200,
-                            paddingTop: 6,
-                          }}>
-                            <div style={{
-                              background: css.surface, border: `1px solid ${css.border}`,
-                              borderRadius: 10, padding: "6px 0", minWidth: 220,
-                              boxShadow: css.shadow,
-                            }}>
-                              {OPT_SUBS.map(sub => (
-                                <button key={sub.id} onClick={() => { setActiveView("optimizer"); setOptimizerTab(sub.id); setOptimizerHover(false); }} style={{
-                                  display: "block", width: "100%", textAlign: "left",
-                                  padding: "9px 18px", border: "none", cursor: "pointer",
-                                  background: (activeView === "optimizer" && optimizerTab === sub.id) ? css.accentBg : "transparent",
-                                  color: (activeView === "optimizer" && optimizerTab === sub.id) ? css.accent : css.text,
-                                  fontSize: 13, fontFamily: "'Outfit', sans-serif",
-                                }}>{sub.label}</button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                        <AnimatePresence>
+                          {optimizerHover && (
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.95, y: 8 }}
+                              animate={{ opacity: 1, scale: 1, y: 0 }}
+                              exit={{ opacity: 0, scale: 0.95, y: 8 }}
+                              transition={{ type: "spring", mass: 0.5, damping: 11.5, stiffness: 100, restDelta: 0.001, restSpeed: 0.001 }}
+                              style={{ position: "absolute", top: "100%", left: 0, zIndex: 200, paddingTop: 6, transformOrigin: "top left" }}
+                            >
+                              <div style={{
+                                background: css.surface, border: `1px solid ${css.border}`,
+                                borderRadius: 0, padding: 12, boxShadow: css.shadow,
+                                display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8,
+                              }}>
+                                {OPT_SUBS.map(sub => (
+                                  <div key={sub.id} style={{ position: "relative" }}>
+                                    {optDropItem === sub.id && (
+                                      <motion.div layoutId="optActive" style={{ position: "absolute", inset: 0, borderRadius: 0, background: css.accentBg }} />
+                                    )}
+                                    <div
+                                      onMouseEnter={() => setOptDropItem(sub.id)}
+                                      onClick={() => { setActiveView("optimizer"); setOptimizerTab(sub.id); setOptimizerHover(false); }}
+                                      style={{ position: "relative", zIndex: 1, cursor: "pointer", borderRadius: 0, padding: "8px 8px 6px", width: 155 }}
+                                    >
+                                      <div style={{ width: "100%", height: 90, overflow: "hidden", borderRadius: 0, border: `1px solid ${css.border}`, background: css.bg, marginBottom: 8 }}>
+                                        <div style={{ transform: "scale(0.09)", transformOrigin: "top left", width: 1533, pointerEvents: "none" }}>
+                                          {renderOptimizer(sub.id)}
+                                        </div>
+                                      </div>
+                                      <div style={{ fontSize: 11, fontWeight: optDropItem === sub.id ? 600 : 400, color: optDropItem === sub.id ? css.accent : css.text2, textAlign: "center", lineHeight: 1.3 }}>
+                                        {sub.label}
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
                     );
                   }
                   return (
-                    <button key={item.id} onClick={() => setActiveView(item.id)} className="c-nav-btn" style={{
-                      display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8,
-                      border: "none", cursor: "pointer",
-                      background: activeView === item.id ? css.accentBg : "transparent",
-                      color: activeView === item.id ? css.accent : css.text2,
-                      fontSize: 13, fontWeight: activeView === item.id ? 600 : 400,
-                      fontFamily: "'Outfit', sans-serif",
+                    <button key={item.id} onClick={() => setActiveView(item.id)} onMouseEnter={() => setNavCursor(item.id)} style={{
+                      position: "relative", display: "flex", alignItems: "center",
+                      padding: "6px 14px", border: "none", cursor: "pointer", background: "transparent",
+                      borderRadius: 9999, fontFamily: "'Outfit', sans-serif",
                     }}>
-                      <span style={{ fontSize: 14 }}>{item.icon}</span>
-                      {item.label}
-                      {item.id === "premium" && <span style={{ fontSize: 9, background: css.goldBg, color: css.gold, padding: "2px 6px", borderRadius: 6, fontWeight: 700, border: `1px solid ${D ? "rgba(201,168,76,0.2)" : "rgba(201,168,76,0.3)"}` }}>PRO</span>}
+                      {(navCursor ?? activeView) === item.id && (
+                        <motion.div layoutId="navCursor" transition={{ type: "spring", mass: 0.5, damping: 11.5, stiffness: 100 }} style={{ position: "absolute", inset: 0, borderRadius: 9999, background: css.accent, zIndex: 0 }} />
+                      )}
+                      <span style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", gap: 5, color: (navCursor ?? activeView) === item.id ? "#fff" : css.text2, fontSize: 13, fontWeight: (navCursor ?? activeView) === item.id ? 600 : 400 }}>
+                        {item.label}
+                        {item.id === "premium" && <span style={{ fontSize: 9, background: css.goldBg, color: css.gold, padding: "2px 6px", borderRadius: 6, fontWeight: 700, border: `1px solid ${D ? "rgba(201,168,76,0.2)" : "rgba(201,168,76,0.3)"}` }}>PRO</span>}
+                      </span>
                     </button>
                   );
                 })}
@@ -4401,71 +5689,110 @@ Start by introducing yourself briefly in-character with personality, and give an
         </>)}
 
         {/* Mobile nav */}
-        {isMobile && (<>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px" }}>
-            <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: 28 }} />
-            <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={() => setDarkMode(d => !d)} style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${css.border}`, background: "transparent", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>{D ? "☀️" : "🌙"}</button>
-              <button onClick={handleLogout} style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${css.border}`, background: "transparent", color: css.text3, fontSize: 11, cursor: "pointer" }}>Out</button>
+        {isMobile && (
+          <>
+            {/* Top bar: logo + controls */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", height: 56 }}>
+              <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: 28 }} />
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <button onClick={() => setDarkMode(d => !d)} style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${css.border}`, background: "transparent", cursor: "pointer", fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center" }}>{D ? "☀️" : "🌙"}</button>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: `linear-gradient(135deg, ${css.accent}, ${D ? "#C06020" : "#B85820"})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff" }}>{user?.avatar || "U"}</div>
+              </div>
             </div>
-          </div>
-          <div style={{ display: "flex", overflowX: "auto", borderTop: `1px solid ${css.border}`, padding: "0 8px", scrollbarWidth: "none" }}>
-            {navItems.map(item => (
-              <button key={item.id} onClick={() => setActiveView(item.id)} style={{
-                display: "flex", alignItems: "center", gap: 4, padding: "8px 10px", border: "none", cursor: "pointer",
-                background: "transparent", borderBottom: activeView === item.id ? `2px solid ${css.accent}` : "2px solid transparent",
-                color: activeView === item.id ? css.accent : css.text3,
-                fontSize: 11, fontWeight: activeView === item.id ? 600 : 400,
-                whiteSpace: "nowrap", flexShrink: 0, transition: "all 0.15s",
-              }}><span>{item.icon}</span> {item.label}</button>
-            ))}
-          </div>
-          {activeView === "programs" && (
-            <div style={{ display: "flex", overflowX: "auto", borderTop: `1px solid ${css.border}`, padding: "0 8px", scrollbarWidth: "none", background: css.surface2 }}>
-              {[
-                { id: "airlines", label: "Airlines" },
-                { id: "hotels", label: "Hotels" },
-                { id: "credit_cards", label: "Credit Cards" },
-                { id: "rentals", label: "Car Rentals" },
-                { id: "alliances", label: "Alliance Benefits" },
-              ].map(sub => (
-                <button key={sub.id} onClick={() => setProgramSubView(sub.id)} style={{
-                  padding: "6px 10px", border: "none", cursor: "pointer", background: "transparent",
-                  borderBottom: programSubView === sub.id ? `2px solid ${css.accent}` : "2px solid transparent",
-                  color: programSubView === sub.id ? css.accent : css.text3,
-                  fontSize: 10, fontWeight: programSubView === sub.id ? 600 : 400,
-                  whiteSpace: "nowrap", flexShrink: 0,
-                }}>{sub.label}</button>
-              ))}
-            </div>
-          )}
-          {activeView === "optimizer" && (
-            <div style={{ display: "flex", overflowX: "auto", borderTop: `1px solid ${css.border}`, padding: "0 8px", scrollbarWidth: "none", background: css.surface2 }}>
-              {[
-                { id: "global", label: "Global Optimizer" },
-                { id: "trip", label: "Trip-by-Trip" },
-                { id: "alliance", label: "Alliance Goal" },
-                { id: "cards", label: "Card Optimizer" },
-              ].map(sub => (
-                <button key={sub.id} onClick={() => setOptimizerTab(sub.id)} style={{
-                  padding: "6px 10px", border: "none", cursor: "pointer", background: "transparent",
-                  borderBottom: optimizerTab === sub.id ? `2px solid ${css.accent}` : "2px solid transparent",
-                  color: optimizerTab === sub.id ? css.accent : css.text3,
-                  fontSize: 10, fontWeight: optimizerTab === sub.id ? 600 : 400,
-                  whiteSpace: "nowrap", flexShrink: 0,
-                }}>{sub.label}</button>
-              ))}
-            </div>
-          )}
-        </>)}
+            {/* Programs sub-tabs */}
+            {activeView === "programs" && (
+              <div style={{ display: "flex", overflowX: "auto", borderTop: `1px solid ${css.border}`, scrollbarWidth: "none" }}>
+                {[
+                  { id: "airlines", label: "Airlines" },
+                  { id: "hotels", label: "Hotels" },
+                  { id: "credit_cards", label: "Credit Cards" },
+                  { id: "rentals", label: "Car Rentals" },
+                  { id: "alliances", label: "Alliance Benefits" },
+                ].map(sub => (
+                  <button key={sub.id} onClick={() => setProgramSubView(sub.id)} style={{
+                    padding: "11px 14px", border: "none", cursor: "pointer", background: "transparent",
+                    borderBottom: programSubView === sub.id ? `2px solid ${css.accent}` : "2px solid transparent",
+                    color: programSubView === sub.id ? css.accent : css.text3,
+                    fontSize: 11, fontWeight: programSubView === sub.id ? 600 : 400,
+                    whiteSpace: "nowrap", flexShrink: 0, fontFamily: "'Outfit', sans-serif",
+                  }}>{sub.label}</button>
+                ))}
+              </div>
+            )}
+            {/* Optimizer sub-tabs */}
+            {activeView === "optimizer" && (
+              <div style={{ display: "flex", overflowX: "auto", borderTop: `1px solid ${css.border}`, scrollbarWidth: "none" }}>
+                {[
+                  { id: "global", label: "Global Optimizer" },
+                  { id: "trip", label: "Trip-by-Trip" },
+                  { id: "alliance", label: "Alliance Goal" },
+                  { id: "cards", label: "Credit Card" },
+                ].map(sub => (
+                  <button key={sub.id} onClick={() => setOptimizerTab(sub.id)} style={{
+                    padding: "11px 14px", border: "none", cursor: "pointer", background: "transparent",
+                    borderBottom: optimizerTab === sub.id ? `2px solid ${css.accent}` : "2px solid transparent",
+                    color: optimizerTab === sub.id ? css.accent : css.text3,
+                    fontSize: 11, fontWeight: optimizerTab === sub.id ? 600 : 400,
+                    whiteSpace: "nowrap", flexShrink: 0, fontFamily: "'Outfit', sans-serif",
+                  }}>{sub.label}</button>
+                ))}
+              </div>
+            )}
+            {/* Insights sub-tabs */}
+            {activeView === "insights" && (
+              <div style={{ display: "flex", overflowX: "auto", borderTop: `1px solid ${css.border}`, scrollbarWidth: "none" }}>
+                {[
+                  { id: "countdown",  label: "Status" },
+                  { id: "expiration", label: "Expiration" },
+                  { id: "redemption", label: "Value" },
+                  { id: "transfer",   label: "Transfers" },
+                  { id: "annual_fee", label: "Annual Fee" },
+                ].map(sub => (
+                  <button key={sub.id} onClick={() => setInsightTab(sub.id)} style={{
+                    padding: "11px 14px", border: "none", cursor: "pointer", background: "transparent",
+                    borderBottom: insightTab === sub.id ? `2px solid ${css.accent}` : "2px solid transparent",
+                    color: insightTab === sub.id ? css.accent : css.text3,
+                    fontSize: 11, fontWeight: insightTab === sub.id ? 600 : 400,
+                    whiteSpace: "nowrap", flexShrink: 0, fontFamily: "'Outfit', sans-serif",
+                  }}>{sub.label}</button>
+                ))}
+              </div>
+            )}
+          </>
+        )}
       </header>
 
       {/* ── Main Content ── */}
       <main style={{ flex: 1, overflowY: "auto", position: "relative" }}>
-        <div style={{ maxWidth: 1140, margin: "0 auto", padding: isMobile ? "24px 16px 60px" : "36px 40px 80px" }}>
+        <div style={{ maxWidth: 1140, margin: "0 auto", padding: isMobile ? "20px 16px 100px" : "36px 40px 80px" }}>
           {viewRenderers[activeView]?.()}
         </div>
       </main>
+
+      {/* Fixed bottom nav (mobile) */}
+      {isMobile && (
+        <div style={{
+          position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 150,
+          background: css.nav, backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
+          borderTop: `1px solid ${css.border}`,
+          display: "flex", alignItems: "stretch",
+          paddingBottom: "env(safe-area-inset-bottom, 0px)",
+        }}>
+          {navItems.map(item => (
+            <button key={item.id} onClick={() => setActiveView(item.id)} style={{
+              flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+              gap: 3, padding: "10px 2px 8px", border: "none", cursor: "pointer",
+              background: "transparent", color: activeView === item.id ? css.accent : css.text3,
+              fontFamily: "'Outfit', sans-serif",
+            }}>
+              <span style={{ fontSize: 19, lineHeight: 1 }}>{item.icon}</span>
+              <span style={{ fontSize: 9, fontWeight: activeView === item.id ? 700 : 400, letterSpacing: "0.01em" }}>
+                {item.label === "Dashboard" ? "Home" : item.label === "Optimizer" ? "Optimize" : item.label}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* ============================================================ */}
       {/* MODALS */}
@@ -4525,6 +5852,23 @@ Start by introducing yourself briefly in-character with personality, and give an
                   border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box",
                 }} />
             </label>
+
+            {newTrip.type === "flight" && (
+              <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
+                <label style={{ flex: 1 }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Dep. Terminal</span>
+                  <input value={newTrip.departureTerminal} onChange={e => setNewTrip(p => ({ ...p, departureTerminal: e.target.value.toUpperCase() }))}
+                    placeholder="e.g. B, 4, T2"
+                    style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
+                </label>
+                <label style={{ flex: 1 }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Arr. Terminal</span>
+                  <input value={newTrip.arrivalTerminal} onChange={e => setNewTrip(p => ({ ...p, arrivalTerminal: e.target.value.toUpperCase() }))}
+                    placeholder="e.g. C, 1, T4"
+                    style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
+                </label>
+              </div>
+            )}
 
             <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
               <label style={{ flex: 1 }}>
