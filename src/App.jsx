@@ -3313,42 +3313,34 @@ Start by introducing yourself briefly in-character with personality, and give an
                           const isFlight = trip.type === "flight";
                           const isHotel = trip.type === "hotel";
                           const icon = isFlight ? "✈" : isHotel ? "🏨" : "🚗";
-                          // Parse airports from route "JFK → LAX"
-                          const routeParts = (trip.route || "").split(/\s*[→\-–—>]+\s*/);
-                          const origin = routeParts[0]?.trim();
-                          const dest = routeParts[1]?.trim();
-                          // Line 1: for flights always show route (with terminals); hotels show property name
-                          const originLabel = origin ? `${origin}${trip.departureTerminal ? `/T${trip.departureTerminal}` : ""}` : "";
-                          const destLabel   = dest   ? `${dest}${trip.arrivalTerminal   ? `/T${trip.arrivalTerminal}`   : ""}` : "";
-                          const chipLine1 = isFlight
-                            ? (originLabel && destLabel ? `${originLabel} – ${destLabel}` : trip.route || trip.flightNumber || "Flight")
+                          // Line 1: route normalized to "JFK - LAX" for flights, property name for hotels
+                          const routeDisplay = isFlight
+                            ? (trip.route
+                                ? trip.route.replace(/\s*[→>]\s*/g, " - ").replace(/\s*[–—]+\s*/g, " - ")
+                                : trip.flightNumber || "Flight")
                             : (trip.property || trip.location || "Hotel");
-                          // Line 2: "AA 1289"  |  hotel nights
-                          const flightLabel = (() => {
+                          // Line 2: "AA 1289 · 8:30AM - 4:30PM" combined, or hotel nights
+                          const flightNum = (() => {
                             if (!trip.flightNumber) return "";
                             const m = trip.flightNumber.match(/^([A-Z]{1,3})\s*(\d+)$/);
                             return m ? `${m[1]} ${m[2]}` : trip.flightNumber;
                           })();
-                          // Line 3 (flights only): departure – arrival time
-                          const timesLine = [trip.departureTime, trip.arrivalTime].filter(Boolean).join(" – ");
+                          const timeRange = [trip.departureTime, trip.arrivalTime].filter(Boolean).join(" - ");
+                          const subtext = isFlight
+                            ? [flightNum, timeRange].filter(Boolean).join(" · ")
+                            : isHotel && trip.nights ? `${trip.nights} nights` : "";
                           return (
                             <div key={ti} onClick={() => setTripDetailId(trip.id)}
                               title={[trip.route || trip.property, trip.flightNumber, trip.departureTime, trip.arrivalTime].filter(Boolean).join(" · ")}
                               style={{ background: `${color}18`, borderLeft: `2px solid ${color}`, borderRadius: 3, padding: "3px 6px", marginBottom: 3, cursor: "pointer" }}>
-                              {/* Line 1: route (flights) or hotel name */}
+                              {/* Line 1: "JFK - LAX" or hotel name */}
                               <div style={{ fontSize: 9, fontWeight: 600, color: css.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                {icon} {chipLine1}
+                                {icon} {routeDisplay}
                               </div>
-                              {/* Line 2: "AA 1289"  |  hotel nights */}
-                              {(isFlight ? flightLabel : isHotel && trip.nights ? `${trip.nights} nights` : null) && (
+                              {/* Line 2: "AA 1289 · 8:30AM - 4:30PM" or hotel nights */}
+                              {subtext && (
                                 <div style={{ fontSize: 8, color: css.text2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 1 }}>
-                                  {isFlight ? flightLabel : `${trip.nights} nights`}
-                                </div>
-                              )}
-                              {/* Line 3 (flights): departure – arrival time */}
-                              {isFlight && timesLine && (
-                                <div style={{ fontSize: 8, color: css.text3, fontFamily: "'JetBrains Mono', monospace", marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                  {timesLine}
+                                  {subtext}
                                 </div>
                               )}
                             </div>
