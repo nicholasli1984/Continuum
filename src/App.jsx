@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "./supabase";
 
 // ============================================================
 // LOGO COMPONENT — Geometric travel icon in Neuron brand style
@@ -1145,6 +1146,8 @@ export default function EliteStatusTracker() {
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [isRegistering, setIsRegistering] = useState(false);
   const [registerForm, setRegisterForm] = useState({ name: "", email: "", password: "" });
+  const [authError, setAuthError] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
   const [showAddTrip, setShowAddTrip] = useState(false);
   const [newTrip, setNewTrip] = useState({ type: "flight", program: "aa", route: "", date: "", class: "domestic", nights: 1, status: "planned", tripName: "", flightNumber: "", departureTime: "", arrivalTime: "", departureTerminal: "", arrivalTerminal: "" });
   const [trips, setTrips] = useState([]);
@@ -1274,6 +1277,63 @@ export default function EliteStatusTracker() {
       }, 1200);
     } catch(e) {}
   }, []);
+
+  // ── Supabase auth listener + trip loader ──
+  useEffect(() => {
+    // Check existing session on mount
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUser(session.user);
+        setIsLoggedIn(true);
+        loadTrips(session.user.id);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUser(session.user);
+        setIsLoggedIn(true);
+        loadTrips(session.user.id);
+      } else {
+        setUser(null);
+        setIsLoggedIn(false);
+        setTrips([]);
+        setLinkedAccounts({});
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const loadTrips = async (userId) => {
+    const { data, error } = await supabase
+      .from("trips")
+      .select("*")
+      .eq("user_id", userId)
+      .order("date", { ascending: true });
+    if (!error && data) {
+      setTrips(data.map(row => ({
+        id: row.id,
+        type: row.type,
+        program: row.program,
+        route: row.route,
+        date: row.date,
+        class: row.class,
+        nights: row.nights,
+        status: row.status,
+        tripName: row.trip_name,
+        property: row.property,
+        location: row.location,
+        flightNumber: row.flight_number,
+        departureTime: row.departure_time,
+        arrivalTime: row.arrival_time,
+        departureTerminal: row.departure_terminal,
+        arrivalTerminal: row.arrival_terminal,
+        estimatedPoints: row.estimated_points,
+        estimatedNights: row.estimated_nights,
+      })));
+    }
+  };
 
   // Trigger PA on first click/touch anywhere while on the landing page
   useEffect(() => {
@@ -1466,27 +1526,41 @@ Start by introducing yourself briefly in-character with personality, and give an
     { id: 112, tripId: 5, category: "shopping", description: "Harrods gifts", amount: 320, currency: "USD", date: "2026-04-13", paymentMethod: "Amex Platinum", receipt: true, notes: "Personal" },
   ];
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     if (e) e.preventDefault();
-    setUser(SAMPLE_USER);
-    setTrips(SAMPLE_USER.upcomingTrips);
-    setLinkedAccounts(SAMPLE_USER.linkedAccounts);
-    setExpenses(SAMPLE_EXPENSES);
-    setIsLoggedIn(true);
+    setAuthError("");
+    setAuthLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({
+      email: loginForm.email,
+      password: loginForm.password,
+    });
+    setAuthLoading(false);
+    if (error) { setAuthError(error.message); return; }
+    setActiveView("dashboard");
+    setPublicPage("app");
   };
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     if (e) e.preventDefault();
-    setUser({ ...SAMPLE_USER, name: registerForm.name || "New User", email: registerForm.email });
-    setTrips([]);
-    setLinkedAccounts({});
-    setIsLoggedIn(true);
+    setAuthError("");
+    setAuthLoading(true);
+    const { error } = await supabase.auth.signUp({
+      email: registerForm.email,
+      password: registerForm.password,
+      options: { data: { name: registerForm.name } },
+    });
+    setAuthLoading(false);
+    if (error) { setAuthError(error.message); return; }
+    setAuthError("Check your email for a confirmation link, then sign in.");
   };
 
-  const handleLogout = () => { setIsLoggedIn(false); setUser(null); setActiveView("dashboard"); setPublicPage("landing"); };
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setActiveView("dashboard");
+    setPublicPage("landing");
+  };
 
-  const handleAddTrip = () => {
-    const id = Date.now();
+  const handleAddTrip = async () => {
     let estimatedPoints = 0;
     let estimatedNights = 0;
     let estimatedRentals = 0;
@@ -1498,12 +1572,43 @@ Start by introducing yourself briefly in-character with personality, and give an
     } else {
       estimatedRentals = 1;
     }
-    setTrips(prev => [...prev, { ...newTrip, id, estimatedPoints, estimatedNights, estimatedRentals }]);
+    const tripData = { ...newTrip, estimatedPoints, estimatedNights, estimatedRentals };
+
+    if (user) {
+      const { data, error } = await supabase.from("trips").insert({
+        user_id: user.id,
+        type: tripData.type,
+        program: tripData.program,
+        route: tripData.route,
+        date: tripData.date,
+        class: tripData.class,
+        nights: tripData.nights ? parseInt(tripData.nights) : null,
+        status: tripData.status,
+        trip_name: tripData.tripName,
+        property: tripData.property,
+        location: tripData.location,
+        flight_number: tripData.flightNumber,
+        departure_time: tripData.departureTime,
+        arrival_time: tripData.arrivalTime,
+        departure_terminal: tripData.departureTerminal,
+        arrival_terminal: tripData.arrivalTerminal,
+        estimated_points: tripData.estimatedPoints,
+        estimated_nights: tripData.estimatedNights,
+      }).select().single();
+      if (!error && data) {
+        setTrips(prev => [...prev, { ...tripData, id: data.id }]);
+      }
+    } else {
+      setTrips(prev => [...prev, { ...tripData, id: Date.now() }]);
+    }
     setShowAddTrip(false);
     setNewTrip({ type: "flight", program: "aa", route: "", date: "", class: "domestic", nights: 1, status: "planned", tripName: "", flightNumber: "", departureTime: "", arrivalTime: "", departureTerminal: "", arrivalTerminal: "" });
   };
 
-  const removeTrip = (id) => setTrips(prev => prev.filter(t => t.id !== id));
+  const removeTrip = async (id) => {
+    setTrips(prev => prev.filter(t => t.id !== id));
+    if (user) await supabase.from("trips").delete().eq("id", id).eq("user_id", user.id);
+  };
 
   // ── Itinerary parser ──
   const parseItinerary = (text) => {
@@ -2473,13 +2578,17 @@ Start by introducing yourself briefly in-character with personality, and give an
                       <button style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", background: "none", border: "none", cursor: "pointer", fontFamily: "Inter, sans-serif", padding: 0 }}>Forgot password?</button>
                     </div>
                   </div>
+                  {authError && !isRegistering && (
+                    <div style={{ fontSize: 11, color: "#f87171", background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.25)", borderRadius: 6, padding: "8px 12px", fontFamily: "Inter, sans-serif" }}>{authError}</div>
+                  )}
                   <button
                     onClick={handleLogin}
+                    disabled={authLoading}
                     onMouseEnter={e => e.currentTarget.style.background = "#0cb8b2"}
                     onMouseLeave={e => e.currentTarget.style.background = "#0EA5A0"}
-                    style={{ width: "100%", padding: "10px 0", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: "Inter, sans-serif", background: "#0EA5A0", color: "#fff", letterSpacing: 0.2, boxShadow: "0 4px 16px rgba(14,165,160,0.35)", transition: "background 0.2s" }}
+                    style={{ width: "100%", padding: "10px 0", border: "none", borderRadius: 8, cursor: authLoading ? "default" : "pointer", fontSize: 13, fontWeight: 600, fontFamily: "Inter, sans-serif", background: "#0EA5A0", color: "#fff", letterSpacing: 0.2, boxShadow: "0 4px 16px rgba(14,165,160,0.35)", transition: "background 0.2s", opacity: authLoading ? 0.7 : 1 }}
                   >
-                    Sign in
+                    {authLoading ? "Signing in…" : "Sign in"}
                   </button>
                   <button
                     onClick={() => { setLoginForm({ email: "alex@example.com", password: "demo" }); setTimeout(handleLogin, 100); }}
@@ -2513,13 +2622,17 @@ Start by introducing yourself briefly in-character with personality, and give an
                     onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.12)"}
                     style={inputStyle}
                   />
+                  {authError && isRegistering && (
+                    <div style={{ fontSize: 11, color: authError.startsWith("Check") ? "#34d399" : "#f87171", background: authError.startsWith("Check") ? "rgba(52,211,153,0.1)" : "rgba(248,113,113,0.1)", border: `1px solid ${authError.startsWith("Check") ? "rgba(52,211,153,0.25)" : "rgba(248,113,113,0.25)"}`, borderRadius: 6, padding: "8px 12px", fontFamily: "Inter, sans-serif" }}>{authError}</div>
+                  )}
                   <button
                     onClick={handleRegister}
+                    disabled={authLoading}
                     onMouseEnter={e => e.currentTarget.style.background = "#0cb8b2"}
                     onMouseLeave={e => e.currentTarget.style.background = "#0EA5A0"}
-                    style={{ width: "100%", padding: "10px 0", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: "Inter, sans-serif", background: "#0EA5A0", color: "#fff", letterSpacing: 0.2, boxShadow: "0 4px 16px rgba(14,165,160,0.35)", transition: "background 0.2s" }}
+                    style={{ width: "100%", padding: "10px 0", border: "none", borderRadius: 8, cursor: authLoading ? "default" : "pointer", fontSize: 13, fontWeight: 600, fontFamily: "Inter, sans-serif", background: "#0EA5A0", color: "#fff", letterSpacing: 0.2, boxShadow: "0 4px 16px rgba(14,165,160,0.35)", transition: "background 0.2s", opacity: authLoading ? 0.7 : 1 }}
                   >
-                    Create account
+                    {authLoading ? "Creating account…" : "Create account"}
                   </button>
                 </div>
               )}
@@ -2528,7 +2641,7 @@ Start by introducing yourself briefly in-character with personality, and give an
               <p style={{ textAlign: "center", marginTop: 12, marginBottom: 0, fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: "Inter, sans-serif" }}>
                 {isRegistering ? "Already have an account? " : "Don't have an account? "}
                 <button
-                  onClick={() => setIsRegistering(r => !r)}
+                  onClick={() => { setIsRegistering(r => !r); setAuthError(""); }}
                   style={{ background: "none", border: "none", cursor: "pointer", color: "#0EA5A0", fontWeight: 600, fontSize: 12, fontFamily: "Inter, sans-serif", padding: 0 }}
                 >
                   {isRegistering ? "Sign in" : "Sign up"}
