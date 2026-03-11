@@ -2590,14 +2590,6 @@ Start by introducing yourself briefly in-character with personality, and give an
                   >
                     {authLoading ? "Signing in…" : "Sign in"}
                   </button>
-                  <button
-                    onClick={() => { setLoginForm({ email: "alex@example.com", password: "demo" }); setTimeout(handleLogin, 100); }}
-                    onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(14,165,160,0.4)"}
-                    onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"}
-                    style={{ width: "100%", padding: "9px 0", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, cursor: "pointer", fontSize: 11, fontWeight: 500, fontFamily: "Inter, sans-serif", background: "transparent", color: "rgba(255,255,255,0.5)", transition: "border-color 0.2s" }}
-                  >
-                    Try demo account →
-                  </button>
                 </div>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
