@@ -1331,6 +1331,7 @@ export default function EliteStatusTracker() {
           currentRentals: row.current_rentals || 0,
           pointsBalance: row.points_balance || 0,
           currentTier: row.current_tier || "",
+          updatedAt: row.updated_at || null,
         };
       });
       setLinkedAccounts(map);
@@ -2092,6 +2093,7 @@ Start by introducing yourself briefly in-character with personality, and give an
   const handleLinkAccount = async (programId) => {
     setLinkError("");
     setLinkLoading(true);
+    const now = new Date().toISOString();
     const payload = {
       user_id: user.id,
       program_id: programId,
@@ -2102,6 +2104,7 @@ Start by introducing yourself briefly in-character with personality, and give an
       current_nights: parseInt(linkForm.currentNights) || 0,
       current_rentals: parseInt(linkForm.currentRentals) || 0,
       current_tier: linkForm.currentTier.trim(),
+      updated_at: now,
     };
     const { error } = await supabase
       .from("linked_accounts")
@@ -2118,6 +2121,7 @@ Start by introducing yourself briefly in-character with personality, and give an
         currentNights: payload.current_nights,
         currentRentals: payload.current_rentals,
         currentTier: payload.current_tier,
+        updatedAt: now,
       },
     }));
     setShowLinkModal(null);
@@ -3186,18 +3190,45 @@ Start by introducing yourself briefly in-character with personality, and give an
 
                     {/* Actions */}
                     {isLinked ? (
-                      <div style={{ display: "flex", gap: 8 }}>
-                        <span style={{
-                          flex: 1, padding: "8px 0", borderRadius: 8, border: `1px solid ${css.border}`,
-                          background: css.surface2, color: css.text3,
-                          fontSize: 11, fontWeight: 500, textAlign: "center",
-                        }}>✓ Connected</span>
-                        {prog.loginUrl && (
-                          <a href={prog.loginUrl} target="_blank" rel="noopener noreferrer" style={{
-                            padding: "8px 14px", borderRadius: 8, border: `1px solid ${prog.color}40`,
-                            background: `${prog.color}12`, color: css.text, textDecoration: "none",
-                            fontSize: 11, fontWeight: 600, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 4,
-                          }}>View ↗</a>
+                      <div>
+                        <div style={{ display: "flex", gap: 8, marginBottom: 6 }}>
+                          <button onClick={() => {
+                            const existing = linkedAccounts[prog.id];
+                            const isHotelProg = LOYALTY_PROGRAMS.hotels.some(p => p.id === prog.id);
+                            const isRentalProg = LOYALTY_PROGRAMS.rentals.some(p => p.id === prog.id);
+                            setLinkForm({
+                              memberId: existing?.memberId || "",
+                              pointsBalance: existing?.pointsBalance ? String(existing.pointsBalance) : "",
+                              tierCredits: isHotelProg || isRentalProg ? "" : existing?.tierCredits ? String(existing.tierCredits) : "",
+                              currentNights: isHotelProg ? (existing?.currentNights ? String(existing.currentNights) : "") : "",
+                              currentRentals: isRentalProg ? (existing?.currentRentals ? String(existing.currentRentals) : "") : "",
+                              currentTier: existing?.currentTier || "",
+                            });
+                            setLinkError("");
+                            setShowLinkModal(prog.id);
+                          }} style={{
+                            flex: 1, padding: "8px 0", borderRadius: 8, border: `1px solid ${css.border}`,
+                            background: css.surface2, color: css.text2,
+                            fontSize: 11, fontWeight: 600, cursor: "pointer",
+                          }}>↺ Update Stats</button>
+                          {prog.loginUrl && (
+                            <a href={prog.loginUrl} target="_blank" rel="noopener noreferrer" style={{
+                              padding: "8px 14px", borderRadius: 8, border: `1px solid ${prog.color}40`,
+                              background: `${prog.color}12`, color: css.text, textDecoration: "none",
+                              fontSize: 11, fontWeight: 600, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 4,
+                            }}>View ↗</a>
+                          )}
+                        </div>
+                        {linkedAccounts[prog.id]?.updatedAt && (
+                          <div style={{ fontSize: 10, color: css.text3, fontFamily: "'JetBrains Mono', monospace", textAlign: "center" }}>
+                            Updated {(() => {
+                              const diff = Math.floor((Date.now() - new Date(linkedAccounts[prog.id].updatedAt)) / 1000);
+                              if (diff < 60) return "just now";
+                              if (diff < 3600) return `${Math.floor(diff/60)}m ago`;
+                              if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
+                              return `${Math.floor(diff/86400)}d ago`;
+                            })()}
+                          </div>
                         )}
                       </div>
                     ) : (
@@ -6260,87 +6291,92 @@ Start by introducing yourself briefly in-character with personality, and give an
         const prog = allPrograms.find(p => p.id === showLinkModal);
         const isHotel = LOYALTY_PROGRAMS.hotels.some(p => p.id === showLinkModal);
         const isRental = LOYALTY_PROGRAMS.rentals.some(p => p.id === showLinkModal);
-        const isAirline = !isHotel && !isRental;
+
+        const isUpdating = !!linkedAccounts[showLinkModal];
+
+        // Program-specific field labels
+        const balanceLabel = isHotel
+          ? `${prog?.name?.split(" ")[0] || "Hotel"} Points Balance`
+          : isRental
+            ? "Points Balance"
+            : `${prog?.name?.split(" ").slice(-1)[0] || "Miles"} Balance`;
+        const balancePlaceholder = isHotel ? "e.g. 120000" : isRental ? "e.g. 5000" : "e.g. 45000";
+        const statusLabel = isHotel
+          ? "Qualifying Nights This Year"
+          : isRental
+            ? "Qualifying Rentals This Year"
+            : `${prog?.unit || "Loyalty Points"} Toward Status`;
+        const statusPlaceholder = isHotel ? "e.g. 18" : isRental ? "e.g. 5" : "e.g. 12500";
+        const statusField = isHotel ? "currentNights" : isRental ? "currentRentals" : "tierCredits";
+
         const inputStyle = {
-          display: "block", width: "100%", marginTop: 6, padding: "10px 12px",
-          background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 6,
-          color: "#f7f8f8", fontSize: 14, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box",
+          display: "block", width: "100%", marginTop: 6, padding: "12px 14px",
+          background: "#13111C", border: "1px solid #2a2640", borderRadius: 6,
+          color: "#f7f8f8", fontSize: 15, fontFamily: "'Inter Tight', Inter, sans-serif",
+          outline: "none", boxSizing: "border-box",
         };
-        const labelStyle = { display: "block", marginBottom: 14 };
-        const spanStyle = { fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" };
+        const labelStyle = { display: "block", marginBottom: 18 };
+        const spanStyle = { fontSize: 10, fontWeight: 700, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1.2, fontFamily: "Inter, sans-serif" };
+
         return (
         <div style={{
-          position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.88)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
         }} onClick={() => { setShowLinkModal(null); setLinkError(""); }}>
           <div onClick={e => e.stopPropagation()} style={{
-            background: "#211e2e", border: "1px solid #2a2640", borderRadius: 8, padding: 28, width: "100%", maxWidth: 420,
+            background: "#1a1725", border: "1px solid #2a2640", borderRadius: 12, padding: 32, width: "100%", maxWidth: 400,
           }}>
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: "0 0 4px", fontFamily: "'Inter Tight', Inter, sans-serif" }}>
-              {linkedAccounts[showLinkModal] ? "Update" : "Link"} Account
-            </h3>
-            <p style={{ color: "#8a8f98", fontSize: 12, margin: "0 0 20px", fontFamily: "Inter, sans-serif" }}>
-              Enter your current stats from your {prog?.name || "loyalty"} account
-            </p>
+            {/* Header */}
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: `${prog?.color || "#0EA5A0"}20`, border: `1px solid ${prog?.color || "#0EA5A0"}40`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>
+                {prog?.logo || "✈️"}
+              </div>
+              <div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#fff", fontFamily: "'Inter Tight', Inter, sans-serif" }}>
+                  {isUpdating ? "Update" : "Link"} {prog?.name?.split(" ").slice(0, 2).join(" ") || "Program"}
+                </div>
+                <div style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif", marginTop: 2 }}>
+                  Enter your current numbers from your account
+                </div>
+              </div>
+            </div>
 
+            {/* Field 1: Balance */}
             <label style={labelStyle}>
-              <span style={spanStyle}>Member ID / Number</span>
-              <input value={linkForm.memberId} onChange={e => setLinkForm(p => ({ ...p, memberId: e.target.value }))}
-                placeholder="Your membership number" style={inputStyle} autoFocus />
+              <span style={spanStyle}>{balanceLabel}</span>
+              <input
+                type="number"
+                value={linkForm.pointsBalance}
+                onChange={e => setLinkForm(p => ({ ...p, pointsBalance: e.target.value }))}
+                placeholder={balancePlaceholder}
+                style={inputStyle}
+                autoFocus
+              />
             </label>
 
+            {/* Field 2: Status metric */}
             <label style={labelStyle}>
-              <span style={spanStyle}>Points / Miles Balance</span>
-              <input type="number" value={linkForm.pointsBalance} onChange={e => setLinkForm(p => ({ ...p, pointsBalance: e.target.value }))}
-                placeholder="e.g. 45000" style={inputStyle} />
+              <span style={spanStyle}>{statusLabel}</span>
+              <input
+                type="number"
+                value={linkForm[statusField]}
+                onChange={e => setLinkForm(p => ({ ...p, [statusField]: e.target.value }))}
+                placeholder={statusPlaceholder}
+                style={inputStyle}
+              />
             </label>
 
-            {isAirline && (
-              <label style={labelStyle}>
-                <span style={spanStyle}>{prog?.unit || "Qualifying Miles"} (toward status)</span>
-                <input type="number" value={linkForm.tierCredits} onChange={e => setLinkForm(p => ({ ...p, tierCredits: e.target.value }))}
-                  placeholder="e.g. 12500" style={inputStyle} />
-              </label>
-            )}
-
-            {isHotel && (
-              <label style={labelStyle}>
-                <span style={spanStyle}>Qualifying Nights (this year)</span>
-                <input type="number" value={linkForm.currentNights} onChange={e => setLinkForm(p => ({ ...p, currentNights: e.target.value }))}
-                  placeholder="e.g. 18" style={inputStyle} />
-              </label>
-            )}
-
-            {isRental && (
-              <label style={labelStyle}>
-                <span style={spanStyle}>Qualifying Rentals (this year)</span>
-                <input type="number" value={linkForm.currentRentals} onChange={e => setLinkForm(p => ({ ...p, currentRentals: e.target.value }))}
-                  placeholder="e.g. 5" style={inputStyle} />
-              </label>
-            )}
-
-            <label style={labelStyle}>
-              <span style={spanStyle}>Current Elite Tier (leave blank if none)</span>
-              <select value={linkForm.currentTier} onChange={e => setLinkForm(p => ({ ...p, currentTier: e.target.value }))}
-                style={{ ...inputStyle, cursor: "pointer" }}>
-                <option value="">— No status —</option>
-                {(prog?.tiers || []).map(t => (
-                  <option key={t.name} value={t.name}>{t.name}</option>
-                ))}
-              </select>
-            </label>
-
-            {linkError && <div style={{ fontSize: 12, color: "#f87171", marginBottom: 12, fontFamily: "Inter, sans-serif" }}>{linkError}</div>}
+            {linkError && <div style={{ fontSize: 12, color: "#f87171", marginBottom: 14, fontFamily: "Inter, sans-serif" }}>{linkError}</div>}
 
             <div style={{ display: "flex", gap: 10 }}>
               <button onClick={() => { setShowLinkModal(null); setLinkError(""); }} style={{
-                flex: 1, padding: "11px 0", borderRadius: 8, border: "1px solid #2a2640", background: "rgba(255,255,255,0.03)",
+                flex: 1, padding: "12px 0", borderRadius: 8, border: "1px solid #2a2640", background: "transparent",
                 color: "#8a8f98", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif",
               }}>Cancel</button>
               <button onClick={() => handleLinkAccount(showLinkModal)} disabled={linkLoading} style={{
-                flex: 1, padding: "11px 0", borderRadius: 8, border: "none", cursor: linkLoading ? "not-allowed" : "pointer",
-                fontSize: 13, fontWeight: 700, fontFamily: "Inter, sans-serif",
-                background: "#0EA5A0", color: "#f7f8f8", opacity: linkLoading ? 0.7 : 1,
-              }}>{linkLoading ? "Saving..." : linkedAccounts[showLinkModal] ? "Update" : "Link Account"}</button>
+                flex: 2, padding: "12px 0", borderRadius: 8, border: "none", cursor: linkLoading ? "not-allowed" : "pointer",
+                fontSize: 13, fontWeight: 700, fontFamily: "'Inter Tight', Inter, sans-serif",
+                background: "#0EA5A0", color: "#fff", opacity: linkLoading ? 0.7 : 1,
+              }}>{linkLoading ? "Saving..." : isUpdating ? "Update Stats" : "Link Account"}</button>
             </div>
           </div>
         </div>
