@@ -2244,6 +2244,18 @@ Start by introducing yourself briefly in-character with personality, and give an
     setLinkForm({ memberId: "", pointsBalance: "", tierCredits: "", currentNights: "", currentRentals: "", currentTier: "" });
   };
 
+  const handleUnlinkAccount = async (programId) => {
+    if (!window.confirm(`Unlink this program? Your saved stats will be removed.`)) return;
+    if (user) {
+      await supabase.from("linked_accounts").delete().eq("user_id", user.id).eq("program_id", programId);
+    }
+    setLinkedAccounts(prev => {
+      const next = { ...prev };
+      delete next[programId];
+      return next;
+    });
+  };
+
   const getProjectedStatus = useCallback((programId) => {
     const account = linkedAccounts[programId];
     if (!account) return null;
@@ -3376,6 +3388,11 @@ Start by introducing yourself briefly in-character with personality, and give an
                               fontSize: 11, fontWeight: 600, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 4,
                             }}>View ↗</a>
                           )}
+                          <button onClick={() => handleUnlinkAccount(prog.id)} style={{
+                            padding: "8px 10px", borderRadius: 8, border: `1px solid rgba(239,68,68,0.3)`,
+                            background: "transparent", color: "#ef4444",
+                            fontSize: 11, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap",
+                          }} title="Unlink program">✕</button>
                         </div>
                         {linkedAccounts[prog.id]?.updatedAt && (
                           <div style={{ fontSize: 10, color: css.text3, fontFamily: "'JetBrains Mono', monospace", textAlign: "center" }}>
