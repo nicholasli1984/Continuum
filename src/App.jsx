@@ -1214,6 +1214,8 @@ export default function EliteStatusTracker() {
   const [tripsView, setTripsView] = useState("list"); // "list" | "calendar"
   const [calViewMonth, setCalViewMonth] = useState(() => ({ year: new Date().getFullYear(), month: new Date().getMonth() }));
 
+  const [tierScrollIdx, setTierScrollIdx] = useState({}); // { [programId]: activeIndex }
+
   // ── Settings state ──
   const [showSettings, setShowSettings] = useState(false);
   const [settingsTab, setSettingsTab] = useState("profile");
@@ -3256,26 +3258,70 @@ Start by introducing yourself briefly in-character with personality, and give an
                       )}
                     </div>
 
-                    {/* Status progress for airline/hotel */}
-                    {isLinked && status && !isCard && (
-                      <div style={{ marginBottom: 14 }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: css.text2, marginBottom: 6 }}>
-                          <span style={{ fontWeight: 600, color: prog.color }}>{status.currentTier?.name || "Member"}</span>
-                          {status.nextTier && <span style={{ color: css.text3 }}>→ {status.nextTier.name}</span>}
+                    {/* Tier scroll strip for airline/hotel */}
+                    {isLinked && status && !isCard && prog.tiers?.length > 0 && (() => {
+                      const tiers = prog.tiers;
+                      const current = status.projected;
+                      const activeIdx = tierScrollIdx[prog.id] ?? Math.max(0, tiers.findIndex(t => current < t.threshold));
+                      const safIdx = Math.min(Math.max(activeIdx, 0), tiers.length - 1);
+                      const tier = tiers[safIdx];
+                      const prevThreshold = safIdx > 0 ? tiers[safIdx - 1].threshold : 0;
+                      const achieved = current >= tier.threshold;
+                      const pct = achieved ? 100 : Math.min(((current - prevThreshold) / (tier.threshold - prevThreshold)) * 100, 100);
+                      const toGo = Math.max(tier.threshold - current, 0);
+
+                      return (
+                        <div style={{ marginBottom: 14 }}>
+                          {/* Tier nav: arrows + dots */}
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                            <button
+                              onClick={() => setTierScrollIdx(p => ({ ...p, [prog.id]: Math.max(safIdx - 1, 0) }))}
+                              disabled={safIdx === 0}
+                              style={{ width: 22, height: 22, borderRadius: 6, border: `1px solid ${css.border}`, background: "transparent", cursor: safIdx === 0 ? "default" : "pointer", color: safIdx === 0 ? css.border : css.text2, fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+                            >‹</button>
+                            <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
+                              {tiers.map((t, i) => {
+                                const tierAchieved = current >= t.threshold;
+                                return (
+                                  <button key={i} onClick={() => setTierScrollIdx(p => ({ ...p, [prog.id]: i }))} style={{
+                                    width: i === safIdx ? 20 : 6, height: 6, borderRadius: 3,
+                                    border: "none", cursor: "pointer", padding: 0, transition: "all 0.2s",
+                                    background: tierAchieved ? prog.color : i === safIdx ? prog.color : css.border,
+                                    opacity: i === safIdx ? 1 : 0.5,
+                                  }} />
+                                );
+                              })}
+                            </div>
+                            <button
+                              onClick={() => setTierScrollIdx(p => ({ ...p, [prog.id]: Math.min(safIdx + 1, tiers.length - 1) }))}
+                              disabled={safIdx === tiers.length - 1}
+                              style={{ width: 22, height: 22, borderRadius: 6, border: `1px solid ${css.border}`, background: "transparent", cursor: safIdx === tiers.length - 1 ? "default" : "pointer", color: safIdx === tiers.length - 1 ? css.border : css.text2, fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+                            >›</button>
+                          </div>
+
+                          {/* Tier card */}
+                          <div style={{ padding: "12px 14px", borderRadius: 10, background: achieved ? `${prog.color}12` : css.surface2, border: `1px solid ${achieved ? prog.color + "40" : css.border}` }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+                              <div>
+                                <div style={{ fontSize: 13, fontWeight: 700, color: achieved ? prog.color : css.text, fontFamily: "'Inter Tight', Inter, sans-serif" }}>{tier.name}</div>
+                                <div style={{ fontSize: 10, color: css.text3, fontFamily: "Inter, sans-serif", marginTop: 2 }}>{tier.threshold.toLocaleString()} {prog.unit?.split(" ")[0]} required</div>
+                              </div>
+                              {achieved
+                                ? <span style={{ fontSize: 10, fontWeight: 700, color: prog.color, background: `${prog.color}15`, border: `1px solid ${prog.color}40`, borderRadius: 20, padding: "3px 9px", flexShrink: 0 }}>✓ Achieved</span>
+                                : <span style={{ fontSize: 10, color: css.text3, fontFamily: "'JetBrains Mono', monospace", flexShrink: 0 }}>{toGo.toLocaleString()} to go</span>
+                              }
+                            </div>
+                            <div style={{ width: "100%", height: 5, borderRadius: 3, background: D ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.08)", overflow: "hidden" }}>
+                              <div style={{ width: `${pct}%`, height: "100%", borderRadius: 3, background: prog.color, transition: "width 0.6s ease" }} />
+                            </div>
+                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: css.text3, marginTop: 5, fontFamily: "'JetBrains Mono', monospace" }}>
+                              <span>{current.toLocaleString()} {prog.unit?.split(" ")[0]}</span>
+                              <span style={{ color: css.text3 }}>{tier.threshold.toLocaleString()}</span>
+                            </div>
+                          </div>
                         </div>
-                        <div style={{ width: "100%", height: 5, borderRadius: 3, background: css.surface2, overflow: "hidden" }}>
-                          <div style={{
-                            width: `${Math.min((status.projected / (status.nextTier?.threshold || status.projected)) * 100, 100)}%`,
-                            height: "100%", borderRadius: 3, background: prog.color, transition: "width 1s ease",
-                          }} />
-                        </div>
-                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: css.text3, marginTop: 5, fontFamily: "'JetBrains Mono', monospace" }}>
-                          <span>{status.projected.toLocaleString()} {prog.unit?.split(" ")[0]}</span>
-                          {status.willAdvance && <span style={{ color: css.success, fontWeight: 600 }}>On track ↑</span>}
-                          {status.nextTier && !status.willAdvance && <span>{(status.nextTier.threshold - status.projected).toLocaleString()} to go</span>}
-                        </div>
-                      </div>
-                    )}
+                      );
+                    })()}
 
                     {/* Card balance */}
                     {isCard && isLinked && (
@@ -3288,15 +3334,13 @@ Start by introducing yourself briefly in-character with personality, and give an
                       </div>
                     )}
 
-                    {/* Tier badges */}
-                    {!isCard && prog.tiers && (
+                    {/* Tier badges — only shown for unlinked programs */}
+                    {!isCard && prog.tiers && !isLinked && (
                       <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 14 }}>
                         {prog.tiers.map((tier, ti) => (
                           <span key={ti} style={{
                             fontSize: 9, fontWeight: 600, padding: "2px 8px", borderRadius: 20,
-                            background: status?.currentTier?.name === tier.name ? `${prog.color}20` : css.surface2,
-                            color: status?.currentTier?.name === tier.name ? prog.color : css.text3,
-                            border: status?.currentTier?.name === tier.name ? `1px solid ${prog.color}40` : `1px solid ${css.border}`,
+                            background: css.surface2, color: css.text3, border: `1px solid ${css.border}`,
                           }}>{tier.name}</span>
                         ))}
                       </div>
