@@ -68,39 +68,38 @@ const LiveClock = () => {
 const PROGRAM_DIRECTORY = {
   airlines: [
     { id: "aa", name: "American Airlines AAdvantage", logo: "✈️", color: "#0078D2", accent: "#C8102E", unit: "Loyalty Points", loginUrl: "https://www.aa.com/loyalty/login", tiers: [
-      { name: "Gold", threshold: 30000, perks: "Priority boarding, free checked bag, 40% bonus miles" },
-      { name: "Platinum", threshold: 60000, perks: "Upgrades, 60% bonus, Admiral's Club day passes" },
-      { name: "Platinum Pro", threshold: 90000, perks: "Premium upgrades, 80% bonus, complimentary MCE" },
-      { name: "Executive Platinum", threshold: 120000, perks: "Systemwide upgrades, 120% bonus, ConciergeKey eligible" },
+      { name: "Gold", threshold: 40000, perks: "Priority boarding, free checked bag, 40% bonus miles" },
+      { name: "Platinum", threshold: 75000, perks: "Upgrades, 60% bonus, Admiral's Club day passes" },
+      { name: "Platinum Pro", threshold: 125000, perks: "Premium upgrades, 80% bonus, complimentary MCE" },
+      { name: "Executive Platinum", threshold: 200000, perks: "Systemwide upgrades, 120% bonus, ConciergeKey eligible" },
     ], earnRate: { domestic: 5, international: 10, premium: 20 } },
-    { id: "dl", name: "Delta SkyMiles", logo: "🔺", color: "#003366", accent: "#C8102E", unit: "MQMs", loginUrl: "https://www.delta.com/myprofile/personal-details", tiers: [
-      { name: "Silver Medallion", threshold: 25000, perks: "Unlimited upgrades, 40% bonus miles" },
-      { name: "Gold Medallion", threshold: 50000, perks: "SkyTeam Elite Plus, 60% bonus, Sky Priority" },
-      { name: "Platinum Medallion", threshold: 75000, perks: "Choice Benefits, 80% bonus, waived fees" },
-      { name: "Diamond Medallion", threshold: 125000, perks: "Global upgrades, 120% bonus, Delta ONE access" },
+    { id: "dl", name: "Delta SkyMiles", logo: "🔺", color: "#003366", accent: "#C8102E", unit: "MQDs ($)", loginUrl: "https://www.delta.com/myprofile/personal-details", tiers: [
+      { name: "Silver Medallion", threshold: 5000, perks: "Unlimited upgrades, 40% bonus miles, Sky Priority" },
+      { name: "Gold Medallion", threshold: 10000, perks: "SkyTeam Elite Plus, 60% bonus, Sky Priority" },
+      { name: "Platinum Medallion", threshold: 15000, perks: "Choice Benefits, 80% bonus, waived fees" },
+      { name: "Diamond Medallion", threshold: 28000, perks: "Global upgrades, 120% bonus, Delta ONE access" },
     ], earnRate: { domestic: 5, international: 10, premium: 18 } },
     { id: "ua", name: "United MileagePlus", logo: "🌐", color: "#002244", accent: "#0066CC", unit: "PQPs", loginUrl: "https://www.united.com/en/us/mileageplus", tiers: [
-      { name: "Silver", threshold: 12, perks: "Economy Plus, priority boarding, 1 bag free", isSegments: true },
-      { name: "Gold", threshold: 24, perks: "Star Alliance Gold, United Club passes", isSegments: true },
-      { name: "Platinum", threshold: 36, perks: "Regional upgrades, 2 GPUs", isSegments: true },
-      { name: "1K", threshold: 54, perks: "Global upgrades, PlusPoints, Premier Access", isSegments: true },
+      { name: "Premier Silver", threshold: 5000, perks: "Economy Plus, priority boarding, 1 bag free" },
+      { name: "Premier Gold", threshold: 10000, perks: "Star Alliance Gold, United Club passes" },
+      { name: "Premier Platinum", threshold: 15000, perks: "Regional upgrades, 2 GPUs" },
+      { name: "Premier 1K", threshold: 22000, perks: "Global upgrades, PlusPoints, Premier Access" },
     ], earnRate: { domestic: 5, international: 11, premium: 22 } },
     { id: "sw", name: "Southwest Rapid Rewards", logo: "❤️", color: "#304CB2", accent: "#FFBF27", unit: "Points", loginUrl: "https://www.southwest.com/rapid-rewards/myaccount", tiers: [
       { name: "A-List", threshold: 35000, perks: "Priority boarding, same-day standby, 25% bonus" },
       { name: "A-List Preferred", threshold: 70000, perks: "Free WiFi, 100% bonus points, all A-List perks" },
       { name: "Companion Pass", threshold: 135000, perks: "Designated companion flies free on every flight" },
     ], earnRate: { domestic: 6, international: 6, premium: 12 } },
-    { id: "b6", name: "JetBlue TrueBlue", logo: "💙", color: "#003876", accent: "#0033A0", unit: "Points", loginUrl: "https://trueblue.jetblue.com/", tiers: [
-      { name: "Mosaic 1", threshold: 15000, perks: "Free checked bags, Even More Space, early boarding" },
-      { name: "Mosaic 2", threshold: 30000, perks: "All Mosaic 1 + free same-day changes, Mint upgrades" },
-      { name: "Mosaic 3", threshold: 50000, perks: "Guaranteed Even More Space, complimentary Mint upgrades" },
-      { name: "Mosaic 4", threshold: 75000, perks: "Highest upgrade priority, 4 guest passes per year" },
+    { id: "b6", name: "JetBlue TrueBlue", logo: "💙", color: "#003876", accent: "#0033A0", unit: "Tiles", loginUrl: "https://trueblue.jetblue.com/", tiers: [
+      { name: "Mosaic 1", threshold: 50, perks: "Free checked bags, Even More Space, early boarding ($5,000 JetBlue spend)" },
+      { name: "Mosaic 2", threshold: 100, perks: "All Mosaic 1 + free same-day changes, Mint upgrades ($10,000 spend)" },
+      { name: "Mosaic 3", threshold: 150, perks: "Guaranteed Even More Space, complimentary Mint upgrades ($15,000 spend)" },
+      { name: "Mosaic 4", threshold: 250, perks: "Highest upgrade priority, 4 guest passes per year ($25,000 spend)" },
     ], earnRate: { domestic: 5, international: 6, premium: 10 } },
-    { id: "atmos", name: "Atmos Rewards (Alaska/Hawaiian)", logo: "🏔️", color: "#01426A", accent: "#64CCC9", unit: "Points", loginUrl: "https://www.alaskaair.com/account/overview", tiers: [
-      { name: "Atmos Silver", threshold: 20000, perks: "Free checked bag, preferred boarding, 50% bonus" },
-      { name: "Atmos Gold", threshold: 40000, perks: "Upgrades, lounge passes, 100% bonus" },
-      { name: "Atmos 75K", threshold: 75000, perks: "4 complimentary upgrades, Gold guest, 125% bonus" },
-      { name: "Atmos 100K", threshold: 100000, perks: "Intl biz upgrades, lounge membership, 150% bonus" },
+    { id: "atmos", name: "Alaska Airlines Mileage Plan", logo: "🏔️", color: "#01426A", accent: "#64CCC9", unit: "EQMs", loginUrl: "https://www.alaskaair.com/account/overview", tiers: [
+      { name: "MVP", threshold: 20000, perks: "Priority boarding, upgrade eligibility, 50% bonus miles" },
+      { name: "MVP Gold", threshold: 40000, perks: "Lounge passes, upgrades, 100% bonus miles" },
+      { name: "MVP Gold 75K", threshold: 75000, perks: "4 complimentary upgrades, lounge membership, 125% bonus miles" },
     ], earnRate: { domestic: 5, international: 10, premium: 20 } },
     { id: "frontier", name: "Frontier Miles", logo: "🦅", color: "#006845", accent: "#FFD700", unit: "Miles", loginUrl: "https://www.flyfrontier.com/myfrontier/my-account/", tiers: [
       { name: "Elite 20K", threshold: 20000, perks: "Free carry-on, seat selection, shortcut boarding" },
@@ -195,9 +194,9 @@ const PROGRAM_DIRECTORY = {
     ], earnRate: { standard: 10, premium: 12, luxury: 15 } },
     { id: "wyndham", name: "Wyndham Rewards", logo: "🌀", color: "#0066B3", accent: "#FF6600", unit: "Nights", loginUrl: "https://www.wyndhamhotels.com/wyndham-rewards/member/dashboard", tiers: [
       { name: "Blue", threshold: 0, perks: "Member rates, free WiFi" },
-      { name: "Gold", threshold: 11, perks: "1,000 bonus points per stay, late checkout" },
-      { name: "Platinum", threshold: 22, perks: "Best room guarantee, welcome amenity" },
-      { name: "Diamond", threshold: 37, perks: "Suite upgrade, early check-in/late checkout, bonus" },
+      { name: "Gold", threshold: 5, perks: "1,000 bonus points per stay, late checkout" },
+      { name: "Platinum", threshold: 15, perks: "Best room guarantee, welcome amenity" },
+      { name: "Diamond", threshold: 40, perks: "Suite upgrade, early check-in/late checkout, bonus" },
     ], earnRate: { standard: 10, premium: 12, luxury: 15 } },
     { id: "accor", name: "ALL – Accor Live Limitless", logo: "🇫🇷", color: "#1B3160", accent: "#C4A769", unit: "Nights", loginUrl: "https://all.accor.com/loyalty-program/index.en.shtml", tiers: [
       { name: "Silver", threshold: 10, perks: "Late checkout, welcome drink" },
@@ -207,14 +206,14 @@ const PROGRAM_DIRECTORY = {
     ], earnRate: { standard: 10, premium: 15, luxury: 25 } },
     { id: "bestwestern", name: "Best Western Rewards", logo: "👑", color: "#003876", accent: "#FFD700", unit: "Nights", loginUrl: "https://www.bestwestern.com/en_US/rewards/member-profile.html", tiers: [
       { name: "Blue", threshold: 0, perks: "Member rates, points never expire" },
-      { name: "Gold", threshold: 10, perks: "10% bonus, late checkout" },
-      { name: "Platinum", threshold: 15, perks: "15% bonus, room upgrade" },
-      { name: "Diamond", threshold: 30, perks: "30% bonus, suite when available, amenity" },
-      { name: "Diamond Select", threshold: 50, perks: "50% bonus, best room guarantee" },
+      { name: "Gold", threshold: 5, perks: "10% bonus, late checkout" },
+      { name: "Platinum", threshold: 7, perks: "15% bonus, room upgrade" },
+      { name: "Diamond", threshold: 15, perks: "30% bonus, suite when available, amenity" },
+      { name: "Diamond Select", threshold: 25, perks: "50% bonus, best room guarantee" },
     ], earnRate: { standard: 10, premium: 12, luxury: 15 } },
     { id: "radisson", name: "Radisson Rewards", logo: "🔶", color: "#0C2340", accent: "#D4A553", unit: "Nights", loginUrl: "https://www.radissonhotels.com/en-us/rewards/my-account", tiers: [
       { name: "Club", threshold: 0, perks: "Member rates, free WiFi" },
-      { name: "Premium", threshold: 9, perks: "Priority check-in, room upgrade" },
+      { name: "Premium", threshold: 5, perks: "Priority check-in, room upgrade" },
       { name: "VIP", threshold: 30, perks: "Suite upgrade, welcome amenity, guaranteed room" },
     ], earnRate: { standard: 10, premium: 12, luxury: 15 } },
     { id: "sonesta", name: "Sonesta Travel Pass", logo: "🌅", color: "#A3238E", accent: "#F7B538", unit: "Nights", loginUrl: "https://www.sonesta.com/sonesta-travel-pass/dashboard", tiers: [
@@ -232,7 +231,7 @@ const PROGRAM_DIRECTORY = {
     { id: "hertz", name: "Hertz Gold Plus Rewards", logo: "🚗", color: "#FFD700", accent: "#000000", unit: "Rentals", loginUrl: "https://www.hertz.com/rentacar/member/enrollment", tiers: [
       { name: "Gold", threshold: 0, perks: "Skip the counter, choose your car" },
       { name: "Five Star", threshold: 10, perks: "Guaranteed upgrades, priority service" },
-      { name: "President's Circle", threshold: 20, perks: "Premium vehicles, dedicated line" },
+      { name: "President's Circle", threshold: 15, perks: "Premium vehicles, dedicated line" },
     ], earnRate: { standard: 1, premium: 1.5 } },
     { id: "national", name: "National Emerald Club", logo: "🟢", color: "#006845", accent: "#2ECC71", unit: "Rentals", loginUrl: "https://www.nationalcar.com/en/loyalty.html", tiers: [
       { name: "Emerald Club", threshold: 0, perks: "Choose any midsize+, bypass counter" },
@@ -241,13 +240,14 @@ const PROGRAM_DIRECTORY = {
     ], earnRate: { standard: 1, premium: 1.5 } },
     { id: "avis", name: "Avis Preferred", logo: "🅰️", color: "#D0021B", accent: "#1A1F36", unit: "Rentals", loginUrl: "https://www.avis.com/en/loyalty-profile", tiers: [
       { name: "Preferred", threshold: 0, perks: "Skip the counter, choose your car" },
-      { name: "Preferred Plus", threshold: 12, perks: "Free upgrade, priority service" },
-      { name: "Chairman's Club", threshold: 25, perks: "Premium vehicles, dedicated line, best rates" },
+      { name: "Preferred Plus", threshold: 10, perks: "Free upgrade, priority service" },
+      { name: "President's Club", threshold: 20, perks: "Premium vehicles, dedicated line, best rates" },
     ], earnRate: { standard: 1, premium: 1.5 } },
     { id: "enterprise", name: "Enterprise Plus", logo: "🚙", color: "#006845", accent: "#FFD700", unit: "Rentals", loginUrl: "https://www.enterprise.com/en/enterprise-plus.html", tiers: [
       { name: "Plus", threshold: 0, perks: "Earn points on rentals, free days" },
-      { name: "Silver", threshold: 12, perks: "Free upgrade, priority service" },
-      { name: "Gold", threshold: 25, perks: "Free class upgrade, premium service" },
+      { name: "Silver", threshold: 6, perks: "Free upgrade, priority service" },
+      { name: "Gold", threshold: 12, perks: "Free class upgrade, premium service" },
+      { name: "Platinum", threshold: 24, perks: "Top tier service, guaranteed upgrades, dedicated line" },
     ], earnRate: { standard: 1, premium: 1.5 } },
     { id: "budget", name: "Budget Fastbreak", logo: "🅱️", color: "#F57C21", accent: "#1A1F36", unit: "Rentals", loginUrl: "https://www.budget.com/en/fast-break", tiers: [
       { name: "Fastbreak", threshold: 0, perks: "Skip the counter, faster pickup" },
