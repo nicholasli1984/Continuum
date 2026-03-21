@@ -1214,6 +1214,13 @@ export default function EliteStatusTracker() {
   const [tripsView, setTripsView] = useState("list"); // "list" | "calendar"
   const [calViewMonth, setCalViewMonth] = useState(() => ({ year: new Date().getFullYear(), month: new Date().getMonth() }));
 
+  // ── Settings state ──
+  const [showSettings, setShowSettings] = useState(false);
+  const [settingsTab, setSettingsTab] = useState("profile");
+  const [settingsForm, setSettingsForm] = useState({ firstName: "", lastName: "", email: "", currentPassword: "", newPassword: "", confirmPassword: "", homeAirport: "", defaultCurrency: "USD", notifications: { statusMilestones: true, expiringMiles: true, newPrograms: false } });
+  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [settingsMsg, setSettingsMsg] = useState({ type: "", text: "" }); // {type: "success"|"error", text}
+
   // ── Itinerary import & trip detail state ──
   const [showImportItinerary, setShowImportItinerary] = useState(false);
   const [itineraryText, setItineraryText] = useState("");
@@ -1613,6 +1620,58 @@ Start by introducing yourself briefly in-character with personality, and give an
     await supabase.auth.signOut();
     setActiveView("dashboard");
     setPublicPage("landing");
+  };
+
+  const openSettings = () => {
+    setSettingsForm(f => ({
+      ...f,
+      firstName: user?.user_metadata?.first_name || "",
+      lastName: user?.user_metadata?.last_name || "",
+      email: user?.email || "",
+      homeAirport: user?.user_metadata?.home_airport || "",
+      defaultCurrency: user?.user_metadata?.default_currency || "USD",
+      notifications: user?.user_metadata?.notifications || { statusMilestones: true, expiringMiles: true, newPrograms: false },
+    }));
+    setSettingsMsg({ type: "", text: "" });
+    setSettingsTab("profile");
+    setShowSettings(true);
+  };
+
+  const saveProfile = async () => {
+    setSettingsSaving(true); setSettingsMsg({ type: "", text: "" });
+    const { data, error } = await supabase.auth.updateUser({ data: { first_name: settingsForm.firstName.trim(), last_name: settingsForm.lastName.trim(), name: `${settingsForm.firstName.trim()} ${settingsForm.lastName.trim()}` } });
+    setSettingsSaving(false);
+    if (error) { setSettingsMsg({ type: "error", text: error.message }); return; }
+    if (data?.user) setUser(data.user);
+    setSettingsMsg({ type: "success", text: "Profile updated." });
+  };
+
+  const saveEmail = async () => {
+    setSettingsSaving(true); setSettingsMsg({ type: "", text: "" });
+    const { error } = await supabase.auth.updateUser({ email: settingsForm.email.trim() });
+    setSettingsSaving(false);
+    if (error) { setSettingsMsg({ type: "error", text: error.message }); return; }
+    setSettingsMsg({ type: "success", text: "Confirmation sent to new email — check your inbox." });
+  };
+
+  const savePassword = async () => {
+    if (settingsForm.newPassword !== settingsForm.confirmPassword) { setSettingsMsg({ type: "error", text: "Passwords don't match." }); return; }
+    if (settingsForm.newPassword.length < 6) { setSettingsMsg({ type: "error", text: "Password must be at least 6 characters." }); return; }
+    setSettingsSaving(true); setSettingsMsg({ type: "", text: "" });
+    const { error } = await supabase.auth.updateUser({ password: settingsForm.newPassword });
+    setSettingsSaving(false);
+    if (error) { setSettingsMsg({ type: "error", text: error.message }); return; }
+    setSettingsForm(f => ({ ...f, newPassword: "", confirmPassword: "" }));
+    setSettingsMsg({ type: "success", text: "Password updated." });
+  };
+
+  const savePreferences = async () => {
+    setSettingsSaving(true); setSettingsMsg({ type: "", text: "" });
+    const { data, error } = await supabase.auth.updateUser({ data: { home_airport: settingsForm.homeAirport.toUpperCase().trim(), default_currency: settingsForm.defaultCurrency, notifications: settingsForm.notifications } });
+    setSettingsSaving(false);
+    if (error) { setSettingsMsg({ type: "error", text: error.message }); return; }
+    if (data?.user) setUser(data.user);
+    setSettingsMsg({ type: "success", text: "Preferences saved." });
   };
 
   // ── Earning calculation engine ──
@@ -5975,6 +6034,11 @@ Start by introducing yourself briefly in-character with personality, and give an
               display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: 12, fontWeight: 700, color: "#fff", flexShrink: 0,
             }}>{((user?.user_metadata?.first_name?.[0] || user?.user_metadata?.name?.[0] || user?.email?.[0] || "U").toUpperCase()) + ((user?.user_metadata?.last_name?.[0] || user?.user_metadata?.name?.split(" ")?.[1]?.[0] || "").toUpperCase())}</div>
+            <button onClick={openSettings} style={{
+              width: 32, height: 32, borderRadius: 8, border: `1px solid ${css.border}`,
+              background: "transparent", cursor: "pointer", fontSize: 15,
+              display: "flex", alignItems: "center", justifyContent: "center", color: css.text2,
+            }} title="Settings">⚙</button>
             <button onClick={handleLogout} style={{
               padding: "5px 12px", borderRadius: 8, border: `1px solid ${css.border}`,
               background: "transparent", color: css.text3, fontSize: 11, fontWeight: 500,
@@ -5991,6 +6055,7 @@ Start by introducing yourself briefly in-character with personality, and give an
               <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: 28 }} />
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                 <button onClick={() => setDarkMode(d => !d)} style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${css.border}`, background: "transparent", cursor: "pointer", fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center" }}>{D ? "☀️" : "🌙"}</button>
+                <button onClick={openSettings} style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${css.border}`, background: "transparent", cursor: "pointer", fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center", color: css.text2 }}>⚙</button>
                 <div style={{ width: 36, height: 36, borderRadius: 10, background: `linear-gradient(135deg, ${css.accent}, ${D ? "#C06020" : "#B85820"})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff" }}>{((user?.user_metadata?.first_name?.[0] || user?.user_metadata?.name?.[0] || user?.email?.[0] || "U").toUpperCase()) + ((user?.user_metadata?.last_name?.[0] || user?.user_metadata?.name?.split(" ")?.[1]?.[0] || "").toUpperCase())}</div>
               </div>
             </div>
@@ -6092,6 +6157,176 @@ Start by introducing yourself briefly in-character with personality, and give an
       {/* ============================================================ */}
       {/* MODALS */}
       {/* ============================================================ */}
+
+      {/* ── Settings Modal ── */}
+      {showSettings && (() => {
+        const sf = { display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: D ? "#13111C" : "#f4f4f8", border: `1px solid ${css.border}`, borderRadius: 6, color: css.text, fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" };
+        const lbl = { fontSize: 10, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: 1.2, fontFamily: "Inter, sans-serif" };
+        const sectionHead = { fontSize: 13, fontWeight: 700, color: css.text, fontFamily: "'Inter Tight', Inter, sans-serif", marginBottom: 14, paddingBottom: 10, borderBottom: `1px solid ${css.border}` };
+        const tabs = [
+          { id: "profile", label: "Profile", icon: "👤" },
+          { id: "security", label: "Security", icon: "🔒" },
+          { id: "preferences", label: "Preferences", icon: "🎛" },
+          { id: "subscription", label: "Subscription", icon: "⭐" },
+          { id: "account", label: "Account", icon: "⚠️" },
+        ];
+        const isPremium = user?.user_metadata?.subscription === "premium";
+        return (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000, padding: 20 }} onClick={() => setShowSettings(false)}>
+            <div onClick={e => e.stopPropagation()} style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 12, width: "100%", maxWidth: 620, maxHeight: "88vh", display: "flex", overflow: "hidden" }}>
+
+              {/* Sidebar tabs */}
+              <div style={{ width: 160, flexShrink: 0, background: D ? "#13111C" : "#f0f0f5", borderRight: `1px solid ${css.border}`, padding: "20px 0" }}>
+                <div style={{ padding: "0 16px 16px", fontSize: 12, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Settings</div>
+                {tabs.map(t => (
+                  <button key={t.id} onClick={() => { setSettingsTab(t.id); setSettingsMsg({ type: "", text: "" }); }} style={{
+                    display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 16px",
+                    border: "none", background: settingsTab === t.id ? css.accentBg : "transparent",
+                    color: settingsTab === t.id ? css.accent : css.text2, cursor: "pointer",
+                    fontSize: 12, fontWeight: settingsTab === t.id ? 600 : 400, fontFamily: "Inter, sans-serif",
+                    borderLeft: settingsTab === t.id ? `2px solid ${css.accent}` : "2px solid transparent",
+                    textAlign: "left",
+                  }}>{t.icon} {t.label}</button>
+                ))}
+              </div>
+
+              {/* Content */}
+              <div style={{ flex: 1, padding: 28, overflowY: "auto" }}>
+                {settingsMsg.text && (
+                  <div style={{ padding: "9px 12px", borderRadius: 6, marginBottom: 18, fontSize: 12, fontFamily: "Inter, sans-serif", background: settingsMsg.type === "success" ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)", color: settingsMsg.type === "success" ? "#10b981" : "#ef4444", border: `1px solid ${settingsMsg.type === "success" ? "#10b98130" : "#ef444430"}` }}>
+                    {settingsMsg.text}
+                  </div>
+                )}
+
+                {/* PROFILE */}
+                {settingsTab === "profile" && (
+                  <div>
+                    <div style={sectionHead}>Profile</div>
+                    <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
+                      <label style={{ flex: 1 }}><span style={lbl}>First Name</span><input value={settingsForm.firstName} onChange={e => setSettingsForm(f => ({ ...f, firstName: e.target.value }))} style={sf} /></label>
+                      <label style={{ flex: 1 }}><span style={lbl}>Last Name</span><input value={settingsForm.lastName} onChange={e => setSettingsForm(f => ({ ...f, lastName: e.target.value }))} style={sf} /></label>
+                    </div>
+                    <button onClick={saveProfile} disabled={settingsSaving} style={{ padding: "9px 20px", borderRadius: 6, border: "none", background: css.accent, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", opacity: settingsSaving ? 0.7 : 1, fontFamily: "Inter, sans-serif" }}>
+                      {settingsSaving ? "Saving..." : "Save Name"}
+                    </button>
+                  </div>
+                )}
+
+                {/* SECURITY */}
+                {settingsTab === "security" && (
+                  <div>
+                    <div style={sectionHead}>Email Address</div>
+                    <label style={{ display: "block", marginBottom: 14 }}><span style={lbl}>Email</span><input type="email" value={settingsForm.email} onChange={e => setSettingsForm(f => ({ ...f, email: e.target.value }))} style={sf} /></label>
+                    <button onClick={saveEmail} disabled={settingsSaving} style={{ padding: "9px 20px", borderRadius: 6, border: "none", background: css.accent, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", opacity: settingsSaving ? 0.7 : 1, fontFamily: "Inter, sans-serif", marginBottom: 28 }}>
+                      {settingsSaving ? "Saving..." : "Update Email"}
+                    </button>
+
+                    <div style={sectionHead}>Change Password</div>
+                    <label style={{ display: "block", marginBottom: 12 }}><span style={lbl}>New Password</span><input type="password" value={settingsForm.newPassword} onChange={e => setSettingsForm(f => ({ ...f, newPassword: e.target.value }))} placeholder="Min 6 characters" style={sf} /></label>
+                    <label style={{ display: "block", marginBottom: 14 }}><span style={lbl}>Confirm Password</span><input type="password" value={settingsForm.confirmPassword} onChange={e => setSettingsForm(f => ({ ...f, confirmPassword: e.target.value }))} style={sf} /></label>
+                    <button onClick={savePassword} disabled={settingsSaving} style={{ padding: "9px 20px", borderRadius: 6, border: "none", background: css.accent, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", opacity: settingsSaving ? 0.7 : 1, fontFamily: "Inter, sans-serif" }}>
+                      {settingsSaving ? "Saving..." : "Change Password"}
+                    </button>
+                  </div>
+                )}
+
+                {/* PREFERENCES */}
+                {settingsTab === "preferences" && (
+                  <div>
+                    <div style={sectionHead}>Travel Preferences</div>
+                    <label style={{ display: "block", marginBottom: 14 }}><span style={lbl}>Home Airport (IATA code)</span><input value={settingsForm.homeAirport} onChange={e => setSettingsForm(f => ({ ...f, homeAirport: e.target.value.toUpperCase().slice(0, 3) }))} placeholder="e.g. JFK, LAX, YYZ" style={sf} maxLength={3} /></label>
+                    <label style={{ display: "block", marginBottom: 20 }}><span style={lbl}>Default Currency</span>
+                      <select value={settingsForm.defaultCurrency} onChange={e => setSettingsForm(f => ({ ...f, defaultCurrency: e.target.value }))} style={{ ...sf, cursor: "pointer" }}>
+                        {["USD","CAD","GBP","EUR","AUD","JPY","SGD","HKD"].map(c => <option key={c} value={c} style={{ background: css.surface }}>{c}</option>)}
+                      </select>
+                    </label>
+
+                    <div style={{ ...sectionHead, marginTop: 8 }}>Notifications</div>
+                    {[
+                      { key: "statusMilestones", label: "Status milestone alerts", desc: "Notify when you're close to reaching the next tier" },
+                      { key: "expiringMiles", label: "Expiring miles/points alerts", desc: "Warn when points are about to expire" },
+                      { key: "newPrograms", label: "New program announcements", desc: "Get notified when Continuum adds new loyalty programs" },
+                    ].map(n => (
+                      <div key={n.key} onClick={() => setSettingsForm(f => ({ ...f, notifications: { ...f.notifications, [n.key]: !f.notifications[n.key] } }))} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: `1px solid ${css.border}`, cursor: "pointer" }}>
+                        <div>
+                          <div style={{ fontSize: 13, color: css.text, fontFamily: "Inter, sans-serif", fontWeight: 500 }}>{n.label}</div>
+                          <div style={{ fontSize: 11, color: css.text3, fontFamily: "Inter, sans-serif", marginTop: 2 }}>{n.desc}</div>
+                        </div>
+                        <div style={{ width: 36, height: 20, borderRadius: 10, background: settingsForm.notifications[n.key] ? css.accent : css.border, position: "relative", transition: "background 0.2s", flexShrink: 0 }}>
+                          <div style={{ position: "absolute", top: 2, left: settingsForm.notifications[n.key] ? 18 : 2, width: 16, height: 16, borderRadius: "50%", background: "#fff", transition: "left 0.2s" }} />
+                        </div>
+                      </div>
+                    ))}
+                    <button onClick={savePreferences} disabled={settingsSaving} style={{ marginTop: 20, padding: "9px 20px", borderRadius: 6, border: "none", background: css.accent, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", opacity: settingsSaving ? 0.7 : 1, fontFamily: "Inter, sans-serif" }}>
+                      {settingsSaving ? "Saving..." : "Save Preferences"}
+                    </button>
+                  </div>
+                )}
+
+                {/* SUBSCRIPTION */}
+                {settingsTab === "subscription" && (
+                  <div>
+                    <div style={sectionHead}>Subscription</div>
+                    <div style={{ padding: "16px", borderRadius: 8, border: `1px solid ${isPremium ? css.accentBorder : css.border}`, background: isPremium ? css.accentBg : css.surface2, marginBottom: 20 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: isPremium ? css.accent : css.text3, textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif", marginBottom: 4 }}>Current Plan</div>
+                      <div style={{ fontSize: 22, fontWeight: 700, color: css.text, fontFamily: "'Inter Tight', Inter, sans-serif" }}>{isPremium ? "Premium" : "Free"}</div>
+                      {!isPremium && <div style={{ fontSize: 12, color: css.text3, marginTop: 4, fontFamily: "Inter, sans-serif" }}>Upgrade to unlock unlimited programs, AI concierge, and advanced insights.</div>}
+                    </div>
+                    {[
+                      { label: "Linked Programs", free: "Up to 3", premium: "Unlimited" },
+                      { label: "AI Travel Concierge", free: "—", premium: "✓" },
+                      { label: "Status Optimizer", free: "Basic", premium: "Advanced" },
+                      { label: "Expense Tracking", free: "✓", premium: "✓ + Export" },
+                      { label: "Calendar Sync", free: "—", premium: "✓" },
+                    ].map(r => (
+                      <div key={r.label} style={{ display: "flex", justifyContent: "space-between", padding: "9px 0", borderBottom: `1px solid ${css.border}`, fontSize: 12, fontFamily: "Inter, sans-serif" }}>
+                        <span style={{ color: css.text2 }}>{r.label}</span>
+                        <span style={{ color: isPremium ? css.accent : css.text3, fontWeight: 600 }}>{isPremium ? r.premium : r.free}</span>
+                      </div>
+                    ))}
+                    {!isPremium && (
+                      <button onClick={() => { setShowSettings(false); setShowUpgrade(true); }} style={{ marginTop: 20, width: "100%", padding: "11px 0", borderRadius: 8, border: "none", background: css.accent, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "'Inter Tight', Inter, sans-serif" }}>
+                        Upgrade to Premium →
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* ACCOUNT */}
+                {settingsTab === "account" && (
+                  <div>
+                    <div style={sectionHead}>Account</div>
+                    <div style={{ fontSize: 12, color: css.text3, fontFamily: "Inter, sans-serif", marginBottom: 6 }}>Signed in as</div>
+                    <div style={{ fontSize: 14, color: css.text, fontFamily: "Inter, sans-serif", fontWeight: 500, marginBottom: 20 }}>{user?.email}</div>
+
+                    <div style={{ marginBottom: 12 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: css.text, fontFamily: "Inter, sans-serif", marginBottom: 6 }}>Export My Data</div>
+                      <div style={{ fontSize: 12, color: css.text3, fontFamily: "Inter, sans-serif", marginBottom: 10 }}>Download a copy of all your trips and linked programs.</div>
+                      <button onClick={() => {
+                        const data = { trips, linkedAccounts, exportedAt: new Date().toISOString() };
+                        const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a"); a.href = url; a.download = "continuum-data.json"; a.click();
+                        URL.revokeObjectURL(url);
+                      }} style={{ padding: "8px 16px", borderRadius: 6, border: `1px solid ${css.border}`, background: "transparent", color: css.text2, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>
+                        Download JSON
+                      </button>
+                    </div>
+
+                    <div style={{ marginTop: 28, padding: "16px", borderRadius: 8, border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.05)" }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#ef4444", fontFamily: "Inter, sans-serif", marginBottom: 4 }}>Danger Zone</div>
+                      <div style={{ fontSize: 12, color: css.text3, fontFamily: "Inter, sans-serif", marginBottom: 12 }}>Signing out will clear your local session. Your data stays safe in your account.</div>
+                      <button onClick={() => { setShowSettings(false); handleLogout(); }} style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid rgba(239,68,68,0.4)", background: "transparent", color: "#ef4444", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>
+                        Sign Out
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Profile Setup Modal */}
       {showProfileSetup && (
