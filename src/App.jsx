@@ -1153,7 +1153,9 @@ export default function EliteStatusTracker() {
   const [trips, setTrips] = useState([]);
   const [linkedAccounts, setLinkedAccounts] = useState({});
   const [showLinkModal, setShowLinkModal] = useState(null);
-  const [linkForm, setLinkForm] = useState({ memberId: "" });
+  const [linkForm, setLinkForm] = useState({ memberId: "", pointsBalance: "", tierCredits: "", currentNights: "", currentRentals: "", currentTier: "" });
+  const [linkLoading, setLinkLoading] = useState(false);
+  const [linkError, setLinkError] = useState("");
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [selectedProgram, setSelectedProgram] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -1290,6 +1292,7 @@ export default function EliteStatusTracker() {
         setUser(session.user);
         setIsLoggedIn(true);
         loadTrips(session.user.id);
+        loadLinkedAccounts(session.user.id);
         if (!session.user.user_metadata?.first_name) setShowProfileSetup(true);
       }
     });
@@ -1299,6 +1302,7 @@ export default function EliteStatusTracker() {
         setUser(session.user);
         setIsLoggedIn(true);
         loadTrips(session.user.id);
+        loadLinkedAccounts(session.user.id);
         if (!session.user.user_metadata?.first_name) setShowProfileSetup(true);
       } else {
         setUser(null);
@@ -1310,6 +1314,28 @@ export default function EliteStatusTracker() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const loadLinkedAccounts = async (userId) => {
+    const { data, error } = await supabase
+      .from("linked_accounts")
+      .select("*")
+      .eq("user_id", userId);
+    if (!error && data) {
+      const map = {};
+      data.forEach(row => {
+        map[row.program_id] = {
+          memberId: row.member_id,
+          currentPoints: row.current_points || 0,
+          tierCredits: row.tier_credits || 0,
+          currentNights: row.current_nights || 0,
+          currentRentals: row.current_rentals || 0,
+          pointsBalance: row.points_balance || 0,
+          currentTier: row.current_tier || "",
+        };
+      });
+      setLinkedAccounts(map);
+    }
+  };
 
   const loadTrips = async (userId) => {
     const { data, error } = await supabase
@@ -2063,11 +2089,39 @@ Start by introducing yourself briefly in-character with personality, and give an
     setTimeout(() => { win.print(); }, 400);
   };
 
-  const handleLinkAccount = (programId) => {
-    const existing = SAMPLE_USER.linkedAccounts[programId];
-    setLinkedAccounts(prev => ({ ...prev, [programId]: existing || { memberId: linkForm.memberId || "****0000", currentPoints: 0, tierCredits: 0, currentNights: 0, currentRentals: 0 } }));
+  const handleLinkAccount = async (programId) => {
+    setLinkError("");
+    setLinkLoading(true);
+    const payload = {
+      user_id: user.id,
+      program_id: programId,
+      member_id: linkForm.memberId.trim(),
+      points_balance: parseInt(linkForm.pointsBalance) || 0,
+      current_points: parseInt(linkForm.tierCredits) || 0,
+      tier_credits: parseInt(linkForm.tierCredits) || 0,
+      current_nights: parseInt(linkForm.currentNights) || 0,
+      current_rentals: parseInt(linkForm.currentRentals) || 0,
+      current_tier: linkForm.currentTier.trim(),
+    };
+    const { error } = await supabase
+      .from("linked_accounts")
+      .upsert(payload, { onConflict: "user_id,program_id" });
+    setLinkLoading(false);
+    if (error) { setLinkError(error.message); return; }
+    setLinkedAccounts(prev => ({
+      ...prev,
+      [programId]: {
+        memberId: payload.member_id,
+        pointsBalance: payload.points_balance,
+        currentPoints: payload.tier_credits,
+        tierCredits: payload.tier_credits,
+        currentNights: payload.current_nights,
+        currentRentals: payload.current_rentals,
+        currentTier: payload.current_tier,
+      },
+    }));
     setShowLinkModal(null);
-    setLinkForm({ memberId: "" });
+    setLinkForm({ memberId: "", pointsBalance: "", tierCredits: "", currentNights: "", currentRentals: "", currentTier: "" });
   };
 
   const getProjectedStatus = useCallback((programId) => {
@@ -3147,7 +3201,19 @@ Start by introducing yourself briefly in-character with personality, and give an
                         )}
                       </div>
                     ) : (
-                      <button onClick={() => { setShowLinkModal(prog.id); setLinkForm({ memberId: "" }); }} style={{
+                      <button onClick={() => {
+                        const existing = linkedAccounts[prog.id];
+                        setLinkForm({
+                          memberId: existing?.memberId || "",
+                          pointsBalance: existing?.pointsBalance ? String(existing.pointsBalance) : "",
+                          tierCredits: existing?.tierCredits ? String(existing.tierCredits) : "",
+                          currentNights: existing?.currentNights ? String(existing.currentNights) : "",
+                          currentRentals: existing?.currentRentals ? String(existing.currentRentals) : "",
+                          currentTier: existing?.currentTier || "",
+                        });
+                        setLinkError("");
+                        setShowLinkModal(prog.id);
+                      }} style={{
                         width: "100%", padding: "9px 0", borderRadius: 8, border: `1px solid ${css.accentBorder}`,
                         background: css.accentBg, color: css.accent,
                         fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all 0.15s",
@@ -6190,43 +6256,96 @@ Start by introducing yourself briefly in-character with personality, and give an
       )}
 
       {/* Link Account Modal */}
-      {showLinkModal && (
+      {showLinkModal && (() => {
+        const prog = allPrograms.find(p => p.id === showLinkModal);
+        const isHotel = LOYALTY_PROGRAMS.hotels.some(p => p.id === showLinkModal);
+        const isRental = LOYALTY_PROGRAMS.rentals.some(p => p.id === showLinkModal);
+        const isAirline = !isHotel && !isRental;
+        const inputStyle = {
+          display: "block", width: "100%", marginTop: 6, padding: "10px 12px",
+          background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 6,
+          color: "#f7f8f8", fontSize: 14, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box",
+        };
+        const labelStyle = { display: "block", marginBottom: 14 };
+        const spanStyle = { fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" };
+        return (
         <div style={{
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
-        }} onClick={() => setShowLinkModal(null)}>
+        }} onClick={() => { setShowLinkModal(null); setLinkError(""); }}>
           <div onClick={e => e.stopPropagation()} style={{
-            background: "#211e2e", border: "1px solid #2a2640", borderRadius: 8, padding: 28, width: "100%", maxWidth: 400,
+            background: "#211e2e", border: "1px solid #2a2640", borderRadius: 8, padding: 28, width: "100%", maxWidth: 420,
           }}>
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: "0 0 6px", fontFamily: "'Inter Tight', Inter, sans-serif" }}>Link Account</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: "0 0 4px", fontFamily: "'Inter Tight', Inter, sans-serif" }}>
+              {linkedAccounts[showLinkModal] ? "Update" : "Link"} Account
+            </h3>
             <p style={{ color: "#8a8f98", fontSize: 12, margin: "0 0 20px", fontFamily: "Inter, sans-serif" }}>
-              Connect your {allPrograms.find(p => p.id === showLinkModal)?.name || "loyalty"} account
+              Enter your current stats from your {prog?.name || "loyalty"} account
             </p>
 
-            <label style={{ display: "block", marginBottom: 18 }}>
-              <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Member ID</span>
-              <input value={linkForm.memberId} onChange={e => setLinkForm(p => ({ ...p, memberId: e.target.value }))} placeholder="Enter your member number"
-                style={{
-                  display: "block", width: "100%", marginTop: 6, padding: "12px 14px", background: "rgba(255,255,255,0.03)",
-                  border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 14, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box",
-                }} />
+            <label style={labelStyle}>
+              <span style={spanStyle}>Member ID / Number</span>
+              <input value={linkForm.memberId} onChange={e => setLinkForm(p => ({ ...p, memberId: e.target.value }))}
+                placeholder="Your membership number" style={inputStyle} autoFocus />
             </label>
-            <p style={{ fontSize: 10, color: "#62666d", fontFamily: "Inter, sans-serif", marginBottom: 20 }}>
-              In production, this would use OAuth to securely connect to the loyalty program's API. Demo mode uses sample data.
-            </p>
+
+            <label style={labelStyle}>
+              <span style={spanStyle}>Points / Miles Balance</span>
+              <input type="number" value={linkForm.pointsBalance} onChange={e => setLinkForm(p => ({ ...p, pointsBalance: e.target.value }))}
+                placeholder="e.g. 45000" style={inputStyle} />
+            </label>
+
+            {isAirline && (
+              <label style={labelStyle}>
+                <span style={spanStyle}>{prog?.unit || "Qualifying Miles"} (toward status)</span>
+                <input type="number" value={linkForm.tierCredits} onChange={e => setLinkForm(p => ({ ...p, tierCredits: e.target.value }))}
+                  placeholder="e.g. 12500" style={inputStyle} />
+              </label>
+            )}
+
+            {isHotel && (
+              <label style={labelStyle}>
+                <span style={spanStyle}>Qualifying Nights (this year)</span>
+                <input type="number" value={linkForm.currentNights} onChange={e => setLinkForm(p => ({ ...p, currentNights: e.target.value }))}
+                  placeholder="e.g. 18" style={inputStyle} />
+              </label>
+            )}
+
+            {isRental && (
+              <label style={labelStyle}>
+                <span style={spanStyle}>Qualifying Rentals (this year)</span>
+                <input type="number" value={linkForm.currentRentals} onChange={e => setLinkForm(p => ({ ...p, currentRentals: e.target.value }))}
+                  placeholder="e.g. 5" style={inputStyle} />
+              </label>
+            )}
+
+            <label style={labelStyle}>
+              <span style={spanStyle}>Current Elite Tier (leave blank if none)</span>
+              <select value={linkForm.currentTier} onChange={e => setLinkForm(p => ({ ...p, currentTier: e.target.value }))}
+                style={{ ...inputStyle, cursor: "pointer" }}>
+                <option value="">— No status —</option>
+                {(prog?.tiers || []).map(t => (
+                  <option key={t.name} value={t.name}>{t.name}</option>
+                ))}
+              </select>
+            </label>
+
+            {linkError && <div style={{ fontSize: 12, color: "#f87171", marginBottom: 12, fontFamily: "Inter, sans-serif" }}>{linkError}</div>}
 
             <div style={{ display: "flex", gap: 10 }}>
-              <button onClick={() => setShowLinkModal(null)} style={{
+              <button onClick={() => { setShowLinkModal(null); setLinkError(""); }} style={{
                 flex: 1, padding: "11px 0", borderRadius: 8, border: "1px solid #2a2640", background: "rgba(255,255,255,0.03)",
                 color: "#8a8f98", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif",
               }}>Cancel</button>
-              <button onClick={() => handleLinkAccount(showLinkModal)} style={{
-                flex: 1, padding: "11px 0", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Inter, sans-serif",
-                background: "#0EA5A0", color: "#f7f8f8",
-              }}>Link Account</button>
+              <button onClick={() => handleLinkAccount(showLinkModal)} disabled={linkLoading} style={{
+                flex: 1, padding: "11px 0", borderRadius: 8, border: "none", cursor: linkLoading ? "not-allowed" : "pointer",
+                fontSize: 13, fontWeight: 700, fontFamily: "Inter, sans-serif",
+                background: "#0EA5A0", color: "#f7f8f8", opacity: linkLoading ? 0.7 : 1,
+              }}>{linkLoading ? "Saving..." : linkedAccounts[showLinkModal] ? "Update" : "Link Account"}</button>
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* Add Program Modal */}
       {showAddProgram && (() => {
