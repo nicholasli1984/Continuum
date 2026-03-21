@@ -3625,8 +3625,14 @@ Start by introducing yourself briefly in-character with personality, and give an
             {trip.arrivalTerminal && <DetailRow label="Arr. Terminal" value={`Terminal ${trip.arrivalTerminal}`} mono />}
             <DetailRow label="Aircraft" value={trip.aircraft} />
             <DetailRow label="Seat" value={trip.seat} mono />
-            <DetailRow label="Fare Class" value={trip.fareClass} mono accent />
-            <DetailRow label="Cabin" value={trip.class === "premium" ? "Premium / Business" : trip.class === "international" ? "International Economy" : "Domestic Economy"} />
+            <DetailRow label="Fare Class" value={trip.bookingClass || trip.booking_class || trip.fareClass || trip.fare_class} mono accent />
+            {(() => {
+              const bc = trip.bookingClass || trip.booking_class;
+              const fc = (bc && getBookingClassCabin(trip.program, bc)) || trip.fareClass || trip.fare_class || "economy";
+              const cabinLabel = CABIN_LABELS[fc] || fc;
+              const routeLabel = trip.class === "international" ? "International" : "Domestic";
+              return <DetailRow label="Cabin" value={`${routeLabel} ${cabinLabel}`} />;
+            })()}
             <DetailRow label="Distance" value={trip.distance ? `${Number(trip.distance).toLocaleString()} mi` : ""} mono />
             <DetailRow label="Travel Time" value={trip.travelTime} mono />
             {trip.layover && <DetailRow label="Layover" value={trip.layover} mono />}
