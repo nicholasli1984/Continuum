@@ -6440,10 +6440,10 @@ Start by introducing yourself briefly in-character with personality, and give an
       {/* Add Trip Modal */}
       {showAddTrip && (
         <div style={{
-          position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "flex-start", justifyContent: "center", zIndex: 1000, padding: "20px 20px", overflowY: "auto",
         }} onClick={() => setShowAddTrip(false)}>
           <div onClick={e => e.stopPropagation()} style={{
-            background: "#211e2e", border: "1px solid #2a2640", borderRadius: 8, padding: 28, width: "100%", maxWidth: 440,
+            background: "#211e2e", border: "1px solid #2a2640", borderRadius: 8, padding: 28, width: "100%", maxWidth: 440, margin: "auto",
           }}>
             <h3 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: "0 0 20px", fontFamily: "'Inter Tight', Inter, sans-serif" }}>Add Trip</h3>
 
