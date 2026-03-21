@@ -1149,7 +1149,7 @@ export default function EliteStatusTracker() {
   const [authError, setAuthError] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
   const [showAddTrip, setShowAddTrip] = useState(false);
-  const [newTrip, setNewTrip] = useState({ type: "flight", program: "aa", route: "", date: "", class: "domestic", nights: 1, status: "planned", tripName: "", flightNumber: "", departureTime: "", arrivalTime: "", departureTerminal: "", arrivalTerminal: "" });
+  const [newTrip, setNewTrip] = useState({ type: "flight", program: "aa", route: "", date: "", class: "domestic", fareClass: "economy", ticketPrice: "", nights: 1, status: "planned", tripName: "", flightNumber: "", departureTime: "", arrivalTime: "", departureTerminal: "", arrivalTerminal: "" });
   const [trips, setTrips] = useState([]);
   const [linkedAccounts, setLinkedAccounts] = useState({});
   const [showLinkModal, setShowLinkModal] = useState(null);
@@ -1615,13 +1615,68 @@ Start by introducing yourself briefly in-character with personality, and give an
     setPublicPage("landing");
   };
 
+  // ── Earning calculation engine ──
+  // Returns { statusCredits, redeemable, statusLabel, redeemLabel, breakdown }
+  const calcTripEarnings = (trip) => {
+    if (trip.type === "hotel") {
+      const nights = parseInt(trip.nights) || 1;
+      const hotelPointsPerNight = { marriott: 1000, hilton: 1500, hyatt: 500, ihg: 700, wyndham: 600, radisson: 400, bestwestern: 300, accor: 800, choice: 300 };
+      const ptsPerNight = hotelPointsPerNight[trip.program] || 800;
+      return { statusCredits: nights, redeemable: nights * ptsPerNight, statusLabel: `${nights} qualifying night${nights !== 1 ? "s" : ""}`, redeemLabel: `~${(nights * ptsPerNight).toLocaleString()} points`, breakdown: `${nights} nights × ${ptsPerNight.toLocaleString()} pts/night (avg rate)` };
+    }
+    if (trip.type === "rental") {
+      return { statusCredits: 1, redeemable: 250, statusLabel: "1 qualifying rental", redeemLabel: "~250 pts", breakdown: "1 rental" };
+    }
+
+    // Flight earning
+    const price = parseFloat(trip.ticketPrice) || { domestic: 350, international: 780, premium: 2200 }[trip.class] || 350;
+    const fc = trip.fareClass || "economy";
+
+    // Per-program revenue-based rules
+    const rules = {
+      aa:  { status: { basic_economy: 1, economy: 5, premium_economy: 7, business_first: 11 }, redeemable: "same", statusUnit: "Loyalty Points", redeemUnit: "AAdvantage Miles" },
+      dl:  { status: { basic_economy: 0, economy: 1, premium_economy: 1.25, business_first: 1.5 }, redeemable: { basic_economy: 0, economy: 5, premium_economy: 7, business_first: 8 }, statusUnit: "MQDs ($)", redeemUnit: "SkyMiles" },
+      ua:  { status: { basic_economy: 0, economy: 1, premium_economy: 1.5, business_first: 2 }, redeemable: { basic_economy: 0, economy: 5, premium_economy: 7, business_first: 9 }, statusUnit: "PQPs", redeemUnit: "Miles" },
+      sw:  { status: { basic_economy: 6, economy: 6, premium_economy: 12, business_first: 12 }, redeemable: "same", statusUnit: "Rapid Rewards Pts", redeemUnit: "Points" },
+      b6:  { status: { basic_economy: 0, economy: 3, premium_economy: 5, business_first: 7 }, redeemable: "same", statusUnit: "Tile Points", redeemUnit: "TrueBlue Points" },
+      atmos: { status: { basic_economy: 0, economy: 3, premium_economy: 5, business_first: 7 }, redeemable: "same", statusUnit: "EQMs", redeemUnit: "Miles" },
+      ba:  { status: { basic_economy: 0, economy: 1.25, premium_economy: 2, business_first: 3 }, redeemable: "same", statusUnit: "Tier Points", redeemUnit: "Avios" },
+      aeroplan: { status: { basic_economy: 0, economy: 1, premium_economy: 1.5, business_first: 2 }, redeemable: "same", statusUnit: "SQMs", redeemUnit: "Aeroplan Points" },
+      singapore_kf: { status: { basic_economy: 0, economy: 1, premium_economy: 1.5, business_first: 2 }, redeemable: "same", statusUnit: "Elite Miles", redeemUnit: "KrisFlyer Miles" },
+    };
+
+    const prog = LOYALTY_PROGRAMS.airlines.find(p => p.id === trip.program);
+    const rule = rules[trip.program];
+
+    if (rule) {
+      const statusRate = rule.status[fc] ?? rule.status.economy ?? 5;
+      const redeemRate = rule.redeemable === "same" ? statusRate : (rule.redeemable[fc] ?? rule.redeemable.economy ?? 5);
+      // DL/UA: status is dollar-based (MQD/PQP), redeemable is per-dollar
+      const isDollarStatus = ["dl", "ua"].includes(trip.program);
+      const statusCredits = isDollarStatus ? Math.round(price * statusRate) : Math.round(price * statusRate);
+      const redeemable = Math.round(price * redeemRate);
+      const statusLabel = `~${statusCredits.toLocaleString()} ${rule.statusUnit}`;
+      const redeemLabel = `~${redeemable.toLocaleString()} ${rule.redeemUnit}`;
+      const breakdown = `$${price.toLocaleString()} × ${statusRate}x${trip.ticketPrice ? "" : " (est. price)"}`;
+      return { statusCredits, redeemable, statusLabel, redeemLabel, breakdown };
+    }
+
+    // Fallback: distance-based using earnRate
+    const distMap = { domestic: 1200, international: 4200, premium: 1800 };
+    const rateKey = fc === "business_first" ? "premium" : (trip.class || "domestic");
+    const rate = prog?.earnRate?.[rateKey] || 5;
+    const dist = distMap[trip.class || "domestic"];
+    const earned = Math.round(rate * dist);
+    return { statusCredits: earned, redeemable: earned, statusLabel: `~${earned.toLocaleString()} ${prog?.unit || "miles"}`, redeemLabel: `~${earned.toLocaleString()} redeemable miles`, breakdown: `${dist.toLocaleString()} mi × ${rate}/mi` };
+  };
+
   const handleAddTrip = async () => {
     let estimatedPoints = 0;
     let estimatedNights = 0;
     let estimatedRentals = 0;
     if (newTrip.type === "flight") {
-      const prog = LOYALTY_PROGRAMS.airlines.find(p => p.id === newTrip.program);
-      estimatedPoints = prog ? prog.earnRate[newTrip.class] * 500 : 3000;
+      const { statusCredits } = calcTripEarnings(newTrip);
+      estimatedPoints = statusCredits;
     } else if (newTrip.type === "hotel") {
       estimatedNights = parseInt(newTrip.nights) || 1;
     } else {
@@ -1657,7 +1712,7 @@ Start by introducing yourself briefly in-character with personality, and give an
       setTrips(prev => [...prev, { ...tripData, id: Date.now() }]);
     }
     setShowAddTrip(false);
-    setNewTrip({ type: "flight", program: "aa", route: "", date: "", class: "domestic", nights: 1, status: "planned", tripName: "", flightNumber: "", departureTime: "", arrivalTime: "", departureTerminal: "", arrivalTerminal: "" });
+    setNewTrip({ type: "flight", program: "aa", route: "", date: "", class: "domestic", fareClass: "economy", ticketPrice: "", nights: 1, status: "planned", tripName: "", flightNumber: "", departureTime: "", arrivalTime: "", departureTerminal: "", arrivalTerminal: "" });
   };
 
   const removeTrip = async (id) => {
@@ -6188,14 +6243,13 @@ Start by introducing yourself briefly in-character with personality, and give an
               </label>
               {newTrip.type === "flight" && (
                 <label style={{ flex: 1 }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Class</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Route Type</span>
                   <select value={newTrip.class} onChange={e => setNewTrip(p => ({ ...p, class: e.target.value }))} style={{
                     display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)",
                     border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box",
                   }}>
-                    <option value="domestic" style={{ background: "#211e2e" }}>Domestic Economy</option>
+                    <option value="domestic" style={{ background: "#211e2e" }}>Domestic</option>
                     <option value="international" style={{ background: "#211e2e" }}>International</option>
-                    <option value="premium" style={{ background: "#211e2e" }}>Premium / Business</option>
                   </select>
                 </label>
               )}
@@ -6209,6 +6263,57 @@ Start by introducing yourself briefly in-character with personality, and give an
                 </label>
               )}
             </div>
+
+            {/* Fare class + ticket price for flights */}
+            {newTrip.type === "flight" && (
+              <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
+                <label style={{ flex: 1.5 }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Cabin Class</span>
+                  <select value={newTrip.fareClass} onChange={e => setNewTrip(p => ({ ...p, fareClass: e.target.value }))} style={{
+                    display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)",
+                    border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box",
+                  }}>
+                    <option value="basic_economy" style={{ background: "#211e2e" }}>Basic Economy</option>
+                    <option value="economy" style={{ background: "#211e2e" }}>Economy</option>
+                    <option value="premium_economy" style={{ background: "#211e2e" }}>Premium Economy</option>
+                    <option value="business_first" style={{ background: "#211e2e" }}>Business / First</option>
+                  </select>
+                </label>
+                <label style={{ flex: 1 }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Ticket Price (USD)</span>
+                  <input type="number" value={newTrip.ticketPrice} onChange={e => setNewTrip(p => ({ ...p, ticketPrice: e.target.value }))}
+                    placeholder="Optional"
+                    style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
+                </label>
+              </div>
+            )}
+
+            {/* Live earnings preview */}
+            {(() => {
+              const earnings = calcTripEarnings(newTrip);
+              return (
+                <div style={{ marginBottom: 16, padding: "12px 14px", background: "rgba(14,165,160,0.06)", border: "1px solid rgba(14,165,160,0.2)", borderRadius: 8 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#0EA5A0", textTransform: "uppercase", letterSpacing: 1.2, fontFamily: "Inter, sans-serif", marginBottom: 8 }}>
+                    Estimated Earnings
+                  </div>
+                  <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+                    <div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: "'JetBrains Mono', monospace" }}>{earnings.statusLabel}</div>
+                      <div style={{ fontSize: 10, color: "#8a8f98", marginTop: 2, fontFamily: "Inter, sans-serif" }}>toward status</div>
+                    </div>
+                    {earnings.redeemLabel !== earnings.statusLabel && (
+                      <div>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: "'JetBrains Mono', monospace" }}>{earnings.redeemLabel}</div>
+                        <div style={{ fontSize: 10, color: "#8a8f98", marginTop: 2, fontFamily: "Inter, sans-serif" }}>redeemable balance</div>
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 10, color: "#62666d", marginTop: 6, fontFamily: "Inter, sans-serif" }}>
+                    {earnings.breakdown}{!newTrip.ticketPrice && newTrip.type === "flight" ? " · Add ticket price for exact calculation" : ""}
+                  </div>
+                </div>
+              );
+            })()}
 
             <label style={{ display: "block", marginBottom: 20 }}>
               <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Status</span>
