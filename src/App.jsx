@@ -1189,6 +1189,10 @@ export default function EliteStatusTracker() {
   const [conciergeInput, setConciergeInput] = useState("");
   const [conciergeLoading, setConciergeLoading] = useState(false);
   const [conciergeSpeaking, setConciergeSpeaking] = useState(false);
+  const [showProfileSetup, setShowProfileSetup] = useState(false);
+  const [profileSetupForm, setProfileSetupForm] = useState({ firstName: "", lastName: "" });
+  const [profileSetupLoading, setProfileSetupLoading] = useState(false);
+  const [profileSetupError, setProfileSetupError] = useState("");
 
   // ── PA announcement state (top-level so mute button works on all pages) ──
   const [audioPlayed, setAudioPlayed] = useState(false);
@@ -1286,6 +1290,7 @@ export default function EliteStatusTracker() {
         setUser(session.user);
         setIsLoggedIn(true);
         loadTrips(session.user.id);
+        if (!session.user.user_metadata?.first_name) setShowProfileSetup(true);
       }
     });
 
@@ -1294,6 +1299,7 @@ export default function EliteStatusTracker() {
         setUser(session.user);
         setIsLoggedIn(true);
         loadTrips(session.user.id);
+        if (!session.user.user_metadata?.first_name) setShowProfileSetup(true);
       } else {
         setUser(null);
         setIsLoggedIn(false);
@@ -1552,6 +1558,28 @@ Start by introducing yourself briefly in-character with personality, and give an
     setAuthLoading(false);
     if (error) { setAuthError(error.message); return; }
     setAuthError("Check your email for a confirmation link, then sign in.");
+  };
+
+  const handleProfileSetup = async (e) => {
+    if (e) e.preventDefault();
+    const { firstName, lastName } = profileSetupForm;
+    if (!firstName.trim() || !lastName.trim()) {
+      setProfileSetupError("Please enter both your first and last name.");
+      return;
+    }
+    setProfileSetupLoading(true);
+    setProfileSetupError("");
+    const { data, error } = await supabase.auth.updateUser({
+      data: {
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+        name: `${firstName.trim()} ${lastName.trim()}`,
+      },
+    });
+    setProfileSetupLoading(false);
+    if (error) { setProfileSetupError(error.message); return; }
+    if (data?.user) setUser(data.user);
+    setShowProfileSetup(false);
   };
 
   const handleLogout = async () => {
@@ -2726,7 +2754,7 @@ Start by introducing yourself briefly in-character with personality, and give an
             <div>
               <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: lp.teal, fontFamily: lp.mono, marginBottom: 8 }}>{greeting}</div>
               <h1 style={{ fontFamily: lp.mono, fontSize: isMobile ? 28 : 40, fontWeight: 700, color: lp.text, margin: 0, letterSpacing: -1, lineHeight: 1 }}>
-                {user?.name?.split(" ")[0]?.toUpperCase()}
+                {(user?.user_metadata?.first_name || user?.user_metadata?.name?.split(" ")[0] || user?.user_metadata?.full_name?.split(" ")[0] || "").toUpperCase()}
               </h1>
             </div>
             <div style={{ textAlign: "right" }}>
@@ -5794,7 +5822,7 @@ Start by introducing yourself briefly in-character with personality, and give an
               background: `linear-gradient(135deg, ${css.accent}, ${D ? "#C06020" : "#B85820"})`,
               display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: 12, fontWeight: 700, color: "#fff", flexShrink: 0,
-            }}>{user?.avatar || "U"}</div>
+            }}>{user?.user_metadata?.first_name?.[0]?.toUpperCase() || user?.user_metadata?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U"}</div>
             <button onClick={handleLogout} style={{
               padding: "5px 12px", borderRadius: 8, border: `1px solid ${css.border}`,
               background: "transparent", color: css.text3, fontSize: 11, fontWeight: 500,
@@ -5811,7 +5839,7 @@ Start by introducing yourself briefly in-character with personality, and give an
               <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: 28 }} />
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                 <button onClick={() => setDarkMode(d => !d)} style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${css.border}`, background: "transparent", cursor: "pointer", fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center" }}>{D ? "☀️" : "🌙"}</button>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: `linear-gradient(135deg, ${css.accent}, ${D ? "#C06020" : "#B85820"})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff" }}>{user?.avatar || "U"}</div>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: `linear-gradient(135deg, ${css.accent}, ${D ? "#C06020" : "#B85820"})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff" }}>{user?.user_metadata?.first_name?.[0]?.toUpperCase() || user?.user_metadata?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U"}</div>
               </div>
             </div>
             {/* Programs sub-tabs */}
@@ -5912,6 +5940,54 @@ Start by introducing yourself briefly in-character with personality, and give an
       {/* ============================================================ */}
       {/* MODALS */}
       {/* ============================================================ */}
+
+      {/* Profile Setup Modal */}
+      {showProfileSetup && (
+        <div style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.92)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000, padding: 20,
+        }}>
+          <div style={{
+            background: "#1a1725", border: "1px solid #2a2640", borderRadius: 12, padding: 36, width: "100%", maxWidth: 400,
+          }}>
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "#0EA5A0", fontFamily: "Space Mono, monospace", marginBottom: 8 }}>Welcome aboard</div>
+              <h2 style={{ fontSize: 24, fontWeight: 700, color: "#fff", margin: 0, fontFamily: "'Inter Tight', Inter, sans-serif" }}>Set up your profile</h2>
+              <p style={{ fontSize: 13, color: "#8a8f98", margin: "8px 0 0", fontFamily: "Inter, sans-serif" }}>Just your name — you can update this anytime.</p>
+            </div>
+            <form onSubmit={handleProfileSetup}>
+              <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
+                <label style={{ flex: 1 }}>
+                  <span style={{ display: "block", fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6, fontFamily: "Inter, sans-serif" }}>First Name</span>
+                  <input
+                    value={profileSetupForm.firstName}
+                    onChange={e => setProfileSetupForm(p => ({ ...p, firstName: e.target.value }))}
+                    placeholder="First"
+                    autoFocus
+                    style={{ width: "100%", background: "#13111C", border: "1px solid #2a2640", borderRadius: 6, padding: "10px 12px", color: "#fff", fontSize: 14, fontFamily: "Inter, sans-serif", boxSizing: "border-box" }}
+                  />
+                </label>
+                <label style={{ flex: 1 }}>
+                  <span style={{ display: "block", fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6, fontFamily: "Inter, sans-serif" }}>Last Name</span>
+                  <input
+                    value={profileSetupForm.lastName}
+                    onChange={e => setProfileSetupForm(p => ({ ...p, lastName: e.target.value }))}
+                    placeholder="Last"
+                    style={{ width: "100%", background: "#13111C", border: "1px solid #2a2640", borderRadius: 6, padding: "10px 12px", color: "#fff", fontSize: 14, fontFamily: "Inter, sans-serif", boxSizing: "border-box" }}
+                  />
+                </label>
+              </div>
+              {profileSetupError && <div style={{ fontSize: 12, color: "#f87171", marginBottom: 12, fontFamily: "Inter, sans-serif" }}>{profileSetupError}</div>}
+              <button type="submit" disabled={profileSetupLoading} style={{
+                width: "100%", padding: "12px", background: "#0EA5A0", border: "none", borderRadius: 6,
+                color: "#fff", fontSize: 14, fontWeight: 700, cursor: profileSetupLoading ? "not-allowed" : "pointer",
+                opacity: profileSetupLoading ? 0.7 : 1, fontFamily: "'Inter Tight', Inter, sans-serif",
+              }}>
+                {profileSetupLoading ? "Saving..." : "Continue"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Add Trip Modal */}
       {showAddTrip && (
