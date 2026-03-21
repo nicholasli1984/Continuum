@@ -283,17 +283,6 @@ const PROGRAM_DIRECTORY = {
   ],
 };
 
-// Booking class code → cabin category (IATA standard)
-const BOOKING_CLASS_MAP = {
-  G: "basic_economy", O: "basic_economy", E: "basic_economy",
-  Y: "economy", B: "economy", H: "economy", K: "economy", M: "economy",
-  L: "economy", V: "economy", S: "economy", Q: "economy", T: "economy",
-  X: "economy", U: "economy", N: "economy",
-  W: "premium_economy", P: "premium_economy",
-  J: "business_first", C: "business_first", D: "business_first",
-  I: "business_first", Z: "business_first", R: "business_first",
-  F: "business_first", A: "business_first",
-};
 const CABIN_LABELS = {
   basic_economy: "Basic Economy",
   economy: "Economy",
@@ -301,17 +290,51 @@ const CABIN_LABELS = {
   business_first: "Business / First",
 };
 
+// Per-airline booking class → cabin mapping (codes vary by carrier)
+const AIRLINE_BOOKING_CLASS_MAP = {
+  aa:  { F:"business_first",A:"business_first",P:"business_first", J:"business_first",D:"business_first",R:"business_first",I:"business_first",C:"business_first", W:"premium_economy", Y:"economy",B:"economy",H:"economy",K:"economy",M:"economy",L:"economy",V:"economy",S:"economy",N:"economy",Q:"economy",O:"economy", G:"basic_economy" },
+  dl:  { J:"business_first",C:"business_first",D:"business_first",I:"business_first",Z:"business_first", W:"premium_economy",P:"premium_economy", Y:"economy",B:"economy",M:"economy",H:"economy",Q:"economy",K:"economy",L:"economy",U:"economy",T:"economy",X:"economy",V:"economy",S:"economy", E:"basic_economy",N:"basic_economy" },
+  ua:  { J:"business_first",C:"business_first",D:"business_first",Z:"business_first",P:"business_first", A:"premium_economy", Y:"economy",B:"economy",M:"economy",E:"economy",U:"economy",H:"economy",Q:"economy",V:"economy",W:"economy",S:"economy",T:"economy",K:"economy",L:"economy",G:"economy",X:"economy", N:"basic_economy" },
+  sw:  { A:"business_first",B:"business_first", Y:"economy",K:"economy",L:"economy",M:"economy",N:"economy",Q:"economy",S:"economy",T:"economy",V:"economy",W:"economy",X:"economy" },
+  b6:  { J:"business_first",C:"business_first",D:"business_first", Y:"economy",B:"economy",H:"economy",K:"economy",M:"economy",L:"economy",V:"economy",S:"economy",Q:"economy",T:"economy",N:"economy", G:"basic_economy",O:"basic_economy" },
+  atmos: { F:"business_first",A:"business_first",C:"business_first",J:"business_first",D:"business_first", P:"premium_economy", Y:"economy",B:"economy",H:"economy",K:"economy",L:"economy",M:"economy",O:"economy",S:"economy",Q:"economy",G:"economy",T:"economy",X:"economy",E:"economy",N:"economy",V:"economy",U:"economy",W:"economy" },
+  ba_avios: { F:"business_first",A:"business_first", J:"business_first",C:"business_first",D:"business_first",I:"business_first",R:"business_first",U:"business_first", W:"premium_economy",T:"premium_economy",P:"premium_economy", Y:"economy",B:"economy",H:"economy",K:"economy",M:"economy",L:"economy",V:"economy",S:"economy",N:"economy",Q:"economy",O:"economy",G:"economy" },
+  aeroplan: { J:"business_first",C:"business_first",D:"business_first",Z:"business_first",P:"business_first", W:"premium_economy", Y:"economy",B:"economy",H:"economy",K:"economy",M:"economy",L:"economy",V:"economy",S:"economy",Q:"economy",T:"economy", E:"basic_economy",G:"basic_economy",N:"basic_economy" },
+  singapore_kf: { F:"business_first",A:"business_first",P:"business_first", J:"business_first",C:"business_first",D:"business_first",I:"business_first",Z:"business_first",U:"business_first", W:"premium_economy",E:"premium_economy", Y:"economy",B:"economy",H:"economy",K:"economy",M:"economy",L:"economy",V:"economy",S:"economy",Q:"economy", N:"basic_economy",G:"basic_economy" },
+  cathay_mp: { F:"business_first",A:"business_first",L:"business_first", J:"business_first",C:"business_first",D:"business_first",I:"business_first",R:"business_first",P:"business_first", W:"premium_economy", Y:"economy",B:"economy",H:"economy",K:"economy",M:"economy",L:"economy",V:"economy",S:"economy",N:"economy",Q:"economy",T:"economy",X:"economy",E:"economy",G:"economy",O:"economy" },
+  emirates_skywards: { F:"business_first",A:"business_first", J:"business_first",C:"business_first",D:"business_first",I:"business_first",Z:"business_first", W:"premium_economy",P:"premium_economy", Y:"economy",B:"economy",H:"economy",K:"economy",M:"economy",L:"economy",V:"economy",S:"economy",N:"economy",Q:"economy",T:"economy",X:"economy",G:"economy",O:"economy" },
+  flying_blue: { F:"business_first",A:"business_first", J:"business_first",C:"business_first",D:"business_first",I:"business_first",Z:"business_first", W:"premium_economy",P:"premium_economy", Y:"economy",B:"economy",H:"economy",K:"economy",M:"economy",L:"economy",V:"economy",S:"economy",N:"economy",Q:"economy",T:"economy",X:"economy",E:"economy",G:"economy" },
+  turkish_miles: { F:"business_first",A:"business_first", J:"business_first",C:"business_first",D:"business_first",I:"business_first",Z:"business_first", W:"premium_economy",P:"premium_economy", Y:"economy",B:"economy",H:"economy",K:"economy",M:"economy",L:"economy",V:"economy",S:"economy",N:"economy",Q:"economy",T:"economy",X:"economy",E:"economy",G:"economy" },
+  qantas_ff: { F:"business_first",A:"business_first",P:"business_first", J:"business_first",C:"business_first",D:"business_first",I:"business_first",Z:"business_first",U:"business_first", W:"premium_economy", Y:"economy",B:"economy",H:"economy",K:"economy",M:"economy",L:"economy",V:"economy",S:"economy",N:"economy",Q:"economy",O:"economy",G:"economy" },
+  etihad_guest: { F:"business_first",A:"business_first", J:"business_first",C:"business_first",D:"business_first",I:"business_first",Z:"business_first", W:"premium_economy",P:"premium_economy", Y:"economy",B:"economy",H:"economy",K:"economy",M:"economy",L:"economy",V:"economy",S:"economy",N:"economy",Q:"economy",T:"economy",X:"economy",E:"economy",G:"economy" },
+  virgin_fc: { F:"business_first",A:"business_first", J:"business_first",C:"business_first",D:"business_first",I:"business_first",Z:"business_first",U:"business_first", W:"premium_economy",P:"premium_economy", Y:"economy",B:"economy",H:"economy",K:"economy",M:"economy",L:"economy",V:"economy",S:"economy",N:"economy",Q:"economy",T:"economy",X:"economy",G:"economy" },
+  frontier: { J:"business_first",C:"business_first", Y:"economy",B:"economy",H:"economy",K:"economy",M:"economy",L:"economy",V:"economy",S:"economy",Q:"economy", G:"basic_economy",O:"basic_economy" },
+  spirit:   { J:"business_first", Y:"economy",B:"economy",H:"economy",K:"economy",M:"economy",L:"economy",V:"economy",S:"economy",Q:"economy", G:"basic_economy",O:"basic_economy" },
+};
+// Generic fallback map for airlines not listed above
+const BOOKING_CLASS_MAP_GENERIC = { G:"basic_economy",O:"basic_economy",E:"basic_economy", Y:"economy",B:"economy",H:"economy",K:"economy",M:"economy",L:"economy",V:"economy",S:"economy",Q:"economy",T:"economy",X:"economy",U:"economy",N:"economy", W:"premium_economy", J:"business_first",C:"business_first",D:"business_first",I:"business_first",Z:"business_first",R:"business_first",F:"business_first",A:"business_first",P:"business_first" };
+
+const getBookingClassCabin = (programId, code) => {
+  if (!code) return null;
+  const map = AIRLINE_BOOKING_CLASS_MAP[programId] || BOOKING_CLASS_MAP_GENERIC;
+  return map[code.toUpperCase()] || null;
+};
+
 // Per-program per-booking-class status earning rates (per $ spent)
 const BOOKING_CLASS_RATES = {
-  aa:  { F:11,A:11,P:11, J:11,D:11,R:11,I:11,C:11, W:7, Y:5,B:5,H:5,K:5,M:5,L:5,V:5,S:5,N:5,Q:5, G:0,O:0 },
+  aa:  { F:11,A:11,P:11, J:11,D:11,R:11,I:11,C:11, W:7, Y:5,B:5,H:5,K:5,M:5,L:5,V:5,S:5,N:5,Q:5,O:5, G:0 },
   dl:  { J:1.5,C:1.5,D:1.5,I:1.5,Z:1.5, P:1.25,W:1.25, Y:1,B:1,M:1,H:1,Q:1,K:1,L:1,U:1,T:1,X:1,V:1,S:1, E:0,N:0 },
-  ua:  { F:2,A:2,J:2,C:2,D:2,Z:2, P:1.5,W:1.5, Y:1,B:1,M:1,E:1,U:1,H:1,Q:1,V:1,S:1,T:1,K:1,L:1,G:1,X:1, N:0 },
-  sw:  { F:12,C:12,A:12,J:12, Y:6,B:6,H:6,K:6,M:6,L:6,V:6,S:6,Q:6,G:6 },
-  b6:  { J:7,C:7,D:7, Y:3,B:3,H:3,K:3,M:3,L:3,V:3,S:3,Q:3,T:3, G:0,O:0,N:0 },
-  atmos: { F:3,A:3,P:3, C:3,J:3,D:3,I:3,Z:3, W:2,M:2, Y:1,B:1,H:1,K:1,L:1,O:1,S:1,Q:1,G:1,T:1,X:1,E:1,N:1,V:1,U:1 },
-  ba_avios: { F:4,A:4, C:3,D:3,J:3,I:3,R:3, W:2,P:2, Y:1.25,B:1.25,H:1.25,K:1.25,M:1.25, L:1,V:1,S:1,N:1, Q:0.5, O:0,G:0 },
-  aeroplan: { J:2,C:2,D:2,Z:2, P:1.5,W:1.5, Y:1,B:1,H:1,K:1,M:1,L:1,V:1,S:1,Q:1,T:1, E:0,G:0,N:0 },
-  singapore_kf: { J:2,C:2,D:2,Z:2, W:1.5,P:1.5, Y:1,B:1,H:1,K:1,M:1,L:1,V:1,S:1,Q:1, N:0,G:0 },
+  ua:  { J:2,C:2,D:2,Z:2,P:2,F:2,A:2, W:1.5, Y:1,B:1,M:1,E:1,U:1,H:1,Q:1,V:1,S:1,T:1,K:1,L:1,G:1,X:1, N:0 },
+  sw:  { A:12,B:12, Y:6,K:6,L:6,M:6,N:6,Q:6,S:6,T:6,V:6,W:6,X:6 },
+  b6:  { J:7,C:7,D:7, Y:3,B:3,H:3,K:3,M:3,L:3,V:3,S:3,Q:3,T:3,N:3, G:0,O:0 },
+  atmos: { F:3,A:3,C:3,J:3,D:3, P:2, Y:1,B:1,H:1,K:1,L:1,M:1,O:1,S:1,Q:1,G:1,T:1,X:1,E:1,N:1,V:1,U:1,W:1 },
+  ba_avios: { F:4,A:4, J:3,C:3,D:3,I:3,R:3,U:3, W:2,T:2,P:2, Y:1.25,B:1.25,H:1.25,K:1.25,M:1.25, L:1,V:1,S:1,N:1, Q:0.5, O:0,G:0 },
+  aeroplan: { J:2,C:2,D:2,Z:2,P:2, W:1.5, Y:1,B:1,H:1,K:1,M:1,L:1,V:1,S:1,Q:1,T:1, E:0,G:0,N:0 },
+  singapore_kf: { F:2,A:2,P:2, J:2,C:2,D:2,Z:2,U:2, W:1.5,E:1.5, Y:1,B:1,H:1,K:1,M:1,L:1,V:1,S:1,Q:1, N:0,G:0 },
+  cathay_mp: { F:2,A:2,L:2, J:2,C:2,D:2,I:2,R:2,P:2, W:1.5, Y:1,B:1,H:1,K:1,M:1,V:1,S:1,N:1,Q:1,T:1,X:1,E:0.5,G:0,O:0 },
+  emirates_skywards: { F:2,A:2, J:2,C:2,D:2,I:2,Z:2, W:1.5,P:1.5, Y:1,B:1,H:1,K:1,M:1,L:1,V:1,S:1,N:1,Q:1,T:1,X:1, G:0,O:0 },
+  flying_blue: { F:2,A:2, J:2,C:2,D:2,I:2,Z:2, W:1.5,P:1.5, Y:1,B:1,H:1,K:1,M:1,L:1,V:1,S:1,N:0.5,Q:0.5, T:0,X:0,E:0,G:0 },
+  qantas_ff: { F:2,A:2,P:2, J:2,C:2,D:2,I:2,Z:2,U:2, W:1.5, Y:1,B:1,H:1,K:1,M:1,L:1,V:1,S:1,N:0,Q:0,O:0,G:0 },
 };
 
 // Build the same shape used by the rest of the app
@@ -1722,8 +1745,8 @@ Start by introducing yourself briefly in-character with personality, and give an
 
     // Flight earning
     const price = parseFloat(trip.ticketPrice) || { domestic: 350, international: 780, premium: 2200 }[trip.class] || 350;
-    const bc = trip.bookingClass ? trip.bookingClass.toUpperCase() : null; // e.g. "Y", "J"
-    const fc = (bc && BOOKING_CLASS_MAP[bc]) || trip.fareClass || "economy";
+    const bc = trip.bookingClass ? trip.bookingClass.toUpperCase() : null;
+    const fc = (bc && getBookingClassCabin(trip.program, bc)) || trip.fareClass || "economy";
 
     // Per-program rules (cabin-level fallback when no booking class code)
     const rules = {
@@ -1765,12 +1788,66 @@ Start by introducing yourself briefly in-character with personality, and give an
   };
 
   const [addTripError, setAddTripError] = useState("");
+  const [editingTripId, setEditingTripId] = useState(null);
+
+  const openEditTrip = (trip) => {
+    setEditingTripId(trip.id);
+    setNewTrip({
+      type: trip.type || "flight",
+      program: trip.program || "aa",
+      route: trip.route || "",
+      date: trip.date || "",
+      class: trip.class || "domestic",
+      fareClass: trip.fareClass || trip.fare_class || "economy",
+      bookingClass: trip.bookingClass || trip.booking_class || "",
+      ticketPrice: trip.ticketPrice || trip.ticket_price || "",
+      nights: trip.nights || 1,
+      status: trip.status || "planned",
+      tripName: trip.tripName || trip.trip_name || "",
+      flightNumber: trip.flightNumber || trip.flight_number || "",
+      departureTime: trip.departureTime || trip.departure_time || "",
+      arrivalTime: trip.arrivalTime || trip.arrival_time || "",
+      departureTerminal: trip.departureTerminal || trip.departure_terminal || "",
+      arrivalTerminal: trip.arrivalTerminal || trip.arrival_terminal || "",
+      property: trip.property || "",
+      location: trip.location || "",
+    });
+    setShowAddTrip(true);
+  };
+
+  const tripDbPayload = (tripData) => ({
+    type: tripData.type,
+    program: tripData.program,
+    route: tripData.route,
+    date: tripData.date,
+    class: tripData.class,
+    nights: tripData.nights ? parseInt(tripData.nights) : null,
+    status: tripData.status,
+    trip_name: tripData.tripName,
+    property: tripData.property,
+    location: tripData.location,
+    flight_number: tripData.flightNumber,
+    departure_time: tripData.departureTime,
+    arrival_time: tripData.arrivalTime,
+    departure_terminal: tripData.departureTerminal,
+    arrival_terminal: tripData.arrivalTerminal,
+    fare_class: tripData.fareClass || null,
+    booking_class: tripData.bookingClass || null,
+    ticket_price: tripData.ticketPrice ? parseFloat(tripData.ticketPrice) : null,
+    estimated_points: tripData.estimatedPoints,
+    estimated_nights: tripData.estimatedNights,
+  });
+
+  const resetTripModal = () => {
+    setShowAddTrip(false);
+    setAddTripError("");
+    setEditingTripId(null);
+    setNewTrip({ type: "flight", program: "aa", route: "", date: "", class: "domestic", fareClass: "economy", bookingClass: "", ticketPrice: "", nights: 1, status: "planned", tripName: "", flightNumber: "", departureTime: "", arrivalTime: "", departureTerminal: "", arrivalTerminal: "" });
+  };
 
   const handleAddTrip = async () => {
     setAddTripError("");
-    let estimatedPoints = 0;
-    let estimatedNights = 0;
-    let estimatedRentals = 0;
+    let estimatedPoints = 0, estimatedNights = 0, estimatedRentals = 0;
     if (newTrip.type === "flight") {
       const { statusCredits } = calcTripEarnings(newTrip);
       estimatedPoints = statusCredits;
@@ -1781,42 +1858,24 @@ Start by introducing yourself briefly in-character with personality, and give an
     }
     const tripData = { ...newTrip, estimatedPoints, estimatedNights, estimatedRentals };
 
-    if (user) {
-      const { data, error } = await supabase.from("trips").insert({
-        user_id: user.id,
-        type: tripData.type,
-        program: tripData.program,
-        route: tripData.route,
-        date: tripData.date,
-        class: tripData.class,
-        nights: tripData.nights ? parseInt(tripData.nights) : null,
-        status: tripData.status,
-        trip_name: tripData.tripName,
-        property: tripData.property,
-        location: tripData.location,
-        flight_number: tripData.flightNumber,
-        departure_time: tripData.departureTime,
-        arrival_time: tripData.arrivalTime,
-        departure_terminal: tripData.departureTerminal,
-        arrival_terminal: tripData.arrivalTerminal,
-        fare_class: tripData.fareClass || null,
-        booking_class: tripData.bookingClass || null,
-        ticket_price: tripData.ticketPrice ? parseFloat(tripData.ticketPrice) : null,
-        estimated_points: tripData.estimatedPoints,
-        estimated_nights: tripData.estimatedNights,
-      }).select().single();
-      if (error) {
-        console.error("Add trip error:", error);
-        setAddTripError(error.message || "Failed to save trip. Please try again.");
-        return;
+    if (editingTripId) {
+      // Update existing trip
+      if (user) {
+        const { error } = await supabase.from("trips").update(tripDbPayload(tripData)).eq("id", editingTripId).eq("user_id", user.id);
+        if (error) { setAddTripError(error.message || "Failed to update trip."); return; }
       }
-      setTrips(prev => [...prev, { ...tripData, id: data.id }]);
+      setTrips(prev => prev.map(t => t.id === editingTripId ? { ...t, ...tripData, id: editingTripId } : t));
     } else {
-      setTrips(prev => [...prev, { ...tripData, id: Date.now() }]);
+      // Insert new trip
+      if (user) {
+        const { data, error } = await supabase.from("trips").insert({ user_id: user.id, ...tripDbPayload(tripData) }).select().single();
+        if (error) { console.error("Add trip error:", error); setAddTripError(error.message || "Failed to save trip. Please try again."); return; }
+        setTrips(prev => [...prev, { ...tripData, id: data.id }]);
+      } else {
+        setTrips(prev => [...prev, { ...tripData, id: Date.now() }]);
+      }
     }
-    setShowAddTrip(false);
-    setAddTripError("");
-    setNewTrip({ type: "flight", program: "aa", route: "", date: "", class: "domestic", fareClass: "economy", bookingClass: "", ticketPrice: "", nights: 1, status: "planned", tripName: "", flightNumber: "", departureTime: "", arrivalTime: "", departureTerminal: "", arrivalTerminal: "" });
+    resetTripModal();
   };
 
   const removeTrip = async (id) => {
@@ -3906,12 +3965,18 @@ Start by introducing yourself briefly in-character with personality, and give an
                   </button>
                   {/* Chevron expand */}
                   <span style={{ color: css.text3, fontSize: 12, transform: isExpanded ? "rotate(180deg)" : "none", transition: "transform 0.2s", display: "inline-block" }}>▾</span>
+                  {/* Edit trip */}
+                  <button onClick={e => { e.stopPropagation(); openEditTrip(trip); }} style={{
+                    width: 28, height: 28, borderRadius: 8, border: `1px solid ${css.border}`,
+                    background: "rgba(255,255,255,0.04)", color: css.text2,
+                    fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                  }} title="Edit trip">✎</button>
                   {/* Delete trip */}
                   <button onClick={e => { e.stopPropagation(); removeTrip(trip.id); }} style={{
                     width: 28, height: 28, borderRadius: 8, border: `1px solid ${D ? "rgba(239,68,68,0.2)" : "rgba(239,68,68,0.15)"}`,
                     background: "rgba(239,68,68,0.06)", color: "#ef4444",
                     fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                  }}>×</button>
+                  }} title="Delete trip">×</button>
                 </div>
               </div>
 
@@ -6488,7 +6553,7 @@ Start by introducing yourself briefly in-character with personality, and give an
           <div onClick={e => e.stopPropagation()} style={{
             background: "#211e2e", border: "1px solid #2a2640", borderRadius: 8, padding: 28, width: "100%", maxWidth: 440, margin: "20px auto",
           }}>
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: "0 0 20px", fontFamily: "'Inter Tight', Inter, sans-serif" }}>Add Trip</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: "0 0 20px", fontFamily: "'Inter Tight', Inter, sans-serif" }}>{editingTripId ? "Edit Trip" : "Add Trip"}</h3>
 
             {/* Trip Name */}
             <label style={{ display: "block", marginBottom: 16 }}>
@@ -6614,7 +6679,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                         value={newTrip.bookingClass}
                         onChange={e => {
                           const bc = e.target.value.toUpperCase().slice(0, 1);
-                          const cabin = BOOKING_CLASS_MAP[bc] || newTrip.fareClass;
+                          const cabin = getBookingClassCabin(newTrip.program, bc) || newTrip.fareClass;
                           setNewTrip(p => ({ ...p, bookingClass: bc, fareClass: cabin }));
                         }}
                         placeholder="e.g. Y, J, W"
@@ -6622,12 +6687,12 @@ Start by introducing yourself briefly in-character with personality, and give an
                         style={{ display: "block", width: "100%", padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 15, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", outline: "none", boxSizing: "border-box", textTransform: "uppercase", letterSpacing: 2 }}
                       />
                     </div>
-                    {newTrip.bookingClass && BOOKING_CLASS_MAP[newTrip.bookingClass] && (
+                    {newTrip.bookingClass && getBookingClassCabin(newTrip.program, newTrip.bookingClass) && (
                       <div style={{ fontSize: 10, color: "#0EA5A0", marginTop: 4, fontFamily: "Inter, sans-serif" }}>
-                        → {CABIN_LABELS[BOOKING_CLASS_MAP[newTrip.bookingClass]]}
+                        → {CABIN_LABELS[getBookingClassCabin(newTrip.program, newTrip.bookingClass)]}
                       </div>
                     )}
-                    {newTrip.bookingClass && !BOOKING_CLASS_MAP[newTrip.bookingClass] && (
+                    {newTrip.bookingClass && !getBookingClassCabin(newTrip.program, newTrip.bookingClass) && (
                       <div style={{ fontSize: 10, color: "#f59e0b", marginTop: 4, fontFamily: "Inter, sans-serif" }}>
                         Unknown code — select cabin below
                       </div>
@@ -6702,14 +6767,14 @@ Start by introducing yourself briefly in-character with personality, and give an
             )}
 
             <div style={{ display: "flex", gap: 10 }}>
-              <button onClick={() => { setShowAddTrip(false); setAddTripError(""); }} style={{
+              <button onClick={resetTripModal} style={{
                 flex: 1, padding: "11px 0", borderRadius: 8, border: "1px solid #2a2640", background: "rgba(255,255,255,0.03)",
                 color: "#8a8f98", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif",
               }}>Cancel</button>
               <button onClick={handleAddTrip} style={{
                 flex: 1, padding: "11px 0", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Inter, sans-serif",
                 background: "#0EA5A0", color: "#f7f8f8",
-              }}>Add Trip</button>
+              }}>{editingTripId ? "Save Changes" : "Add Trip"}</button>
             </div>
           </div>
         </div>
