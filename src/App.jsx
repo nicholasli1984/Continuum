@@ -6705,6 +6705,23 @@ Start by introducing yourself briefly in-character with personality, and give an
               />
             </label>
 
+            {/* Field 3: Current status tier */}
+            {(prog?.tiers || []).length > 0 && (
+              <label style={labelStyle}>
+                <span style={spanStyle}>Current Elite Status</span>
+                <select
+                  value={linkForm.currentTier}
+                  onChange={e => setLinkForm(p => ({ ...p, currentTier: e.target.value }))}
+                  style={{ ...inputStyle, cursor: "pointer" }}
+                >
+                  <option value="" style={{ background: "#1a1725" }}>— No status / Base member —</option>
+                  {(prog.tiers || []).map(t => (
+                    <option key={t.name} value={t.name} style={{ background: "#1a1725" }}>{t.name}</option>
+                  ))}
+                </select>
+              </label>
+            )}
+
             {linkError && <div style={{ fontSize: 12, color: "#f87171", marginBottom: 14, fontFamily: "Inter, sans-serif" }}>{linkError}</div>}
 
             <div style={{ display: "flex", gap: 10 }}>
