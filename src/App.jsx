@@ -5822,7 +5822,7 @@ Start by introducing yourself briefly in-character with personality, and give an
               background: `linear-gradient(135deg, ${css.accent}, ${D ? "#C06020" : "#B85820"})`,
               display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: 12, fontWeight: 700, color: "#fff", flexShrink: 0,
-            }}>{user?.user_metadata?.first_name?.[0]?.toUpperCase() || user?.user_metadata?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U"}</div>
+            }}>{((user?.user_metadata?.first_name?.[0] || user?.user_metadata?.name?.[0] || user?.email?.[0] || "U").toUpperCase()) + ((user?.user_metadata?.last_name?.[0] || user?.user_metadata?.name?.split(" ")?.[1]?.[0] || "").toUpperCase())}</div>
             <button onClick={handleLogout} style={{
               padding: "5px 12px", borderRadius: 8, border: `1px solid ${css.border}`,
               background: "transparent", color: css.text3, fontSize: 11, fontWeight: 500,
@@ -5839,7 +5839,7 @@ Start by introducing yourself briefly in-character with personality, and give an
               <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: 28 }} />
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                 <button onClick={() => setDarkMode(d => !d)} style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${css.border}`, background: "transparent", cursor: "pointer", fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center" }}>{D ? "☀️" : "🌙"}</button>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: `linear-gradient(135deg, ${css.accent}, ${D ? "#C06020" : "#B85820"})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff" }}>{user?.user_metadata?.first_name?.[0]?.toUpperCase() || user?.user_metadata?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U"}</div>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: `linear-gradient(135deg, ${css.accent}, ${D ? "#C06020" : "#B85820"})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff" }}>{((user?.user_metadata?.first_name?.[0] || user?.user_metadata?.name?.[0] || user?.email?.[0] || "U").toUpperCase()) + ((user?.user_metadata?.last_name?.[0] || user?.user_metadata?.name?.split(" ")?.[1]?.[0] || "").toUpperCase())}</div>
               </div>
             </div>
             {/* Programs sub-tabs */}
