@@ -1789,6 +1789,51 @@ Start by introducing yourself briefly in-character with personality, and give an
 
   const [addTripError, setAddTripError] = useState("");
   const [editingTripId, setEditingTripId] = useState(null);
+  const [flightLookupLoading, setFlightLookupLoading] = useState(false);
+  const [flightLookupMsg, setFlightLookupMsg] = useState("");
+
+  const lookupFlight = async () => {
+    const fn = newTrip.flightNumber.replace(/\s+/g, "").toUpperCase();
+    const date = newTrip.date;
+    if (!fn) { setFlightLookupMsg("Enter a flight number first."); return; }
+    if (!date) { setFlightLookupMsg("Enter the flight date first."); return; }
+    const apiKey = import.meta.env.VITE_AERODATABOX_API_KEY;
+    if (!apiKey || apiKey === "your_rapidapi_key_here") { setFlightLookupMsg("API key not configured. Add VITE_AERODATABOX_API_KEY to .env and Vercel."); return; }
+    setFlightLookupLoading(true);
+    setFlightLookupMsg("");
+    try {
+      const res = await fetch(`https://aerodatabox.p.rapidapi.com/flights/number/${fn}/${date}`, {
+        headers: { "X-RapidAPI-Key": apiKey, "X-RapidAPI-Host": "aerodatabox.p.rapidapi.com" },
+      });
+      if (!res.ok) { setFlightLookupMsg(res.status === 404 ? "Flight not found. Check the number and date." : `Lookup failed (${res.status}).`); return; }
+      const data = await res.json();
+      const flight = Array.isArray(data) ? data[0] : data;
+      if (!flight) { setFlightLookupMsg("No data returned for this flight."); return; }
+      const dep = flight.departure || {};
+      const arr = flight.arrival || {};
+      const depIata = dep.airport?.iata || "";
+      const arrIata = arr.airport?.iata || "";
+      const depTime = dep.scheduledTime?.local?.slice(11, 16) || "";  // "HH:MM"
+      const arrTime = arr.scheduledTime?.local?.slice(11, 16) || "";
+      const depTerminal = dep.terminal || "";
+      const arrTerminal = arr.terminal || "";
+      const isIntl = depIata && arrIata && (dep.airport?.countryCode !== arr.airport?.countryCode);
+      setNewTrip(p => ({
+        ...p,
+        route: depIata && arrIata ? `${depIata} → ${arrIata}` : p.route,
+        departureTime: depTime || p.departureTime,
+        arrivalTime: arrTime || p.arrivalTime,
+        departureTerminal: depTerminal || p.departureTerminal,
+        arrivalTerminal: arrTerminal || p.arrivalTerminal,
+        class: isIntl ? "international" : p.class,
+      }));
+      setFlightLookupMsg(`✓ Found: ${depIata} → ${arrIata}${flight.aircraft?.model ? ` · ${flight.aircraft.model}` : ""}`);
+    } catch (e) {
+      setFlightLookupMsg("Lookup failed. Check your API key or try again.");
+    } finally {
+      setFlightLookupLoading(false);
+    }
+  };
 
   const openEditTrip = (trip) => {
     setEditingTripId(trip.id);
@@ -6607,14 +6652,26 @@ Start by introducing yourself briefly in-character with personality, and give an
             </label>
 
             {newTrip.type === "flight" && (<>
-              {/* Flight number + dep/arr times */}
-              <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
-                <label style={{ flex: 1 }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Flight Number</span>
-                  <input value={newTrip.flightNumber} onChange={e => setNewTrip(p => ({ ...p, flightNumber: e.target.value.toUpperCase() }))}
+              {/* Flight number + lookup */}
+              <div style={{ marginBottom: 14 }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Flight Number</span>
+                <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+                  <input value={newTrip.flightNumber} onChange={e => { setNewTrip(p => ({ ...p, flightNumber: e.target.value.toUpperCase() })); setFlightLookupMsg(""); }}
                     placeholder="e.g. AA1289"
-                    style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
-                </label>
+                    style={{ flex: 1, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
+                  <button onClick={lookupFlight} disabled={flightLookupLoading} style={{
+                    padding: "10px 16px", borderRadius: 8, border: "1px solid rgba(14,165,160,0.4)", background: "rgba(14,165,160,0.1)",
+                    color: "#0EA5A0", fontSize: 12, fontWeight: 700, cursor: flightLookupLoading ? "wait" : "pointer", fontFamily: "Inter, sans-serif", whiteSpace: "nowrap",
+                  }}>{flightLookupLoading ? "Looking up…" : "Auto-fill ✦"}</button>
+                </div>
+                {flightLookupMsg && (
+                  <div style={{ marginTop: 6, fontSize: 11, fontFamily: "Inter, sans-serif", color: flightLookupMsg.startsWith("✓") ? "#0EA5A0" : "#f87171" }}>
+                    {flightLookupMsg}
+                  </div>
+                )}
+              </div>
+              {/* Dep/arr times */}
+              <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
                 <label style={{ flex: 1 }}>
                   <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Dep. Time</span>
                   <input type="time" value={newTrip.departureTime} onChange={e => setNewTrip(p => ({ ...p, departureTime: e.target.value }))}
