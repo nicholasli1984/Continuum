@@ -118,6 +118,26 @@ const parseRoute = (route) => {
 
 const GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 
+const defaultSegment = () => ({
+  _id: Math.random().toString(36).slice(2),
+  type: "flight",
+  program: "aa",
+  route: "",
+  date: "",
+  class: "domestic",
+  fareClass: "economy",
+  bookingClass: "",
+  ticketPrice: "",
+  nights: 1,
+  flightNumber: "",
+  departureTime: "",
+  arrivalTime: "",
+  departureTerminal: "",
+  arrivalTerminal: "",
+  property: "",
+  location: "",
+});
+
 const PROGRAM_DIRECTORY = {
   airlines: [
     { id: "aa", name: "American Airlines AAdvantage", logo: "✈️", color: "#0078D2", accent: "#C8102E", unit: "Loyalty Points", loginUrl: "https://www.aa.com/loyalty/login", tiers: [
@@ -1256,7 +1276,7 @@ export default function EliteStatusTracker() {
   const [authError, setAuthError] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
   const [showAddTrip, setShowAddTrip] = useState(false);
-  const [newTrip, setNewTrip] = useState({ type: "flight", program: "aa", route: "", date: "", class: "domestic", fareClass: "economy", bookingClass: "", ticketPrice: "", nights: 1, status: "planned", tripName: "", flightNumber: "", departureTime: "", arrivalTime: "", departureTerminal: "", arrivalTerminal: "" });
+  const [newTrip, setNewTrip] = useState({ tripName: "", status: "planned", segments: [defaultSegment()] });
   const [trips, setTrips] = useState([]);
   const [linkedAccounts, setLinkedAccounts] = useState({});
   const [showLinkModal, setShowLinkModal] = useState(null);
@@ -1480,6 +1500,9 @@ export default function EliteStatusTracker() {
         arrivalTerminal: row.arrival_terminal,
         estimatedPoints: row.estimated_points,
         estimatedNights: row.estimated_nights,
+        fareClass: row.fare_class,
+        bookingClass: row.booking_class,
+        segments: row.segments || null,
       })));
     }
   };
@@ -1842,135 +1865,139 @@ Start by introducing yourself briefly in-character with personality, and give an
 
   const [addTripError, setAddTripError] = useState("");
   const [editingTripId, setEditingTripId] = useState(null);
-  const [flightLookupLoading, setFlightLookupLoading] = useState(false);
-  const [flightLookupMsg, setFlightLookupMsg] = useState("");
+  const [segLookupState, setSegLookupState] = useState({}); // { [segIdx]: { loading, msg } }
 
-  const lookupFlight = async () => {
-    const fn = newTrip.flightNumber.replace(/\s+/g, "").toUpperCase();
-    const date = newTrip.date;
-    if (!fn) { setFlightLookupMsg("Enter a flight number first."); return; }
-    if (!date) { setFlightLookupMsg("Enter the flight date first."); return; }
+  const lookupFlight = async (segIdx) => {
+    const seg = newTrip.segments[segIdx];
+    if (!seg) return;
+    const fn = (seg.flightNumber || "").replace(/\s+/g, "").toUpperCase();
+    const date = seg.date;
+    const setMsg = (msg, loading = false) => setSegLookupState(p => ({ ...p, [segIdx]: { loading, msg } }));
+    if (!fn) { setMsg("Enter a flight number first."); return; }
+    if (!date) { setMsg("Enter the flight date first."); return; }
     const apiKey = import.meta.env.VITE_AERODATABOX_API_KEY;
-    if (!apiKey || apiKey === "your_rapidapi_key_here") { setFlightLookupMsg("API key not configured. Add VITE_AERODATABOX_API_KEY to .env and Vercel."); return; }
-    setFlightLookupLoading(true);
-    setFlightLookupMsg("");
+    if (!apiKey || apiKey === "your_rapidapi_key_here") { setMsg("API key not configured."); return; }
+    setSegLookupState(p => ({ ...p, [segIdx]: { loading: true, msg: "" } }));
     try {
       const res = await fetch(`https://aerodatabox.p.rapidapi.com/flights/number/${fn}/${date}`, {
         headers: { "X-RapidAPI-Key": apiKey, "X-RapidAPI-Host": "aerodatabox.p.rapidapi.com" },
       });
-      if (!res.ok) { setFlightLookupMsg(res.status === 404 ? "Flight not found. Check the number and date." : `Lookup failed (${res.status}).`); return; }
+      if (!res.ok) { setMsg(res.status === 404 ? "Flight not found. Check number and date." : `Lookup failed (${res.status}).`); return; }
       const data = await res.json();
       const flight = Array.isArray(data) ? data[0] : data;
-      if (!flight) { setFlightLookupMsg("No data returned for this flight."); return; }
+      if (!flight) { setMsg("No data returned for this flight."); return; }
       const dep = flight.departure || {};
       const arr = flight.arrival || {};
       const depIata = dep.airport?.iata || "";
       const arrIata = arr.airport?.iata || "";
-      const depTime = dep.scheduledTime?.local?.slice(11, 16) || "";  // "HH:MM"
+      const depTime = dep.scheduledTime?.local?.slice(11, 16) || "";
       const arrTime = arr.scheduledTime?.local?.slice(11, 16) || "";
-      const depTerminal = dep.terminal || "";
-      const arrTerminal = arr.terminal || "";
       const isIntl = depIata && arrIata && (dep.airport?.countryCode !== arr.airport?.countryCode);
       setNewTrip(p => ({
         ...p,
-        route: depIata && arrIata ? `${depIata} → ${arrIata}` : p.route,
-        departureTime: depTime || p.departureTime,
-        arrivalTime: arrTime || p.arrivalTime,
-        departureTerminal: depTerminal || p.departureTerminal,
-        arrivalTerminal: arrTerminal || p.arrivalTerminal,
-        class: isIntl ? "international" : p.class,
+        segments: p.segments.map((s, i) => i !== segIdx ? s : {
+          ...s,
+          route: depIata && arrIata ? `${depIata} → ${arrIata}` : s.route,
+          departureTime: depTime || s.departureTime,
+          arrivalTime: arrTime || s.arrivalTime,
+          departureTerminal: dep.terminal || s.departureTerminal,
+          arrivalTerminal: arr.terminal || s.arrivalTerminal,
+          class: isIntl ? "international" : s.class,
+        }),
       }));
-      setFlightLookupMsg(`✓ Found: ${depIata} → ${arrIata}${flight.aircraft?.model ? ` · ${flight.aircraft.model}` : ""}`);
+      setMsg(`✓ Found: ${depIata} → ${arrIata}${flight.aircraft?.model ? ` · ${flight.aircraft.model}` : ""}`);
     } catch (e) {
-      setFlightLookupMsg("Lookup failed. Check your API key or try again.");
-    } finally {
-      setFlightLookupLoading(false);
+      setMsg("Lookup failed. Check your API key or try again.");
     }
   };
 
   const openEditTrip = (trip) => {
     setEditingTripId(trip.id);
-    setNewTrip({
-      type: trip.type || "flight",
-      program: trip.program || "aa",
-      route: trip.route || "",
-      date: trip.date || "",
-      class: trip.class || "domestic",
-      fareClass: trip.fareClass || trip.fare_class || "economy",
-      bookingClass: trip.bookingClass || trip.booking_class || "",
-      ticketPrice: trip.ticketPrice || trip.ticket_price || "",
-      nights: trip.nights || 1,
-      status: trip.status || "planned",
-      tripName: trip.tripName || trip.trip_name || "",
-      flightNumber: trip.flightNumber || trip.flight_number || "",
-      departureTime: trip.departureTime || trip.departure_time || "",
-      arrivalTime: trip.arrivalTime || trip.arrival_time || "",
-      departureTerminal: trip.departureTerminal || trip.departure_terminal || "",
-      arrivalTerminal: trip.arrivalTerminal || trip.arrival_terminal || "",
-      property: trip.property || "",
-      location: trip.location || "",
-    });
+    let segments;
+    if (trip.segments && trip.segments.length > 0) {
+      segments = trip.segments.map(s => ({ ...defaultSegment(), ...s }));
+    } else {
+      segments = [{
+        ...defaultSegment(),
+        type: trip.type || "flight",
+        program: trip.program || "aa",
+        route: trip.route || "",
+        date: trip.date || "",
+        class: trip.class || "domestic",
+        fareClass: trip.fareClass || trip.fare_class || "economy",
+        bookingClass: trip.bookingClass || trip.booking_class || "",
+        ticketPrice: trip.ticketPrice || trip.ticket_price || "",
+        nights: trip.nights || 1,
+        flightNumber: trip.flightNumber || trip.flight_number || "",
+        departureTime: trip.departureTime || trip.departure_time || "",
+        arrivalTime: trip.arrivalTime || trip.arrival_time || "",
+        departureTerminal: trip.departureTerminal || trip.departure_terminal || "",
+        arrivalTerminal: trip.arrivalTerminal || trip.arrival_terminal || "",
+        property: trip.property || "",
+        location: trip.location || "",
+      }];
+    }
+    setNewTrip({ tripName: trip.tripName || trip.trip_name || "", status: trip.status || "planned", segments });
+    setSegLookupState({});
     setShowAddTrip(true);
   };
-
-  const tripDbPayload = (tripData) => ({
-    type: tripData.type,
-    program: tripData.program,
-    route: tripData.route,
-    date: tripData.date,
-    class: tripData.class,
-    nights: tripData.nights ? parseInt(tripData.nights) : null,
-    status: tripData.status,
-    trip_name: tripData.tripName,
-    property: tripData.property,
-    location: tripData.location,
-    flight_number: tripData.flightNumber,
-    departure_time: tripData.departureTime,
-    arrival_time: tripData.arrivalTime,
-    departure_terminal: tripData.departureTerminal,
-    arrival_terminal: tripData.arrivalTerminal,
-    fare_class: tripData.fareClass || null,
-    booking_class: tripData.bookingClass || null,
-    ticket_price: tripData.ticketPrice ? parseFloat(tripData.ticketPrice) : null,
-    estimated_points: tripData.estimatedPoints,
-    estimated_nights: tripData.estimatedNights,
-  });
 
   const resetTripModal = () => {
     setShowAddTrip(false);
     setAddTripError("");
     setEditingTripId(null);
-    setNewTrip({ type: "flight", program: "aa", route: "", date: "", class: "domestic", fareClass: "economy", bookingClass: "", ticketPrice: "", nights: 1, status: "planned", tripName: "", flightNumber: "", departureTime: "", arrivalTime: "", departureTerminal: "", arrivalTerminal: "" });
+    setSegLookupState({});
+    setNewTrip({ tripName: "", status: "planned", segments: [defaultSegment()] });
   };
 
   const handleAddTrip = async () => {
     setAddTripError("");
-    let estimatedPoints = 0, estimatedNights = 0, estimatedRentals = 0;
-    if (newTrip.type === "flight") {
-      const { statusCredits } = calcTripEarnings(newTrip);
-      estimatedPoints = statusCredits;
-    } else if (newTrip.type === "hotel") {
-      estimatedNights = parseInt(newTrip.nights) || 1;
-    } else {
-      estimatedRentals = 1;
-    }
-    const tripData = { ...newTrip, estimatedPoints, estimatedNights, estimatedRentals };
-
+    const segments = newTrip.segments.map(seg => {
+      let estimatedPoints = 0, estimatedNights = 0;
+      if (seg.type === "flight") { const { statusCredits } = calcTripEarnings(seg); estimatedPoints = statusCredits; }
+      else if (seg.type === "hotel") { estimatedNights = parseInt(seg.nights) || 1; }
+      return { ...seg, estimatedPoints, estimatedNights };
+    });
+    const totalPoints = segments.reduce((s, seg) => s + (seg.estimatedPoints || 0), 0);
+    const totalNights = segments.reduce((s, seg) => s + (seg.estimatedNights || 0), 0);
+    const firstSeg = segments[0] || {};
+    const firstDate = segments.map(s => s.date).filter(Boolean).sort()[0] || "";
+    const payload = {
+      trip_name: newTrip.tripName,
+      status: newTrip.status,
+      date: firstDate,
+      type: firstSeg.type || "flight",
+      program: firstSeg.program || "aa",
+      route: firstSeg.route || null,
+      class: firstSeg.class || null,
+      nights: firstSeg.nights ? parseInt(firstSeg.nights) : null,
+      property: firstSeg.property || null,
+      location: firstSeg.location || null,
+      flight_number: firstSeg.flightNumber || null,
+      departure_time: firstSeg.departureTime || null,
+      arrival_time: firstSeg.arrivalTime || null,
+      departure_terminal: firstSeg.departureTerminal || null,
+      arrival_terminal: firstSeg.arrivalTerminal || null,
+      fare_class: firstSeg.fareClass || null,
+      booking_class: firstSeg.bookingClass || null,
+      ticket_price: firstSeg.ticketPrice ? parseFloat(firstSeg.ticketPrice) : null,
+      estimated_points: totalPoints,
+      estimated_nights: totalNights,
+      segments: segments,
+    };
     if (editingTripId) {
-      // Update existing trip
       if (user) {
-        const { error } = await supabase.from("trips").update(tripDbPayload(tripData)).eq("id", editingTripId).eq("user_id", user.id);
+        const { error } = await supabase.from("trips").update(payload).eq("id", editingTripId).eq("user_id", user.id);
         if (error) { setAddTripError(error.message || "Failed to update trip."); return; }
       }
-      setTrips(prev => prev.map(t => t.id === editingTripId ? { ...t, ...tripData, id: editingTripId } : t));
+      setTrips(prev => prev.map(t => t.id === editingTripId ? { ...t, ...newTrip, segments, estimatedPoints: totalPoints, estimatedNights: totalNights, tripName: newTrip.tripName, status: newTrip.status, date: firstDate, id: editingTripId } : t));
     } else {
-      // Insert new trip
       if (user) {
-        const { data, error } = await supabase.from("trips").insert({ user_id: user.id, ...tripDbPayload(tripData) }).select().single();
+        const { data, error } = await supabase.from("trips").insert({ user_id: user.id, ...payload }).select().single();
         if (error) { console.error("Add trip error:", error); setAddTripError(error.message || "Failed to save trip. Please try again."); return; }
-        setTrips(prev => [...prev, { ...tripData, id: data.id }]);
+        setTrips(prev => [...prev, { ...newTrip, segments, estimatedPoints: totalPoints, estimatedNights: totalNights, tripName: newTrip.tripName, status: newTrip.status, date: firstDate, id: data.id }]);
       } else {
-        setTrips(prev => [...prev, { ...tripData, id: Date.now() }]);
+        setTrips(prev => [...prev, { ...newTrip, segments, estimatedPoints: totalPoints, estimatedNights: totalNights, tripName: newTrip.tripName, status: newTrip.status, date: firstDate, id: Date.now() }]);
       }
     }
     resetTripModal();
@@ -4021,20 +4048,55 @@ Start by introducing yourself briefly in-character with personality, and give an
                 display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap",
                 gap: 12, padding: "16px 20px", cursor: "pointer",
               }} onClick={() => setExpenseViewTrip(isExpanded ? null : trip.id)}>
-                <div style={{ display: "flex", alignItems: "center", gap: 14, cursor: "pointer" }} onClick={e => { e.stopPropagation(); setTripDetailId(trip.id); }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 14, cursor: "pointer", flex: 1, minWidth: 0 }} onClick={e => { e.stopPropagation(); setTripDetailId(trip.id); }}>
                   <div style={{
                     width: 44, height: 44, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20,
                     background: prog ? `${prog.color}15` : css.surface2, border: `1px solid ${prog ? prog.color + "25" : css.border}`,
                     flexShrink: 0,
-                  }}>{trip.type === "flight" ? "✈️" : trip.type === "hotel" ? "🏨" : "🚗"}</div>
-                  <div>
-                    {trip.tripName && <div style={{ fontSize: 11, fontWeight: 600, color: css.accent, marginBottom: 2, textTransform: "uppercase", letterSpacing: "0.05em" }}>{trip.tripName}</div>}
-                    <div style={{ fontSize: 14, fontWeight: 600, color: css.text }}>{trip.route || trip.property || trip.location}</div>
-                    <div style={{ fontSize: 11, color: css.text3, marginTop: 2, fontFamily: "'JetBrains Mono', monospace" }}>
-                      {trip.date} · {prog?.name?.split(" ")[0] || "—"}{trip.nights ? ` · ${trip.nights}n` : ""}{trip.flightNumber ? ` · ${trip.flightNumber}` : ""}{trip.departureTime ? ` · ${trip.departureTime}` : ""}{trip.arrivalTime ? ` – ${trip.arrivalTime}` : ""}
-                    </div>
+                  }}>
+                    {(() => {
+                      const segs = trip.segments;
+                      if (segs && segs.length > 1) return "🗺️";
+                      const t = (segs && segs[0]?.type) || trip.type;
+                      return t === "flight" ? "✈️" : t === "hotel" ? "🏨" : "🚗";
+                    })()}
                   </div>
-                  <span style={{ fontSize: 10, color: css.accent, fontWeight: 600, opacity: 0.6 }}>View →</span>
+                  <div style={{ minWidth: 0 }}>
+                    {trip.tripName && <div style={{ fontSize: 11, fontWeight: 600, color: css.accent, marginBottom: 3, textTransform: "uppercase", letterSpacing: "0.05em" }}>{trip.tripName}</div>}
+                    {(() => {
+                      const segs = trip.segments;
+                      if (segs && segs.length > 0) {
+                        return (
+                          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                            {segs.map((s, i) => {
+                              const sp = allPrograms.find(p => p.id === s.program);
+                              const label = s.type === "flight"
+                                ? `${s.route || "Flight"}${s.flightNumber ? ` · ${s.flightNumber}` : ""}${s.departureTime ? ` ${s.departureTime}` : ""}${s.arrivalTime ? `–${s.arrivalTime}` : ""}`
+                                : s.type === "hotel"
+                                ? `${s.property || s.location || "Hotel"}${s.nights ? ` · ${s.nights}n` : ""}`
+                                : s.location || "Rental";
+                              return (
+                                <div key={i} style={{ fontSize: 12, color: i === 0 ? css.text : css.text2, fontWeight: i === 0 ? 600 : 400, display: "flex", alignItems: "center", gap: 5 }}>
+                                  <span style={{ fontSize: 10 }}>{s.type === "flight" ? "✈️" : s.type === "hotel" ? "🏨" : "🚗"}</span>
+                                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
+                                  {s.date && <span style={{ fontSize: 10, color: css.text3, fontFamily: "'JetBrains Mono', monospace", flexShrink: 0 }}>{s.date}</span>}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      }
+                      return (
+                        <>
+                          <div style={{ fontSize: 14, fontWeight: 600, color: css.text }}>{trip.route || trip.property || trip.location}</div>
+                          <div style={{ fontSize: 11, color: css.text3, marginTop: 2, fontFamily: "'JetBrains Mono', monospace" }}>
+                            {trip.date} · {prog?.name?.split(" ")[0] || "—"}{trip.nights ? ` · ${trip.nights}n` : ""}{trip.flightNumber ? ` · ${trip.flightNumber}` : ""}{trip.departureTime ? ` · ${trip.departureTime}` : ""}{trip.arrivalTime ? ` – ${trip.arrivalTime}` : ""}
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                  <span style={{ fontSize: 10, color: css.accent, fontWeight: 600, opacity: 0.6, flexShrink: 0 }}>View →</span>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
                   {/* Expense total pill */}
@@ -4911,15 +4973,18 @@ Start by introducing yourself briefly in-character with personality, and give an
     const totalFlights = trips.filter(t => t.type === "flight").length;
 
     // Flight paths + mileage from route strings
-    const flightTrips = trips.filter(t => t.type === "flight" && t.route);
-    const flightPaths = flightTrips.map(t => {
-      const codes = parseRoute(t.route);
-      if (codes.length < 2) return null;
-      const from = AIRPORT_COORDS[codes[0]];
-      const to   = AIRPORT_COORDS[codes[codes.length - 1]];
-      const dist = haversineDistance(from, to);
-      return { from, to, fromCode: codes[0], toCode: codes[codes.length - 1], dist, id: t.id, status: t.status };
-    }).filter(Boolean);
+    const flightPaths = [];
+    trips.forEach(t => {
+      const segs = t.segments && t.segments.length > 0 ? t.segments : (t.type === "flight" && t.route ? [{ type: "flight", route: t.route, status: t.status }] : []);
+      segs.filter(s => s.type === "flight" && s.route).forEach(s => {
+        const codes = parseRoute(s.route);
+        if (codes.length < 2) return;
+        const from = AIRPORT_COORDS[codes[0]];
+        const to   = AIRPORT_COORDS[codes[codes.length - 1]];
+        const dist = haversineDistance(from, to);
+        flightPaths.push({ from, to, fromCode: codes[0], toCode: codes[codes.length - 1], dist, id: t.id + "_" + codes.join(""), status: t.status });
+      });
+    });
 
     const totalMiles = Math.round(flightPaths.reduce((s, p) => s + p.dist, 0));
     const totalHours = totalMiles > 0 ? (totalMiles / 550) : 0; // ~550 mph avg cruising speed
@@ -6740,224 +6805,182 @@ Start by introducing yourself briefly in-character with personality, and give an
           <div onClick={e => e.stopPropagation()} style={{
             background: "#211e2e", border: "1px solid #2a2640", borderRadius: 8, padding: 28, width: "100%", maxWidth: 440, margin: "20px auto",
           }}>
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: "0 0 20px", fontFamily: "'Inter Tight', Inter, sans-serif" }}>{editingTripId ? "Edit Trip" : "Add Trip"}</h3>
-
-            {/* Trip Name */}
-            <label style={{ display: "block", marginBottom: 16 }}>
-              <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Trip Name</span>
-              <input value={newTrip.tripName} onChange={e => setNewTrip(p => ({ ...p, tripName: e.target.value }))}
-                placeholder="e.g. London Spring Getaway, Tokyo Anniversary"
-                style={{
-                  display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)",
-                  border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box",
-                }} />
-            </label>
-
-            <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
-              {["flight", "hotel", "rental"].map(type => (
-                <button key={type} onClick={() => setNewTrip(p => ({ ...p, type, program: type === "flight" ? "aa" : type === "hotel" ? "marriott" : "hertz" }))} style={{
-                  flex: 1, padding: "10px 0", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "Inter, sans-serif",
-                  background: newTrip.type === type ? "rgba(14,165,160,0.2)" : "rgba(255,255,255,0.03)",
-                  color: newTrip.type === type ? "#0EA5A0" : "rgba(0,0,0,0.3)", textTransform: "capitalize",
-                }}>{type === "flight" ? "✈️" : type === "hotel" ? "🏨" : "🚗"} {type}</button>
-              ))}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: "#fff", margin: 0, fontFamily: "'Inter Tight', Inter, sans-serif" }}>{editingTripId ? "Edit Trip" : "Add Trip"}</h3>
             </div>
 
-            <label style={{ display: "block", marginBottom: 14 }}>
-              <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Program</span>
-              <select value={newTrip.program} onChange={e => setNewTrip(p => ({ ...p, program: e.target.value }))} style={{
-                display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640",
-                borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box",
-              }}>
-                {(newTrip.type === "flight" ? [...LOYALTY_PROGRAMS.airlines, ...customPrograms.filter(p => p.category === "airline")] : newTrip.type === "hotel" ? [...LOYALTY_PROGRAMS.hotels, ...customPrograms.filter(p => p.category === "hotel")] : [...LOYALTY_PROGRAMS.rentals, ...customPrograms.filter(p => p.category === "rental")]).map(p => (
-                  <option key={p.id} value={p.id} style={{ background: "#211e2e" }}>{p.name}</option>
-                ))}
-              </select>
-            </label>
-
-            <label style={{ display: "block", marginBottom: 14 }}>
-              <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>
-                {newTrip.type === "flight" ? "Route" : newTrip.type === "hotel" ? "Property" : "Location"}
-              </span>
-              <input value={newTrip.route} onChange={e => setNewTrip(p => ({ ...p, route: e.target.value, property: e.target.value, location: e.target.value }))}
-                placeholder={newTrip.type === "flight" ? "JFK → LAX" : newTrip.type === "hotel" ? "Hotel name" : "City"}
-                style={{
-                  display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)",
-                  border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box",
-                }} />
-            </label>
-
-            {newTrip.type === "flight" && (<>
-              {/* Flight number + lookup */}
-              <div style={{ marginBottom: 14 }}>
-                <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Flight Number</span>
-                <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
-                  <input value={newTrip.flightNumber} onChange={e => { setNewTrip(p => ({ ...p, flightNumber: e.target.value.toUpperCase() })); setFlightLookupMsg(""); }}
-                    placeholder="e.g. AA1289"
-                    style={{ flex: 1, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
-                  <button onClick={lookupFlight} disabled={flightLookupLoading} style={{
-                    padding: "10px 16px", borderRadius: 8, border: "1px solid rgba(14,165,160,0.4)", background: "rgba(14,165,160,0.1)",
-                    color: "#0EA5A0", fontSize: 12, fontWeight: 700, cursor: flightLookupLoading ? "wait" : "pointer", fontFamily: "Inter, sans-serif", whiteSpace: "nowrap",
-                  }}>{flightLookupLoading ? "Looking up…" : "Auto-fill ✦"}</button>
-                </div>
-                {flightLookupMsg && (
-                  <div style={{ marginTop: 6, fontSize: 11, fontFamily: "Inter, sans-serif", color: flightLookupMsg.startsWith("✓") ? "#0EA5A0" : "#f87171" }}>
-                    {flightLookupMsg}
-                  </div>
-                )}
-              </div>
-              {/* Dep/arr times */}
-              <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
-                <label style={{ flex: 1 }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Dep. Time</span>
-                  <input type="time" value={newTrip.departureTime} onChange={e => setNewTrip(p => ({ ...p, departureTime: e.target.value }))}
-                    style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
-                </label>
-                <label style={{ flex: 1 }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Arr. Time</span>
-                  <input type="time" value={newTrip.arrivalTime} onChange={e => setNewTrip(p => ({ ...p, arrivalTime: e.target.value }))}
-                    style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
-                </label>
-              </div>
-              {/* Terminals */}
-              <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
-                <label style={{ flex: 1 }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Dep. Terminal</span>
-                  <input value={newTrip.departureTerminal} onChange={e => setNewTrip(p => ({ ...p, departureTerminal: e.target.value.toUpperCase() }))}
-                    placeholder="e.g. B, 4"
-                    style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
-                </label>
-                <label style={{ flex: 1 }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Arr. Terminal</span>
-                  <input value={newTrip.arrivalTerminal} onChange={e => setNewTrip(p => ({ ...p, arrivalTerminal: e.target.value.toUpperCase() }))}
-                    placeholder="e.g. C, 1"
-                    style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
-                </label>
-              </div>
-            </>)}
-
-            <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
-              <label style={{ flex: 1 }}>
-                <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Date</span>
-                <input type="date" value={newTrip.date} onChange={e => setNewTrip(p => ({ ...p, date: e.target.value }))} style={{
-                  display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)",
-                  border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box",
-                }} />
+            {/* Trip Name + Status */}
+            <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
+              <label style={{ flex: 2 }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Trip Name</span>
+                <input value={newTrip.tripName} onChange={e => setNewTrip(p => ({ ...p, tripName: e.target.value }))}
+                  placeholder="e.g. Tokyo Anniversary, London Getaway"
+                  style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
               </label>
-              {newTrip.type === "flight" && (
-                <label style={{ flex: 1 }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Route Type</span>
-                  <select value={newTrip.class} onChange={e => setNewTrip(p => ({ ...p, class: e.target.value }))} style={{
-                    display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)",
-                    border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box",
-                  }}>
-                    <option value="domestic" style={{ background: "#211e2e" }}>Domestic</option>
-                    <option value="international" style={{ background: "#211e2e" }}>International</option>
-                  </select>
-                </label>
-              )}
-              {newTrip.type === "hotel" && (
-                <label style={{ flex: 1 }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Nights</span>
-                  <input type="number" min={1} value={newTrip.nights} onChange={e => setNewTrip(p => ({ ...p, nights: parseInt(e.target.value) || 1 }))} style={{
-                    display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)",
-                    border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box",
-                  }} />
-                </label>
-              )}
+              <label style={{ flex: 1 }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Status</span>
+                <select value={newTrip.status} onChange={e => setNewTrip(p => ({ ...p, status: e.target.value }))} style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }}>
+                  <option value="confirmed" style={{ background: "#211e2e" }}>Confirmed</option>
+                  <option value="planned" style={{ background: "#211e2e" }}>Planned</option>
+                  <option value="wishlist" style={{ background: "#211e2e" }}>Wishlist</option>
+                </select>
+              </label>
             </div>
 
-            {/* Fare class + ticket price for flights */}
-            {newTrip.type === "flight" && (
-              <>
-                <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
-                  <label style={{ flex: 1 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Fare Class Code</span>
-                    <div style={{ position: "relative", marginTop: 6 }}>
-                      <input
-                        value={newTrip.bookingClass}
-                        onChange={e => {
-                          const bc = e.target.value.toUpperCase().slice(0, 1);
-                          const cabin = getBookingClassCabin(newTrip.program, bc) || newTrip.fareClass;
-                          setNewTrip(p => ({ ...p, bookingClass: bc, fareClass: cabin }));
-                        }}
-                        placeholder="e.g. Y, J, W"
-                        maxLength={1}
-                        style={{ display: "block", width: "100%", padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 15, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", outline: "none", boxSizing: "border-box", textTransform: "uppercase", letterSpacing: 2 }}
-                      />
-                    </div>
-                    {newTrip.bookingClass && getBookingClassCabin(newTrip.program, newTrip.bookingClass) && (
-                      <div style={{ fontSize: 10, color: "#0EA5A0", marginTop: 4, fontFamily: "Inter, sans-serif" }}>
-                        → {CABIN_LABELS[getBookingClassCabin(newTrip.program, newTrip.bookingClass)]}
-                      </div>
-                    )}
-                    {newTrip.bookingClass && !getBookingClassCabin(newTrip.program, newTrip.bookingClass) && (
-                      <div style={{ fontSize: 10, color: "#f59e0b", marginTop: 4, fontFamily: "Inter, sans-serif" }}>
-                        Unknown code — select cabin below
-                      </div>
-                    )}
-                  </label>
-                  <label style={{ flex: 2 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Cabin Class</span>
-                    <select value={newTrip.fareClass} onChange={e => setNewTrip(p => ({ ...p, fareClass: e.target.value }))} style={{
-                      display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)",
-                      border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box",
-                    }}>
-                      <option value="basic_economy" style={{ background: "#211e2e" }}>Basic Economy</option>
-                      <option value="economy" style={{ background: "#211e2e" }}>Economy</option>
-                      <option value="premium_economy" style={{ background: "#211e2e" }}>Premium Economy</option>
-                      <option value="business_first" style={{ background: "#211e2e" }}>Business / First</option>
-                    </select>
-                    <div style={{ fontSize: 10, color: "#62666d", marginTop: 4, fontFamily: "Inter, sans-serif" }}>Auto-set by code, or override</div>
-                  </label>
-                </div>
-                <label style={{ display: "block", marginBottom: 14 }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Ticket Price (USD)</span>
-                  <input type="number" value={newTrip.ticketPrice} onChange={e => setNewTrip(p => ({ ...p, ticketPrice: e.target.value }))}
-                    placeholder="Optional — used for exact earning calculation"
-                    style={{ display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
-                </label>
-              </>
-            )}
-
-            {/* Live earnings preview */}
-            {(() => {
-              const earnings = calcTripEarnings(newTrip);
+            {/* Segments */}
+            {newTrip.segments.map((seg, segIdx) => {
+              const lookup = segLookupState[segIdx] || {};
+              const updateSeg = (updates) => setNewTrip(p => ({ ...p, segments: p.segments.map((s, i) => i === segIdx ? { ...s, ...updates } : s) }));
               return (
-                <div style={{ marginBottom: 16, padding: "12px 14px", background: "rgba(14,165,160,0.06)", border: "1px solid rgba(14,165,160,0.2)", borderRadius: 8 }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "#0EA5A0", textTransform: "uppercase", letterSpacing: 1.2, fontFamily: "Inter, sans-serif", marginBottom: 8 }}>
-                    Estimated Earnings
-                  </div>
-                  <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-                    <div>
-                      <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: "'JetBrains Mono', monospace" }}>{earnings.statusLabel}</div>
-                      <div style={{ fontSize: 10, color: "#8a8f98", marginTop: 2, fontFamily: "Inter, sans-serif" }}>toward status</div>
+                <div key={seg._id || segIdx} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid #2a2640", borderRadius: 10, padding: "16px 16px 12px", marginBottom: 12, position: "relative" }}>
+                  {/* Segment header */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      {["flight", "hotel", "rental"].map(type => (
+                        <button key={type} onClick={() => updateSeg({ type, program: type === "flight" ? "aa" : type === "hotel" ? "marriott" : "hertz" })} style={{
+                          padding: "5px 10px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600, fontFamily: "Inter, sans-serif",
+                          background: seg.type === type ? "rgba(14,165,160,0.25)" : "rgba(255,255,255,0.05)",
+                          color: seg.type === type ? "#0EA5A0" : "#8a8f98",
+                        }}>{type === "flight" ? "✈️ Flight" : type === "hotel" ? "🏨 Hotel" : "🚗 Rental"}</button>
+                      ))}
                     </div>
-                    {earnings.redeemLabel !== earnings.statusLabel && (
-                      <div>
-                        <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: "'JetBrains Mono', monospace" }}>{earnings.redeemLabel}</div>
-                        <div style={{ fontSize: 10, color: "#8a8f98", marginTop: 2, fontFamily: "Inter, sans-serif" }}>redeemable balance</div>
-                      </div>
+                    {newTrip.segments.length > 1 && (
+                      <button onClick={() => setNewTrip(p => ({ ...p, segments: p.segments.filter((_, i) => i !== segIdx) }))} style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", fontSize: 16, padding: "0 4px", lineHeight: 1 }} title="Remove segment">×</button>
                     )}
                   </div>
-                  <div style={{ fontSize: 10, color: "#62666d", marginTop: 6, fontFamily: "Inter, sans-serif" }}>
-                    {earnings.breakdown}{!newTrip.ticketPrice && newTrip.type === "flight" ? " · Add ticket price for exact calculation" : ""}
+
+                  {/* Program */}
+                  <label style={{ display: "block", marginBottom: 10 }}>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Program</span>
+                    <select value={seg.program} onChange={e => updateSeg({ program: e.target.value })} style={{ display: "block", width: "100%", marginTop: 4, padding: "8px 10px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 7, color: "#f7f8f8", fontSize: 12, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }}>
+                      {(seg.type === "flight" ? [...LOYALTY_PROGRAMS.airlines, ...customPrograms.filter(p => p.category === "airline")] : seg.type === "hotel" ? [...LOYALTY_PROGRAMS.hotels, ...customPrograms.filter(p => p.category === "hotel")] : [...LOYALTY_PROGRAMS.rentals, ...customPrograms.filter(p => p.category === "rental")]).map(p => (
+                        <option key={p.id} value={p.id} style={{ background: "#211e2e" }}>{p.name}</option>
+                      ))}
+                    </select>
+                  </label>
+
+                  {/* Route / Property / Location */}
+                  <label style={{ display: "block", marginBottom: 10 }}>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>{seg.type === "flight" ? "Route" : seg.type === "hotel" ? "Property" : "Location"}</span>
+                    <input value={seg.route || seg.property || seg.location || ""} onChange={e => updateSeg({ route: e.target.value, property: e.target.value, location: e.target.value })}
+                      placeholder={seg.type === "flight" ? "JFK → LAX" : seg.type === "hotel" ? "Hotel name" : "City"}
+                      style={{ display: "block", width: "100%", marginTop: 4, padding: "8px 10px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 7, color: "#f7f8f8", fontSize: 12, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
+                  </label>
+
+                  {/* Flight-specific fields */}
+                  {seg.type === "flight" && (<>
+                    {/* Flight number + lookup */}
+                    <div style={{ marginBottom: 10 }}>
+                      <span style={{ fontSize: 10, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Flight Number</span>
+                      <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
+                        <input value={seg.flightNumber} onChange={e => { updateSeg({ flightNumber: e.target.value.toUpperCase() }); setSegLookupState(p => ({ ...p, [segIdx]: { loading: false, msg: "" } })); }}
+                          placeholder="e.g. AA1289"
+                          style={{ flex: 1, padding: "8px 10px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 7, color: "#f7f8f8", fontSize: 12, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
+                        <button onClick={() => lookupFlight(segIdx)} disabled={lookup.loading} style={{ padding: "8px 12px", borderRadius: 7, border: "1px solid rgba(14,165,160,0.4)", background: "rgba(14,165,160,0.1)", color: "#0EA5A0", fontSize: 11, fontWeight: 700, cursor: lookup.loading ? "wait" : "pointer", fontFamily: "Inter, sans-serif", whiteSpace: "nowrap" }}>
+                          {lookup.loading ? "…" : "Auto-fill ✦"}
+                        </button>
+                      </div>
+                      {lookup.msg && <div style={{ marginTop: 4, fontSize: 10, fontFamily: "Inter, sans-serif", color: lookup.msg.startsWith("✓") ? "#0EA5A0" : "#f87171" }}>{lookup.msg}</div>}
+                    </div>
+                    {/* Times */}
+                    <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                      <label style={{ flex: 1 }}>
+                        <span style={{ fontSize: 10, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Dep. Time</span>
+                        <input type="time" value={seg.departureTime} onChange={e => updateSeg({ departureTime: e.target.value })} style={{ display: "block", width: "100%", marginTop: 4, padding: "8px 10px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 7, color: "#f7f8f8", fontSize: 12, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
+                      </label>
+                      <label style={{ flex: 1 }}>
+                        <span style={{ fontSize: 10, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Arr. Time</span>
+                        <input type="time" value={seg.arrivalTime} onChange={e => updateSeg({ arrivalTime: e.target.value })} style={{ display: "block", width: "100%", marginTop: 4, padding: "8px 10px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 7, color: "#f7f8f8", fontSize: 12, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
+                      </label>
+                    </div>
+                    {/* Terminals */}
+                    <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                      <label style={{ flex: 1 }}>
+                        <span style={{ fontSize: 10, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Dep. Terminal</span>
+                        <input value={seg.departureTerminal} onChange={e => updateSeg({ departureTerminal: e.target.value.toUpperCase() })} placeholder="B, 4" style={{ display: "block", width: "100%", marginTop: 4, padding: "8px 10px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 7, color: "#f7f8f8", fontSize: 12, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
+                      </label>
+                      <label style={{ flex: 1 }}>
+                        <span style={{ fontSize: 10, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Arr. Terminal</span>
+                        <input value={seg.arrivalTerminal} onChange={e => updateSeg({ arrivalTerminal: e.target.value.toUpperCase() })} placeholder="C, 1" style={{ display: "block", width: "100%", marginTop: 4, padding: "8px 10px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 7, color: "#f7f8f8", fontSize: 12, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
+                      </label>
+                    </div>
+                  </>)}
+
+                  {/* Date + Route Type / Nights */}
+                  <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                    <label style={{ flex: 1 }}>
+                      <span style={{ fontSize: 10, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Date</span>
+                      <input type="date" value={seg.date} onChange={e => updateSeg({ date: e.target.value })} style={{ display: "block", width: "100%", marginTop: 4, padding: "8px 10px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 7, color: "#f7f8f8", fontSize: 12, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
+                    </label>
+                    {seg.type === "flight" && (
+                      <label style={{ flex: 1 }}>
+                        <span style={{ fontSize: 10, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Route Type</span>
+                        <select value={seg.class} onChange={e => updateSeg({ class: e.target.value })} style={{ display: "block", width: "100%", marginTop: 4, padding: "8px 10px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 7, color: "#f7f8f8", fontSize: 12, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }}>
+                          <option value="domestic" style={{ background: "#211e2e" }}>Domestic</option>
+                          <option value="international" style={{ background: "#211e2e" }}>International</option>
+                        </select>
+                      </label>
+                    )}
+                    {seg.type === "hotel" && (
+                      <label style={{ flex: 1 }}>
+                        <span style={{ fontSize: 10, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Nights</span>
+                        <input type="number" min={1} value={seg.nights} onChange={e => updateSeg({ nights: parseInt(e.target.value) || 1 })} style={{ display: "block", width: "100%", marginTop: 4, padding: "8px 10px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 7, color: "#f7f8f8", fontSize: 12, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
+                      </label>
+                    )}
                   </div>
+
+                  {/* Fare class for flights */}
+                  {seg.type === "flight" && (
+                    <>
+                      <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                        <label style={{ flex: 1 }}>
+                          <span style={{ fontSize: 10, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Fare Class Code</span>
+                          <input value={seg.bookingClass} onChange={e => { const bc = e.target.value.toUpperCase().slice(0, 1); const cabin = getBookingClassCabin(seg.program, bc) || seg.fareClass; updateSeg({ bookingClass: bc, fareClass: cabin }); }}
+                            placeholder="Y, J, W…" maxLength={1}
+                            style={{ display: "block", width: "100%", marginTop: 4, padding: "8px 10px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 7, color: "#f7f8f8", fontSize: 14, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", outline: "none", boxSizing: "border-box", textTransform: "uppercase", letterSpacing: 2 }} />
+                          {seg.bookingClass && getBookingClassCabin(seg.program, seg.bookingClass) && <div style={{ fontSize: 9, color: "#0EA5A0", marginTop: 3, fontFamily: "Inter, sans-serif" }}>→ {CABIN_LABELS[getBookingClassCabin(seg.program, seg.bookingClass)]}</div>}
+                        </label>
+                        <label style={{ flex: 2 }}>
+                          <span style={{ fontSize: 10, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Cabin Class</span>
+                          <select value={seg.fareClass} onChange={e => updateSeg({ fareClass: e.target.value })} style={{ display: "block", width: "100%", marginTop: 4, padding: "8px 10px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 7, color: "#f7f8f8", fontSize: 12, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }}>
+                            <option value="basic_economy" style={{ background: "#211e2e" }}>Basic Economy</option>
+                            <option value="economy" style={{ background: "#211e2e" }}>Economy</option>
+                            <option value="premium_economy" style={{ background: "#211e2e" }}>Premium Economy</option>
+                            <option value="business_first" style={{ background: "#211e2e" }}>Business / First</option>
+                          </select>
+                        </label>
+                      </div>
+                      <label style={{ display: "block", marginBottom: 10 }}>
+                        <span style={{ fontSize: 10, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Ticket Price (USD)</span>
+                        <input type="number" value={seg.ticketPrice} onChange={e => updateSeg({ ticketPrice: e.target.value })} placeholder="Optional — for exact earning calculation" style={{ display: "block", width: "100%", marginTop: 4, padding: "8px 10px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 7, color: "#f7f8f8", fontSize: 12, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
+                      </label>
+                    </>
+                  )}
+
+                  {/* Segment earnings preview */}
+                  {seg.type === "flight" && (() => {
+                    const earnings = calcTripEarnings(seg);
+                    return (
+                      <div style={{ padding: "8px 10px", background: "rgba(14,165,160,0.05)", border: "1px solid rgba(14,165,160,0.15)", borderRadius: 7, fontSize: 11 }}>
+                        <span style={{ color: "#0EA5A0", fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>{earnings.statusLabel}</span>
+                        {earnings.redeemLabel !== earnings.statusLabel && <span style={{ color: "#8a8f98", marginLeft: 8, fontFamily: "'JetBrains Mono', monospace" }}>{earnings.redeemLabel}</span>}
+                        <span style={{ color: "#62666d", marginLeft: 8, fontFamily: "Inter, sans-serif", fontSize: 10 }}>{earnings.breakdown}</span>
+                      </div>
+                    );
+                  })()}
                 </div>
               );
-            })()}
+            })}
 
-            <label style={{ display: "block", marginBottom: 20 }}>
-              <span style={{ fontSize: 11, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Status</span>
-              <select value={newTrip.status} onChange={e => setNewTrip(p => ({ ...p, status: e.target.value }))} style={{
-                display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "rgba(255,255,255,0.03)",
-                border: "1px solid #2a2640", borderRadius: 8, color: "#f7f8f8", fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box",
-              }}>
-                <option value="confirmed" style={{ background: "#211e2e" }}>Confirmed</option>
-                <option value="planned" style={{ background: "#211e2e" }}>Planned</option>
-                <option value="wishlist" style={{ background: "#211e2e" }}>Wishlist</option>
-              </select>
-            </label>
+            {/* Add Segment buttons */}
+            <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+              {[["flight", "✈️ Flight"], ["hotel", "🏨 Hotel"], ["rental", "🚗 Rental"]].map(([type, label]) => (
+                <button key={type} onClick={() => setNewTrip(p => ({ ...p, segments: [...p.segments, { ...defaultSegment(), type, program: type === "flight" ? "aa" : type === "hotel" ? "marriott" : "hertz" }] }))} style={{
+                  flex: 1, padding: "8px 0", borderRadius: 8, border: "1px dashed #2a2640", background: "transparent",
+                  color: "#8a8f98", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif",
+                }}>+ {label}</button>
+              ))}
+            </div>
 
             {addTripError && (
               <div style={{ marginBottom: 12, padding: "10px 12px", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, color: "#f87171", fontSize: 12, fontFamily: "Inter, sans-serif" }}>
@@ -6966,14 +6989,8 @@ Start by introducing yourself briefly in-character with personality, and give an
             )}
 
             <div style={{ display: "flex", gap: 10 }}>
-              <button onClick={resetTripModal} style={{
-                flex: 1, padding: "11px 0", borderRadius: 8, border: "1px solid #2a2640", background: "rgba(255,255,255,0.03)",
-                color: "#8a8f98", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif",
-              }}>Cancel</button>
-              <button onClick={handleAddTrip} style={{
-                flex: 1, padding: "11px 0", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Inter, sans-serif",
-                background: "#0EA5A0", color: "#f7f8f8",
-              }}>{editingTripId ? "Save Changes" : "Add Trip"}</button>
+              <button onClick={resetTripModal} style={{ flex: 1, padding: "11px 0", borderRadius: 8, border: "1px solid #2a2640", background: "rgba(255,255,255,0.03)", color: "#8a8f98", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>Cancel</button>
+              <button onClick={handleAddTrip} style={{ flex: 1, padding: "11px 0", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "Inter, sans-serif", background: "#0EA5A0", color: "#f7f8f8" }}>{editingTripId ? "Save Changes" : "Save Trip"}</button>
             </div>
           </div>
         </div>
