@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ComposableMap, Geographies, Geography, Marker, Line } from "react-simple-maps";
 import { supabase } from "./supabase";
 
 // ============================================================
@@ -65,6 +66,58 @@ const LiveClock = () => {
 // ============================================================
 
 // Comprehensive program directory with login/status URLs
+// ── Airport coordinates (IATA → [lng, lat]) ──────────────────
+const AIRPORT_COORDS = {
+  // North America
+  ATL:[-84.428,33.637],BOS:[-71.005,42.365],CLT:[-80.943,35.214],DEN:[-104.674,39.856],DFW:[-97.038,32.897],
+  DTW:[-83.353,42.212],EWR:[-74.169,40.689],FLL:[-80.153,26.073],HNL:[-157.922,21.319],IAD:[-77.456,38.945],
+  IAH:[-95.341,29.984],JFK:[-73.779,40.640],LAX:[-118.408,33.943],LGA:[-73.872,40.777],MCO:[-81.309,28.429],
+  MDW:[-87.752,41.786],MIA:[-80.290,25.796],MSP:[-93.222,44.883],ORD:[-87.904,41.980],PDX:[-122.598,45.589],
+  PHL:[-75.241,39.872],PHX:[-112.012,33.435],SAN:[-117.190,32.734],SEA:[-122.309,47.450],SFO:[-122.375,37.619],
+  SJC:[-121.929,37.363],SLC:[-111.978,40.789],TPA:[-82.533,27.976],YUL:[-73.741,45.470],YVR:[-123.184,49.195],
+  YYZ:[-79.631,43.677],YYC:[-114.020,51.131],MEX:[-99.072,19.436],CUN:[-86.877,21.037],GRU:[-46.473,-23.432],
+  GIG:[-43.244,-22.810],BOG:[-74.149,4.702],LIM:[-77.115,-12.022],SCL:[-70.787,-33.393],EZE:[-58.535,-34.822],
+  // Europe
+  AMS:[4.764,52.310],ARN:[17.919,59.652],ATH:[23.944,37.937],BCN:[2.078,41.297],BRU:[4.484,50.901],
+  CDG:[2.550,49.013],CPH:[12.656,55.618],DUB:[-6.270,53.421],DUS:[6.757,51.290],EDI:[-3.373,55.950],
+  FCO:[12.252,41.800],FRA:[8.571,50.026],GVA:[6.109,46.238],HAM:[9.988,53.630],HEL:[24.963,60.317],
+  IST:[28.820,40.976],LHR:[-0.461,51.477],LIS:[-9.136,38.774],MAD:[-3.567,40.472],MAN:[-2.275,53.354],
+  MUC:[11.786,48.354],OSL:[11.100,60.197],PRG:[14.260,50.100],SVO:[37.415,55.973],VIE:[16.570,48.110],
+  ZRH:[8.549,47.458],WAW:[14.162,52.166],BUD:[19.256,47.437],LYS:[5.081,45.726],NCE:[7.215,43.658],
+  // Asia Pacific
+  BKK:[100.747,13.681],CAN:[113.299,23.392],CGK:[106.656,-6.126],CJU:[126.493,33.511],CTU:[103.947,30.578],
+  DEL:[77.103,28.556],DPS:[115.167,-8.748],GMP:[126.791,37.559],HAN:[105.807,21.221],HKG:[113.915,22.309],
+  ICN:[126.451,37.463],KIX:[135.244,34.427],KUL:[101.710,2.743],MNL:[121.020,14.509],NRT:[140.386,35.765],
+  PEK:[116.585,40.080],PVG:[121.805,31.143],RGN:[96.133,16.907],SGN:[106.652,10.819],SIN:[103.994,1.350],
+  SZX:[113.811,22.639],TPE:[121.233,25.077],XIY:[108.752,34.447],XMN:[118.128,24.544],HND:[139.781,35.549],
+  KHH:[120.350,22.577],OKA:[127.646,26.196],CKG:[106.642,29.720],WUH:[114.208,30.784],
+  // Middle East & Africa
+  AUH:[54.651,24.433],CAI:[31.400,30.122],CMN:[-7.590,33.368],DOH:[51.608,25.261],DXB:[55.364,25.253],
+  JED:[39.157,21.680],JNB:[28.246,-26.133],KWI:[47.969,29.227],LOS:[3.321,6.577],NBO:[36.925,-1.319],
+  RUH:[46.699,24.958],ADD:[38.799,8.978],CPT:[18.602,-33.965],
+  // Oceania
+  AKL:[174.792,-37.008],BNE:[153.117,-27.384],CBR:[149.195,-35.307],MEL:[144.843,-37.673],
+  PER:[115.967,-31.940],SYD:[151.177,-33.946],CHC:[172.532,-43.490],
+};
+
+// Haversine great-circle distance in miles
+const haversineDistance = (c1, c2) => {
+  if (!c1 || !c2) return 0;
+  const R = 3958.8;
+  const dLat = (c2[1] - c1[1]) * Math.PI / 180;
+  const dLon = (c2[0] - c1[0]) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(c1[1]*Math.PI/180) * Math.cos(c2[1]*Math.PI/180) * Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+};
+
+// Parse "JFK → LAX" → ["JFK","LAX"]
+const parseRoute = (route) => {
+  if (!route) return [];
+  return route.split(/→|->|-|\//).map(s => s.trim().toUpperCase()).filter(s => s.length === 3);
+};
+
+const GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
+
 const PROGRAM_DIRECTORY = {
   airlines: [
     { id: "aa", name: "American Airlines AAdvantage", logo: "✈️", color: "#0078D2", accent: "#C8102E", unit: "Loyalty Points", loginUrl: "https://www.aa.com/loyalty/login", tiers: [
@@ -4857,6 +4910,22 @@ Start by introducing yourself briefly in-character with personality, and give an
     const totalNights = trips.reduce((s, t) => s + (t.estimatedNights || t.nights || 0), 0);
     const totalFlights = trips.filter(t => t.type === "flight").length;
 
+    // Flight paths + mileage from route strings
+    const flightTrips = trips.filter(t => t.type === "flight" && t.route);
+    const flightPaths = flightTrips.map(t => {
+      const codes = parseRoute(t.route);
+      if (codes.length < 2) return null;
+      const from = AIRPORT_COORDS[codes[0]];
+      const to   = AIRPORT_COORDS[codes[codes.length - 1]];
+      const dist = haversineDistance(from, to);
+      return { from, to, fromCode: codes[0], toCode: codes[codes.length - 1], dist, id: t.id, status: t.status };
+    }).filter(Boolean);
+
+    const totalMiles = Math.round(flightPaths.reduce((s, p) => s + p.dist, 0));
+    const totalHours = totalMiles > 0 ? (totalMiles / 550) : 0; // ~550 mph avg cruising speed
+    const visitedAirports = [...new Set(flightPaths.flatMap(p => [p.fromCode, p.toCode]))];
+    const currentYear = new Date().getFullYear();
+
     return (
       <div>
         {/* Header */}
@@ -4874,19 +4943,86 @@ Start by introducing yourself briefly in-character with personality, and give an
         </div>
 
         {/* Summary stats */}
-        <div className="c-a2" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginBottom: 28 }}>
+        <div className="c-a2" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 28 }}>
           {[
-            { label: "Points Projected", value: totalPoints.toLocaleString(), sub: "loyalty pts", color: css.gold },
+            { label: "Miles Flown", value: totalMiles > 0 ? totalMiles.toLocaleString() : "—", sub: `${currentYear} year to date`, color: "#38bdf8" },
+            { label: "Flight Hours", value: totalHours > 0 ? `${Math.floor(totalHours)}h ${Math.round((totalHours % 1) * 60)}m` : "—", sub: `${currentYear} year to date`, color: "#a78bfa" },
+            { label: "Flights", value: totalFlights, sub: "planned / confirmed", color: css.success },
             { label: "Hotel Nights", value: totalNights, sub: "qualifying", color: css.accent },
-            { label: "Flights", value: totalFlights, sub: "planned", color: css.success },
-            { label: "Est. Spend", value: `$${(trips.length * 850).toLocaleString()}`, sub: "travel budget", color: css.text2 },
+            { label: "Points Earned", value: totalPoints.toLocaleString(), sub: "loyalty pts", color: css.gold },
           ].map((stat, i) => (
             <div key={i} style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: "18px 20px", boxShadow: D ? "none" : "0 1px 4px rgba(26,21,18,0.05)" }}>
-              <div style={{ fontSize: 26, fontWeight: 700, color: stat.color, fontFamily: "'JetBrains Mono', monospace", lineHeight: 1 }}>{stat.value}</div>
+              <div style={{ fontSize: 24, fontWeight: 700, color: stat.color, fontFamily: "'JetBrains Mono', monospace", lineHeight: 1 }}>{stat.value}</div>
               <div style={{ fontSize: 12, fontWeight: 600, color: css.text, margin: "6px 0 2px" }}>{stat.label}</div>
               <div style={{ fontSize: 10, color: css.text3 }}>{stat.sub}</div>
             </div>
           ))}
+        </div>
+
+        {/* World Map */}
+        <div className="c-a2b" style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 16, padding: "20px 22px", marginBottom: 24, overflow: "hidden" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 16 }}>
+            <div>
+              <h4 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 20, fontWeight: 500, color: css.text, margin: "0 0 4px" }}>Flight Map</h4>
+              <div style={{ fontSize: 11, color: css.text3, fontFamily: "'JetBrains Mono', monospace" }}>
+                {visitedAirports.length} airports · {flightPaths.length} routes · {totalMiles.toLocaleString()} mi
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 16, fontSize: 10, color: css.text3, fontFamily: "Inter, sans-serif" }}>
+              <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 16, height: 2, background: "#0EA5A0", display: "inline-block", borderRadius: 1 }}></span>Confirmed</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 16, height: 2, background: "#8a8f98", display: "inline-block", borderRadius: 1, opacity: 0.6 }}></span>Planned</span>
+            </div>
+          </div>
+          <div style={{ borderRadius: 10, overflow: "hidden", background: D ? "#0d0b14" : "#0f172a" }}>
+            <ComposableMap
+              projectionConfig={{ scale: 147, center: [10, 10] }}
+              style={{ width: "100%", height: "auto" }}
+            >
+              <Geographies geography={GEO_URL}>
+                {({ geographies }) =>
+                  geographies.map(geo => (
+                    <Geography
+                      key={geo.rsmKey}
+                      geography={geo}
+                      fill={D ? "#1e1a2e" : "#1e293b"}
+                      stroke={D ? "#2a2640" : "#334155"}
+                      strokeWidth={0.4}
+                      style={{ default: { outline: "none" }, hover: { outline: "none" }, pressed: { outline: "none" } }}
+                    />
+                  ))
+                }
+              </Geographies>
+
+              {/* Flight path arcs */}
+              {flightPaths.map((path, i) => path.from && path.to && (
+                <Line
+                  key={i}
+                  from={path.from}
+                  to={path.to}
+                  stroke={path.status === "confirmed" ? "#0EA5A0" : "#8a8f98"}
+                  strokeWidth={path.status === "confirmed" ? 1.2 : 0.8}
+                  strokeOpacity={path.status === "confirmed" ? 0.8 : 0.45}
+                  strokeLinecap="round"
+                />
+              ))}
+
+              {/* Airport dots */}
+              {visitedAirports.map(code => {
+                const coords = AIRPORT_COORDS[code];
+                if (!coords) return null;
+                return (
+                  <Marker key={code} coordinates={coords}>
+                    <circle r={2.5} fill="#0EA5A0" fillOpacity={0.9} stroke="#fff" strokeWidth={0.6} />
+                  </Marker>
+                );
+              })}
+            </ComposableMap>
+          </div>
+          {flightPaths.length === 0 && (
+            <div style={{ textAlign: "center", padding: "32px 0", color: css.text3, fontSize: 13 }}>
+              Add flights with routes (e.g. JFK → LAX) to see your flight map
+            </div>
+          )}
         </div>
 
         {/* Bar Chart */}
