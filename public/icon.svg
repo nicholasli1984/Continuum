@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0D0B10"/>
+      <stop offset="100%" stop-color="#1C1420"/>
+    </linearGradient>
+    <linearGradient id="orange" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#D4742D"/>
+      <stop offset="100%" stop-color="#E8883A"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#C9A84C"/>
+      <stop offset="50%" stop-color="#F0D78C"/>
+      <stop offset="100%" stop-color="#C9A84C"/>
+    </linearGradient>
+  </defs>
+  <!-- Background — fully dark, no white -->
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <!-- Infinity mark centered -->
+  <g transform="translate(256,215)">
+    <path d="M-130,0 C-130,-55 -88,-62 -64,-62 C-32,-62 -13,-32 0,-13 C13,-32 32,-62 64,-62 C88,-62 130,-55 130,0 C130,55 88,62 64,62 C32,62 13,32 0,13 C-13,32 -32,62 -64,62 C-88,62 -130,55 -130,0 Z"
+      fill="none" stroke="url(#orange)" stroke-width="9" stroke-linecap="round"/>
+    <path d="M-112,0 C-112,-42 -80,-48 -64,-48 C-40,-48 -16,-24 0,-5 C16,-24 40,-48 64,-48 C80,-48 112,-42 112,0 C112,42 80,48 64,48 C40,48 16,24 0,5 C-16,24 -40,48 -64,48 C-80,48 -112,42 -112,0 Z"
+      fill="none" stroke="url(#gold)" stroke-width="2.5" stroke-linecap="round" opacity="0.6"/>
+    <polygon points="0,-9 7,0 0,9 -7,0" fill="url(#gold)"/>
+    <!-- Aircraft -->
+    <g transform="translate(110,-38) rotate(-35)">
+      <path d="M0,0 L5,-2.5 L22,-2.5 L28,0 L22,2.5 L5,2.5 Z" fill="#D4742D"/>
+      <path d="M10,-2.5 L15,-10 L18,-10 L15,-2.5 Z" fill="#D4742D" opacity="0.75"/>
+      <path d="M10,2.5 L15,10 L18,10 L15,2.5 Z" fill="#D4742D" opacity="0.75"/>
+    </g>
+  </g>
+  <!-- Wordmark -->
+  <text x="256" y="326" text-anchor="middle" font-family="Georgia, serif" font-size="48" font-weight="400" letter-spacing="13" fill="#F0F0F0" opacity="0.95">CONTINUUM</text>
+  <!-- Gold lines -->
+  <line x1="160" y1="347" x2="234" y2="347" stroke="url(#gold)" stroke-width="0.8" opacity="0.5"/>
+  <line x1="278" y1="347" x2="352" y2="347" stroke="url(#gold)" stroke-width="0.8" opacity="0.5"/>
+  <!-- Tagline -->
+  <text x="256" y="382" text-anchor="middle" font-family="'Trebuchet MS', sans-serif" font-size="17" font-weight="300" letter-spacing="5" fill="url(#gold)" opacity="0.75">ELEVATE EVERY JOURNEY</text>
+</svg>
