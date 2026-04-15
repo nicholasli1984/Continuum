@@ -8377,7 +8377,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                     </button>
                     <button onClick={e => { e.stopPropagation(); openEditTrip(trip); }} style={{
                       width: 28, height: 28, borderRadius: 8, border: `1px solid ${css.border}`,
-                      background: "rgba(255,255,255,0.04)", color: css.text2,
+                      background: css.surface2, color: css.text2,
                       fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
                     }} title="Edit trip">✎</button>
                     <button onClick={e => { e.stopPropagation(); removeTrip(trip.id); }} style={{
@@ -8410,10 +8410,10 @@ Start by introducing yourself briefly in-character with personality, and give an
                           width: 30, height: 30, borderRadius: 8, border: `1px solid ${css.border}`, background: "transparent", color: css.text2, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
                         }} title="Add to calendar">📅</button>
                         <button onClick={e => { e.stopPropagation(); openEditTrip(trip); }} style={{
-                          width: 30, height: 30, borderRadius: 8, border: `1px solid ${css.border}`, background: "rgba(255,255,255,0.04)", color: css.text2, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                          width: 30, height: 30, borderRadius: 8, border: `1px solid ${css.border}`, background: css.surface2, color: css.text2, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
                         }} title="Edit trip">✎</button>
                         <button onClick={e => { e.stopPropagation(); removeTrip(trip.id); }} style={{
-                          width: 30, height: 30, borderRadius: 8, border: `1px solid rgba(239,68,68,0.2)`, background: "rgba(239,68,68,0.06)", color: "#ef4444", fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                          width: 30, height: 30, borderRadius: 8, border: `1px solid ${D ? "rgba(239,68,68,0.2)" : "rgba(239,68,68,0.15)"}`, background: "rgba(239,68,68,0.06)", color: "#ef4444", fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
                         }} title="Delete trip">×</button>
                       </>}
                     </div>
@@ -8583,7 +8583,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                         {!isMobile && <>
                           <button onClick={e => { e.stopPropagation(); openEditTrip(trip); }} style={{
                             width: 28, height: 28, borderRadius: 8, border: `1px solid ${css.border}`,
-                            background: "rgba(255,255,255,0.04)", color: css.text2,
+                            background: css.surface2, color: css.text2,
                             fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
                           }} title="Edit trip">✎</button>
                           <button onClick={e => { e.stopPropagation(); removeTrip(trip.id); }} style={{
@@ -8610,10 +8610,10 @@ Start by introducing yourself briefly in-character with personality, and give an
                             }}>Export Report ↗</button>
                             {isMobile && <>
                               <button onClick={e => { e.stopPropagation(); openEditTrip(trip); }} style={{
-                                width: 30, height: 30, borderRadius: 8, border: `1px solid ${css.border}`, background: "rgba(255,255,255,0.04)", color: css.text2, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                                width: 30, height: 30, borderRadius: 8, border: `1px solid ${css.border}`, background: css.surface2, color: css.text2, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
                               }} title="Edit trip">✎</button>
                               <button onClick={e => { e.stopPropagation(); removeTrip(trip.id); }} style={{
-                                width: 30, height: 30, borderRadius: 8, border: `1px solid rgba(239,68,68,0.2)`, background: "rgba(239,68,68,0.06)", color: "#ef4444", fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                                width: 30, height: 30, borderRadius: 8, border: `1px solid ${D ? "rgba(239,68,68,0.2)" : "rgba(239,68,68,0.15)"}`, background: "rgba(239,68,68,0.06)", color: "#ef4444", fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
                               }} title="Delete trip">×</button>
                             </>}
                           </div>
@@ -10304,7 +10304,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                   <div style={{ background: css.surface2, border: `1px solid ${css.border}`, borderRadius: 10, padding: 16, marginBottom: 10, display: "flex", flexDirection: "column", gap: 10 }}>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                       {EXPENSE_CATEGORIES.map(cat => (
-                        <button key={cat.id} onClick={() => setReportBuilderCustom(p => ({ ...p, category: cat.id }))} style={{ padding: "5px 10px", borderRadius: 7, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600, background: reportBuilderCustom.category === cat.id ? `${cat.color}25` : "rgba(255,255,255,0.04)", color: reportBuilderCustom.category === cat.id ? cat.color : css.text3 }}>{cat.icon} {cat.label}</button>
+                        <button key={cat.id} onClick={() => setReportBuilderCustom(p => ({ ...p, category: cat.id }))} style={{ padding: "5px 10px", borderRadius: 7, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600, background: reportBuilderCustom.category === cat.id ? `${cat.color}25` : css.surface2, color: reportBuilderCustom.category === cat.id ? cat.color : css.text3 }}>{cat.icon} {cat.label}</button>
                       ))}
                     </div>
                     <div style={{ display: "flex", gap: 8 }}>
