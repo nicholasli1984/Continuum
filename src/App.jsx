@@ -10031,10 +10031,15 @@ Start by introducing yourself briefly in-character with personality, and give an
       ${receiptPages}
     </body></html>`;
 
+    return html;
+  };
+
+  const openReportWindow = (html, autoPrint = false) => {
     const w = window.open("", "_blank");
     if (!w) return;
     w.document.write(html);
     w.document.close();
+    if (!autoPrint) return;
     const imgs = w.document.images;
     if (imgs.length === 0) { setTimeout(() => { w.focus(); w.print(); }, 300); return; }
     let loaded = 0;
@@ -10203,7 +10208,11 @@ Start by introducing yourself briefly in-character with personality, and give an
                       <div style={{ fontSize: 18, fontWeight: 800, color: css.gold, fontFamily: "'Geist Mono', monospace" }}>${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                       <div style={{ fontSize: 9, color: css.text3, marginBottom: 8 }}>USD</div>
                       <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
-                        <button onClick={async () => await buildPrintReport(report.title, exps)} style={{ padding: "5px 12px", borderRadius: 8, border: "none", background: css.accent, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>Print</button>
+                        <button onClick={async () => { const html = await buildPrintReport(report.title, exps); openReportWindow(html, false); }} style={{ padding: "5px 12px", borderRadius: 8, border: "none", background: css.accent, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                          View
+                        </button>
+                        <button onClick={async () => { const html = await buildPrintReport(report.title, exps); openReportWindow(html, true); }} style={{ padding: "5px 12px", borderRadius: 8, border: `1px solid ${css.border}`, background: "transparent", color: css.text2, fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Print</button>
                         <button onClick={() => { setForwardReportId(report.id); setForwardEmail(""); setForwardStatus(""); }} style={{ padding: "5px 12px", borderRadius: 8, border: `1px solid ${css.border}`, background: "transparent", color: css.text2, fontSize: 11, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                           Forward
@@ -10365,7 +10374,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                 <button onClick={() => setShowReportBuilder(false)} style={{ flex: 1, padding: "11px 0", borderRadius: 8, border: `1px solid ${css.border}`, background: "transparent", color: css.text2, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
                 <button onClick={saveReport} disabled={!reportBuilder.title.trim() || builderAllExps.length === 0} style={{ flex: 1, padding: "11px 0", borderRadius: 8, border: "none", background: !reportBuilder.title.trim() || builderAllExps.length === 0 ? css.surface2 : css.accent, color: !reportBuilder.title.trim() || builderAllExps.length === 0 ? css.text3 : "#fff", fontSize: 13, fontWeight: 700, cursor: !reportBuilder.title.trim() || builderAllExps.length === 0 ? "not-allowed" : "pointer" }}>Save Report</button>
                 {builderAllExps.length > 0 && reportBuilder.title.trim() && (
-                  <button onClick={async () => { await saveReport(); await buildPrintReport(reportBuilder.title, builderAllExps); }} style={{ flex: 1, padding: "11px 0", borderRadius: 8, border: "none", background: "#1a3a2a", color: "#34d399", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>🖨️ Save & Print</button>
+                  <button onClick={async () => { await saveReport(); const html = await buildPrintReport(reportBuilder.title, builderAllExps); openReportWindow(html, true); }} style={{ flex: 1, padding: "11px 0", borderRadius: 8, border: "none", background: "#1a3a2a", color: "#34d399", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>🖨️ Save & Print</button>
                 )}
               </div>
             </div>
