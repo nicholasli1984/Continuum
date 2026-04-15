@@ -12316,16 +12316,41 @@ Start by introducing yourself briefly in-character with personality, and give an
           return { x: Math.max(0, Math.min(x, img.offsetWidth)), y: Math.max(0, Math.min(y, img.offsetHeight)) };
         };
 
-        // Simple edge scroll — nudge container a small fixed amount when near edges
-        const edgeScroll = (clientY) => {
+        // Smooth edge-scroll: interval-based so it continues while holding near edges
+        const scrollInterval = { current: null };
+        const scrollSpeed = { current: 0 };
+        const lastClient = { current: { x: 0, y: 0 } };
+
+        const startEdgeScroll = () => {
+          if (scrollInterval.current) return;
+          scrollInterval.current = setInterval(() => {
+            const container = cropContainerRef.current;
+            if (!container || scrollSpeed.current === 0) return;
+            container.scrollTop += scrollSpeed.current;
+            setCropEnd(getPos(lastClient.current.x, lastClient.current.y));
+          }, 16);
+        };
+
+        const stopEdgeScroll = () => {
+          if (scrollInterval.current) { clearInterval(scrollInterval.current); scrollInterval.current = null; }
+          scrollSpeed.current = 0;
+        };
+
+        const updateEdgeScroll = (clientY) => {
           const container = cropContainerRef.current;
           if (!container) return;
           const rect = container.getBoundingClientRect();
-          const edgeZone = 50;
+          const edgeZone = 60;
           if (clientY > rect.bottom - edgeZone) {
-            container.scrollTop += 4;
+            const pct = (clientY - (rect.bottom - edgeZone)) / edgeZone;
+            scrollSpeed.current = 2 + pct * 6;
+            startEdgeScroll();
           } else if (clientY < rect.top + edgeZone) {
-            container.scrollTop -= 4;
+            const pct = ((rect.top + edgeZone) - clientY) / edgeZone;
+            scrollSpeed.current = -(2 + pct * 6);
+            startEdgeScroll();
+          } else {
+            scrollSpeed.current = 0;
           }
         };
 
@@ -12334,17 +12359,19 @@ Start by introducing yourself briefly in-character with personality, and give an
           setCropStart(pos);
           setCropEnd(pos);
           setCropDragging(true);
+          lastClient.current = { x: e.clientX, y: e.clientY };
           e.preventDefault();
         };
         const handleMouseMove = (e) => {
           if (!cropDragging) return;
+          lastClient.current = { x: e.clientX, y: e.clientY };
           setCropEnd(getPos(e.clientX, e.clientY));
-          edgeScroll(e.clientY);
+          updateEdgeScroll(e.clientY);
         };
-        const handleMouseUp = () => { setCropDragging(false); };
-        const handleTouchStart = (e) => { const t = e.touches[0]; const pos = getPos(t.clientX, t.clientY); setCropStart(pos); setCropEnd(pos); setCropDragging(true); e.preventDefault(); };
-        const handleTouchMove = (e) => { if (!cropDragging) return; const t = e.touches[0]; setCropEnd(getPos(t.clientX, t.clientY)); edgeScroll(t.clientY); };
-        const handleTouchEnd = () => { setCropDragging(false); };
+        const handleMouseUp = () => { setCropDragging(false); stopEdgeScroll(); };
+        const handleTouchStart = (e) => { const t = e.touches[0]; const pos = getPos(t.clientX, t.clientY); setCropStart(pos); setCropEnd(pos); setCropDragging(true); lastClient.current = { x: t.clientX, y: t.clientY }; e.preventDefault(); };
+        const handleTouchMove = (e) => { if (!cropDragging) return; const t = e.touches[0]; lastClient.current = { x: t.clientX, y: t.clientY }; setCropEnd(getPos(t.clientX, t.clientY)); updateEdgeScroll(t.clientY); };
+        const handleTouchEnd = () => { setCropDragging(false); stopEdgeScroll(); };
 
         const saveCrop = async () => {
           if (!cropStart || !cropEnd || !cropImgRef.current) return;
