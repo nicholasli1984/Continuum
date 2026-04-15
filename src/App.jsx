@@ -2,6 +2,7 @@
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { ComposableMap, Geographies, Geography, Marker, Line } from "react-simple-maps";
 import { supabase } from "./supabase";
+// QR code generated via Google Charts API (no npm dependency)
 
 // ============================================================
 // LOGO COMPONENT — Geometric travel icon in Neuron brand style
@@ -119,6 +120,11 @@ const AIRPORT_CITY = {
   MNL:"Manila",NRT:"Tokyo",PEK:"Beijing",PVG:"Shanghai",SGN:"Ho Chi Minh City",SIN:"Singapore",TPE:"Taipei",HND:"Tokyo",
   OKA:"Okinawa",AUH:"Abu Dhabi",CAI:"Cairo",DOH:"Doha",DXB:"Dubai",JNB:"Johannesburg",NBO:"Nairobi",CPT:"Cape Town",
   AKL:"Auckland",BNE:"Brisbane",MEL:"Melbourne",SYD:"Sydney",PER:"Perth",
+  PTY:"Panama City",CAN:"Guangzhou",BOM:"Mumbai",
+  LAS:"Las Vegas",DCA:"Washington DC",MSY:"New Orleans",BNA:"Nashville",AUS:"Austin",STL:"St Louis",
+  PIT:"Pittsburgh",MKE:"Milwaukee",CLE:"Cleveland",IND:"Indianapolis",CMH:"Columbus",OAK:"Oakland",SMF:"Sacramento",
+  JAX:"Jacksonville",RSW:"Fort Myers",RDU:"Raleigh-Durham",ADD:"Addis Ababa",CMB:"Colombo",MLE:"Malé",
+  HAN:"Hanoi",RGN:"Yangon",BKI:"Kota Kinabalu",PNH:"Phnom Penh",BER:"Berlin",
 };
 
 // ── City gradient themes — warm/cool palettes per destination ──
@@ -659,6 +665,7 @@ const PROGRAM_DIRECTORY = {
     { id: "united_explorer", name: "United Explorer Card", logo: "🌐", color: "#0066CC", accent: "#002244", unit: "MileagePlus Miles", loginUrl: "https://www.chase.com/personal/credit-cards/login-account-access", perks: "2x United/dining/hotels, free checked bag, priority boarding", annualFee: 95, bonusCategories: { flights: 2, dining: 2, other: 1 } },
     { id: "aa_exec", name: "Citi AAdvantage Executive", logo: "—", color: "#0078D2", accent: "#003B70", unit: "AAdvantage Miles", loginUrl: "https://www.citi.com/login", perks: "Admirals Club, 4x AA/hotels, companion cert, Global Entry", annualFee: 595, bonusCategories: { flights: 4, hotels: 4, dining: 1, other: 1 } },
     { id: "marriott_boundless", name: "Marriott Bonvoy Boundless", logo: "—", color: "#7C2529", accent: "#B5985A", unit: "Bonvoy Points", loginUrl: "https://www.chase.com/personal/credit-cards/login-account-access", perks: "6x Marriott, free night award annually, auto Silver Elite", annualFee: 95, bonusCategories: { flights: 2, hotels: 6, dining: 2, other: 1 } },
+    { id: "ritz_carlton", name: "Ritz-Carlton Credit Card", logo: "—", color: "#1C1C1C", accent: "#C6A96C", unit: "Bonvoy Points", loginUrl: "https://www.chase.com/personal/credit-cards/login-account-access", perks: "6x Marriott, auto Platinum Elite, $300 travel credit, Priority Pass, free night", annualFee: 450, bonusCategories: { flights: 3, hotels: 6, dining: 3, other: 1 } },
     { id: "hilton_aspire", name: "Hilton Honors Aspire", logo: "🌟", color: "#003B5C", accent: "#FFD700", unit: "Hilton Honors Points", loginUrl: "https://www.americanexpress.com/en-us/account/login", perks: "14x Hilton, auto Diamond, $250 resort credit, free night", annualFee: 550, bonusCategories: { flights: 7, hotels: 14, dining: 7, other: 3 } },
     { id: "hilton_surpass", name: "Hilton Honors Surpass", logo: "🌟", color: "#0099CC", accent: "#003B5C", unit: "Hilton Honors Points", loginUrl: "https://www.americanexpress.com/en-us/account/login", perks: "12x Hilton, auto Gold, free night after $15k spend", annualFee: 150, bonusCategories: { flights: 6, hotels: 12, dining: 6, other: 3 } },
     { id: "hyatt_card", name: "World of Hyatt Credit Card", logo: "🏛️", color: "#1C4B82", accent: "#D4A553", unit: "World of Hyatt Points", loginUrl: "https://www.chase.com/personal/credit-cards/login-account-access", perks: "4x Hyatt, auto Discoverist, free night annually, bonus nights", annualFee: 95, bonusCategories: { flights: 2, hotels: 4, dining: 2, other: 1 } },
@@ -1151,6 +1158,893 @@ const CC_BONUS_EXPANDED = {
   // Alaska/Atmos Summit Visa Infinite: 3x Alaska & Hawaiian flights, 2x dining & gas, 1x other.
   atmos_summit:     { dining: 2, flights: 3, hotels: 1, groceries: 1, gas: 2, streaming: 1, rent: 0, other: 1 },
 };
+
+// ── Lounge Database ──
+const LOUNGE_DATABASE = {
+  DFW: [
+    { id: "dfw_cap1", name: "Capital One Lounge", terminal: "D", network: "capital_one", rating: 4.7, amenities: ["showers","hot_food","bar","wifi","spa","phone_rooms"], hours: "5:30 AM - 10:00 PM", location: "Near Gate D22", placeQuery: "Capital One Lounge DFW Airport" },
+    { id: "dfw_flagship", name: "American Airlines Flagship Lounge", terminal: "D", network: "flagship", alliance: "oneworld", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Near Gate D12", placeQuery: "American Airlines Flagship Lounge DFW" },
+    { id: "dfw_admirals_d", name: "Admirals Club", terminal: "D", network: "admirals_club", alliance: "oneworld", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 10:00 PM", location: "Gate D21", placeQuery: "Admirals Club DFW Terminal D" },
+    { id: "dfw_admirals_a", name: "Admirals Club", terminal: "A", network: "admirals_club", alliance: "oneworld", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:30 PM", location: "Gate A22", placeQuery: "Admirals Club DFW Terminal A" },
+    { id: "dfw_centurion", name: "Amex Centurion Lounge", terminal: "D", network: "centurion", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "6:00 AM - 10:00 PM", location: "Near Gate D12", placeQuery: "American Express Centurion Lounge DFW" },
+    { id: "dfw_pp_club", name: "The Club DFW", terminal: "D", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Terminal D", placeQuery: "The Club at DFW Airport" },
+    { id: "dfw_admirals_c", name: "Admirals Club", terminal: "C", network: "admirals_club", alliance: "oneworld", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:30 PM", location: "Gate C6", placeQuery: "Admirals Club DFW Terminal C" },
+    { id: "dfw_admirals_b", name: "Admirals Club", terminal: "B", network: "admirals_club", alliance: "oneworld", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 8:00 PM", location: "Gate B22", placeQuery: "Admirals Club DFW Terminal B" },
+    { id: "dfw_turkish", name: "Turkish Airlines Lounge", terminal: "D", network: "turkish_lounge", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 10:00 PM", location: "Terminal D near Gate D12", placeQuery: "Turkish Airlines Lounge DFW Airport" },
+  ],
+  JFK: [
+    { id: "jfk_centurion_t4", name: "Amex Centurion Lounge", terminal: "T4", network: "centurion", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","spa","phone_rooms"], hours: "6:00 AM - 11:00 PM", location: "Near Gate B20", placeQuery: "American Express Centurion Lounge JFK Terminal 4" },
+    { id: "jfk_sky_club_t4", name: "Delta Sky Club", terminal: "T4", network: "delta_sky_club", alliance: "skyteam", rating: 4.2, amenities: ["showers","hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Near Gate B37", placeQuery: "Delta Sky Club JFK Terminal 4" },
+    { id: "jfk_cap1", name: "Capital One Lounge", terminal: "T6/T7", network: "capital_one", rating: 4.6, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "5:30 AM - 11:00 PM", location: "Terminal 6", placeQuery: "Capital One Lounge JFK Airport" },
+    { id: "jfk_polaris", name: "United Polaris Lounge", terminal: "T7", network: "polaris", alliance: "star", rating: 4.4, amenities: ["showers","hot_food","bar","wifi","nap_pods","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Terminal 7", placeQuery: "United Polaris Lounge JFK" },
+    { id: "jfk_admirals_t8", name: "Admirals Club", terminal: "T8", network: "admirals_club", alliance: "oneworld", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 8", placeQuery: "Admirals Club JFK Terminal 8" },
+    { id: "jfk_flagship_t8", name: "AA Flagship First Dining", terminal: "T8", network: "flagship", alliance: "oneworld", rating: 4.4, amenities: ["showers","hot_food","bar","wifi","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Terminal 8 near Gate 1", placeQuery: "American Airlines Flagship First Dining JFK" },
+    { id: "jfk_greenwich", name: "Greenwich Lounge", terminal: "T8", network: "greenwich_lounge", alliance: "oneworld", rating: 4.5, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal 8", placeQuery: "Greenwich Lounge JFK Terminal 8" },
+    { id: "jfk_soho", name: "Soho Lounge", terminal: "T8", network: "soho_lounge", alliance: "oneworld", rating: 4.3, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 8", placeQuery: "Soho Lounge JFK Terminal 8" },
+    { id: "jfk_chelsea", name: "Chelsea Lounge", terminal: "T8", network: "chelsea_lounge", alliance: "oneworld", rating: 4.2, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 8", placeQuery: "Chelsea Lounge JFK Terminal 8" },
+    { id: "jfk_pp_kingsford", name: "KingsfordSmith Lounge", terminal: "T1", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Terminal 1", placeQuery: "KingsfordSmith Lounge JFK" },
+    { id: "jfk_ba_lounge", name: "British Airways Lounge", terminal: "T8", network: "generic_airline", alliance: "oneworld", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with BA flights", location: "Terminal 8", placeQuery: "British Airways Lounge JFK Terminal 8" },
+    { id: "jfk_turkish", name: "Turkish Airlines Lounge", terminal: "T1", network: "turkish_lounge", alliance: "star", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 11:00 PM", location: "Terminal 1", placeQuery: "Turkish Airlines Lounge JFK" },
+    { id: "jfk_korean_air", name: "Korean Air Lounge", terminal: "T1", network: "generic_airline", alliance: "skyteam", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with KE flights", location: "Terminal 1", placeQuery: "Korean Air Lounge JFK" },
+    { id: "jfk_air_france", name: "Air France Lounge", terminal: "T1", network: "generic_airline", alliance: "skyteam", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with AF flights", location: "Terminal 1", placeQuery: "Air France Lounge JFK Terminal 1" },
+    { id: "jfk_united_club", name: "United Club", terminal: "T7", network: "united_club", alliance: "star", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 7", placeQuery: "United Club JFK Terminal 7" },
+    { id: "jfk_sky_club_t2", name: "Delta Sky Club", terminal: "T2", network: "delta_sky_club", alliance: "skyteam", rating: 4.0, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 2", placeQuery: "Delta Sky Club JFK Terminal 2" },
+    { id: "jfk_chase_sapphire", name: "Chase Sapphire Lounge", terminal: "T5", network: "chase_sapphire_lounge", rating: 4.4, amenities: ["showers","hot_food","bar","wifi","phone_rooms"], hours: "5:30 AM - 11:00 PM", location: "Terminal 5", placeQuery: "Chase Sapphire Lounge JFK Terminal 5" },
+    { id: "jfk_qatar", name: "Qatar Airways Lounge", terminal: "T8", network: "generic_airline", alliance: "oneworld", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with QR flights", location: "Terminal 8", placeQuery: "Qatar Airways Lounge JFK" },
+    { id: "jfk_cathay", name: "Cathay Pacific Lounge", terminal: "T8", network: "cathay_lounge", alliance: "oneworld", rating: 4.0, amenities: ["hot_food","bar","wifi"], hours: "Varies with CX flights", location: "Terminal 8", placeQuery: "Cathay Pacific Lounge JFK" },
+  ],
+  LAX: [
+    { id: "lax_cap1", name: "Capital One Lounge", terminal: "T3", network: "capital_one", rating: 4.6, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "5:30 AM - 11:00 PM", location: "Terminal 3", placeQuery: "Capital One Lounge LAX" },
+    { id: "lax_centurion", name: "Amex Centurion Lounge", terminal: "TBIT", network: "centurion", rating: 4.4, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "6:00 AM - 11:00 PM", location: "Tom Bradley Int'l Terminal", placeQuery: "American Express Centurion Lounge LAX" },
+    { id: "lax_polaris", name: "United Polaris Lounge", terminal: "T7", network: "polaris", alliance: "star", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","nap_pods"], hours: "5:00 AM - Last Departure", location: "Terminal 7", placeQuery: "United Polaris Lounge LAX" },
+    { id: "lax_sky_club", name: "Delta Sky Club", terminal: "T3", network: "delta_sky_club", alliance: "skyteam", rating: 4.1, amenities: ["hot_food","bar","wifi","outdoor_terrace"], hours: "4:30 AM - Last Departure", location: "Terminal 3", placeQuery: "Delta Sky Club LAX" },
+    { id: "lax_flagship", name: "AA Flagship Lounge", terminal: "T4/5", network: "flagship", alliance: "oneworld", rating: 4.2, amenities: ["showers","hot_food","bar","wifi","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Terminal 4", placeQuery: "American Airlines Flagship Lounge LAX" },
+    { id: "lax_star_alliance", name: "Star Alliance Lounge", terminal: "TBIT", network: "generic_airline", alliance: "star", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 12:00 AM", location: "Tom Bradley Terminal", placeQuery: "Star Alliance Lounge LAX" },
+    { id: "lax_admirals_t4", name: "Admirals Club", terminal: "T4/5", network: "admirals_club", alliance: "oneworld", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 5 near Gate 52A", placeQuery: "Admirals Club LAX Terminal 5" },
+    { id: "lax_united_club", name: "United Club", terminal: "T7", network: "united_club", alliance: "star", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 7", placeQuery: "United Club LAX Terminal 7" },
+    { id: "lax_qantas_first", name: "Qantas First Lounge", terminal: "TBIT", network: "qantas_lounge", alliance: "oneworld", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","spa","a_la_carte"], hours: "6:00 AM - Last Departure", location: "Tom Bradley Int'l Terminal", placeQuery: "Qantas First Class Lounge LAX" },
+    { id: "lax_qantas_business", name: "Qantas Business Lounge", terminal: "TBIT", network: "qantas_lounge", alliance: "oneworld", rating: 4.1, amenities: ["showers","hot_food","bar","wifi"], hours: "6:00 AM - Last Departure", location: "Tom Bradley Int'l Terminal", placeQuery: "Qantas Business Lounge LAX" },
+    { id: "lax_korean_air", name: "Korean Air Lounge", terminal: "TBIT", network: "generic_airline", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with KE flights", location: "Tom Bradley Int'l Terminal", placeQuery: "Korean Air Lounge LAX" },
+    { id: "lax_oneworld", name: "oneworld Lounge", terminal: "TBIT", network: "generic_airline", alliance: "oneworld", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - Last Departure", location: "Tom Bradley Int'l Terminal", placeQuery: "oneworld Lounge LAX" },
+    { id: "lax_turkish", name: "Turkish Airlines Lounge", terminal: "TBIT", network: "turkish_lounge", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 11:00 PM", location: "Tom Bradley Int'l Terminal", placeQuery: "Turkish Airlines Lounge LAX" },
+    { id: "lax_air_france", name: "Air France / KLM Lounge", terminal: "TBIT", network: "generic_airline", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies with AF/KL flights", location: "Tom Bradley Int'l Terminal", placeQuery: "Air France Lounge LAX" },
+  ],
+  ORD: [
+    { id: "ord_cap1", name: "Capital One Lounge", terminal: "T3", network: "capital_one", rating: 4.6, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "5:30 AM - 10:00 PM", location: "Terminal 3", placeQuery: "Capital One Lounge ORD" },
+    { id: "ord_polaris", name: "United Polaris Lounge", terminal: "T1", network: "polaris", alliance: "star", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","nap_pods","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Terminal 1", placeQuery: "United Polaris Lounge ORD" },
+    { id: "ord_united_club", name: "United Club", terminal: "T1", network: "united_club", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 1 Gate B6", placeQuery: "United Club ORD Terminal 1" },
+    { id: "ord_centurion", name: "Amex Centurion Lounge", terminal: "T3", network: "centurion", rating: 4.3, amenities: ["showers","hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Terminal 3", placeQuery: "American Express Centurion Lounge ORD" },
+    { id: "ord_admirals_t3", name: "Admirals Club", terminal: "T3", network: "admirals_club", alliance: "oneworld", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Terminal 3 Gate H4", placeQuery: "Admirals Club ORD Terminal 3" },
+    { id: "ord_united_club_b18", name: "United Club", terminal: "T1", network: "united_club", alliance: "star", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 1 Gate B18", placeQuery: "United Club ORD Terminal 1 B18" },
+    { id: "ord_united_club_c", name: "United Club", terminal: "T2", network: "united_club", alliance: "star", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 2 Gate F4", placeQuery: "United Club ORD Terminal 2" },
+    { id: "ord_sky_club_t2", name: "Delta Sky Club", terminal: "T2", network: "delta_sky_club", alliance: "skyteam", rating: 3.9, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 2 Gate E6", placeQuery: "Delta Sky Club ORD" },
+    { id: "ord_turkish", name: "Turkish Airlines Lounge", terminal: "T5", network: "turkish_lounge", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 10:00 PM", location: "Terminal 5 Int'l", placeQuery: "Turkish Airlines Lounge ORD" },
+    { id: "ord_ba_lounge", name: "British Airways Lounge", terminal: "T5", network: "generic_airline", alliance: "oneworld", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies with BA flights", location: "Terminal 5 Int'l", placeQuery: "British Airways Lounge ORD" },
+    { id: "ord_swiss", name: "SWISS Lounge", terminal: "T5", network: "generic_airline", alliance: "star", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "Varies with LX flights", location: "Terminal 5 Int'l", placeQuery: "SWISS Lounge Chicago O'Hare" },
+    { id: "ord_flagship", name: "AA Flagship Lounge", terminal: "T3", network: "flagship", alliance: "oneworld", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Terminal 3 Gate K4", placeQuery: "American Airlines Flagship Lounge ORD" },
+  ],
+  SFO: [
+    { id: "sfo_centurion", name: "Amex Centurion Lounge", terminal: "T3", network: "centurion", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "6:00 AM - 10:00 PM", location: "Terminal 3", placeQuery: "American Express Centurion Lounge SFO" },
+    { id: "sfo_polaris", name: "United Polaris Lounge", terminal: "Int'l G", network: "polaris", alliance: "star", rating: 4.4, amenities: ["showers","hot_food","bar","wifi","nap_pods"], hours: "6:00 AM - Last Departure", location: "Int'l Terminal G", placeQuery: "United Polaris Lounge SFO" },
+    { id: "sfo_united_club", name: "United Club", terminal: "T3", network: "united_club", alliance: "star", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 3", placeQuery: "United Club SFO Terminal 3" },
+    { id: "sfo_sky_club", name: "Delta Sky Club", terminal: "T1", network: "delta_sky_club", alliance: "skyteam", rating: 4.0, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Terminal 1", placeQuery: "Delta Sky Club SFO" },
+    { id: "sfo_united_club_intl", name: "United Club", terminal: "Int'l G", network: "united_club", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Int'l Terminal G", placeQuery: "United Club SFO International Terminal" },
+    { id: "sfo_cathay", name: "Cathay Pacific Lounge", terminal: "Int'l A", network: "cathay_lounge", alliance: "oneworld", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with CX flights", location: "Int'l Terminal A", placeQuery: "Cathay Pacific Lounge SFO" },
+    { id: "sfo_korean_air", name: "Korean Air Lounge", terminal: "Int'l A", network: "generic_airline", alliance: "skyteam", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "Varies with KE flights", location: "Int'l Terminal A", placeQuery: "Korean Air Lounge SFO" },
+    { id: "sfo_singapore", name: "Singapore Airlines SilverKris Lounge", terminal: "Int'l G", network: "singapore_lounge", alliance: "star", rating: 4.2, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with SQ flights", location: "Int'l Terminal G", placeQuery: "SilverKris Lounge SFO" },
+    { id: "sfo_turkish", name: "Turkish Airlines Lounge", terminal: "Int'l A", network: "turkish_lounge", alliance: "star", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with TK flights", location: "Int'l Terminal A", placeQuery: "Turkish Airlines Lounge SFO" },
+    { id: "sfo_air_france", name: "Air France / KLM Lounge", terminal: "Int'l A", network: "generic_airline", alliance: "skyteam", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "Varies with AF/KL flights", location: "Int'l Terminal A", placeQuery: "Air France Lounge SFO" },
+    { id: "sfo_alaska", name: "Alaska Lounge", terminal: "T2", network: "alaska_lounge", alliance: "oneworld", rating: 3.9, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 2", placeQuery: "Alaska Lounge SFO" },
+  ],
+  MIA: [
+    { id: "mia_centurion", name: "Amex Centurion Lounge", terminal: "N", network: "centurion", rating: 4.6, amenities: ["showers","hot_food","bar","wifi","spa","outdoor_terrace"], hours: "6:00 AM - 10:00 PM", location: "Concourse D", placeQuery: "American Express Centurion Lounge MIA" },
+    { id: "mia_flagship", name: "AA Flagship Lounge", terminal: "N", network: "flagship", alliance: "oneworld", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Concourse D", placeQuery: "American Airlines Flagship Lounge MIA" },
+    { id: "mia_admirals_d", name: "Admirals Club", terminal: "N", network: "admirals_club", alliance: "oneworld", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 10:00 PM", location: "Concourse D", placeQuery: "Admirals Club MIA Concourse D" },
+    { id: "mia_turkish", name: "Turkish Airlines Lounge (Miami)", terminal: "N", network: "turkish_lounge", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 10:00 PM", location: "North Terminal Concourse D", placeQuery: "Turkish Airlines Lounge Miami Airport" },
+    { id: "mia_ba_lounge", name: "British Airways Lounge", terminal: "N", network: "generic_airline", alliance: "oneworld", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "Varies with BA flights", location: "North Terminal", placeQuery: "British Airways Lounge Miami Airport" },
+    { id: "mia_delta_sky", name: "Delta Sky Club", terminal: "J", network: "delta_sky_club", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal J", placeQuery: "Delta Sky Club Miami Airport" },
+    { id: "mia_united_club", name: "United Club", terminal: "J", network: "united_club", alliance: "star", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "Varies with UA flights", location: "Terminal J", placeQuery: "United Club Miami Airport" },
+    { id: "mia_pp_club", name: "The Club MIA", terminal: "J", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Terminal J", placeQuery: "The Club at Miami Airport" },
+  ],
+  ATL: [
+    { id: "atl_sky_club_b", name: "Delta Sky Club", terminal: "B", network: "delta_sky_club", alliance: "skyteam", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","outdoor_terrace"], hours: "5:00 AM - Last Departure", location: "Concourse B", placeQuery: "Delta Sky Club ATL Concourse B" },
+    { id: "atl_sky_club_f", name: "Delta Sky Club", terminal: "F", network: "delta_sky_club", alliance: "skyteam", rating: 4.1, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Concourse F Int'l", placeQuery: "Delta Sky Club ATL Concourse F" },
+    { id: "atl_centurion", name: "Amex Centurion Lounge", terminal: "F", network: "centurion", rating: 4.4, amenities: ["showers","hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Concourse F", placeQuery: "American Express Centurion Lounge ATL" },
+    { id: "atl_pp_club", name: "The Club ATL", terminal: "T", network: "priority_pass", rating: 3.2, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Domestic Terminal", placeQuery: "The Club at ATL Airport" },
+  ],
+  BOS: [
+    { id: "bos_cap1", name: "Capital One Lounge", terminal: "B", network: "capital_one", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "5:30 AM - 10:00 PM", location: "Terminal B", placeQuery: "Capital One Lounge BOS" },
+    { id: "bos_admirals", name: "Admirals Club", terminal: "B", network: "admirals_club", alliance: "oneworld", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 9:00 PM", location: "Terminal B", placeQuery: "Admirals Club BOS" },
+    { id: "bos_delta_sky", name: "Delta Sky Club", terminal: "A", network: "delta_sky_club", alliance: "skyteam", rating: 3.9, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Terminal A", placeQuery: "Delta Sky Club BOS" },
+  ],
+  SEA: [
+    { id: "sea_centurion", name: "Amex Centurion Lounge", terminal: "S", network: "centurion", rating: 4.3, amenities: ["showers","hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "South Satellite", placeQuery: "American Express Centurion Lounge SEA" },
+    { id: "sea_alaska", name: "Alaska Lounge", terminal: "N", network: "alaska_lounge", alliance: "oneworld", rating: 4.0, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "N Terminal", placeQuery: "Alaska Lounge SEA" },
+    { id: "sea_delta_sky", name: "Delta Sky Club", terminal: "S", network: "delta_sky_club", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "South Satellite", placeQuery: "Delta Sky Club SEA" },
+    { id: "sea_alaska_n2", name: "Alaska Lounge (North Satellite)", terminal: "N", network: "alaska_lounge", alliance: "oneworld", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "North Satellite", placeQuery: "Alaska Lounge SEA North Satellite" },
+    { id: "sea_alaska_concourse_d", name: "Alaska Lounge (Concourse D)", terminal: "D", network: "alaska_lounge", alliance: "oneworld", rating: 3.9, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Concourse D", placeQuery: "Alaska Lounge SEA Concourse D" },
+  ],
+  DEN: [
+    { id: "den_centurion", name: "Amex Centurion Lounge", terminal: "C", network: "centurion", rating: 4.4, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "6:00 AM - 10:00 PM", location: "Concourse C", placeQuery: "American Express Centurion Lounge DEN" },
+    { id: "den_united_club_b", name: "United Club", terminal: "B", network: "united_club", alliance: "star", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Concourse B", placeQuery: "United Club DEN Concourse B" },
+    { id: "den_united_club_a", name: "United Club", terminal: "A", network: "united_club", alliance: "star", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Concourse A", placeQuery: "United Club DEN Concourse A" },
+    { id: "den_delta_sky", name: "Delta Sky Club", terminal: "A", network: "delta_sky_club", alliance: "skyteam", rating: 3.9, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Concourse A", placeQuery: "Delta Sky Club DEN" },
+    { id: "den_admirals", name: "Admirals Club", terminal: "B", network: "admirals_club", alliance: "oneworld", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Concourse B", placeQuery: "Admirals Club DEN" },
+  ],
+  LHR: [
+    { id: "lhr_pp_plaza", name: "Plaza Premium Lounge", terminal: "T2", network: "priority_pass", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - 10:00 PM", location: "Terminal 2", placeQuery: "Plaza Premium Lounge Heathrow Terminal 2" },
+    { id: "lhr_cathay", name: "Cathay Pacific Lounge", terminal: "T3", network: "cathay_lounge", alliance: "oneworld", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","nap_pods"], hours: "6:00 AM - 10:30 PM", location: "Terminal 3", placeQuery: "Cathay Pacific Lounge Heathrow" },
+    { id: "lhr_singapore", name: "Singapore Airlines SilverKris Lounge", terminal: "T2", network: "singapore_lounge", alliance: "star", rating: 4.2, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal 2", placeQuery: "Singapore Airlines SilverKris Lounge Heathrow" },
+    { id: "lhr_ba_galleries", name: "British Airways Galleries Lounge", terminal: "T5", network: "generic_airline", alliance: "oneworld", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal 5", placeQuery: "British Airways Galleries Lounge Heathrow Terminal 5" },
+    { id: "lhr_ba_galleries_first", name: "British Airways Galleries First Lounge", terminal: "T5", network: "generic_airline", alliance: "oneworld", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Terminal 5 South", placeQuery: "British Airways Galleries First Lounge Heathrow Terminal 5" },
+    { id: "lhr_ba_concorde", name: "British Airways Concorde Room", terminal: "T5", network: "generic_airline", alliance: "oneworld", rating: 4.7, amenities: ["showers","hot_food","bar","wifi","a_la_carte","spa"], hours: "5:00 AM - Last Departure", location: "Terminal 5", placeQuery: "British Airways Concorde Room Heathrow" },
+    { id: "lhr_ba_galleries_t3", name: "British Airways Galleries Lounge", terminal: "T3", network: "generic_airline", alliance: "oneworld", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal 3", placeQuery: "British Airways Galleries Lounge Heathrow Terminal 3" },
+    { id: "lhr_qantas", name: "Qantas Lounge", terminal: "T3", network: "qantas_lounge", alliance: "oneworld", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with QF flights", location: "Terminal 3", placeQuery: "Qantas Lounge Heathrow Terminal 3" },
+    { id: "lhr_united_club", name: "United Club", terminal: "T2", network: "united_club", alliance: "star", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Terminal 2", placeQuery: "United Club Heathrow Terminal 2" },
+    { id: "lhr_lufthansa", name: "Lufthansa Business Lounge", terminal: "T2", network: "generic_airline", alliance: "star", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - Last Departure", location: "Terminal 2", placeQuery: "Lufthansa Business Lounge Heathrow" },
+    { id: "lhr_air_canada", name: "Air Canada Maple Leaf Lounge", terminal: "T2", network: "generic_airline", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies with AC flights", location: "Terminal 2", placeQuery: "Air Canada Maple Leaf Lounge Heathrow" },
+    { id: "lhr_virgin_upper", name: "Virgin Atlantic Clubhouse", terminal: "T3", network: "generic_airline", alliance: "none", rating: 4.4, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "5:00 AM - Last Departure", location: "Terminal 3", placeQuery: "Virgin Atlantic Clubhouse Heathrow Terminal 3" },
+    { id: "lhr_aa_admirals", name: "American Airlines Admirals Club / Arrivals Lounge", terminal: "T3", network: "admirals_club", alliance: "oneworld", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal 3", placeQuery: "American Airlines Lounge Heathrow Terminal 3" },
+    { id: "lhr_emirates", name: "Emirates Lounge", terminal: "T3", network: "generic_airline", alliance: "none", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with EK flights", location: "Terminal 3", placeQuery: "Emirates Lounge Heathrow Terminal 3" },
+    { id: "lhr_turkish", name: "Turkish Airlines Lounge", terminal: "T2", network: "turkish_lounge", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - Last Departure", location: "Terminal 2", placeQuery: "Turkish Airlines Lounge Heathrow" },
+  ],
+  NRT: [
+    { id: "nrt_ana_lounge", name: "ANA Lounge", terminal: "T1", network: "generic_airline", alliance: "star", rating: 4.4, amenities: ["hot_food","bar","wifi","showers"], hours: "6:30 AM - Last Departure", location: "Terminal 1", placeQuery: "ANA Lounge Narita Airport Terminal 1" },
+    { id: "nrt_jal_sakura", name: "JAL Sakura Lounge", terminal: "T2", network: "generic_airline", alliance: "oneworld", rating: 4.3, amenities: ["hot_food","bar","wifi","showers"], hours: "7:00 AM - Last Departure", location: "Terminal 2", placeQuery: "JAL Sakura Lounge Narita" },
+    { id: "nrt_pp_iass", name: "IASS Executive Lounge", terminal: "T1", network: "priority_pass", rating: 3.4, amenities: ["bar","wifi"], hours: "7:00 AM - 9:00 PM", location: "Terminal 1", placeQuery: "IASS Executive Lounge Narita" },
+    { id: "nrt_united_club", name: "United Club", terminal: "T1", network: "united_club", alliance: "star", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "7:00 AM - Last Departure", location: "Terminal 1 South Wing", placeQuery: "United Club Narita Airport" },
+    { id: "nrt_korean_air", name: "Korean Air Lounge", terminal: "T1", network: "generic_airline", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies with KE flights", location: "Terminal 1 South Wing", placeQuery: "Korean Air Lounge Narita" },
+    { id: "nrt_delta_sky", name: "Delta Sky Club", terminal: "T1", network: "delta_sky_club", alliance: "skyteam", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "Varies with DL flights", location: "Terminal 1 South Wing", placeQuery: "Delta Sky Club Narita" },
+    { id: "nrt_cathay", name: "Cathay Pacific Lounge", terminal: "T2", network: "cathay_lounge", alliance: "oneworld", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with CX flights", location: "Terminal 2", placeQuery: "Cathay Pacific Lounge Narita" },
+    { id: "nrt_qantas", name: "Qantas Lounge", terminal: "T2", network: "qantas_lounge", alliance: "oneworld", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies with QF flights", location: "Terminal 2", placeQuery: "Qantas Lounge Narita Airport" },
+    { id: "nrt_jal_first", name: "JAL First Class Lounge", terminal: "T2", network: "generic_airline", alliance: "oneworld", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","a_la_carte"], hours: "7:00 AM - Last Departure", location: "Terminal 2", placeQuery: "JAL First Class Lounge Narita" },
+    { id: "nrt_singapore", name: "Singapore Airlines SilverKris Lounge", terminal: "T1", network: "singapore_lounge", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with SQ flights", location: "Terminal 1 South Wing", placeQuery: "Singapore Airlines SilverKris Lounge Narita" },
+  ],
+  HKG: [
+    { id: "hkg_cathay_wing", name: "Cathay Pacific The Wing First Class Lounge", terminal: "T1", network: "cathay_lounge", alliance: "oneworld", rating: 4.7, amenities: ["showers","hot_food","bar","wifi","nap_pods","a_la_carte"], hours: "5:30 AM - Last Departure", location: "Level 7 near Gate 1", placeQuery: "Cathay Pacific The Wing First Class Lounge Hong Kong" },
+    { id: "hkg_cathay_wing_biz", name: "Cathay Pacific The Wing Business Class Lounge", terminal: "T1", network: "cathay_lounge", alliance: "oneworld", rating: 4.3, amenities: ["showers","hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Level 7 near Gate 1", placeQuery: "Cathay Pacific The Wing Business Class Lounge Hong Kong" },
+    { id: "hkg_cathay_pier_first", name: "Cathay Pacific The Pier First Class Lounge", terminal: "T1", network: "cathay_lounge", alliance: "oneworld", rating: 4.8, amenities: ["showers","hot_food","bar","wifi","nap_pods","a_la_carte","spa"], hours: "5:30 AM - Last Departure", location: "Near Gate 65", placeQuery: "Cathay Pacific The Pier First Class Lounge Hong Kong" },
+    { id: "hkg_cathay_pier_biz", name: "Cathay Pacific The Pier Business Class Lounge", terminal: "T1", network: "cathay_lounge", alliance: "oneworld", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","nap_pods"], hours: "5:30 AM - Last Departure", location: "Near Gate 65", placeQuery: "Cathay Pacific The Pier Business Class Lounge Hong Kong" },
+    { id: "hkg_cathay_bridge", name: "Cathay Pacific The Bridge", terminal: "T1", network: "cathay_lounge", alliance: "oneworld", rating: 4.2, amenities: ["showers","hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Near Gate 35", placeQuery: "Cathay Pacific The Bridge Lounge Hong Kong" },
+    { id: "hkg_cathay_deck", name: "Cathay Pacific The Deck", terminal: "T1", network: "cathay_lounge", alliance: "oneworld", rating: 4.0, amenities: ["hot_food","bar","wifi","outdoor_terrace"], hours: "5:30 AM - Last Departure", location: "Near Gate 16", placeQuery: "Cathay Pacific The Deck Lounge Hong Kong" },
+    { id: "hkg_centurion", name: "Amex Centurion Lounge", terminal: "T1", network: "centurion", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "6:00 AM - 12:00 AM", location: "Near Gate 60", placeQuery: "American Express Centurion Lounge Hong Kong Airport" },
+    { id: "hkg_pp_plaza_east", name: "Plaza Premium Lounge (East Hall)", terminal: "T1", network: "priority_pass", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 1 East Hall", placeQuery: "Plaza Premium Lounge Hong Kong Airport East Hall" },
+    { id: "hkg_pp_plaza_west", name: "Plaza Premium Lounge (West Hall)", terminal: "T1", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 1 West Hall", placeQuery: "Plaza Premium Lounge Hong Kong Airport West Hall" },
+    { id: "hkg_qantas", name: "Qantas Lounge", terminal: "T1", network: "qantas_lounge", alliance: "oneworld", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with QF flights", location: "Near Gate 16", placeQuery: "Qantas Lounge Hong Kong Airport" },
+    { id: "hkg_singapore", name: "Singapore Airlines SilverKris Lounge", terminal: "T1", network: "singapore_lounge", alliance: "star", rating: 4.2, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies", location: "Near Gate 15", placeQuery: "Singapore Airlines SilverKris Lounge Hong Kong" },
+    { id: "hkg_united_club", name: "United Club", terminal: "T1", network: "united_club", alliance: "star", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "Varies with UA flights", location: "Near Gate 4", placeQuery: "United Club Hong Kong Airport" },
+    { id: "hkg_ba_lounge", name: "British Airways Lounge", terminal: "T1", network: "generic_airline", alliance: "oneworld", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with BA flights", location: "Near Gate 4", placeQuery: "British Airways Lounge Hong Kong Airport" },
+    { id: "hkg_thai", name: "Thai Airways Royal Orchid Lounge", terminal: "T1", network: "generic_airline", alliance: "star", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "Varies with TG flights", location: "Near Gate 16", placeQuery: "Thai Airways Royal Orchid Lounge Hong Kong" },
+    { id: "hkg_korean_air", name: "Korean Air Lounge", terminal: "T1", network: "generic_airline", alliance: "skyteam", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "Varies with KE flights", location: "Near Gate 15", placeQuery: "Korean Air Lounge Hong Kong Airport" },
+    { id: "hkg_turkish", name: "Turkish Airlines Lounge", terminal: "T1", network: "turkish_lounge", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with TK flights", location: "Near Gate 1", placeQuery: "Turkish Airlines Lounge Hong Kong Airport" },
+    { id: "hkg_japan_airlines", name: "JAL Sakura Lounge", terminal: "T1", network: "generic_airline", alliance: "oneworld", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with JL flights", location: "Near Gate 65", placeQuery: "JAL Sakura Lounge Hong Kong Airport" },
+  ],
+  SIN: [
+    { id: "sin_silverkris_t2", name: "SilverKris Business Class Lounge", terminal: "T2", network: "singapore_lounge", alliance: "star", rating: 4.5, amenities: ["showers","hot_food","bar","wifi"], hours: "24 hours", location: "Terminal 2", placeQuery: "Singapore Airlines SilverKris Business Lounge Changi Terminal 2" },
+    { id: "sin_silverkris_t3", name: "SilverKris First Class Lounge", terminal: "T3", network: "singapore_lounge", alliance: "star", rating: 4.7, amenities: ["showers","hot_food","bar","wifi","nap_pods","a_la_carte"], hours: "24 hours", location: "Terminal 3", placeQuery: "Singapore Airlines SilverKris First Class Lounge Changi Terminal 3" },
+    { id: "sin_silverkris_t3_biz", name: "SilverKris Business Class Lounge", terminal: "T3", network: "singapore_lounge", alliance: "star", rating: 4.5, amenities: ["showers","hot_food","bar","wifi"], hours: "24 hours", location: "Terminal 3", placeQuery: "Singapore Airlines SilverKris Business Lounge Changi Terminal 3" },
+    { id: "sin_qantas", name: "Qantas Singapore Lounge", terminal: "T1", network: "qantas_lounge", alliance: "oneworld", rating: 4.2, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with QF flights", location: "Terminal 1", placeQuery: "Qantas Lounge Singapore Changi Airport" },
+    { id: "sin_ba_lounge", name: "British Airways Lounge", terminal: "T1", network: "generic_airline", alliance: "oneworld", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies with BA flights", location: "Terminal 1", placeQuery: "British Airways Lounge Singapore Changi" },
+    { id: "sin_cathay_lounge", name: "Cathay Pacific Lounge", terminal: "T4", network: "cathay_lounge", alliance: "oneworld", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with CX flights", location: "Terminal 4", placeQuery: "Cathay Pacific Lounge Singapore Changi" },
+    { id: "sin_qatar_lounge", name: "Qatar Airways Premium Lounge", terminal: "T1", network: "generic_airline", alliance: "oneworld", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with QR flights", location: "Terminal 1", placeQuery: "Qatar Airways Premium Lounge Singapore Changi" },
+    { id: "sin_pp_sats", name: "SATS Premier Lounge", terminal: "T1", network: "priority_pass", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 1", placeQuery: "SATS Premier Lounge Changi" },
+    { id: "sin_pp_sats_t3", name: "SATS Premier Lounge", terminal: "T3", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "24 hours", location: "Terminal 3", placeQuery: "SATS Premier Lounge Changi Terminal 3" },
+    { id: "sin_dnata", name: "Dnata Lounge", terminal: "T1", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "24 hours", location: "Terminal 1", placeQuery: "Dnata Lounge Changi Airport" },
+    { id: "sin_centurion", name: "Amex Centurion Lounge (opening soon)", terminal: "T1", network: "centurion", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "TBD", location: "Terminal 1", placeQuery: "American Express Centurion Lounge Singapore Changi" },
+    { id: "sin_turkish", name: "Turkish Airlines Lounge", terminal: "T1", network: "turkish_lounge", alliance: "star", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with TK flights", location: "Terminal 1", placeQuery: "Turkish Airlines Lounge Singapore Changi" },
+    { id: "sin_korean_air", name: "Korean Air Lounge", terminal: "T1", network: "generic_airline", alliance: "skyteam", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "Varies with KE flights", location: "Terminal 1", placeQuery: "Korean Air Lounge Singapore Changi" },
+    { id: "sin_malaysia", name: "Malaysia Airlines Golden Lounge", terminal: "T1", network: "generic_airline", alliance: "oneworld", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies with MH flights", location: "Terminal 1", placeQuery: "Malaysia Airlines Golden Lounge Singapore Changi" },
+    { id: "sin_jal", name: "JAL Sakura Lounge", terminal: "T1", network: "generic_airline", alliance: "oneworld", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies with JL flights", location: "Terminal 1", placeQuery: "JAL Sakura Lounge Singapore Changi" },
+    { id: "sin_plaza_t1", name: "Plaza Premium Lounge", terminal: "T1", network: "plaza_premium", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 1 Transit", placeQuery: "Plaza Premium Lounge Singapore Changi Terminal 1" },
+  ],
+  BDA: [
+    { id: "bda_pp_lounge", name: "BDA Airport Lounge", terminal: "Main", network: "priority_pass", rating: 3.2, amenities: ["bar","wifi"], hours: "Varies", location: "Main Terminal", placeQuery: "Bermuda Airport Lounge" },
+  ],
+  // Americas — expanded
+  EWR: [
+    { id: "ewr_polaris", name: "United Polaris Lounge", terminal: "C", network: "polaris", alliance: "star", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","nap_pods","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Terminal C", placeQuery: "United Polaris Lounge Newark" },
+    { id: "ewr_united_club_c", name: "United Club", terminal: "C", network: "united_club", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal C Gate C74", placeQuery: "United Club Newark Terminal C" },
+    { id: "ewr_pp_virgin", name: "Virgin Atlantic Clubhouse", terminal: "B", network: "priority_pass", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 10:00 PM", location: "Terminal B", placeQuery: "Virgin Atlantic Clubhouse Newark" },
+    { id: "ewr_united_club_c3", name: "United Club", terminal: "C", network: "united_club", alliance: "star", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal C Gate C120", placeQuery: "United Club Newark Terminal C Gate C120" },
+    { id: "ewr_centurion", name: "Amex Centurion Lounge", terminal: "C", network: "centurion", rating: 4.3, amenities: ["showers","hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Terminal C", placeQuery: "American Express Centurion Lounge Newark" },
+    { id: "ewr_chase_sapphire", name: "Chase Sapphire Lounge", terminal: "A", network: "chase_sapphire_lounge", rating: 4.4, amenities: ["showers","hot_food","bar","wifi","phone_rooms"], hours: "5:30 AM - 10:00 PM", location: "Terminal A", placeQuery: "Chase Sapphire Lounge Newark Airport" },
+  ],
+  IAH: [
+    { id: "iah_centurion", name: "Amex Centurion Lounge", terminal: "D", network: "centurion", rating: 4.4, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "6:00 AM - 10:00 PM", location: "Terminal D", placeQuery: "American Express Centurion Lounge IAH" },
+    { id: "iah_united_club_c", name: "United Club", terminal: "C", network: "united_club", alliance: "star", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal C North", placeQuery: "United Club IAH Terminal C" },
+    { id: "iah_united_club_e", name: "United Club", terminal: "E", network: "united_club", alliance: "star", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Terminal E", placeQuery: "United Club IAH Terminal E" },
+    { id: "iah_pp_club", name: "The Club at IAH", terminal: "A", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Terminal A", placeQuery: "The Club IAH Airport" },
+  ],
+  PHX: [
+    { id: "phx_centurion", name: "Amex Centurion Lounge", terminal: "T4", network: "centurion", rating: 4.3, amenities: ["showers","hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Terminal 4", placeQuery: "American Express Centurion Lounge PHX" },
+    { id: "phx_admirals", name: "Admirals Club", terminal: "T4", network: "admirals_club", alliance: "oneworld", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:30 PM", location: "Terminal 4 Gate B", placeQuery: "Admirals Club PHX" },
+    { id: "phx_pp_club", name: "The Club PHX", terminal: "T4", network: "priority_pass", rating: 3.2, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Terminal 4", placeQuery: "The Club PHX Airport" },
+  ],
+  MSP: [
+    { id: "msp_delta_sky_f", name: "Delta Sky Club", terminal: "1-F", network: "delta_sky_club", alliance: "skyteam", rating: 4.1, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 1 Concourse F", placeQuery: "Delta Sky Club MSP Concourse F" },
+    { id: "msp_delta_sky_g", name: "Delta Sky Club", terminal: "1-G", network: "delta_sky_club", alliance: "skyteam", rating: 4.2, amenities: ["hot_food","bar","wifi","outdoor_terrace"], hours: "5:00 AM - Last Departure", location: "Terminal 1 Concourse G", placeQuery: "Delta Sky Club MSP Concourse G" },
+    { id: "msp_pp_espace", name: "Espace Musees Lounge", terminal: "2", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Terminal 2", placeQuery: "Espace Musees Lounge MSP" },
+  ],
+  DTW: [
+    { id: "dtw_delta_sky_a", name: "Delta Sky Club", terminal: "EM-A", network: "delta_sky_club", alliance: "skyteam", rating: 4.2, amenities: ["showers","hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "McNamara Terminal Concourse A", placeQuery: "Delta Sky Club DTW McNamara" },
+    { id: "dtw_centurion", name: "Amex Centurion Lounge", terminal: "EM-A", network: "centurion", rating: 4.3, amenities: ["hot_food","bar","wifi","spa"], hours: "6:00 AM - 9:00 PM", location: "McNamara Terminal", placeQuery: "American Express Centurion Lounge DTW" },
+    { id: "dtw_pp_club", name: "The Club DTW", terminal: "NM", network: "priority_pass", rating: 3.1, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "North Terminal", placeQuery: "The Club DTW Airport" },
+  ],
+  CLT: [
+    { id: "clt_centurion", name: "Amex Centurion Lounge", terminal: "C", network: "centurion", rating: 4.3, amenities: ["showers","hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Concourse C", placeQuery: "American Express Centurion Lounge CLT" },
+    { id: "clt_admirals_c", name: "Admirals Club", terminal: "C", network: "admirals_club", alliance: "oneworld", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 9:30 PM", location: "Concourse C", placeQuery: "Admirals Club CLT" },
+    { id: "clt_pp_club", name: "The Club CLT", terminal: "B", network: "priority_pass", rating: 3.2, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Concourse B", placeQuery: "The Club CLT Airport" },
+  ],
+  MCO: [
+    { id: "mco_pp_club", name: "The Club MCO", terminal: "A", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Terminal A Airside", placeQuery: "The Club MCO Airport" },
+    { id: "mco_plaza", name: "Plaza Premium Lounge", terminal: "C", network: "plaza_premium", rating: 3.5, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 10:00 PM", location: "Terminal C", placeQuery: "Plaza Premium Lounge Orlando Airport" },
+  ],
+  FLL: [
+    { id: "fll_pp_club", name: "The Club FLL", terminal: "1", network: "priority_pass", rating: 3.2, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Terminal 1", placeQuery: "The Club FLL Airport" },
+    { id: "fll_admirals", name: "Admirals Club", terminal: "4", network: "admirals_club", alliance: "oneworld", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 8:30 PM", location: "Terminal 4", placeQuery: "Admirals Club FLL" },
+  ],
+  SAN: [
+    { id: "san_pp_club", name: "The Club SAN", terminal: "2W", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Terminal 2 West", placeQuery: "The Club SAN Airport" },
+    { id: "san_admirals", name: "Admirals Club", terminal: "2W", network: "admirals_club", alliance: "oneworld", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Terminal 2 West", placeQuery: "Admirals Club SAN" },
+    { id: "san_delta_sky", name: "Delta Sky Club", terminal: "2E", network: "delta_sky_club", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Terminal 2 East", placeQuery: "Delta Sky Club SAN" },
+  ],
+  PDX: [
+    { id: "pdx_alaska", name: "Alaska Lounge", terminal: "C", network: "alaska_lounge", alliance: "oneworld", rating: 4.0, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Concourse C", placeQuery: "Alaska Lounge PDX" },
+    { id: "pdx_pp_capers", name: "Capers Market", terminal: "E", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Concourse E", placeQuery: "Capers Market Lounge PDX" },
+  ],
+  HNL: [
+    { id: "hnl_pp_iass", name: "IASS Hawaii Lounge", terminal: "2", network: "priority_pass", rating: 3.4, amenities: ["bar","wifi"], hours: "7:00 AM - 8:00 PM", location: "Terminal 2", placeQuery: "IASS Hawaii Lounge Honolulu" },
+    { id: "hnl_delta_sky", name: "Delta Sky Club", terminal: "2", network: "delta_sky_club", alliance: "skyteam", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "Opening varies by flight", location: "Terminal 2", placeQuery: "Delta Sky Club HNL" },
+  ],
+  YYZ: [
+    { id: "yyz_pp_plaza_t1", name: "Plaza Premium Lounge", terminal: "T1", network: "plaza_premium", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - 11:00 PM", location: "Terminal 1 Domestic", placeQuery: "Plaza Premium Lounge Toronto Pearson Terminal 1" },
+    { id: "yyz_pp_plaza_t3", name: "Plaza Premium Lounge", terminal: "T3", network: "plaza_premium", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - 10:30 PM", location: "Terminal 3", placeQuery: "Plaza Premium Lounge Toronto Pearson Terminal 3" },
+    { id: "yyz_air_canada", name: "Air Canada Maple Leaf Lounge", terminal: "T1", network: "generic_airline", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal 1 Int'l", placeQuery: "Air Canada Maple Leaf Lounge Toronto" },
+  ],
+  YVR: [
+    { id: "yvr_pp_plaza", name: "Plaza Premium Lounge", terminal: "Int'l", network: "plaza_premium", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - 1:00 AM", location: "International Terminal", placeQuery: "Plaza Premium Lounge Vancouver Airport" },
+    { id: "yvr_air_canada", name: "Air Canada Maple Leaf Lounge", terminal: "Dom", network: "generic_airline", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Domestic Terminal", placeQuery: "Air Canada Maple Leaf Lounge Vancouver" },
+    { id: "yvr_cathay", name: "Cathay Pacific Lounge", terminal: "Int'l", network: "cathay_lounge", alliance: "oneworld", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "6:30 AM - 1:30 AM", location: "International Terminal", placeQuery: "Cathay Pacific Lounge Vancouver Airport" },
+  ],
+  MEX: [
+    { id: "mex_centurion", name: "Amex Centurion Lounge", terminal: "T1", network: "centurion", rating: 4.2, amenities: ["showers","hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Terminal 1 Int'l", placeQuery: "American Express Centurion Lounge Mexico City Airport" },
+    { id: "mex_pp_salon", name: "Salon Premier", terminal: "T2", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 10:00 PM", location: "Terminal 2", placeQuery: "Salon Premier Mexico City Airport Terminal 2" },
+    { id: "mex_admirals", name: "Admirals Club", terminal: "T1", network: "admirals_club", alliance: "oneworld", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Terminal 1", placeQuery: "Admirals Club Mexico City Airport" },
+  ],
+  GRU: [
+    { id: "gru_pp_plaza", name: "Plaza Premium Lounge", terminal: "T3", network: "plaza_premium", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 3 Int'l", placeQuery: "Plaza Premium Lounge Guarulhos Airport" },
+    { id: "gru_admirals", name: "Admirals Club", terminal: "T3", network: "admirals_club", alliance: "oneworld", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - Last Departure", location: "Terminal 3", placeQuery: "Admirals Club Guarulhos Airport" },
+    { id: "gru_latam", name: "LATAM VIP Lounge", terminal: "T3", network: "generic_airline", alliance: "none", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal 3", placeQuery: "LATAM VIP Lounge Guarulhos" },
+  ],
+  EZE: [
+    { id: "eze_pp_salon", name: "Salon Condor", terminal: "A", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "24 hours", location: "Terminal A", placeQuery: "Salon Condor Ezeiza Airport" },
+    { id: "eze_aerolineas", name: "Aerolineas Argentinas Salon VIP", terminal: "A", network: "generic_airline", alliance: "skyteam", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - Last Departure", location: "Terminal A", placeQuery: "Aerolineas Argentinas VIP Lounge Ezeiza" },
+  ],
+  BOG: [
+    { id: "bog_avianca", name: "Avianca Lounge", terminal: "Int'l", network: "generic_airline", alliance: "star", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "4:30 AM - 10:00 PM", location: "International Terminal", placeQuery: "Avianca Lounge El Dorado Bogota" },
+    { id: "bog_pp_sala", name: "Sala VIP El Dorado", terminal: "Int'l", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 10:00 PM", location: "International Terminal", placeQuery: "Sala VIP El Dorado Airport Bogota" },
+  ],
+  SCL: [
+    { id: "scl_latam", name: "LATAM VIP Lounge", terminal: "Int'l", network: "generic_airline", alliance: "none", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "International Terminal", placeQuery: "LATAM VIP Lounge Santiago Airport" },
+    { id: "scl_pp_salon", name: "Salon VIP Pacific Club", terminal: "Int'l", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "International Terminal", placeQuery: "Pacific Club Lounge Santiago Airport" },
+  ],
+  PTY: [
+    { id: "pty_copa", name: "Copa Club", terminal: "Main", network: "generic_airline", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - 10:00 PM", location: "Main Terminal", placeQuery: "Copa Club Tocumen Airport Panama" },
+    { id: "pty_pp_global", name: "Global Lounge", terminal: "T2", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "24 hours", location: "Terminal 2", placeQuery: "Global Lounge Tocumen Airport Panama" },
+  ],
+  LIM: [
+    { id: "lim_pp_sumaq", name: "Sumaq VIP Lounge", terminal: "Int'l", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "International Terminal", placeQuery: "Sumaq VIP Lounge Lima Airport" },
+    { id: "lim_latam", name: "LATAM VIP Lounge", terminal: "Int'l", network: "generic_airline", alliance: "none", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "International Terminal", placeQuery: "LATAM VIP Lounge Lima Airport" },
+  ],
+  SJU: [
+    { id: "sju_pp_club", name: "The Club SJU", terminal: "A", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Terminal A", placeQuery: "The Club SJU Airport" },
+    { id: "sju_jetblue", name: "JetBlue Mint Lounge", terminal: "A", network: "generic_airline", alliance: "none", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies by flight", location: "Terminal A", placeQuery: "JetBlue Lounge San Juan Airport" },
+  ],
+  CUN: [
+    { id: "cun_pp_viplounge", name: "Mera Business Lounge", terminal: "T3", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 10:00 PM", location: "Terminal 3 Int'l", placeQuery: "Mera Business Lounge Cancun Airport Terminal 3" },
+    { id: "cun_admirals", name: "Admirals Club", terminal: "T3", network: "admirals_club", alliance: "oneworld", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 8:00 PM", location: "Terminal 3", placeQuery: "Admirals Club Cancun Airport" },
+  ],
+  // Europe — expanded
+  CDG: [
+    { id: "cdg_af_salon", name: "Air France Business Lounge", terminal: "T2E", network: "generic_airline", alliance: "skyteam", rating: 4.2, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - Last Departure", location: "Terminal 2E Hall K", placeQuery: "Air France Business Lounge CDG Terminal 2E" },
+    { id: "cdg_pp_icare", name: "Icare Lounge", terminal: "T1", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Terminal 1", placeQuery: "Icare Lounge CDG Terminal 1" },
+    { id: "cdg_qatar", name: "Qatar Airways Premium Lounge", terminal: "T1", network: "generic_airline", alliance: "oneworld", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 11:00 PM", location: "Terminal 1", placeQuery: "Qatar Airways Lounge CDG" },
+    { id: "cdg_star_alliance", name: "Star Alliance Lounge", terminal: "T1", network: "generic_airline", alliance: "star", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 11:00 PM", location: "Terminal 1", placeQuery: "Star Alliance Lounge CDG" },
+    { id: "cdg_af_salon_first", name: "Air France La Premiere Lounge", terminal: "T2E", network: "generic_airline", alliance: "skyteam", rating: 4.6, amenities: ["showers","hot_food","bar","wifi","a_la_carte","spa"], hours: "5:30 AM - Last Departure", location: "Terminal 2E Hall L", placeQuery: "Air France La Premiere Lounge CDG" },
+    { id: "cdg_af_salon_2f", name: "Air France Business Lounge", terminal: "T2F", network: "generic_airline", alliance: "skyteam", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - Last Departure", location: "Terminal 2F", placeQuery: "Air France Business Lounge CDG Terminal 2F" },
+    { id: "cdg_korean_air", name: "Korean Air Lounge", terminal: "T1", network: "generic_airline", alliance: "skyteam", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "Varies with KE flights", location: "Terminal 1", placeQuery: "Korean Air Lounge CDG" },
+    { id: "cdg_cathay", name: "Cathay Pacific Lounge", terminal: "T1", network: "cathay_lounge", alliance: "oneworld", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with CX flights", location: "Terminal 1", placeQuery: "Cathay Pacific Lounge CDG" },
+    { id: "cdg_turkish", name: "Turkish Airlines Lounge", terminal: "T1", network: "turkish_lounge", alliance: "star", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 10:00 PM", location: "Terminal 1", placeQuery: "Turkish Airlines Lounge CDG" },
+    { id: "cdg_emirates", name: "Emirates Lounge", terminal: "T2C", network: "generic_airline", alliance: "none", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with EK flights", location: "Terminal 2C", placeQuery: "Emirates Lounge CDG Paris" },
+  ],
+  AMS: [
+    { id: "ams_klm_crown", name: "KLM Crown Lounge", terminal: "3", network: "generic_airline", alliance: "skyteam", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Schengen Area Lounge 3", placeQuery: "KLM Crown Lounge Schiphol" },
+    { id: "ams_pp_aspire", name: "Aspire Lounge", terminal: "2", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 10:00 PM", location: "Lounge 2", placeQuery: "Aspire Lounge Amsterdam Schiphol" },
+    { id: "ams_centurion", name: "Amex Centurion Lounge", terminal: "2", network: "centurion", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "6:00 AM - 10:00 PM", location: "Behind Passport Control", placeQuery: "American Express Centurion Lounge Amsterdam" },
+    { id: "ams_klm_crown_ns", name: "KLM Crown Lounge (Non-Schengen)", terminal: "3", network: "generic_airline", alliance: "skyteam", rating: 4.2, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Non-Schengen Lounge 3", placeQuery: "KLM Crown Lounge Schiphol Non-Schengen" },
+    { id: "ams_british_airways", name: "British Airways Lounge", terminal: "Non-Schengen", network: "generic_airline", alliance: "oneworld", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "Varies with BA flights", location: "Non-Schengen area", placeQuery: "British Airways Lounge Amsterdam Schiphol" },
+    { id: "ams_star_alliance", name: "Star Alliance Lounge", terminal: "Non-Schengen", network: "generic_airline", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - Last Departure", location: "Non-Schengen area", placeQuery: "Star Alliance Lounge Amsterdam Schiphol" },
+  ],
+  FRA: [
+    { id: "fra_luft_senator", name: "Lufthansa Senator Lounge", terminal: "T1", network: "generic_airline", alliance: "star", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","nap_pods"], hours: "5:30 AM - Last Departure", location: "Terminal 1 Concourse B", placeQuery: "Lufthansa Senator Lounge Frankfurt Terminal 1" },
+    { id: "fra_luft_business", name: "Lufthansa Business Lounge", terminal: "T1", network: "generic_airline", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - Last Departure", location: "Terminal 1 Concourse A", placeQuery: "Lufthansa Business Lounge Frankfurt" },
+    { id: "fra_pp_primeclass", name: "Primeclass Lounge", terminal: "T2", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Terminal 2", placeQuery: "Primeclass Lounge Frankfurt Airport" },
+    { id: "fra_luft_first", name: "Lufthansa First Class Terminal", terminal: "T1", network: "generic_airline", alliance: "star", rating: 4.8, amenities: ["showers","hot_food","bar","wifi","spa","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Separate First Class Terminal", placeQuery: "Lufthansa First Class Terminal Frankfurt" },
+    { id: "fra_singapore", name: "Singapore Airlines SilverKris Lounge", terminal: "T1", network: "singapore_lounge", alliance: "star", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with SQ flights", location: "Terminal 1 Concourse B", placeQuery: "SilverKris Lounge Frankfurt Airport" },
+    { id: "fra_cathay", name: "Cathay Pacific Lounge", terminal: "T1", network: "cathay_lounge", alliance: "oneworld", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with CX flights", location: "Terminal 1 Concourse B", placeQuery: "Cathay Pacific Lounge Frankfurt Airport" },
+    { id: "fra_emirates", name: "Emirates Lounge", terminal: "T2", network: "generic_airline", alliance: "none", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with EK flights", location: "Terminal 2 Concourse D", placeQuery: "Emirates Lounge Frankfurt Airport" },
+    { id: "fra_turkish", name: "Turkish Airlines Lounge", terminal: "T1", network: "turkish_lounge", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with TK flights", location: "Terminal 1", placeQuery: "Turkish Airlines Lounge Frankfurt Airport" },
+    { id: "fra_ba_lounge", name: "British Airways Lounge", terminal: "T1", network: "generic_airline", alliance: "oneworld", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "Varies with BA flights", location: "Terminal 1 Concourse B", placeQuery: "British Airways Lounge Frankfurt Airport" },
+  ],
+  MUC: [
+    { id: "muc_luft_senator", name: "Lufthansa Senator Lounge", terminal: "T2", network: "generic_airline", alliance: "star", rating: 4.4, amenities: ["showers","hot_food","bar","wifi","nap_pods"], hours: "5:30 AM - Last Departure", location: "Terminal 2 Satellite", placeQuery: "Lufthansa Senator Lounge Munich Airport" },
+    { id: "muc_luft_business", name: "Lufthansa Business Lounge", terminal: "T2", network: "generic_airline", alliance: "star", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - Last Departure", location: "Terminal 2", placeQuery: "Lufthansa Business Lounge Munich" },
+    { id: "muc_pp_airport", name: "Airport Lounge Europa", terminal: "T1", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:30 PM", location: "Terminal 1", placeQuery: "Airport Lounge Europa Munich" },
+  ],
+  ZRH: [
+    { id: "zrh_swiss_senator", name: "SWISS Senator Lounge", terminal: "E", network: "generic_airline", alliance: "star", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","nap_pods"], hours: "5:30 AM - Last Departure", location: "Airside E", placeQuery: "SWISS Senator Lounge Zurich Airport" },
+    { id: "zrh_swiss_business", name: "SWISS Business Lounge", terminal: "E", network: "generic_airline", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - Last Departure", location: "Airside E", placeQuery: "SWISS Business Lounge Zurich" },
+    { id: "zrh_pp_aspire", name: "Aspire Lounge", terminal: "E", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Airside E", placeQuery: "Aspire Lounge Zurich Airport" },
+  ],
+  FCO: [
+    { id: "fco_pp_plaza", name: "Plaza Premium Lounge", terminal: "T3", network: "plaza_premium", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 11:00 PM", location: "Terminal 3", placeQuery: "Plaza Premium Lounge Rome Fiumicino" },
+    { id: "fco_ita_lounge", name: "ITA Airways Lounge Dolce Vita", terminal: "T1", network: "generic_airline", alliance: "skyteam", rating: 3.9, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Terminal 1", placeQuery: "ITA Airways Lounge Rome Fiumicino" },
+    { id: "fco_pp_primeclass", name: "Primeclass Lounge", terminal: "T3", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Terminal 3", placeQuery: "Primeclass Lounge Rome Fiumicino Airport" },
+  ],
+  BCN: [
+    { id: "bcn_pp_sala", name: "Sala VIP Pau Casals", terminal: "T1", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Terminal 1", placeQuery: "Sala VIP Pau Casals Barcelona Airport" },
+    { id: "bcn_iberia", name: "Iberia Sala VIP Dali", terminal: "T1", network: "generic_airline", alliance: "oneworld", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - Last Departure", location: "Terminal 1", placeQuery: "Iberia Sala VIP Dali Barcelona" },
+  ],
+  MAD: [
+    { id: "mad_iberia_vela", name: "Iberia Premium Lounge Velazquez", terminal: "T4S", network: "generic_airline", alliance: "oneworld", rating: 4.2, amenities: ["showers","hot_food","bar","wifi","nap_pods"], hours: "5:00 AM - Last Departure", location: "Terminal 4 Satellite", placeQuery: "Iberia Premium Lounge Velazquez Madrid" },
+    { id: "mad_pp_sala", name: "Sala VIP Cibeles", terminal: "T4", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Terminal 4", placeQuery: "Sala VIP Cibeles Madrid Airport" },
+    { id: "mad_neptuno", name: "Sala VIP Neptuno", terminal: "T1", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Terminal 1", placeQuery: "Sala VIP Neptuno Madrid Airport" },
+  ],
+  LIS: [
+    { id: "lis_pp_ana", name: "ANA Lounge", terminal: "T1", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - 11:00 PM", location: "Terminal 1", placeQuery: "ANA Star Alliance Lounge Lisbon Airport" },
+    { id: "lis_tap", name: "TAP Premium Lounge", terminal: "T1", network: "generic_airline", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal 1", placeQuery: "TAP Premium Lounge Lisbon Airport" },
+  ],
+  DUB: [
+    { id: "dub_pp_51st", name: "51st & Green", terminal: "T2", network: "priority_pass", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - 10:00 PM", location: "Terminal 2 Departure Gates", placeQuery: "51st and Green Lounge Dublin Airport" },
+    { id: "dub_pp_t1", name: "The Lounge", terminal: "T1", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 9:00 PM", location: "Terminal 1", placeQuery: "The Lounge Dublin Airport Terminal 1" },
+  ],
+  CPH: [
+    { id: "cph_sas_gold", name: "SAS Gold Lounge", terminal: "T3", network: "generic_airline", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal 3", placeQuery: "SAS Gold Lounge Copenhagen Airport" },
+    { id: "cph_pp_eventyr", name: "Eventyr Lounge", terminal: "T3", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 10:00 PM", location: "Terminal 3", placeQuery: "Eventyr Lounge Copenhagen Airport" },
+  ],
+  ARN: [
+    { id: "arn_sas_gold", name: "SAS Gold Lounge", terminal: "T5", network: "generic_airline", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal 5", placeQuery: "SAS Gold Lounge Stockholm Arlanda" },
+    { id: "arn_pp_menzies", name: "Menzies Aviation Lounge", terminal: "T5", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:30 PM", location: "Terminal 5", placeQuery: "Menzies Aviation Lounge Arlanda" },
+  ],
+  HEL: [
+    { id: "hel_finnair_lounge", name: "Finnair Premium Lounge", terminal: "T2", network: "generic_airline", alliance: "oneworld", rating: 4.2, amenities: ["showers","hot_food","bar","wifi","nap_pods"], hours: "5:00 AM - Last Departure", location: "Terminal 2 Schengen", placeQuery: "Finnair Premium Lounge Helsinki Airport" },
+    { id: "hel_pp_plaza", name: "Plaza Premium Lounge", terminal: "T2", network: "plaza_premium", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 10:00 PM", location: "Terminal 2 Non-Schengen", placeQuery: "Plaza Premium Lounge Helsinki Airport" },
+  ],
+  IST: [
+    { id: "ist_turkish_miles", name: "Turkish Airlines Miles&Smiles Lounge", terminal: "Int'l", network: "turkish_lounge", alliance: "star", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","nap_pods","spa"], hours: "24 hours", location: "International Departures", placeQuery: "Turkish Airlines Miles Smiles Lounge Istanbul Airport" },
+    { id: "ist_turkish_business", name: "Turkish Airlines Business Lounge", terminal: "Int'l", network: "turkish_lounge", alliance: "star", rating: 4.6, amenities: ["showers","hot_food","bar","wifi","nap_pods","spa","a_la_carte"], hours: "24 hours", location: "International Departures", placeQuery: "Turkish Airlines Business Lounge Istanbul Airport" },
+    { id: "ist_pp_primeclass", name: "Primeclass CIP Lounge", terminal: "Dom", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "24 hours", location: "Domestic Terminal", placeQuery: "Primeclass Lounge Istanbul Airport" },
+  ],
+  VIE: [
+    { id: "vie_austrian", name: "Austrian Airlines Senator Lounge", terminal: "3", network: "generic_airline", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - Last Departure", location: "Terminal 3", placeQuery: "Austrian Airlines Senator Lounge Vienna Airport" },
+    { id: "vie_pp_lounge", name: "Air Lounge", terminal: "3", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Terminal 3", placeQuery: "Air Lounge Vienna Airport" },
+  ],
+  ATH: [
+    { id: "ath_pp_goldair", name: "Goldair Handling CIP Lounge", terminal: "Main", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 10:00 PM", location: "Main Terminal Non-Schengen", placeQuery: "Goldair Handling CIP Lounge Athens Airport" },
+    { id: "ath_aegean", name: "Aegean Business Lounge", terminal: "Main", network: "generic_airline", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - Last Departure", location: "Main Terminal Schengen", placeQuery: "Aegean Business Lounge Athens Airport" },
+  ],
+  // Middle East / Africa — expanded
+  DXB: [
+    { id: "dxb_emirates_bc", name: "Emirates Business Class Lounge", terminal: "T3", network: "emirates_lounge", alliance: "none", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","spa","nap_pods"], hours: "24 hours", location: "Terminal 3 Concourse B", placeQuery: "Emirates Business Class Lounge Dubai Concourse B" },
+    { id: "dxb_emirates_fc", name: "Emirates First Class Lounge", terminal: "T3", network: "emirates_lounge", alliance: "none", rating: 4.8, amenities: ["showers","hot_food","bar","wifi","spa","nap_pods","a_la_carte"], hours: "24 hours", location: "Terminal 3 Concourse A", placeQuery: "Emirates First Class Lounge Dubai Concourse A" },
+    { id: "dxb_pp_marhaba", name: "Marhaba Lounge", terminal: "T1", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 1", placeQuery: "Marhaba Lounge Dubai Airport Terminal 1" },
+    { id: "dxb_centurion", name: "Amex Centurion Lounge (coming)", terminal: "T3", network: "centurion", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "Opening 2025", location: "Terminal 3 Concourse B", placeQuery: "American Express Centurion Lounge Dubai" },
+    { id: "dxb_emirates_bc_c", name: "Emirates Business Class Lounge (Concourse C)", terminal: "T3", network: "emirates_lounge", alliance: "none", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","nap_pods"], hours: "24 hours", location: "Terminal 3 Concourse C", placeQuery: "Emirates Business Class Lounge Dubai Concourse C" },
+    { id: "dxb_qantas", name: "Qantas Lounge", terminal: "T1", network: "qantas_lounge", alliance: "oneworld", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with QF flights", location: "Terminal 1", placeQuery: "Qantas Lounge Dubai Airport" },
+    { id: "dxb_pp_ahlan", name: "Ahlan Lounge", terminal: "T1", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 1 Concourse D", placeQuery: "Ahlan Lounge Dubai Airport Terminal 1" },
+    { id: "dxb_ba_lounge", name: "British Airways Lounge", terminal: "T1", network: "generic_airline", alliance: "oneworld", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with BA flights", location: "Terminal 1", placeQuery: "British Airways Lounge Dubai Airport" },
+  ],
+  DOH: [
+    { id: "doh_qatar_alm", name: "Qatar Airways Al Mourjan Business Lounge", terminal: "Main", network: "generic_airline", alliance: "oneworld", rating: 4.7, amenities: ["showers","hot_food","bar","wifi","nap_pods","spa","a_la_carte"], hours: "24 hours", location: "Main Departures", placeQuery: "Al Mourjan Business Lounge Doha Hamad" },
+    { id: "doh_qatar_gold", name: "Qatar Airways Al Mourjan Garden", terminal: "Main", network: "generic_airline", alliance: "oneworld", rating: 4.8, amenities: ["showers","hot_food","bar","wifi","nap_pods","spa","a_la_carte","outdoor_terrace"], hours: "24 hours", location: "Main Departures", placeQuery: "Al Mourjan Garden Lounge Doha Hamad" },
+    { id: "doh_pp_oryx", name: "Oryx Lounge", terminal: "Main", network: "priority_pass", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "South Node", placeQuery: "Oryx Lounge Doha Hamad Airport" },
+    { id: "doh_qatar_first", name: "Qatar Airways Al Safwa First Class Lounge", terminal: "Main", network: "generic_airline", alliance: "oneworld", rating: 4.9, amenities: ["showers","hot_food","bar","wifi","spa","nap_pods","a_la_carte"], hours: "24 hours", location: "Near Gate A1", placeQuery: "Al Safwa First Class Lounge Doha Hamad" },
+    { id: "doh_pp_plaza", name: "Plaza Premium Lounge", terminal: "Main", network: "plaza_premium", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "South Node", placeQuery: "Plaza Premium Lounge Doha Hamad Airport" },
+  ],
+  AUH: [
+    { id: "auh_etihad_fc", name: "Etihad First Class Lounge & Spa", terminal: "T3", network: "generic_airline", alliance: "none", rating: 4.7, amenities: ["showers","hot_food","bar","wifi","spa","nap_pods","a_la_carte"], hours: "24 hours", location: "Terminal 3", placeQuery: "Etihad First Class Lounge Abu Dhabi" },
+    { id: "auh_etihad_bc", name: "Etihad Business Class Lounge", terminal: "T3", network: "generic_airline", alliance: "none", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","nap_pods"], hours: "24 hours", location: "Terminal 3", placeQuery: "Etihad Business Lounge Abu Dhabi" },
+    { id: "auh_pp_aldhabi", name: "Al Dhabi Lounge", terminal: "T1", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 1", placeQuery: "Al Dhabi Lounge Abu Dhabi Airport" },
+  ],
+  JNB: [
+    { id: "jnb_pp_bidvest", name: "Bidvest Premier Lounge", terminal: "Int'l", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - 10:00 PM", location: "International Terminal", placeQuery: "Bidvest Premier Lounge Johannesburg Airport" },
+    { id: "jnb_saa_lounge", name: "SAA Voyager Lounge", terminal: "Dom", network: "generic_airline", alliance: "star", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Domestic Terminal", placeQuery: "SAA Voyager Lounge Johannesburg" },
+  ],
+  CAI: [
+    { id: "cai_pp_premium", name: "Premium Lounge", terminal: "T3", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "24 hours", location: "Terminal 3", placeQuery: "Premium Lounge Cairo Airport Terminal 3" },
+    { id: "cai_egyptair", name: "EgyptAir Horus Lounge", terminal: "T3", network: "generic_airline", alliance: "star", rating: 3.5, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 3", placeQuery: "EgyptAir Horus Lounge Cairo Airport" },
+  ],
+  // Asia-Pacific — expanded
+  ICN: [
+    { id: "icn_ke_prestige", name: "Korean Air Prestige Class Lounge", terminal: "T2", network: "generic_airline", alliance: "skyteam", rating: 4.4, amenities: ["showers","hot_food","bar","wifi","nap_pods"], hours: "6:00 AM - Last Departure", location: "Terminal 2 Concourse", placeQuery: "Korean Air Prestige Lounge Incheon Terminal 2" },
+    { id: "icn_asiana_business", name: "Asiana Business Lounge", terminal: "T1", network: "generic_airline", alliance: "star", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - Last Departure", location: "Terminal 1", placeQuery: "Asiana Business Lounge Incheon" },
+    { id: "icn_pp_matina", name: "Matina Lounge", terminal: "T1", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "7:00 AM - 10:00 PM", location: "Terminal 1", placeQuery: "Matina Lounge Incheon Airport" },
+    { id: "icn_sky_hub", name: "Sky Hub Lounge", terminal: "T1", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "7:00 AM - 10:00 PM", location: "Terminal 1 East", placeQuery: "Sky Hub Lounge Incheon Airport" },
+    { id: "icn_ke_first", name: "Korean Air First Class Lounge", terminal: "T2", network: "generic_airline", alliance: "skyteam", rating: 4.6, amenities: ["showers","hot_food","bar","wifi","nap_pods","a_la_carte","spa"], hours: "6:00 AM - Last Departure", location: "Terminal 2", placeQuery: "Korean Air First Class Lounge Incheon" },
+    { id: "icn_asiana_first", name: "Asiana First Class Lounge", terminal: "T1", network: "generic_airline", alliance: "star", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","nap_pods"], hours: "6:00 AM - Last Departure", location: "Terminal 1", placeQuery: "Asiana First Class Lounge Incheon" },
+    { id: "icn_cathay", name: "Cathay Pacific Lounge", terminal: "T1", network: "cathay_lounge", alliance: "oneworld", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with CX flights", location: "Terminal 1", placeQuery: "Cathay Pacific Lounge Incheon" },
+    { id: "icn_singapore", name: "Singapore Airlines SilverKris Lounge", terminal: "T1", network: "singapore_lounge", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with SQ flights", location: "Terminal 1", placeQuery: "SilverKris Lounge Incheon" },
+    { id: "icn_delta_sky", name: "Delta Sky Club", terminal: "T2", network: "delta_sky_club", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies with DL flights", location: "Terminal 2", placeQuery: "Delta Sky Club Incheon" },
+    { id: "icn_jal_sakura", name: "JAL Sakura Lounge", terminal: "T1", network: "generic_airline", alliance: "oneworld", rating: 3.9, amenities: ["hot_food","bar","wifi"], hours: "Varies with JL flights", location: "Terminal 1", placeQuery: "JAL Sakura Lounge Incheon" },
+    { id: "icn_ana_lounge", name: "ANA Lounge", terminal: "T1", network: "generic_airline", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies with NH flights", location: "Terminal 1", placeQuery: "ANA Lounge Incheon Airport" },
+  ],
+  KIX: [
+    { id: "kix_ana_lounge", name: "ANA Lounge", terminal: "T1", network: "generic_airline", alliance: "star", rating: 4.1, amenities: ["hot_food","bar","wifi"], hours: "6:30 AM - Last Departure", location: "Terminal 1 Int'l", placeQuery: "ANA Lounge Kansai Airport" },
+    { id: "kix_jal_sakura", name: "JAL Sakura Lounge", terminal: "T1", network: "generic_airline", alliance: "oneworld", rating: 4.0, amenities: ["hot_food","bar","wifi"], hours: "7:00 AM - Last Departure", location: "Terminal 1 Int'l", placeQuery: "JAL Sakura Lounge Kansai" },
+    { id: "kix_pp_kanku", name: "KIX Airport Lounge", terminal: "T1", network: "priority_pass", rating: 3.3, amenities: ["bar","wifi"], hours: "7:00 AM - 9:00 PM", location: "Terminal 1", placeQuery: "KIX Airport Lounge Kansai" },
+  ],
+  BKK: [
+    { id: "bkk_thai_royal_silk", name: "Thai Airways Royal Silk Lounge", terminal: "Main", network: "generic_airline", alliance: "star", rating: 4.2, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "5:00 AM - Last Departure", location: "Concourse C", placeQuery: "Thai Airways Royal Silk Lounge Suvarnabhumi" },
+    { id: "bkk_singapore_sl", name: "Singapore Airlines SilverKris Lounge", terminal: "Main", network: "singapore_lounge", alliance: "star", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - Last Departure", location: "Concourse D", placeQuery: "SilverKris Lounge Bangkok Suvarnabhumi" },
+    { id: "bkk_cathay", name: "Cathay Pacific Lounge", terminal: "Main", network: "cathay_lounge", alliance: "oneworld", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 11:00 PM", location: "Concourse G", placeQuery: "Cathay Pacific Lounge Bangkok" },
+    { id: "bkk_pp_miracle", name: "Miracle First Class Lounge", terminal: "Main", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Concourse G", placeQuery: "Miracle First Class Lounge Bangkok" },
+    { id: "bkk_turkish", name: "Turkish Airlines Lounge", terminal: "Main", network: "turkish_lounge", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Concourse F", placeQuery: "Turkish Airlines Lounge Bangkok Suvarnabhumi" },
+    { id: "bkk_eva_lounge", name: "EVA Air Lounge", terminal: "Main", network: "generic_airline", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with BR flights", location: "Concourse D", placeQuery: "EVA Air Lounge Bangkok Suvarnabhumi" },
+    { id: "bkk_korean_air", name: "Korean Air Lounge", terminal: "Main", network: "generic_airline", alliance: "skyteam", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "Varies with KE flights", location: "Concourse F", placeQuery: "Korean Air Lounge Bangkok Suvarnabhumi" },
+    { id: "bkk_jal", name: "JAL Sakura Lounge", terminal: "Main", network: "generic_airline", alliance: "oneworld", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with JL flights", location: "Concourse C", placeQuery: "JAL Sakura Lounge Bangkok Suvarnabhumi" },
+    { id: "bkk_thai_royal_first", name: "Thai Airways Royal First Lounge", terminal: "Main", network: "generic_airline", alliance: "star", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","spa","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Concourse D", placeQuery: "Thai Airways Royal First Lounge Suvarnabhumi" },
+    { id: "bkk_oman_air", name: "Oman Air Lounge", terminal: "Main", network: "generic_airline", alliance: "oneworld", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Concourse E", placeQuery: "Oman Air Lounge Bangkok Suvarnabhumi" },
+  ],
+  TPE: [
+    { id: "tpe_plaza_t1", name: "Plaza Premium Lounge", terminal: "T1", network: "plaza_premium", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - Last Departure", location: "Terminal 1", placeQuery: "Plaza Premium Lounge Taiwan Taoyuan Terminal 1" },
+    { id: "tpe_china_dynasty", name: "China Airlines Dynasty Lounge", terminal: "T2", network: "generic_airline", alliance: "skyteam", rating: 4.0, amenities: ["hot_food","bar","wifi","showers","nap_pods"], hours: "5:30 AM - Last Departure", location: "Terminal 2", placeQuery: "China Airlines Dynasty Lounge Taoyuan" },
+    { id: "tpe_eva_infinity", name: "EVA Air Infinity Lounge", terminal: "T2", network: "generic_airline", alliance: "star", rating: 4.2, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - Last Departure", location: "Terminal 2", placeQuery: "EVA Air Infinity Lounge Taoyuan" },
+  ],
+  KUL: [
+    { id: "kul_pp_plaza", name: "Plaza Premium Lounge", terminal: "KLIA1", network: "plaza_premium", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "KLIA Main Terminal", placeQuery: "Plaza Premium Lounge KLIA" },
+    { id: "kul_malaysia_golden", name: "Malaysia Airlines Golden Lounge", terminal: "KLIA1", network: "generic_airline", alliance: "oneworld", rating: 4.1, amenities: ["hot_food","bar","wifi","showers","nap_pods"], hours: "24 hours", location: "KLIA Satellite", placeQuery: "Malaysia Airlines Golden Lounge KLIA" },
+    { id: "kul_cathay", name: "Cathay Pacific Lounge", terminal: "KLIA1", network: "cathay_lounge", alliance: "oneworld", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "7:00 AM - 11:00 PM", location: "KLIA Satellite", placeQuery: "Cathay Pacific Lounge KLIA" },
+  ],
+  MNL: [
+    { id: "mnl_pp_mabuhay", name: "Mabuhay Lounge", terminal: "T3", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "24 hours", location: "Terminal 3 Int'l", placeQuery: "Mabuhay Lounge Manila Terminal 3" },
+    { id: "mnl_cathay", name: "Cathay Pacific Lounge", terminal: "T3", network: "cathay_lounge", alliance: "oneworld", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - Last Departure", location: "Terminal 3", placeQuery: "Cathay Pacific Lounge Manila" },
+  ],
+  DEL: [
+    { id: "del_pp_plaza_t3", name: "Plaza Premium Lounge", terminal: "T3", network: "plaza_premium", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 3 Int'l", placeQuery: "Plaza Premium Lounge Delhi Airport Terminal 3" },
+    { id: "del_pp_encalm", name: "Encalm Privé Lounge", terminal: "T3", network: "priority_pass", rating: 4.0, amenities: ["hot_food","bar","wifi","showers","nap_pods"], hours: "24 hours", location: "Terminal 3 Domestic", placeQuery: "Encalm Prive Lounge Delhi Airport" },
+    { id: "del_air_india", name: "Air India Maharaja Lounge", terminal: "T3", network: "generic_airline", alliance: "star", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "24 hours", location: "Terminal 3 Int'l", placeQuery: "Air India Maharaja Lounge Delhi" },
+  ],
+  BOM: [
+    { id: "bom_pp_plaza_t2", name: "Plaza Premium Lounge", terminal: "T2", network: "plaza_premium", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 2 Int'l", placeQuery: "Plaza Premium Lounge Mumbai Airport Terminal 2" },
+    { id: "bom_pp_encalm", name: "Encalm Privé Lounge", terminal: "T2", network: "priority_pass", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 2 Domestic", placeQuery: "Encalm Prive Lounge Mumbai Airport" },
+  ],
+  SYD: [
+    { id: "syd_qantas_business", name: "Qantas Business Lounge", terminal: "T1", network: "qantas_lounge", alliance: "oneworld", rating: 4.2, amenities: ["showers","hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 1 Int'l", placeQuery: "Qantas Business Lounge Sydney Airport" },
+    { id: "syd_qantas_first", name: "Qantas First Lounge", terminal: "T1", network: "qantas_lounge", alliance: "oneworld", rating: 4.6, amenities: ["showers","hot_food","bar","wifi","spa","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Terminal 1 Int'l", placeQuery: "Qantas First Class Lounge Sydney" },
+    { id: "syd_singapore_sl", name: "SilverKris Lounge", terminal: "T1", network: "singapore_lounge", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - Last Departure", location: "Terminal 1", placeQuery: "SilverKris Lounge Sydney Airport" },
+    { id: "syd_pp_sky_team", name: "SkyTeam Lounge", terminal: "T1", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 11:00 PM", location: "Terminal 1", placeQuery: "SkyTeam Lounge Sydney Airport" },
+    { id: "syd_air_nz", name: "Air New Zealand Lounge", terminal: "T1", network: "generic_airline", alliance: "star", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with NZ flights", location: "Terminal 1 Int'l", placeQuery: "Air New Zealand Lounge Sydney Airport" },
+    { id: "syd_cathay", name: "Cathay Pacific Lounge", terminal: "T1", network: "cathay_lounge", alliance: "oneworld", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with CX flights", location: "Terminal 1 Int'l", placeQuery: "Cathay Pacific Lounge Sydney Airport" },
+    { id: "syd_emirates", name: "Emirates Lounge", terminal: "T1", network: "generic_airline", alliance: "none", rating: 4.2, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with EK flights", location: "Terminal 1 Int'l", placeQuery: "Emirates Lounge Sydney Airport" },
+    { id: "syd_american_lounge", name: "American Airlines Lounge", terminal: "T1", network: "admirals_club", alliance: "oneworld", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "Varies with AA flights", location: "Terminal 1 Int'l", placeQuery: "American Airlines Lounge Sydney Airport" },
+    { id: "syd_qantas_dom_biz", name: "Qantas Business Lounge (Domestic)", terminal: "T3", network: "qantas_lounge", alliance: "oneworld", rating: 4.1, amenities: ["showers","hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 3 Domestic", placeQuery: "Qantas Business Lounge Sydney Domestic Terminal" },
+  ],
+  MEL: [
+    { id: "mel_qantas_business", name: "Qantas Business Lounge", terminal: "T1", network: "qantas_lounge", alliance: "oneworld", rating: 4.1, amenities: ["showers","hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 1 Int'l", placeQuery: "Qantas Business Lounge Melbourne Airport" },
+    { id: "mel_qantas_first", name: "Qantas First Lounge", terminal: "T1", network: "qantas_lounge", alliance: "oneworld", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","spa","a_la_carte"], hours: "5:30 AM - Last Departure", location: "Terminal 1 Int'l", placeQuery: "Qantas First Lounge Melbourne" },
+    { id: "mel_pp_menzies", name: "Menzies Aviation Lounge", terminal: "T2", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 10:00 PM", location: "Terminal 2", placeQuery: "Menzies Aviation Lounge Melbourne Airport" },
+  ],
+  AKL: [
+    { id: "akl_airnz_koru", name: "Air New Zealand Koru Lounge", terminal: "Int'l", network: "generic_airline", alliance: "star", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "International Terminal", placeQuery: "Air New Zealand Koru Lounge Auckland Airport" },
+    { id: "akl_pp_strata", name: "Strata Lounge", terminal: "Int'l", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - Last Departure", location: "International Terminal", placeQuery: "Strata Lounge Auckland Airport" },
+  ],
+  PVG: [
+    { id: "pvg_china_eastern", name: "China Eastern V03 Lounge", terminal: "T1", network: "generic_airline", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - Last Departure", location: "Terminal 1", placeQuery: "China Eastern VIP Lounge Shanghai Pudong" },
+    { id: "pvg_pp_no77", name: "No. 77 China Eastern Plaza Premium", terminal: "T2", network: "plaza_premium", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 11:00 PM", location: "Terminal 2", placeQuery: "No 77 Lounge Shanghai Pudong Terminal 2" },
+    { id: "pvg_cathay", name: "Cathay Pacific Lounge", terminal: "T2", network: "cathay_lounge", alliance: "oneworld", rating: 3.9, amenities: ["hot_food","bar","wifi"], hours: "6:30 AM - Last Departure", location: "Terminal 2", placeQuery: "Cathay Pacific Lounge Shanghai Pudong" },
+  ],
+  PEK: [
+    { id: "pek_air_china", name: "Air China First Class Lounge", terminal: "T3E", network: "generic_airline", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers","nap_pods"], hours: "6:00 AM - Last Departure", location: "Terminal 3E Int'l", placeQuery: "Air China First Class Lounge Beijing Capital Terminal 3" },
+    { id: "pek_pp_bgs", name: "BGS Premier Lounge", terminal: "T3E", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Terminal 3E", placeQuery: "BGS Premier Lounge Beijing Capital Airport" },
+  ],
+  CAN: [
+    { id: "can_china_southern", name: "China Southern Sky Pearl Lounge", terminal: "T2", network: "generic_airline", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - Last Departure", location: "Terminal 2 Int'l", placeQuery: "China Southern Sky Pearl Lounge Guangzhou" },
+    { id: "can_pp_lounge", name: "V1 Lounge", terminal: "T2", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Terminal 2", placeQuery: "V1 Lounge Guangzhou Baiyun Airport" },
+  ],
+  LAS: [
+    { id: "las_chase_sapphire", name: "Chase Sapphire Lounge by The Club", terminal: "T1", network: "chase_sapphire_lounge", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","phone_rooms"], hours: "5:00 AM - 11:00 PM", location: "Terminal 1 D Gates near Gate D1", placeQuery: "Chase Sapphire Lounge Las Vegas Airport" },
+    { id: "las_centurion", name: "Amex Centurion Lounge", terminal: "T1", network: "centurion", rating: 4.6, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "6:00 AM - 10:00 PM", location: "Terminal 1 D Gates", placeQuery: "American Express Centurion Lounge Las Vegas" },
+    { id: "las_pp_club", name: "The Club LAS", terminal: "T1", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 11:00 PM", location: "Terminal 1 D Gates", placeQuery: "The Club at LAS Airport" },
+    { id: "las_delta_sky", name: "Delta Sky Club", terminal: "T1", network: "delta_sky_club", alliance: "skyteam", rating: 4.0, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Terminal 1", placeQuery: "Delta Sky Club Las Vegas" },
+    { id: "las_united_club", name: "United Club", terminal: "T3", network: "united_club", alliance: "star", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 3 D Gates", placeQuery: "United Club Las Vegas" },
+  ],
+  PHL: [
+    { id: "phl_centurion", name: "Amex Centurion Lounge", terminal: "A West", network: "centurion", rating: 4.3, amenities: ["showers","hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Terminal A West", placeQuery: "American Express Centurion Lounge Philadelphia" },
+    { id: "phl_admirals", name: "Admirals Club", terminal: "B/C", network: "admirals_club", alliance: "oneworld", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 9:30 PM", location: "Between B and C", placeQuery: "Admirals Club Philadelphia Airport" },
+    { id: "phl_pp_minute", name: "Minute Suites", terminal: "A East", network: "priority_pass", rating: 3.4, amenities: ["wifi","nap_pods"], hours: "24 hours", location: "Terminal A East", placeQuery: "Minute Suites Philadelphia Airport" },
+  ],
+  IAD: [
+    { id: "iad_united_club", name: "United Club", terminal: "C/D", network: "united_club", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Concourse C", placeQuery: "United Club Dulles Airport" },
+    { id: "iad_polaris", name: "United Polaris Lounge", terminal: "Int'l", network: "polaris", alliance: "star", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","nap_pods","a_la_carte"], hours: "6:00 AM - Last Departure", location: "International Departures", placeQuery: "United Polaris Lounge Dulles" },
+    { id: "iad_pp_turkish", name: "Turkish Airlines Lounge", terminal: "Int'l", network: "priority_pass", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 11:00 PM", location: "International", placeQuery: "Turkish Airlines Lounge Dulles" },
+  ],
+  DCA: [
+    { id: "dca_admirals", name: "Admirals Club", terminal: "B", network: "admirals_club", alliance: "oneworld", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Terminal B", placeQuery: "Admirals Club Reagan National Airport" },
+    { id: "dca_delta_sky", name: "Delta Sky Club", terminal: "B", network: "delta_sky_club", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Terminal B", placeQuery: "Delta Sky Club Reagan National" },
+    { id: "dca_cap1", name: "Capital One Lounge", terminal: "A", network: "capital_one", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "5:30 AM - 10:00 PM", location: "Terminal A", placeQuery: "Capital One Lounge DCA" },
+  ],
+  TPA: [
+    { id: "tpa_pp_club", name: "The Club TPA", terminal: "F", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Airside F", placeQuery: "The Club at Tampa Airport" },
+    { id: "tpa_delta_sky", name: "Delta Sky Club", terminal: "E", network: "delta_sky_club", alliance: "skyteam", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Airside E", placeQuery: "Delta Sky Club Tampa" },
+  ],
+  MSY: [
+    { id: "msy_pp_club", name: "The Club MSY", terminal: "C/D", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Concourse C", placeQuery: "The Club at New Orleans Airport" },
+  ],
+  RDU: [
+    { id: "rdu_pp_club", name: "The Club RDU", terminal: "2", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Terminal 2", placeQuery: "The Club at Raleigh Durham Airport" },
+  ],
+  BNA: [
+    { id: "bna_pp_club", name: "The Club BNA", terminal: "Main", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Concourse C", placeQuery: "The Club at Nashville Airport" },
+    { id: "bna_delta_sky", name: "Delta Sky Club", terminal: "B", network: "delta_sky_club", alliance: "skyteam", rating: 3.9, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Concourse B", placeQuery: "Delta Sky Club Nashville" },
+  ],
+  AUS: [
+    { id: "aus_centurion", name: "Amex Centurion Lounge", terminal: "Main", network: "centurion", rating: 4.4, amenities: ["showers","hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "East Wing", placeQuery: "American Express Centurion Lounge Austin" },
+    { id: "aus_pp_club", name: "The Club AUS", terminal: "Main", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Near Gate 18", placeQuery: "The Club at Austin Airport" },
+  ],
+  SLC: [
+    { id: "slc_delta_sky", name: "Delta Sky Club", terminal: "A", network: "delta_sky_club", alliance: "skyteam", rating: 4.2, amenities: ["hot_food","bar","wifi","showers"], hours: "4:30 AM - Last Departure", location: "Concourse A", placeQuery: "Delta Sky Club Salt Lake City" },
+    { id: "slc_pp_club", name: "The Club SLC", terminal: "B", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 9:00 PM", location: "Concourse B", placeQuery: "The Club at Salt Lake City Airport" },
+  ],
+  STL: [
+    { id: "stl_pp_club", name: "The Club STL", terminal: "1", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Terminal 1", placeQuery: "The Club at St Louis Airport" },
+  ],
+  PIT: [
+    { id: "pit_pp_club", name: "The Club PIT", terminal: "C", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Concourse C", placeQuery: "The Club at Pittsburgh Airport" },
+  ],
+  MKE: [
+    { id: "mke_pp_club", name: "The Club MKE", terminal: "C", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Concourse C", placeQuery: "The Club at Milwaukee Airport" },
+  ],
+  CLE: [
+    { id: "cle_pp_club", name: "The Club CLE", terminal: "C", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Concourse C", placeQuery: "The Club at Cleveland Airport" },
+  ],
+  IND: [
+    { id: "ind_pp_club", name: "The Club IND", terminal: "B", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Concourse B", placeQuery: "The Club at Indianapolis Airport" },
+  ],
+  CMH: [
+    { id: "cmh_pp_club", name: "The Club CMH", terminal: "B", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 8:00 PM", location: "Concourse B", placeQuery: "The Club at Columbus Airport" },
+  ],
+  OAK: [
+    { id: "oak_pp_club", name: "The Club OAK", terminal: "2", network: "priority_pass", rating: 3.2, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Terminal 2", placeQuery: "The Club at Oakland Airport" },
+  ],
+  SJC: [
+    { id: "sjc_pp_club", name: "The Club SJC", terminal: "B", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Terminal B", placeQuery: "The Club at San Jose Airport" },
+  ],
+  SMF: [
+    { id: "smf_pp_club", name: "The Club SMF", terminal: "B", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 8:30 PM", location: "Terminal B", placeQuery: "The Club at Sacramento Airport" },
+  ],
+  JAX: [
+    { id: "jax_pp_club", name: "The Club JAX", terminal: "C", network: "priority_pass", rating: 3.2, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 8:00 PM", location: "Concourse C", placeQuery: "The Club at Jacksonville Airport" },
+  ],
+  RSW: [
+    { id: "rsw_pp_club", name: "The Club RSW", terminal: "C", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 8:30 PM", location: "Concourse C", placeQuery: "The Club at Fort Myers Airport" },
+  ],
+  // International - additional
+  ADD: [
+    { id: "add_sheba", name: "Sheba Lounge", terminal: "T2", network: "generic_airline", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 2 Int'l", placeQuery: "Sheba Lounge Addis Ababa Airport" },
+  ],
+  NBO: [
+    { id: "nbo_pp_simba", name: "Simba Lounge", terminal: "1", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "24 hours", location: "Terminal 1 Int'l", placeQuery: "Simba Lounge Nairobi Jomo Kenyatta Airport" },
+  ],
+  CMB: [
+    { id: "cmb_pp_serendib", name: "Serendib Lounge", terminal: "Main", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Departures", placeQuery: "Serendib Lounge Colombo Bandaranaike Airport" },
+  ],
+  MLE: [
+    { id: "mle_pp_moonimaa", name: "Moonimaa Lounge", terminal: "Main", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "24 hours", location: "Int'l Departures", placeQuery: "Moonimaa Lounge Maldives Velana Airport" },
+  ],
+  HAN: [
+    { id: "han_pp_song_hong", name: "Song Hong Business Lounge", terminal: "T2", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - 12:00 AM", location: "Terminal 2 Int'l", placeQuery: "Song Hong Business Lounge Hanoi Noi Bai" },
+  ],
+  SGN: [
+    { id: "sgn_pp_lotus", name: "Lotus Lounge", terminal: "T2", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 12:00 AM", location: "Terminal 2 Int'l", placeQuery: "Lotus Lounge Ho Chi Minh City Airport" },
+  ],
+  DPS: [
+    { id: "dps_pp_premier", name: "Premier Lounge", terminal: "Int'l", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Int'l Departures", placeQuery: "Premier Lounge Bali Ngurah Rai Airport" },
+  ],
+  CGK: [
+    { id: "cgk_pp_saphire", name: "Saphire Lounge", terminal: "T3", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 3", placeQuery: "Saphire Lounge Jakarta Soekarno-Hatta" },
+    { id: "cgk_ga_lounge", name: "Garuda Indonesia Lounge", terminal: "T3", network: "generic_airline", alliance: "none", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal 3", placeQuery: "Garuda Indonesia Lounge Jakarta T3" },
+  ],
+  BKI: [
+    { id: "bki_pp_plaza", name: "Plaza Premium Lounge", terminal: "T1", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 12:00 AM", location: "Terminal 1", placeQuery: "Plaza Premium Lounge Kota Kinabalu Airport" },
+  ],
+  PNH: [
+    { id: "pnh_pp_plaza", name: "Plaza Premium Lounge", terminal: "Main", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 12:00 AM", location: "Int'l Departures", placeQuery: "Plaza Premium Lounge Phnom Penh Airport" },
+  ],
+  RGN: [
+    { id: "rgn_pp_mingalar", name: "Mingalar Sky Lounge", terminal: "Main", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 11:00 PM", location: "Int'l Departures", placeQuery: "Mingalar Sky Lounge Yangon Airport" },
+  ],
+  EDI: [
+    { id: "edi_pp_aspire", name: "Aspire Lounge", terminal: "Main", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "4:00 AM - 9:00 PM", location: "Airside after security", placeQuery: "Aspire Lounge Edinburgh Airport" },
+  ],
+  MAN: [
+    { id: "man_pp_escape", name: "Escape Lounge", terminal: "T1", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "4:00 AM - 9:00 PM", location: "Terminal 1", placeQuery: "Escape Lounge Manchester Airport Terminal 1" },
+    { id: "man_pp_1903", name: "1903 Lounge", terminal: "T3", network: "priority_pass", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "4:00 AM - 9:00 PM", location: "Terminal 3", placeQuery: "1903 Lounge Manchester Airport" },
+  ],
+  GVA: [
+    { id: "gva_pp_swiss", name: "Dnata Skyview Lounge", terminal: "1", network: "priority_pass", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 10:00 PM", location: "Terminal 1", placeQuery: "Dnata Skyview Lounge Geneva Airport" },
+  ],
+  BRU: [
+    { id: "bru_pp_diamond", name: "Diamond Lounge", terminal: "A", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:30 PM", location: "Pier A", placeQuery: "Diamond Lounge Brussels Airport" },
+  ],
+  OSL: [
+    { id: "osl_pp_osl", name: "OSL Lounge", terminal: "Main", network: "priority_pass", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - 10:00 PM", location: "Int'l Departures", placeQuery: "OSL Lounge Oslo Gardermoen Airport" },
+  ],
+  WAW: [
+    { id: "waw_pp_preludium", name: "Preludium Lounge", terminal: "A", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 10:00 PM", location: "Terminal A", placeQuery: "Preludium Lounge Warsaw Chopin Airport" },
+  ],
+  PRG: [
+    { id: "prg_pp_mastercard", name: "Mastercard Lounge", terminal: "2", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 10:00 PM", location: "Terminal 2", placeQuery: "Mastercard Lounge Prague Airport" },
+  ],
+  BUD: [
+    { id: "bud_pp_skycourt", name: "SkyCourt Lounge", terminal: "2B", network: "priority_pass", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - 10:00 PM", location: "Terminal 2B", placeQuery: "SkyCourt Lounge Budapest Airport" },
+  ],
+};
+
+const CARD_LOUNGE_ACCESS = {
+  // Source: americanexpress.com/platinum — updated 2026
+  amex_plat: [
+    { network: "centurion", guests: 0, guestNote: "Guests $50/adult, $30/child 2-17. Free 2 guests after $75K spend/yr" },
+    { network: "priority_pass", guests: 0, guestNote: "Cardholder only via digital Priority Pass" },
+    { network: "delta_sky_club", condition: "flying_delta", guests: 0, guestNote: "10 visits/yr flying Delta. Guests $50 each (max 2). Unlimited after $75K spend" },
+    { network: "plaza_premium", guests: 0, guestNote: "Select locations, cardholder only" },
+  ],
+  amex_gold: [],
+  // Source: chase.com/sapphire/reserve — updated 2026
+  chase_sapphire: [
+    { network: "chase_sapphire_lounge", guests: 2, guestNote: "2 free guests, $27/each additional" },
+    { network: "priority_pass", guests: 2, guestNote: "2 free guests, $27/each additional. Children under 2 free" },
+  ],
+  // Source: capitalone.com/venture-x — updated Feb 2026
+  cap1_venturex: [
+    { network: "capital_one", guests: 0, guestNote: "Guests $45/adult, $25/child under 18. Free 2 guests after $75K spend/yr" },
+    { network: "priority_pass", guests: 0, guestNote: "Guests $35 each at Priority Pass lounges" },
+  ],
+  cap1_venture: [
+    { network: "capital_one", guests: 0, guestNote: "Cardholder access $45/visit, no free guests" },
+  ],
+  // Source: delta.com/sky-club/access — updated 2026
+  delta_reserve: [
+    { network: "delta_sky_club", guests: 0, guestNote: "15 visit days/yr. Guests $50 each (max 2 or family). Unlimited after $75K spend. 4 one-time guest passes/yr" },
+  ],
+  // Source: chase.com/united — updated 2026
+  united_club_card: [
+    { network: "united_club", guests: 2, guestNote: "2 free guests per visit" },
+  ],
+  // Source: americanexpress.com — Priority Pass REMOVED from Aspire as of Feb 2024
+  hilton_aspire: [],
+  hilton_surpass: [],
+  // Source: chase.com/marriott — updated 2026
+  marriott_brilliant: [
+    { network: "priority_pass", guests: 0, guestNote: "Cardholder only (Priority Pass Select membership)" },
+  ],
+  // Source: chase.com/ritz-carlton — updated Jan 15, 2026
+  ritz_carlton: [
+    { network: "chase_sapphire_lounge", guests: 2, guestNote: "2 free guests, $27/each additional" },
+    { network: "priority_pass", guests: 2, guestNote: "2 free guests, $27/each additional (changed from unlimited Jan 2026)" },
+  ],
+  // Source: aa.com/citi-executive — updated 2026
+  aa_exec: [
+    { network: "admirals_club", guests: 2, guestNote: "Immediate family or 2 guests. Must have same-day AA/oneworld boarding pass" },
+  ],
+};
+
+const ELITE_LOUNGE_ACCESS = {
+  // Source: aa.com/admirals-club-access, exploreamerican.com — updated 2026
+  aa: {
+    name: "American Airlines AAdvantage",
+    tiers: {
+      "Gold": { lounges: [] },
+      "Platinum": { lounges: [
+        { network: "admirals_club", condition: "intl_only", guests: 0, guestNote: "Int'l AA/oneworld itinerary only. Member only, no guests" },
+        { network: "greenwich_lounge", condition: "intl_only", guests: 0, guestNote: "Greenwich Lounge at JFK on int'l itinerary" },
+      ]},
+      "Platinum Pro": { lounges: [
+        { network: "admirals_club", condition: "intl_only", guests: 0, guestNote: "Int'l AA/oneworld itinerary only. Member only, no guests" },
+        { network: "greenwich_lounge", condition: "intl_only", guests: 0, guestNote: "Greenwich Lounge at JFK on int'l itinerary" },
+        { network: "soho_lounge", condition: "intl_only", guests: 0, guestNote: "Soho Lounge at JFK on int'l itinerary" },
+        { network: "chelsea_lounge", condition: "intl_only", guests: 0, guestNote: "Chelsea Lounge at JFK on int'l itinerary" },
+      ]},
+      "Executive Platinum": { lounges: [
+        { network: "admirals_club", condition: "intl_only", guests: 1, guestNote: "Int'l AA/oneworld itinerary. 1 guest (children 2+ count)" },
+        { network: "greenwich_lounge", condition: "intl_only", guests: 1, guestNote: "Greenwich Lounge at JFK on int'l itinerary + 1 guest" },
+        { network: "soho_lounge", condition: "intl_only", guests: 1, guestNote: "Soho Lounge at JFK on int'l itinerary + 1 guest" },
+        { network: "chelsea_lounge", condition: "intl_only", guests: 1, guestNote: "Chelsea Lounge at JFK on int'l itinerary + 1 guest" },
+        { network: "flagship", condition: "intl_premium_cabin", guests: 0, guestNote: "Flagship First Dining on int'l/transcon premium cabin" },
+      ]},
+      "ConciergeKey": { lounges: [
+        { network: "admirals_club", guests: 2, guestNote: "2 guests or immediate family on same-day AA travel" },
+        { network: "greenwich_lounge", guests: 2, guestNote: "Greenwich Lounge + 2 guests" },
+        { network: "soho_lounge", guests: 2, guestNote: "Soho Lounge + 2 guests" },
+        { network: "chelsea_lounge", guests: 2, guestNote: "Chelsea Lounge + 2 guests" },
+        { network: "flagship", guests: 1, guestNote: "Flagship First Dining when ticketed in Flagship cabin" },
+      ]},
+    },
+  },
+  // Source: delta.com/sky-club/access — updated 2026
+  dl: {
+    name: "Delta SkyMiles",
+    tiers: {
+      "Silver Medallion": { lounges: [] },
+      "Gold Medallion": { lounges: [] },
+      "Platinum Medallion": { lounges: [] },
+      "Diamond Medallion": { lounges: [
+        { network: "delta_sky_club", condition: "same_day_delta", guests: 0, guestNote: "Member only on same-day Delta travel. No complimentary guests" },
+      ]},
+    },
+  },
+  // Source: united.com, onemileatatime.com/guides/united-club-access — updated 2026
+  ua: {
+    name: "United MileagePlus",
+    tiers: {
+      "Premier Silver": { lounges: [] },
+      "Premier Gold": { lounges: [] },
+      "Premier Platinum": { lounges: [] },
+      "Premier 1K": { lounges: [
+        { network: "united_club", condition: "intl_departure", guests: 0, guestNote: "Same-day international itinerary only. No guests" },
+      ]},
+      "Global Services": { lounges: [
+        { network: "united_club", condition: "same_day_ua", guests: 0, guestNote: "Same-day UA itinerary (any route). No complimentary guests" },
+        { network: "polaris", condition: "intl_premium_cabin", guests: 0, guestNote: "When ticketed in Polaris cabin" },
+      ]},
+    },
+  },
+  // Source: alaskaair.com/content/airport-lounge — updated 2026
+  as: {
+    name: "Alaska Mileage Plan",
+    tiers: {
+      "MVP": { lounges: [] },
+      "MVP Gold": { lounges: [] },
+      "MVP Gold 75K": { lounges: [
+        { network: "alaska_lounge", guests: 0, guestNote: "4 Alaska Lounge day passes per year (can share with others)" },
+      ]},
+    },
+  },
+  // Source: aircanada.com/maple-leaf-lounges, milesopedia.com — updated 2026
+  aeroplan: {
+    name: "Air Canada Aeroplan",
+    tiers: {
+      "25K": { lounges: [] },
+      "35K": { lounges: [] },
+      "50K": { lounges: [
+        { network: "generic_airline", condition: "same_day_ac", guests: 1, guestNote: "Maple Leaf Lounge on same-day AC/Star Alliance. Spouse/partner + children under 26, plus 1 additional guest. 3 guest passes/yr" },
+      ]},
+      "75K": { lounges: [
+        { network: "generic_airline", condition: "same_day_ac", guests: 1, guestNote: "Maple Leaf Lounge on same-day AC/Star Alliance. Spouse/partner + children under 26, plus 1 additional guest. 3 guest passes/yr" },
+      ]},
+      "Super Elite 100K": { lounges: [
+        { network: "generic_airline", guests: 1, guestNote: "Maple Leaf Lounge + Signature Suite (int'l). Spouse/partner + children under 26, plus 1 guest. 4 guest passes/yr" },
+      ]},
+    },
+  },
+};
+
+// Alliance status mapping — which elite tier gives which alliance level
+const ELITE_ALLIANCE_MAP = {
+  // American Airlines → oneworld
+  aa: { alliance: "oneworld", tiers: { "Gold": "Ruby", "Platinum": "Sapphire", "Platinum Pro": "Sapphire", "Executive Platinum": "Emerald", "ConciergeKey": "Emerald" } },
+  // British Airways → oneworld
+  ba_avios: { alliance: "oneworld", tiers: { "Bronze": "Ruby", "Silver": "Sapphire", "Gold": "Emerald" } },
+  // Cathay Pacific → oneworld
+  cathay_mp: { alliance: "oneworld", tiers: { "Green": "Ruby", "Silver": "Sapphire", "Gold": "Sapphire", "Diamond": "Emerald" } },
+  // Qantas → oneworld
+  qantas_ff: { alliance: "oneworld", tiers: { "Silver": "Ruby", "Gold": "Sapphire", "Platinum": "Emerald", "Platinum One": "Emerald" } },
+  // Alaska → oneworld
+  as: { alliance: "oneworld", tiers: { "MVP": "Ruby", "MVP Gold": "Sapphire", "MVP Gold 75K": "Emerald" } },
+  // United → Star Alliance
+  ua: { alliance: "star", tiers: { "Premier Silver": "Silver", "Premier Gold": "Gold", "Premier Platinum": "Gold", "Premier 1K": "Gold", "Global Services": "Gold" } },
+  // Air Canada → Star Alliance
+  aeroplan: { alliance: "star", tiers: { "25K": "Silver", "35K": "Silver", "50K": "Gold", "75K": "Gold", "Super Elite 100K": "Gold" } },
+  // ANA → Star Alliance
+  ana_mc: { alliance: "star", tiers: { "Bronze": "Silver", "Platinum": "Gold", "Diamond": "Gold", "Super Flyers": "Gold" } },
+  // Singapore → Star Alliance
+  singapore_kf: { alliance: "star", tiers: { "KrisFlyer Elite Silver": "Silver", "KrisFlyer Elite Gold": "Gold", "PPS Club": "Gold" } },
+  // Delta → SkyTeam
+  dl: { alliance: "skyteam", tiers: { "Silver Medallion": "Elite", "Gold Medallion": "Elite Plus", "Platinum Medallion": "Elite Plus", "Diamond Medallion": "Elite Plus" } },
+  // Korean Air → SkyTeam
+  korean_skypass: { alliance: "skyteam", tiers: { "Morning Calm": "Elite", "Morning Calm Premium": "Elite Plus", "Million Miler": "Elite Plus" } },
+  // Air France/KLM → SkyTeam
+  flying_blue: { alliance: "skyteam", tiers: { "Silver": "Elite", "Gold": "Elite Plus", "Platinum": "Elite Plus", "Ultimate": "Elite Plus" } },
+};
+
+// Airline → alliance membership (for flight context checking)
+const AIRLINE_ALLIANCE = {
+  // oneworld
+  aa: "oneworld", ba_avios: "oneworld", cathay_mp: "oneworld", qantas_ff: "oneworld", as: "oneworld",
+  ib: "oneworld", ay: "oneworld", jl: "oneworld", mh: "oneworld", qr: "oneworld", rj: "oneworld", s7: "oneworld", at: "oneworld", fj: "oneworld", oj: "oneworld",
+  // Star Alliance
+  ua: "star", aeroplan: "star", ana_mc: "star", singapore_kf: "star", lh: "star", os: "star", lx: "star", tk: "star",
+  et: "star", sk: "star", tp: "star", ca: "star", ai: "star", oz: "star", nh: "star", sq: "star", tg: "star", br: "star", cm: "star", av: "star", ms: "star", sa: "star",
+  // SkyTeam
+  dl: "skyteam", flying_blue: "skyteam", korean_skypass: "skyteam", am: "skyteam", ci: "skyteam", cz: "skyteam", ga: "skyteam",
+  ke: "skyteam", kl: "skyteam", me: "skyteam", mu: "skyteam", ro: "skyteam", su: "skyteam", sv: "skyteam", vn: "skyteam",
+};
+
+// Alliance level → lounge access rules
+const ALLIANCE_LOUNGE_ACCESS = {
+  oneworld: {
+    "Ruby": { lounges: [] },
+    "Sapphire": { lounges: [
+      { networkTypes: ["generic_airline","cathay_lounge","qantas_lounge","admirals_club","alaska_lounge","flagship"], guests: 1, guestNote: "oneworld Sapphire: business class lounges + 1 guest on same-day oneworld flight" },
+    ]},
+    "Emerald": { lounges: [
+      { networkTypes: ["generic_airline","cathay_lounge","qantas_lounge","admirals_club","alaska_lounge","flagship"], guests: 1, guestNote: "oneworld Emerald: first & business class lounges + 1 guest. Access regardless of cabin" },
+    ]},
+  },
+  star: {
+    "Silver": { lounges: [] },
+    "Gold": { lounges: [
+      { networkTypes: ["generic_airline","singapore_lounge","united_club","polaris"], guests: 1, guestNote: "Star Alliance Gold: business class lounges + 1 guest on same-day Star Alliance flight" },
+    ]},
+  },
+  skyteam: {
+    "Elite": { lounges: [] },
+    "Elite Plus": { lounges: [
+      { networkTypes: ["generic_airline","delta_sky_club"], guests: 1, guestNote: "SkyTeam Elite Plus: business class lounges + 1 guest on same-day SkyTeam flight" },
+    ]},
+  },
+};
+
+const AMENITY_ICONS = {
+  showers: "M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.49 8.49l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.49-8.49l2.83-2.83",
+  hot_food: "M3 2l1.5 15h15L21 2M3 17h18v2a2 2 0 01-2 2H5a2 2 0 01-2-2v-2z",
+  bar: "M8 22h8M12 11v11M5 2l7 9 7-9",
+  wifi: "M5 12.55a11 11 0 0114 0M8.53 16.11a6 6 0 016.95 0M12 20h.01",
+  spa: "M12 22c-4 0-8-2-8-6 0-3 2.5-5.5 4-7 1.5 1.5 4 4 4 7 0-3 2.5-5.5 4-7 1.5 1.5 4 4 4 7 0 4-4 6-8 6z",
+  phone_rooms: "M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z",
+  nap_pods: "M2 4v16M2 8h18a2 2 0 012 2v6H2M6 8v4",
+  a_la_carte: "M3 6h18M6 6v14h12V6M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2",
+  outdoor_terrace: "M3 21h18M5 21V7l7-4 7 4v14",
+  business_center: "M4 4h16v16H4zM9 9h6M9 13h6",
+};
+const AMENITY_LABELS = { showers: "Showers", hot_food: "Hot Food", bar: "Full Bar", wifi: "Wi-Fi", spa: "Spa", phone_rooms: "Phone Rooms", nap_pods: "Nap Pods", a_la_carte: "A la Carte Dining", outdoor_terrace: "Outdoor Terrace", business_center: "Business Center" };
+
+const LANDMARK_FALLBACK_PHOTOS = {
+  "Statue of Liberty": "https://images.unsplash.com/photo-1503174971373-b1f69850bded?w=400&q=80&auto=format&fit=crop",
+  "Central Park": "https://images.unsplash.com/photo-1534430480872-3498386e7856?w=400&q=80&auto=format&fit=crop",
+  "Times Square": "https://images.unsplash.com/photo-1560703650-ef3e0f254ae0?w=400&q=80&auto=format&fit=crop",
+  "Brooklyn Bridge": "https://images.unsplash.com/photo-1496588152823-86ff7695e68f?w=400&q=80&auto=format&fit=crop",
+  "Empire State Building": "https://images.unsplash.com/photo-1555109307-f7d9da25c244?w=400&q=80&auto=format&fit=crop",
+  "Shibuya Crossing": "https://images.unsplash.com/photo-1542051841857-5f90071e7989?w=400&q=80&auto=format&fit=crop",
+  "Senso-ji Temple": "https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=400&q=80&auto=format&fit=crop",
+  "Tokyo Tower": "https://images.unsplash.com/photo-1536098561742-ca998e48cbcc?w=400&q=80&auto=format&fit=crop",
+  "Osaka Castle": "https://images.unsplash.com/photo-1589452271712-64b8a66c3929?w=400&q=80&auto=format&fit=crop",
+  "Dotonbori": "https://images.unsplash.com/photo-1514222788835-3a1a1d76b903?w=400&q=80&auto=format&fit=crop",
+  "Victoria Peak": "https://images.unsplash.com/photo-1536599018102-9f803c140fc1?w=400&q=80&auto=format&fit=crop",
+  "Star Ferry": "https://images.unsplash.com/photo-1594973782943-3314fe063f68?w=400&q=80&auto=format&fit=crop",
+  "Taipei 101": "https://images.unsplash.com/photo-1508248467877-aec1e22e0e68?w=400&q=80&auto=format&fit=crop",
+  "Eiffel Tower": "https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?w=400&q=80&auto=format&fit=crop",
+  "Colosseum": "https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=400&q=80&auto=format&fit=crop",
+  "Big Ben": "https://images.unsplash.com/photo-1529655683826-aba9b3e77383?w=400&q=80&auto=format&fit=crop",
+  "Sagrada Familia": "https://images.unsplash.com/photo-1583779457094-ab6f77f7bf57?w=400&q=80&auto=format&fit=crop",
+  "Golden Gate Bridge": "https://images.unsplash.com/photo-1449034446853-66c86144b0ad?w=400&q=80&auto=format&fit=crop",
+  "Burj Khalifa": "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=400&q=80&auto=format&fit=crop",
+  "Opera House": "https://images.unsplash.com/photo-1523482580672-f109ba8cb9be?w=400&q=80&auto=format&fit=crop",
+  "Hagia Sophia": "https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?w=400&q=80&auto=format&fit=crop",
+  "Marina Bay Sands": "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=400&q=80&auto=format&fit=crop",
+  "Horseshoe Bay": "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=400&q=80&auto=format&fit=crop",
+  "Waikiki Beach": "https://images.unsplash.com/photo-1507876466758-bc54f384809c?w=400&q=80&auto=format&fit=crop",
+  "South Beach": "https://images.unsplash.com/photo-1535498730771-e735b998cd64?w=400&q=80&auto=format&fit=crop",
+  "Meiji Shrine": "https://images.unsplash.com/photo-1478436127897-769e1b3f0f36?w=400&q=80&auto=format&fit=crop",
+  "Tsukiji Market": "https://images.unsplash.com/photo-1555992336-03a23c7b20ee?w=400&q=80&auto=format&fit=crop",
+  "Universal Studios": "https://images.unsplash.com/photo-1581351721010-8cf859cb14a4?w=400&q=80&auto=format&fit=crop",
+  "Shinsekai": "https://images.unsplash.com/photo-1598887142487-3c854d51eabb?w=400&q=80&auto=format&fit=crop",
+  "Namba": "https://images.unsplash.com/photo-1590559899731-a382839e5549?w=400&q=80&auto=format&fit=crop",
+  "Temple Street": "https://images.unsplash.com/photo-1517144447511-aebb25bbc5fa?w=400&q=80&auto=format&fit=crop",
+  "Tian Tan Buddha": "https://images.unsplash.com/photo-1518509562904-e7ef99cdcc86?w=400&q=80&auto=format&fit=crop",
+  "Mong Kok": "https://images.unsplash.com/photo-1513326738677-b964603b136d?w=400&q=80&auto=format&fit=crop",
+  "Jiufen Old Street": "https://images.unsplash.com/photo-1558545838-83d3e4ae0f84?w=400&q=80&auto=format&fit=crop",
+};
+
 // Helper: resolve a bonus entry to a number given booking mode ("direct" or "portal")
 const _ccRate = (entry, mode) => {
   if (typeof entry === "number") return entry;
@@ -2045,6 +2939,7 @@ export default function EliteStatusTracker() {
   const [publicPage, setPublicPage] = useState("login");
   const [user, setUser] = useState(null);
   const [activeView, setActiveView] = useState("dashboard");
+  // Redirect expenses view to trips (expenses is rendered within trips)
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [isRegistering, setIsRegistering] = useState(false);
   const [registerForm, setRegisterForm] = useState({ name: "", email: "", password: "" });
@@ -2059,6 +2954,7 @@ export default function EliteStatusTracker() {
   const [addSegmentType, setAddSegmentType] = useState(null); // which segment type form is open
   const [segmentForm, setSegmentForm] = useState({});
   const [flightLegs, setFlightLegs] = useState([{ id: 1, flightNumber: "", date: "", arrivalDate: "", departureTime: "", arrivalTime: "", departureAirport: "", arrivalAirport: "", departureTerminal: "", arrivalTerminal: "", airline: "", aircraft: "", lookupMsg: "" }]);
+  const [flightRouteOptions, setFlightRouteOptions] = useState({}); // { legIdx: [{ dep, arr, depTime, arrTime, aircraft, raw }] }
   const [flightType, setFlightType] = useState("roundtrip"); // "oneway", "roundtrip", "multicity"
   const [editingSegIdx, setEditingSegIdx] = useState(null); // index of segment being edited within a trip
   const [tempUnit, setTempUnit] = useState(() => localStorage.getItem("continuum_temp_unit") || "F");
@@ -2067,11 +2963,62 @@ export default function EliteStatusTracker() {
   const [hotelSectionOpen, setHotelSectionOpen] = useState(false);
   const [expandedItinId, setExpandedItinId] = useState(null); // expanded booking inbox item
   const [viewExpenseId, setViewExpenseId] = useState(null); // expense detail view modal
+  const [cropExpenseId, setCropExpenseId] = useState(null); // expense id being cropped
+  const [cropStart, setCropStart] = useState(null); // {x,y} start of drag
+  const [cropEnd, setCropEnd] = useState(null); // {x,y} end of drag
+  const [cropDragging, setCropDragging] = useState(false);
+  const cropImgRef = useRef(null);
+  const cropContainerRef = useRef(null);
   const [sharedTrips, setSharedTrips] = useState([]); // trips shared with me
   const [showShareModal, setShowShareModal] = useState(null); // trip ID to share
   const [shareEmail, setShareEmail] = useState("");
   const [shareStatus, setShareStatus] = useState(""); // "sent" | "error" | "already" | ""
   const [dashSubTab, setDashSubTab] = useState("overview"); // overview | timeline | reports | activity
+  const [landmarkPhotos, setLandmarkPhotos] = useState({}); // cache: "Landmark, City" -> photoUrl
+  const landmarkFetchedRef = useRef(new Set()); // track which landmarks we've already tried to fetch
+
+  // ── Receipt QR state ──
+  const [showReceiptQR, setShowReceiptQR] = useState(false);
+  const [receiptQRDataUrl, setReceiptQRDataUrl] = useState("");
+
+  // ── Programs tab state ──
+  const [progAddType, setProgAddType] = useState("airline");
+  const [progAddId, setProgAddId] = useState("");
+  const [progAddTier, setProgAddTier] = useState("");
+
+  // ── Lounge tab state ──
+  const [loungeSearchCode, setLoungeSearchCode] = useState("");
+  const [loungeDropdownOpen, setLoungeDropdownOpen] = useState(false);
+  const [loungeAirport, setLoungeAirport] = useState(null);
+  const [loungeSubTab, setLoungeSubTab] = useState("directory");
+  const [loungePhotos, setLoungePhotos] = useState({});
+  const [loungeExpandedId, setLoungeExpandedId] = useState(null);
+  const [loungeVisits, setLoungeVisits] = useState(() => { try { return JSON.parse(localStorage.getItem("continuum_lounge_visits") || "[]"); } catch { return []; } });
+  const [loungeAccessAirline, setLoungeAccessAirline] = useState(""); // kept for backward compat
+  const [loungeAccessTier, setLoungeAccessTier] = useState(""); // kept for backward compat
+  const [loungeFlightAirline, setLoungeFlightAirline] = useState("");
+  const [loungeFlightClass, setLoungeFlightClass] = useState("economy");
+  const [loungeAccessRoute, setLoungeAccessRoute] = useState("domestic");
+  const loungePhotoFetched = useRef(new Set());
+  const landmarkPhotosFetchedOnce = useRef(false);
+
+  // Fetch a Google Places photo for a landmark
+  const fetchLandmarkPhoto = useCallback((landmarkName, city) => {
+    const key = `${landmarkName}, ${city}`;
+    if (landmarkFetchedRef.current.has(key)) return;
+    landmarkFetchedRef.current.add(key);
+    loadGoogleMaps().then(() => {
+      if (!window.google?.maps?.places) return;
+      const svc = new window.google.maps.places.PlacesService(document.createElement("div"));
+      svc.findPlaceFromQuery({ query: `${landmarkName} ${city}`, fields: ["photos"] }, (results, status) => {
+        if (status === "OK" && results?.[0]?.photos?.[0]) {
+          const url = results[0].photos[0].getUrl({ maxWidth: 600 });
+          if (url) setLandmarkPhotos(prev => ({ ...prev, [key]: url }));
+        }
+      });
+    }).catch(() => {});
+  }, []);
+
   const lastDateRef = useRef(""); // tracks last selected date for calendar month persistence
   // Date input helper — remembers last used month so calendar opens there
   const dateInputProps = (value, onChange, extraProps = {}) => ({
@@ -2260,6 +3207,9 @@ export default function EliteStatusTracker() {
   const [newExpense, setNewExpense] = useState({ category: "flight", description: "", amount: "", currency: "USD", fxRate: 1, date: "", paymentMethod: "", receipt: false, receiptImage: null, notes: "" });
   const [expenseViewTrip, setExpenseViewTrip] = useState(null); // null = overview, tripId = detail
   const [showExpenseReport, setShowExpenseReport] = useState(null); // tripId for report modal
+  const [forwardReportId, setForwardReportId] = useState(null); // report id to forward
+  const [forwardEmail, setForwardEmail] = useState("");
+  const [forwardStatus, setForwardStatus] = useState(""); // "" | "sending" | "sent" | "error"
   const [allianceMyProgram, setAllianceMyProgram] = useState("aa");
   const [allianceMyTierOverride, setAllianceMyTierOverride] = useState(null);
   const [allianceCompare, setAllianceCompare] = useState("ua");
@@ -2333,6 +3283,14 @@ export default function EliteStatusTracker() {
   const [pasteText, setPasteText] = useState("");
   const [pasteLabel, setPasteLabel] = useState("");
 
+  // Receipt QR code generation
+  useEffect(() => {
+    if (showReceiptQR && userForwardingAddress) {
+      const receiptUrl = `${window.location.origin}/api/receipt?t=${userForwardingAddress}`;
+      setReceiptQRDataUrl(`/api/qrcode?data=${encodeURIComponent(receiptUrl)}`);
+    }
+  }, [showReceiptQR, userForwardingAddress]);
+
   // Handle Web Share Target — detect ?share=1 on app open
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -2349,8 +3307,45 @@ export default function EliteStatusTracker() {
     }
   }, []);
   const [tripDetailId, setTripDetailId] = useState(null); // trip id to show detail view
+  useEffect(() => { if (tripDetailId && ![...trips, ...sharedTrips].find(t => t.id === tripDetailId)) setTripDetailId(null); }, [tripDetailId, trips, sharedTrips]);
   const [tripDetailSegIdx, setTripDetailSegIdx] = useState(0); // which segment is active in detail view
   const [tripSummaryId, setTripSummaryId] = useState(null); // trip summary popup from dashboard
+
+  // Fetch weather for all days when trip detail opens — uses server-side API
+  useEffect(() => {
+    if (!tripDetailId) return;
+    const trip = [...trips, ...sharedTrips].find(t => t.id === tripDetailId);
+    if (!trip) return;
+    const segs = (trip.segments || []).filter(s => !s._isMeta);
+    const dates = [...new Set(segs.map(s => s.date).filter(Boolean))].sort();
+    if (dates.length === 0) return;
+    const fallbackCity = trip.location?.split(",")[0]?.trim() || "";
+    let cancelled = false;
+
+    const doFetch = async () => {
+      for (const date of dates) {
+        if (cancelled) break;
+        const dayCity = resolveCityForDate(segs, date);
+        const city = dayCity.airportCode || dayCity.city || fallbackCity;
+        if (!city) continue;
+        const cacheKey = `${city}_${date}`;
+        if (weatherLoading.current[cacheKey]) continue;
+        weatherLoading.current[cacheKey] = true;
+        try {
+          const resp = await fetch(`/api/weather?city=${encodeURIComponent(city)}&date=${date}`);
+          if (resp.ok && !cancelled) {
+            const data = await resp.json();
+            if (data.high !== undefined) {
+              setWeatherCache(prev => ({ ...prev, [cacheKey]: data }));
+            }
+          }
+        } catch {}
+      }
+    };
+
+    setTimeout(doFetch, 300);
+    return () => { cancelled = true; };
+  }, [tripDetailId, trips, sharedTrips]);
 
   // ── Standalone Expense Reports ──
   const [standaloneReports, setStandaloneReports] = useState([]);
@@ -2487,6 +3482,19 @@ export default function EliteStatusTracker() {
       }
     });
 
+    // Re-check session when app comes back to foreground (mobile PWA)
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (session?.user) {
+            setUser(session.user);
+            setIsLoggedIn(true);
+          }
+        });
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       // Don't sign out on INITIAL_SESSION with no session — getSession above handles that
       if (event === "INITIAL_SESSION") return;
@@ -2514,7 +3522,7 @@ export default function EliteStatusTracker() {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => { subscription.unsubscribe(); document.removeEventListener("visibilitychange", handleVisibility); };
   }, []);
 
   const loadLinkedAccounts = async (userId) => {
@@ -2580,8 +3588,23 @@ export default function EliteStatusTracker() {
       .or(`shared_with_id.eq.${userId},shared_with_email.eq.${userEmail}`);
     if (!shares || shares.length === 0) { setSharedTrips([]); return; }
     const tripIds = shares.map(s => s.trip_id);
-    const { data: tripRows } = await supabase.from("trips").select("*").in("id", tripIds);
-    if (tripRows) {
+    // Try fetching trips directly first
+    let { data: tripRows } = await supabase.from("trips").select("*").in("id", tripIds);
+    // If RLS blocks direct access, fetch via API with service role
+    if (!tripRows || tripRows.length === 0) {
+      try {
+        const resp = await fetch(`/api/shared-trips`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tripIds }),
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          tripRows = data.trips || [];
+        }
+      } catch {}
+    }
+    if (tripRows && tripRows.length > 0) {
       setSharedTrips(tripRows.map(row => {
         const share = shares.find(s => s.trip_id === row.id);
         return {
@@ -2961,12 +3984,28 @@ Start by introducing yourself briefly in-character with personality, and give an
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    // Set logged out state BEFORE signOut to prevent intermediate render with null user
+    setIsLoggedIn(false);
+    setUser(null);
+    setTrips([]);
+    setSharedTrips([]);
+    setExpenses([]);
+    setLinkedAccounts({});
+    setShowSettings(false);
     setActiveView("dashboard");
     setPublicPage("login");
+    await supabase.auth.signOut();
   };
 
-  const openSettings = () => {
+  const openSettings = async () => {
+    // Load additional forwarding emails
+    let additionalEmails = [];
+    if (user) {
+      const { data } = await supabase.from("user_forwarding_addresses").select("email").eq("user_id", user.id);
+      if (data) {
+        additionalEmails = data.map(r => r.email).filter(e => e && e !== user.email);
+      }
+    }
     setSettingsForm(f => ({
       ...f,
       firstName: user?.user_metadata?.first_name || "",
@@ -2975,6 +4014,7 @@ Start by introducing yourself briefly in-character with personality, and give an
       homeAirport: user?.user_metadata?.home_airport || "",
       defaultCurrency: user?.user_metadata?.default_currency || "USD",
       notifications: user?.user_metadata?.notifications || { statusMilestones: true, expiringMiles: true, newPrograms: false },
+      additionalEmails,
     }));
     setSettingsMsg({ type: "", text: "" });
     setSettingsTab("profile");
@@ -3088,7 +4128,30 @@ Start by introducing yourself briefly in-character with personality, and give an
       });
       if (!res.ok) { setMsg(res.status === 404 ? "Flight not found. Check number and date." : `Lookup failed (${res.status}).`); return; }
       const data = await res.json();
-      const flight = Array.isArray(data) ? data[0] : data;
+      let flight = null;
+      if (Array.isArray(data) && data.length > 0) {
+        // Match by user-entered airports if available
+        const userRoute = (seg.route || "").toUpperCase();
+        const routeParts = userRoute.split(/[→\-–>\/]/).map(s => s.trim()).filter(s => /^[A-Z]{3}$/.test(s));
+        const userDep = routeParts[0] || "";
+        const userArr = routeParts[1] || "";
+        if (userDep || userArr) {
+          flight = data.find(f => {
+            const fDep = (f.departure?.airport?.iata || "").toUpperCase();
+            const fArr = (f.arrival?.airport?.iata || "").toUpperCase();
+            if (userDep && userArr) return fDep === userDep && fArr === userArr;
+            if (userDep) return fDep === userDep;
+            if (userArr) return fArr === userArr;
+            return false;
+          });
+        }
+        if (!flight) flight = data[0];
+        if (data.length > 1 && !flight) {
+          setMsg(`Found ${data.length} routes for ${fn} — enter route to pick the right one`);
+        }
+      } else {
+        flight = data;
+      }
       if (!flight) { setMsg("No data returned for this flight."); return; }
       const dep = flight.departure || {};
       const arr = flight.arrival || {};
@@ -3109,7 +4172,8 @@ Start by introducing yourself briefly in-character with personality, and give an
           class: isIntl ? "international" : s.class,
         }),
       }));
-      setMsg(`✓ Found: ${depIata} → ${arrIata}${flight.aircraft?.model ? ` · ${flight.aircraft.model}` : ""}`);
+      const routeInfo = data.length > 1 ? ` (${data.length} routes found)` : "";
+      setMsg(`Found: ${depIata} → ${arrIata}${flight.aircraft?.model ? ` · ${flight.aircraft.model}` : ""}${routeInfo}`);
     } catch (e) {
       setMsg("Lookup failed. Check your API key or try again.");
     }
@@ -3156,13 +4220,17 @@ Start by introducing yourself briefly in-character with personality, and give an
     for (const seg of sorted) {
       if (seg.date > dateStr) break; // future segments don't affect this date
       if (seg.type === "flight") {
-        const airports = (seg.route || "").split("→").map(s => s.trim());
+        const airports = (seg.route || "").split(/[→\-–>]/).map(s => s.trim()).filter(s => s.length >= 2);
+        const depApt = seg.departureAirport || airports[0] || "";
+        const arrApt = seg.arrivalAirport || airports[airports.length - 1] || "";
         const resolvedArr = resolveArrivalDate(seg);
-        // If the flight departs on or before this date and arrives on or before this date
-        if (airports.length >= 2) {
-          if (seg.date <= dateStr) currentAirport = airports[0]; // departed from here
-          if (resolvedArr && resolvedArr <= dateStr) {
-            currentAirport = airports[airports.length - 1]; // arrived here
+        if (depApt || arrApt) {
+          if (seg.date <= dateStr && depApt) currentAirport = depApt;
+          if (resolvedArr && resolvedArr <= dateStr && arrApt) {
+            currentAirport = arrApt;
+            currentCity = "";
+          } else if (!resolvedArr && seg.date <= dateStr && arrApt) {
+            currentAirport = arrApt;
             currentCity = "";
           }
         }
@@ -3170,8 +4238,7 @@ Start by introducing yourself briefly in-character with personality, and give an
         if (seg.date <= dateStr) {
           const checkout = seg.checkoutDate || "";
           if (!checkout || checkout > dateStr) {
-            currentCity = seg.location || seg.property || "";
-            if (!currentAirport) currentAirport = "";
+            currentCity = (seg.location ? seg.location.split(",")[0].trim() : "") || (seg.property ? seg.property.replace(/^(Grand |The |Hotel |Sheraton |Hyatt |Marriott |Hilton |Ritz-Carlton |Four Seasons |W |St\. Regis |Residence Inn |Courtyard |Hampton Inn |Holiday Inn |Fairfield |SpringHill |TownePlace )/i, "").split(/\s+by\s+/i)[0].trim() : "") || "";
           }
         }
       } else {
@@ -3245,7 +4312,6 @@ Start by introducing yourself briefly in-character with personality, and give an
   // For dates >14 days out, uses historical data from same dates last year as approximation
   const fetchWeather = async (cityOrAirport, dateStr) => {
     const cacheKey = `${cityOrAirport}_${dateStr}`;
-    if (weatherCache[cacheKey]) return weatherCache[cacheKey];
     try {
       // Geocode — try multiple query strategies for best match
       const queries = [];
@@ -3271,7 +4337,7 @@ Start by introducing yourself briefly in-character with personality, and give an
       let isHistorical = false;
       if (daysOut <= 14 && daysOut >= -1) {
         // Use forecast API
-        const wxRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=auto&start_date=${dateStr}&end_date=${dateStr}`);
+        const wxRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=auto&start_date=${dateStr}&end_date=${dateStr}`);
         wxData = await wxRes.json();
       }
       if (!wxData?.daily?.time?.length) {
@@ -3281,14 +4347,14 @@ Start by introducing yourself briefly in-character with personality, and give an
         const lastYear = new Date(targetDate);
         lastYear.setFullYear(lastYear.getFullYear() - 1);
         const histDate = lastYear.toISOString().slice(0, 10);
-        const wxRes = await fetch(`https://archive-api.open-meteo.com/v1/archive?latitude=${latitude}&longitude=${longitude}&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=auto&start_date=${histDate}&end_date=${histDate}`);
+        const wxRes = await fetch(`https://archive-api.open-meteo.com/v1/archive?latitude=${latitude}&longitude=${longitude}&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=auto&start_date=${histDate}&end_date=${histDate}`);
         wxData = await wxRes.json();
       }
       if (!wxData?.daily?.time?.length) return null;
       const result = {
         high: wxData.daily.temperature_2m_max[0],
         low: wxData.daily.temperature_2m_min[0],
-        code: wxData.daily.weathercode[0],
+        code: wxData.daily.weather_code?.[0] ?? wxData.daily.weathercode?.[0] ?? 0,
         cityName: name,
         isHistorical,
       };
@@ -3316,8 +4382,41 @@ Start by introducing yourself briefly in-character with personality, and give an
       });
       if (!res.ok) { setFlightLegs(l => l.map((g, i) => i === legIdx ? { ...g, lookupMsg: res.status === 404 ? "Not found" : `Error ${res.status}` } : g)); return; }
       const data = await res.json();
-      const flight = Array.isArray(data) ? data[0] : data;
+      let flight = null;
+      if (Array.isArray(data) && data.length > 0) {
+        const userDep = (leg.departureAirport || "").toUpperCase();
+        const userArr = (leg.arrivalAirport || "").toUpperCase();
+        // Try exact match first
+        if (userDep || userArr) {
+          flight = data.find(f => {
+            const fDep = (f.departure?.airport?.iata || "").toUpperCase();
+            const fArr = (f.arrival?.airport?.iata || "").toUpperCase();
+            if (userDep && userArr) return fDep === userDep && fArr === userArr;
+            if (userDep) return fDep === userDep;
+            if (userArr) return fArr === userArr;
+            return false;
+          });
+        }
+        // If multiple routes and no exact match, show selector
+        if (!flight && data.length > 1) {
+          const options = data.map(f => ({
+            dep: f.departure?.airport?.iata || "?",
+            arr: f.arrival?.airport?.iata || "?",
+            depTime: (f.departure?.scheduledTime?.local || "").slice(11, 16),
+            arrTime: (f.arrival?.scheduledTime?.local || "").slice(11, 16),
+            aircraft: f.aircraft?.model || "",
+            raw: f,
+          }));
+          setFlightRouteOptions(prev => ({ ...prev, [legIdx]: options }));
+          setFlightLegs(l => l.map((g, i) => i === legIdx ? { ...g, lookupMsg: `${data.length} routes found — select yours below` } : g));
+          return;
+        }
+        if (!flight) flight = data[0];
+      } else {
+        flight = data;
+      }
       if (!flight) { setFlightLegs(l => l.map((g, i) => i === legIdx ? { ...g, lookupMsg: "No data" } : g)); return; }
+      setFlightRouteOptions(prev => { const n = { ...prev }; delete n[legIdx]; return n; });
       const dep = flight.departure || {};
       const arr = flight.arrival || {};
       // Parse local times for display
@@ -3383,6 +4482,56 @@ Start by introducing yourself briefly in-character with personality, and give an
     } catch {
       setFlightLegs(l => l.map((g, i) => i === legIdx ? { ...g, lookupMsg: "Lookup failed" } : g));
     }
+  };
+
+  // Apply a selected route from the multi-route picker
+  const applyFlightRouteOption = (legIdx, option) => {
+    const flight = option.raw;
+    const dep = flight.departure || {};
+    const arr = flight.arrival || {};
+    const depLocal = dep.scheduledTime?.local || "";
+    const arrLocal = arr.scheduledTime?.local || "";
+    const depUtcStr = dep.scheduledTime?.utc || "";
+    const arrUtcStr = arr.scheduledTime?.utc || "";
+    const parseLocalTime = (s) => s ? s.replace("T", " ").slice(11, 16) : "";
+    const arrTimeStr = parseLocalTime(arrLocal);
+    const depTimeStr = parseLocalTime(depLocal);
+    let arrDateStr = "";
+    if (arrUtcStr && arrTimeStr) {
+      const parseUtc = (s) => new Date(s.replace(" ", "T").replace(/([^Z])$/, "$1Z").replace(/TZ$/, "T00:00Z"));
+      const arrUtcDate = parseUtc(arrUtcStr);
+      const arrUtcMs = arrUtcDate.getTime();
+      if (!isNaN(arrUtcMs)) {
+        for (const dayOff of [0, 1, -1]) {
+          const candidate = new Date(arrUtcDate);
+          candidate.setUTCDate(candidate.getUTCDate() + dayOff);
+          const candidateDateStr = candidate.toISOString().slice(0, 10);
+          const candidateLocalMs = new Date(`${candidateDateStr}T${arrTimeStr}:00Z`).getTime();
+          const offsetHours = (candidateLocalMs - arrUtcMs) / 3600000;
+          if (offsetHours >= -12 && offsetHours <= 14) { arrDateStr = candidateDateStr; break; }
+        }
+      }
+    }
+    if (!arrDateStr) arrDateStr = (arrLocal ? arrLocal.slice(0, 10) : "") || flightLegs[legIdx]?.date || "";
+    if (depTimeStr && arrTimeStr && arrTimeStr < depTimeStr && arrDateStr === flightLegs[legIdx]?.date) {
+      const nextDay = new Date(flightLegs[legIdx].date + "T12:00:00");
+      nextDay.setDate(nextDay.getDate() + 1);
+      arrDateStr = nextDay.toISOString().slice(0, 10);
+    }
+    setFlightLegs(l => l.map((g, i) => i === legIdx ? {
+      ...g,
+      departureAirport: dep.airport?.iata || g.departureAirport,
+      arrivalAirport: arr.airport?.iata || g.arrivalAirport,
+      departureTime: depTimeStr || g.departureTime,
+      arrivalTime: arrTimeStr || g.arrivalTime,
+      arrivalDate: arrDateStr || g.arrivalDate,
+      departureTerminal: dep.terminal || g.departureTerminal,
+      arrivalTerminal: arr.terminal || g.arrivalTerminal,
+      airline: flight.airline?.name || g.airline,
+      aircraft: flight.aircraft?.model || g.aircraft,
+      lookupMsg: `Selected: ${dep.airport?.iata || "?"} → ${arr.airport?.iata || "?"}`,
+    } : g));
+    setFlightRouteOptions(prev => { const n = { ...prev }; delete n[legIdx]; return n; });
   };
 
   const openEditTrip = (trip) => {
@@ -4587,6 +5736,184 @@ Start by introducing yourself briefly in-character with personality, and give an
     return allPrograms.find(p => p.id === seg.program)?.name || seg.customProgramName || seg.program || "—";
   };
 
+  // Fetch Google Places photos for all trip landmarks (delayed, batched, once)
+  useEffect(() => {
+    if (!isLoggedIn || trips.length === 0 || landmarkPhotosFetchedOnce.current || activeView !== "dashboard") return;
+    landmarkPhotosFetchedOnce.current = true;
+    const CITY_LANDMARKS_ALL = {
+      "New York": ["Statue of Liberty", "Central Park", "Times Square", "Brooklyn Bridge", "Empire State Building"],
+      "London": ["Big Ben", "Tower Bridge", "Buckingham Palace", "British Museum", "Hyde Park"],
+      "Paris": ["Eiffel Tower", "Louvre Museum", "Arc de Triomphe", "Notre-Dame", "Montmartre"],
+      "Tokyo": ["Shibuya Crossing", "Senso-ji Temple", "Tokyo Tower", "Meiji Shrine", "Tsukiji Market"],
+      "Osaka": ["Osaka Castle", "Dotonbori", "Universal Studios", "Shinsekai", "Namba"],
+      "Hong Kong": ["Victoria Peak", "Star Ferry", "Temple Street", "Tian Tan Buddha", "Mong Kok"],
+      "Taipei": ["Taipei 101", "Jiufen Old Street", "Shilin Night Market", "National Palace Museum", "Elephant Mountain"],
+      "Seoul": ["Gyeongbokgung Palace", "Bukchon Hanok Village", "Myeongdong", "N Seoul Tower", "Hongdae"],
+      "Singapore": ["Marina Bay Sands", "Gardens by the Bay", "Sentosa Island", "Chinatown", "Orchard Road"],
+      "Dubai": ["Burj Khalifa", "Palm Jumeirah", "Dubai Mall", "Gold Souk", "Dubai Marina"],
+      "Rome": ["Colosseum", "Vatican City", "Trevi Fountain", "Pantheon", "Spanish Steps"],
+      "Barcelona": ["Sagrada Familia", "Park Guell", "La Rambla", "Casa Batllo", "Gothic Quarter"],
+      "Amsterdam": ["Anne Frank House", "Rijksmuseum", "Canal Cruise", "Vondelpark", "Dam Square"],
+      "Istanbul": ["Hagia Sophia", "Blue Mosque", "Grand Bazaar", "Topkapi Palace", "Bosphorus Cruise"],
+      "Bangkok": ["Grand Palace", "Wat Pho", "Chatuchak Market", "Khao San Road", "Jim Thompson House"],
+      "Sydney": ["Opera House", "Harbour Bridge", "Bondi Beach", "Taronga Zoo", "The Rocks"],
+      "Bermuda": ["Horseshoe Bay", "Crystal Caves", "Royal Naval Dockyard", "St George", "Gibbs Hill Lighthouse"],
+      "Miami": ["South Beach", "Wynwood Walls", "Art Deco District", "Brickell", "Little Havana"],
+      "Los Angeles": ["Hollywood Sign", "Santa Monica Pier", "Griffith Observatory", "Venice Beach", "Getty Center"],
+      "San Francisco": ["Golden Gate Bridge", "Alcatraz Island", "Fishermans Wharf", "Chinatown", "Cable Cars"],
+      "Chicago": ["Millennium Park", "Willis Tower", "Navy Pier", "Art Institute", "Magnificent Mile"],
+      "Honolulu": ["Waikiki Beach", "Diamond Head", "Pearl Harbor", "North Shore", "Ala Moana"],
+      "Cancun": ["Chichen Itza", "Isla Mujeres", "Xcaret Park", "Tulum Ruins", "Cenotes"],
+      "Washington DC": ["Lincoln Memorial", "Capitol Building", "Smithsonian", "Georgetown", "National Mall"],
+      "Boston": ["Freedom Trail", "Fenway Park", "Harvard Yard", "Boston Common", "Faneuil Hall"],
+      "Seattle": ["Space Needle", "Pike Place Market", "Chihuly Garden", "Museum of Pop Culture", "Kerry Park"],
+      "Toronto": ["CN Tower", "Royal Ontario Museum", "Distillery District", "Kensington Market", "Toronto Islands"],
+      "Nassau": ["Atlantis Resort", "Cable Beach", "Fort Charlotte", "Blue Lagoon", "Junkanoo Beach"],
+      "Vancouver": ["Stanley Park", "Granville Island", "Capilano Suspension Bridge", "Gastown", "English Bay"],
+      "Montreal": ["Old Montreal", "Mount Royal", "Notre-Dame Basilica", "Jean-Talon Market", "Plateau"],
+      "Nashville": ["Broadway", "Ryman Auditorium", "Parthenon", "Music Row", "Hot Chicken"],
+      "Fort Lauderdale": ["Las Olas Boulevard", "Fort Lauderdale Beach", "Riverwalk", "Bonnet House", "Hugh Taylor Birch State Park"],
+      "Jersey City": ["Liberty State Park", "Statue of Liberty View", "Exchange Place", "Newport Mall", "Hoboken Waterfront"],
+    };
+    // Collect all cities from upcoming trips
+    const allCities = new Set();
+    trips.slice(0, 6).forEach(trip => {
+      const segs = (trip.segments || []).filter(s => !s._isMeta && s.type === "flight");
+      segs.forEach(f => {
+        [f.arrivalAirport, f.departureAirport].filter(Boolean).forEach(code => {
+          const city = AIRPORT_CITY[code.toUpperCase()];
+          if (city) allCities.add(city);
+        });
+        if (f.route) f.route.split(/[→\-–>\/]/).map(s => s.trim().toUpperCase()).filter(s => /^[A-Z]{3}$/.test(s)).forEach(code => {
+          const city = AIRPORT_CITY[code]; if (city) allCities.add(city);
+        });
+      });
+      if (trip.location) trip.location.split(/[,\/]/).map(s => s.trim()).filter(Boolean).forEach(l => allCities.add(l));
+    });
+    // Fetch only first 2 landmarks per city, max 4 cities — keeps re-renders manageable
+    let delay = 3000;
+    let cityCount = 0;
+    allCities.forEach(city => {
+      if (cityCount >= 4) return;
+      cityCount++;
+      const lms = (CITY_LANDMARKS_ALL[city] || [`Visit ${city}`]).slice(0, 2);
+      lms.forEach((lm, i) => {
+        setTimeout(() => fetchLandmarkPhoto(lm, city), delay + i * 500);
+      });
+      delay += lms.length * 500 + 1000;
+    });
+  }, [isLoggedIn, trips.length, activeView]);
+
+  // ── Lounge helpers ──
+  const fetchLoungePhoto = useCallback((loungeId, placeQuery) => {
+    if (loungePhotoFetched.current.has(loungeId)) return;
+    loungePhotoFetched.current.add(loungeId);
+    loadGoogleMaps().then(() => {
+      if (!window.google?.maps?.places) return;
+      const svc = new window.google.maps.places.PlacesService(document.createElement("div"));
+      svc.findPlaceFromQuery({ query: placeQuery, fields: ["photos"] }, (results, status) => {
+        if (status === "OK" && results?.[0]?.photos?.[0]) {
+          const url = results[0].photos[0].getUrl({ maxWidth: 600 });
+          if (url) setLoungePhotos(prev => ({ ...prev, [loungeId]: url }));
+        }
+      });
+    }).catch(() => {});
+  }, []);
+
+  // Fetch lounge photo when a lounge card is expanded
+  useEffect(() => {
+    if (!loungeExpandedId || !loungeAirport) return;
+    const lounges = LOUNGE_DATABASE[loungeAirport] || [];
+    const lounge = lounges.find(l => l.id === loungeExpandedId);
+    if (lounge?.placeQuery) fetchLoungePhoto(loungeExpandedId, lounge.placeQuery);
+  }, [loungeExpandedId, loungeAirport]);
+
+  const getLoungeAccess = useCallback((network, lounge) => {
+    const results = [];
+    const flyingAlliance = loungeFlightAirline ? AIRLINE_ALLIANCE[loungeFlightAirline] : null;
+    const flyingClass = loungeFlightClass || "economy";
+
+    // 1. Card-based access — always available regardless of flight
+    Object.keys(linkedAccounts).forEach(cardId => {
+      const rules = CARD_LOUNGE_ACCESS[cardId];
+      if (!rules) return;
+      rules.forEach(rule => {
+        if (rule.network === network) {
+          const cardMeta = LOYALTY_PROGRAMS.creditCards.find(c => c.id === cardId);
+          results.push({ source: "card", cardId, cardName: cardMeta?.name || cardId, guests: rule.guests, guestNote: rule.guestNote, condition: rule.condition });
+        }
+      });
+    });
+
+    // 2. Direct airline elite status access (e.g. AA EP → Admirals Club)
+    const isIntl = loungeAccessRoute === "international";
+    Object.entries(linkedAccounts).forEach(([progId, acct]) => {
+      if (!acct.currentTier) return;
+      const airline = ELITE_LOUNGE_ACCESS[progId];
+      if (airline?.tiers?.[acct.currentTier]) {
+        airline.tiers[acct.currentTier].lounges.forEach(rule => {
+          if (rule.network !== network) return;
+          // Check route conditions
+          if (rule.condition === "intl_only" && !isIntl) return;
+          if (rule.condition === "intl_aa_oneworld" && !isIntl) return;
+          if (rule.condition === "intl_premium_cabin" && (!isIntl || (flyingClass !== "business" && flyingClass !== "first"))) return;
+          if (rule.condition === "intl_or_transcon" && !isIntl && flyingClass !== "business" && flyingClass !== "first") return;
+          results.push({ source: "elite", airlineName: airline.name, tier: acct.currentTier, guests: rule.guests, guestNote: rule.guestNote, condition: rule.condition });
+        });
+      }
+    });
+
+    // 3. Alliance-based access — ONLY when flying an airline in the SAME alliance
+    if (flyingAlliance) {
+      const checkedAlliances = new Set();
+      Object.entries(linkedAccounts).forEach(([progId, acct]) => {
+        if (!acct.currentTier) return;
+        const mapping = ELITE_ALLIANCE_MAP[progId];
+        if (!mapping || !mapping.tiers[acct.currentTier]) return;
+        // Only grant alliance access if the user's status alliance matches the flying airline's alliance
+        if (mapping.alliance !== flyingAlliance) return;
+        const allianceLevel = mapping.tiers[acct.currentTier];
+        const key = `${mapping.alliance}_${allianceLevel}`;
+        if (checkedAlliances.has(key)) return;
+        checkedAlliances.add(key);
+        const allianceRules = ALLIANCE_LOUNGE_ACCESS[mapping.alliance]?.[allianceLevel];
+        if (!allianceRules) return;
+        allianceRules.lounges.forEach(rule => {
+          if (!rule.networkTypes.includes(network)) return;
+          // Only match if the lounge belongs to the same alliance
+          if (lounge?.alliance && lounge.alliance !== "none" && lounge.alliance !== mapping.alliance) return;
+          // Check cabin class requirement
+          if (rule.class === "first_and_business" || rule.class === "business") {
+            // Emerald gets first+business regardless of cabin; Sapphire/Gold need to be checked
+            // For Emerald-level, access is regardless of cabin class
+            // For lower levels, typically need business+ ticket unless status overrides
+          }
+          const allianceNames = { oneworld: "oneworld", star: "Star Alliance", skyteam: "SkyTeam" };
+          results.push({ source: "alliance", airlineName: `${allianceNames[mapping.alliance]} ${allianceLevel}`, tier: acct.currentTier, guests: rule.guests, guestNote: rule.guestNote });
+        });
+      });
+    }
+
+    // 4. Cabin-class based access — flying business/first on any airline often grants their own lounges
+    if ((flyingClass === "business" || flyingClass === "first") && loungeFlightAirline) {
+      // Flying business/first on the operating airline grants access to that airline's lounges
+      const airlineNetworks = {
+        cathay_mp: "cathay_lounge", qantas_ff: "qantas_lounge", singapore_kf: "singapore_lounge",
+        ua: "united_club", dl: "delta_sky_club", aa: "admirals_club",
+      };
+      const operatingNetwork = airlineNetworks[loungeFlightAirline];
+      if (operatingNetwork === network) {
+        const alreadyHasAccess = results.length > 0;
+        if (!alreadyHasAccess) {
+          const airlineMeta = LOYALTY_PROGRAMS.airlines.find(a => a.id === loungeFlightAirline);
+          results.push({ source: "cabin", airlineName: airlineMeta?.name || loungeFlightAirline, tier: flyingClass === "first" ? "First Class ticket" : "Business Class ticket", guests: 0, guestNote: "Ticketed cabin access only" });
+        }
+      }
+    }
+
+    return results;
+  }, [linkedAccounts, loungeFlightAirline, loungeFlightClass, loungeAccessRoute]);
+
   // ============================================================
   // PUBLIC SITE — Landing, Content Pages, Login
   // ============================================================
@@ -5234,7 +6561,8 @@ Start by introducing yourself briefly in-character with personality, and give an
     return true;
   });
   const upcomingTripsFiltered = filteredTrips.filter(t => { const end = getTripEndDate(t); return !end || end >= todayStr; }).sort((a, b) => (a.date || "").localeCompare(b.date || ""));
-  const pastTripsFiltered = filteredTrips.filter(t => { const end = getTripEndDate(t); return end && end < todayStr; }).sort((a, b) => b.date.localeCompare(a.date));
+
+  const pastTripsFiltered = filteredTrips.filter(t => { const end = getTripEndDate(t); return end && end < todayStr; }).sort((a, b) => (b.date || "").localeCompare(a.date || ""));
 
   const renderDashboard = () => {
     // Dashboard uses shared css palette
@@ -5278,65 +6606,116 @@ Start by introducing yourself briefly in-character with personality, and give an
     return (
       <div style={{ fontFamily: lp.sans, color: lp.text }}>
 
-        {/* ── Header: greeting + add trip + date ── */}
-        <div style={{ padding: "8px 0 24px", marginBottom: 8 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-              <div>
-                <h1 style={{ fontSize: isMobile ? 24 : 32, fontWeight: 700, color: css.text, margin: 0, letterSpacing: "-0.02em", lineHeight: 1.2 }}>
-                  {greeting}, {user?.user_metadata?.first_name || user?.user_metadata?.name?.split(" ")[0] || "Traveler"}
-                </h1>
-              </div>
-              <button onClick={() => setShowCreateTrip(true)} style={{
-                padding: "10px 24px", border: "none", background: css.accent, color: "#fff",
-                fontSize: 14, fontWeight: 600, cursor: "pointer", borderRadius: 24,
-                transition: "all 0.15s ease", whiteSpace: "nowrap",
-              }} onMouseEnter={e => { e.currentTarget.style.opacity = "0.9"; }} onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}>
-                + Add Trip
-              </button>
-            </div>
-            <div style={{ fontSize: 13, color: css.text3, fontWeight: 500 }}>
-              {new Date().toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }).toUpperCase()}
-            </div>
+        {/* ── Header: greeting ── */}
+        <div style={{ marginBottom: 20 }}>
+          <h1 style={{ fontSize: isMobile ? 22 : 32, fontWeight: 700, color: css.text, margin: 0, letterSpacing: "-0.02em", lineHeight: 1.2 }}>
+            {greeting}, {user?.user_metadata?.first_name || user?.user_metadata?.name?.split(" ")[0] || "Traveler"}
+          </h1>
+          <div style={{ fontSize: isMobile ? 12 : 13, color: css.text3, fontWeight: 500, marginTop: 4 }}>
+            {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
           </div>
         </div>
 
-        {/* ── Upcoming Trips — first thing the user sees ── */}
-        <div className="c-a1">
+        {/* ── Tab bar + Add Trip (sticks to top on scroll, flush with header) ── */}
+        <div className="c-a1" style={{ position: "sticky", top: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "8px 0", marginBottom: 16, background: D ? "rgba(15,15,15,0.95)" : "rgba(255,255,255,0.95)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderBottom: `1px solid ${css.border}`, marginLeft: isMobile ? -16 : -48, marginRight: isMobile ? -16 : -48, paddingLeft: isMobile ? 8 : 48, paddingRight: isMobile ? 8 : 48 }}>
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: isMobile ? 0 : 4,
+            background: "transparent",
+            padding: 0, overflowX: isMobile ? "auto" : "visible", flex: 1, justifyContent: "center",
+          }}>
+            {[
+              { id: "overview", label: "Overview" },
+              { id: "inbox", label: "Inbox" },
+              { id: "timeline", label: "Timeline" },
+              { id: "reports", label: "Reports" },
+              { id: "activity", label: "Activity" },
+            ].map(tab => {
+              const isActive = dashSubTab === tab.id;
+              return (
+                <button key={tab.id} onClick={() => setDashSubTab(tab.id)} style={{
+                  padding: isMobile ? "6px 10px" : "8px 18px", border: "none", cursor: "pointer",
+                  background: "transparent",
+                  borderBottom: isActive ? `2px solid ${css.accent}` : "2px solid transparent",
+                  borderRadius: 0, color: isActive ? css.accent : css.text3,
+                  fontSize: isMobile ? 11 : 13, fontWeight: isActive ? 600 : 400, transition: "all 0.15s",
+                  whiteSpace: "nowrap", fontFamily: "inherit",
+                }}>
+                  {tab.label}
+                  {tab.id === "inbox" && (savedItineraries.length + expenses.filter(e => !e.tripId).length) > 0 && (
+                    <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, color: "#fff", background: css.accent, borderRadius: 10, padding: "1px 6px", minWidth: 16, display: "inline-block", textAlign: "center" }}>
+                      {savedItineraries.length + expenses.filter(e => !e.tripId).length}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          <button onClick={() => setShowCreateTrip(true)} style={{
+            padding: isMobile ? "7px 14px" : "8px 20px", border: "none", background: css.accent, color: "#fff",
+            fontSize: isMobile ? 12 : 13, fontWeight: 600, cursor: "pointer", borderRadius: 24,
+            transition: "all 0.15s ease", whiteSpace: "nowrap", marginLeft: 12, flexShrink: 0,
+          }}>
+            + Add Trip
+          </button>
+        </div>
+
+        {/* ── Hero banner image ── */}
+        {dashSubTab === "overview" && (
+          <div style={{ margin: isMobile ? "0 -16px 0" : "0 -48px 0", position: "relative", height: isMobile ? 160 : 240, overflow: "hidden" }}>
+            <img src="/hero-travel.jpg" alt="Travel" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 40%", display: "block" }} />
+            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: isMobile ? 60 : 80, background: D ? "linear-gradient(transparent, #0f0f0f)" : "linear-gradient(transparent, #ffffff)" }} />
+          </div>
+        )}
+
+        {/* ── Dashboard content (on solid background) ── */}
+        {dashSubTab === "overview" && <>
+
+                {/* Next trip countdown */}
+                {nextTrip && (
+                  <div className="c-a1" style={{ padding: "8px 0 8px" }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: css.accent, marginBottom: 4 }}>
+                      {daysToNext === 0 ? "Departing Today" : daysToNext === 1 ? "Departing Tomorrow" : `${daysToNext} Days Away`}
+                    </div>
+                    <div style={{ fontSize: isMobile ? 20 : 26, fontWeight: 700, color: css.text, letterSpacing: "-0.02em", lineHeight: 1.2 }}>
+                      {nextTrip.tripName || nextTrip.trip_name || nextTrip.location || "Upcoming Trip"}
+                    </div>
+                    {nextTrip.location && <div style={{ fontSize: 13, color: css.text3, marginTop: 4 }}>{nextTrip.location}</div>}
+                  </div>
+                )}
+
+        {/* ── Upcoming Trips ── */}
+        <div className="c-a1" style={{ marginTop: 20 }}>
           <SectionLabel action={() => setActiveView("trips")} actionLabel="View all">Upcoming Trips</SectionLabel>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {upcomingTripsFiltered.slice(0, 6).map(trip => {
-              const prog = allPrograms.find(p => p.id === trip.program);
-              const sColor = trip.status === "confirmed" ? lp.green : trip.status === "planned" ? "#F59E0B" : lp.teal;
-              const sBg = trip.status === "confirmed" ? "rgba(34,197,94,0.10)" : trip.status === "planned" ? "rgba(245,158,11,0.10)" : "rgba(14,165,160,0.10)";
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {upcomingTripsFiltered.slice(0, 6).map((trip, tIdx) => {
               const tripStart = trip.date || (trip.segments && trip.segments.map(s => s.date).filter(Boolean).sort()[0]) || "";
               const daysAway = tripStart ? Math.max(0, Math.ceil((new Date(tripStart + "T12:00:00") - new Date()) / 86400000)) : null;
-              // Get confirmation code from trip or its segments
               const confCode = trip.confirmationCode || trip.confirmation_code
                 || (trip.segments && trip.segments.map(s => s.confirmationCode).filter(Boolean)[0])
                 || (trip.bookingSource?.confirmation) || "";
-              // Determine the segment types present
               const realSegs = (trip.segments || []).filter(s => !s._isMeta);
               const hasFlights = realSegs.some(s => s.type === "flight");
               const hasHotels = realSegs.some(s => s.type === "hotel" || s.type === "accommodation");
               const hasActivities = realSegs.some(s => s.type === "activity" || s.type === "restaurant");
               const segIconType = realSegs.length === 0 ? "pin" : hasFlights ? "flight" : hasHotels ? "hotel" : hasActivities ? "activity" : "pin";
-              const tripColor = lp.teal;
+              const sColor = trip.status === "confirmed" ? lp.green : trip.status === "planned" ? "#F59E0B" : lp.teal;
+              const sBg = trip.status === "confirmed" ? "rgba(34,197,94,0.10)" : trip.status === "planned" ? "rgba(245,158,11,0.10)" : "rgba(14,165,160,0.10)";
               return (
                 <div key={trip.id} onClick={() => { setTripDetailId(trip.id); setTripDetailSegIdx(0); setActiveView("trips"); }}
                   style={{ padding: "16px 20px", borderRadius: css.radius, background: css.surface, border: `1px solid ${css.border}`, boxShadow: css.shadow, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, transition: "all 0.15s ease" }}
-                  onMouseEnter={e => { e.currentTarget.style.boxShadow = css.shadowHover; }}
-                  onMouseLeave={e => { e.currentTarget.style.boxShadow = css.shadow; }}>
+                  onMouseEnter={e => { e.currentTarget.style.boxShadow = css.shadowHover; e.currentTarget.style.borderColor = css.accent; }}
+                  onMouseLeave={e => { e.currentTarget.style.boxShadow = css.shadow; e.currentTarget.style.borderColor = css.border; }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: 0, background: `${tripColor}15`, border: `1px solid ${tripColor}30`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                      <SegIcon type={segIconType} size={18} color={tripColor} />
+                    <div style={{ width: 40, height: 40, borderRadius: 10, background: `${lp.teal}15`, border: `1px solid ${lp.teal}30`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <SegIcon type={segIconType} size={18} color={lp.teal} />
                     </div>
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: lp.text, fontFamily: lp.sans, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{trip.tripName || trip.trip_name || trip.route || trip.property || trip.location}</div>
-                      <div style={{ fontSize: 11, color: lp.dim, marginTop: 2, display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: css.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{trip.tripName || trip.trip_name || trip.route || trip.property || trip.location}</div>
+                      <div style={{ fontSize: 11, color: css.text3, marginTop: 2, display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
                         <span>{formatTripDates(trip)}</span>
                         {trip.location && <span>· {trip.location}</span>}
                         {confCode && <span style={{ fontFamily: lp.mono, fontWeight: 600, color: lp.text2, fontSize: 10 }}>· {confCode}</span>}
+                        {trip._shared && <span style={{ fontSize: 10, fontWeight: 600, color: "#3b82f6" }}>· Shared by {trip._sharedBy}</span>}
                       </div>
                     </div>
                   </div>
@@ -5346,7 +6725,8 @@ Start by introducing yourself briefly in-character with personality, and give an
                         {daysAway === 0 ? "Today" : daysAway === 1 ? "Tomorrow" : `${daysAway}d`}
                       </span>
                     )}
-                    <span style={{ fontSize: 9, fontWeight: 700, color: sColor, background: sBg, padding: "4px 10px", borderRadius: 0, textTransform: "uppercase", letterSpacing: "0.06em", border: `1px solid ${sColor}30` }}>{trip.status}</span>
+                    {trip._shared && <span style={{ fontSize: 9, fontWeight: 600, color: "#3b82f6", background: "rgba(59,130,246,0.1)", padding: "3px 8px", borderRadius: 4, border: "1px solid rgba(59,130,246,0.2)" }}>Shared</span>}
+                    <span style={{ fontSize: 9, fontWeight: 700, color: sColor, background: sBg, padding: "4px 10px", borderRadius: 6, textTransform: "uppercase", letterSpacing: "0.06em", border: `1px solid ${sColor}30` }}>{trip.status}</span>
                   </div>
                 </div>
               );
@@ -5360,8 +6740,184 @@ Start by introducing yourself briefly in-character with personality, and give an
           </div>
         </div>
 
-        {/* ── Booking Inbox — parsed itineraries from forwarded emails or paste ── */}
-        <div className="c-a2" style={{ marginTop: 32 }}>
+        {/* ── Trip Highlights — vertical list with horizontal landmark scroll ── */}
+        {upcomingTripsFiltered.length > 0 && (() => {
+          // Extract unique destination cities from flight segments
+          const IATA_CITY = { JFK: "New York", LAX: "Los Angeles", SFO: "San Francisco", ORD: "Chicago", MIA: "Miami", LHR: "London", CDG: "Paris", NRT: "Tokyo", HND: "Tokyo", KIX: "Osaka", ICN: "Seoul", SIN: "Singapore", HKG: "Hong Kong", DXB: "Dubai", FCO: "Rome", BCN: "Barcelona", AMS: "Amsterdam", FRA: "Frankfurt", IST: "Istanbul", BKK: "Bangkok", SYD: "Sydney", YYZ: "Toronto", MEX: "Mexico City", GRU: "Sao Paulo", DEL: "Delhi", BOM: "Mumbai", PEK: "Beijing", PVG: "Shanghai", TPE: "Taipei", CAN: "Guangzhou", KUL: "Kuala Lumpur", MNL: "Manila", CGK: "Jakarta", DOH: "Doha", AUH: "Abu Dhabi", JNB: "Johannesburg", CAI: "Cairo", ATH: "Athens", LIS: "Lisbon", MAD: "Madrid", MUC: "Munich", ZRH: "Zurich", VIE: "Vienna", CPH: "Copenhagen", OSL: "Oslo", ARN: "Stockholm", HEL: "Helsinki", WAW: "Warsaw", PRG: "Prague", BUD: "Budapest", DUB: "Dublin", EDI: "Edinburgh", BER: "Berlin", MXP: "Milan", VCE: "Venice", NAP: "Naples", ATL: "Atlanta", DFW: "Dallas", DEN: "Denver", SEA: "Seattle", BOS: "Boston", IAD: "Washington DC", PHL: "Philadelphia", MSP: "Minneapolis", DTW: "Detroit", CLT: "Charlotte", PHX: "Phoenix", TPA: "Tampa", MCO: "Orlando", FLL: "Fort Lauderdale", SAN: "San Diego", PDX: "Portland", HNL: "Honolulu", ANC: "Anchorage", BDA: "Bermuda", NAS: "Nassau", MBJ: "Montego Bay", CUN: "Cancun", LIM: "Lima", SCL: "Santiago", EZE: "Buenos Aires", BOG: "Bogota", PTY: "Panama City", SJU: "San Juan", STT: "St Thomas", SXM: "St Maarten" };
+          const CITY_LANDMARKS = {
+            "New York": ["Statue of Liberty", "Central Park", "Times Square", "Brooklyn Bridge", "Empire State Building"],
+            "London": ["Big Ben", "Tower Bridge", "Buckingham Palace", "British Museum", "Hyde Park"],
+            "Paris": ["Eiffel Tower", "Louvre Museum", "Arc de Triomphe", "Notre-Dame", "Montmartre"],
+            "Tokyo": ["Shibuya Crossing", "Senso-ji Temple", "Tokyo Tower", "Meiji Shrine", "Tsukiji Market"],
+            "Osaka": ["Osaka Castle", "Dotonbori", "Universal Studios", "Shinsekai", "Namba"],
+            "Seoul": ["Gyeongbokgung Palace", "Bukchon Hanok Village", "Myeongdong", "N Seoul Tower", "Hongdae"],
+            "Singapore": ["Marina Bay Sands", "Gardens by the Bay", "Sentosa Island", "Chinatown", "Orchard Road"],
+            "Hong Kong": ["Victoria Peak", "Star Ferry", "Temple Street", "Tian Tan Buddha", "Mong Kok"],
+            "Dubai": ["Burj Khalifa", "Palm Jumeirah", "Dubai Mall", "Gold Souk", "Dubai Marina"],
+            "Rome": ["Colosseum", "Vatican City", "Trevi Fountain", "Pantheon", "Spanish Steps"],
+            "Barcelona": ["Sagrada Familia", "Park Guell", "La Rambla", "Casa Batllo", "Gothic Quarter"],
+            "Amsterdam": ["Anne Frank House", "Rijksmuseum", "Canal Cruise", "Vondelpark", "Dam Square"],
+            "Istanbul": ["Hagia Sophia", "Blue Mosque", "Grand Bazaar", "Topkapi Palace", "Bosphorus Cruise"],
+            "Bangkok": ["Grand Palace", "Wat Pho", "Chatuchak Market", "Khao San Road", "Jim Thompson House"],
+            "Sydney": ["Opera House", "Harbour Bridge", "Bondi Beach", "Taronga Zoo", "The Rocks"],
+            "Bermuda": ["Horseshoe Bay", "Crystal Caves", "Royal Naval Dockyard", "St George", "Gibbs Hill Lighthouse"],
+            "Miami": ["South Beach", "Wynwood Walls", "Art Deco District", "Brickell", "Little Havana"],
+            "Los Angeles": ["Hollywood Sign", "Santa Monica Pier", "Griffith Observatory", "Venice Beach", "Getty Center"],
+            "San Francisco": ["Golden Gate Bridge", "Alcatraz Island", "Fishermans Wharf", "Chinatown", "Cable Cars"],
+            "Chicago": ["Millennium Park", "Willis Tower", "Navy Pier", "Art Institute", "Magnificent Mile"],
+            "Honolulu": ["Waikiki Beach", "Diamond Head", "Pearl Harbor", "North Shore", "Ala Moana"],
+            "Cancun": ["Chichen Itza", "Isla Mujeres", "Xcaret Park", "Tulum Ruins", "Cenotes"],
+            "Nassau": ["Atlantis Resort", "Cable Beach", "Fort Charlotte", "Blue Lagoon", "Junkanoo Beach"],
+            "Taipei": ["Taipei 101", "Jiufen Old Street", "Shilin Night Market", "National Palace Museum", "Elephant Mountain"],
+            "Washington DC": ["Lincoln Memorial", "Capitol Building", "Smithsonian", "Georgetown", "National Mall"],
+            "Boston": ["Freedom Trail", "Fenway Park", "Harvard Yard", "Boston Common", "Faneuil Hall"],
+            "Seattle": ["Space Needle", "Pike Place Market", "Chihuly Garden", "Museum of Pop Culture", "Kerry Park"],
+            "Toronto": ["CN Tower", "Royal Ontario Museum", "Distillery District", "Kensington Market", "Toronto Islands"],
+          };
+          // Normalize city name lookups (handle "New York City" -> "New York" etc.)
+          const normalizeCity = (name) => {
+            const map = { "New York City": "New York", "NYC": "New York", "LA": "Los Angeles", "SF": "San Francisco", "DC": "Washington DC", "Washington": "Washington DC" };
+            return map[name] || name;
+          };
+          // Photos come from Google Places API — fetched dynamically
+          return (
+            <div className="c-a2" style={{ marginTop: 32 }}>
+              <SectionLabel>Trip Highlights</SectionLabel>
+              <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+                {upcomingTripsFiltered.slice(0, 6).map((trip, tIdx) => {
+                  const realSegs = (trip.segments || []).filter(s => !s._isMeta);
+                  const flights = realSegs.filter(s => s.type === "flight");
+                  // Collect unique destination cities from flight segments
+                  // Find origin city (first departure) and final return (last arrival) to exclude
+                  const sortedFlights = [...flights].sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+                  const homeCode = sortedFlights.length > 0 ? (sortedFlights[0].departureAirport?.toUpperCase() || sortedFlights[0].route?.split(/[→\-–>\/]/)[0]?.trim()?.toUpperCase()) : null;
+                  const returnCode = sortedFlights.length > 0 ? (sortedFlights[sortedFlights.length - 1].arrivalAirport?.toUpperCase() || sortedFlights[sortedFlights.length - 1].route?.split(/[→\-–>\/]/).pop()?.trim()?.toUpperCase()) : null;
+                  const homeCodes = new Set([homeCode, returnCode].filter(Boolean));
+
+                  // Collect all airport codes from flights
+                  const allCodes = new Set();
+                  flights.forEach(f => {
+                    if (f.arrivalAirport) allCodes.add(f.arrivalAirport.toUpperCase());
+                    if (f.departureAirport) allCodes.add(f.departureAirport.toUpperCase());
+                    if (f.route) {
+                      f.route.split(/[→\-–>\/]/).map(s => s.trim().toUpperCase()).filter(s => s.length === 3 && /^[A-Z]{3}$/.test(s)).forEach(code => allCodes.add(code));
+                    }
+                  });
+
+                  // Remove home/origin airports — keep only destination cities
+                  homeCodes.forEach(code => allCodes.delete(code));
+
+                  const cities = [...allCodes].map(code => IATA_CITY[code]).filter(Boolean);
+
+                  // Also check non-flight segments for location-based cities
+                  realSegs.filter(s => s.type !== "flight").forEach(s => {
+                    if (s.location) {
+                      s.location.split(/[,\/]/).map(p => p.trim()).filter(Boolean).forEach(loc => {
+                        const n = normalizeCity(loc);
+                        if (CITY_LANDMARKS[n] && !cities.includes(n)) cities.push(n);
+                      });
+                    }
+                  });
+
+                  // Also parse trip.location for additional cities
+                  if (trip.location) {
+                    trip.location.split(/[,\/]/).map(s => s.trim()).filter(Boolean).forEach(loc => {
+                      const normalized = normalizeCity(loc);
+                      // Skip if it matches the home city
+                      const homeCity = homeCode ? IATA_CITY[homeCode] : null;
+                      if (normalized !== homeCity && !cities.includes(normalized)) cities.push(normalized);
+                    });
+                  }
+                  const uniqueCities = [...new Set(cities)];
+                  // Build landmark cards
+                  const landmarks = [];
+                  const CITY_PHOTOS = {
+                      "New York": "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=400&q=80&auto=format&fit=crop",
+                      "London": "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=400&q=80&auto=format&fit=crop",
+                      "Paris": "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400&q=80&auto=format&fit=crop",
+                      "Tokyo": "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&q=80&auto=format&fit=crop",
+                      "Osaka": "https://images.unsplash.com/photo-1590559899731-a382839e5549?w=400&q=80&auto=format&fit=crop",
+                      "Seoul": "https://images.unsplash.com/photo-1546874177-9e664107314e?w=400&q=80&auto=format&fit=crop",
+                      "Singapore": "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=400&q=80&auto=format&fit=crop",
+                      "Hong Kong": "https://images.unsplash.com/photo-1536599018102-9f803c140fc1?w=400&q=80&auto=format&fit=crop",
+                      "Dubai": "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=400&q=80&auto=format&fit=crop",
+                      "Rome": "https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=400&q=80&auto=format&fit=crop",
+                      "Barcelona": "https://images.unsplash.com/photo-1583779457094-ab6f77f7bf57?w=400&q=80&auto=format&fit=crop",
+                      "Amsterdam": "https://images.unsplash.com/photo-1534351590666-13e3e96b5017?w=400&q=80&auto=format&fit=crop",
+                      "Istanbul": "https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?w=400&q=80&auto=format&fit=crop",
+                      "Bangkok": "https://images.unsplash.com/photo-1563492065599-3520f775eeed?w=400&q=80&auto=format&fit=crop",
+                      "Sydney": "https://images.unsplash.com/photo-1523482580672-f109ba8cb9be?w=400&q=80&auto=format&fit=crop",
+                      "Bermuda": "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=400&q=80&auto=format&fit=crop",
+                      "Miami": "https://images.unsplash.com/photo-1535498730771-e735b998cd64?w=400&q=80&auto=format&fit=crop",
+                      "Los Angeles": "https://images.unsplash.com/photo-1534190760961-74e8c1c5c3da?w=400&q=80&auto=format&fit=crop",
+                      "San Francisco": "https://images.unsplash.com/photo-1449034446853-66c86144b0ad?w=400&q=80&auto=format&fit=crop",
+                      "Chicago": "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=400&q=80&auto=format&fit=crop",
+                      "Honolulu": "https://images.unsplash.com/photo-1507876466758-bc54f384809c?w=400&q=80&auto=format&fit=crop",
+                      "Taipei": "https://images.unsplash.com/photo-1508248467877-aec1e22e0e68?w=400&q=80&auto=format&fit=crop",
+                      "Cancun": "https://images.unsplash.com/photo-1518638150340-f706e86654de?w=400&q=80&auto=format&fit=crop",
+                      "Vancouver": "https://images.unsplash.com/photo-1559511260-66a68e7e9b97?w=400&q=80&auto=format&fit=crop",
+                      "Montreal": "https://images.unsplash.com/photo-1519178614-68673b201f36?w=400&q=80&auto=format&fit=crop",
+                      "Nashville": "https://images.unsplash.com/photo-1545419913-775cae67e15f?w=400&q=80&auto=format&fit=crop",
+                      "Fort Lauderdale": "https://images.unsplash.com/photo-1591792111137-5b8219d5fad6?w=400&q=80&auto=format&fit=crop",
+                      "Washington DC": "https://images.unsplash.com/photo-1501466044931-62695aada8e9?w=400&q=80&auto=format&fit=crop",
+                      "Jersey City": "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=400&q=80&auto=format&fit=crop",
+                  };
+                  uniqueCities.forEach(city => {
+                    const normalCity = normalizeCity(city);
+                    const cityLandmarks = CITY_LANDMARKS[normalCity] || [`Visit ${city}`];
+                    const defaultCityPhoto = CITY_PHOTOS[normalCity] || "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=400&q=80&auto=format&fit=crop";
+                    cityLandmarks.forEach(lm => {
+                      const photoKey = `${lm}, ${normalCity}`;
+                      landmarks.push({ city: normalCity, name: lm, photo: landmarkPhotos[photoKey] || null, _fetchKey: photoKey, _lm: lm, _city: normalCity });
+                    });
+                  });
+                  if (landmarks.length === 0 && trip.location) {
+                    const loc = normalizeCity(trip.location.split(",")[0].trim());
+                    landmarks.push({ city: loc, name: `Visit ${loc}`, photo: landmarkPhotos[`${loc}, `] || CITY_PHOTOS[loc] || "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=400&q=80&auto=format&fit=crop", _fetchKey: `${loc}, `, _lm: loc, _city: "" });
+                  }
+                  return (
+                    <div key={trip.id}>
+                      {/* Trip header */}
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: css.text }}>{trip.tripName || trip.trip_name || trip.location || "Trip"}</div>
+                        <span style={{ fontSize: 11, color: css.text3 }}>{formatTripDates(trip)}</span>
+                        {uniqueCities.length > 0 && <span style={{ fontSize: 11, color: css.accent, fontWeight: 600, textShadow: "0 0 8px rgba(255,255,255,0.9)" }}>{uniqueCities.join(" · ")}</span>}
+                      </div>
+                      {/* Horizontal scrolling landmark cards */}
+                      <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 8, scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch", marginLeft: isMobile ? -16 : 0, marginRight: isMobile ? -16 : 0, paddingLeft: isMobile ? 16 : 0, paddingRight: isMobile ? 16 : 0 }}>
+                        {landmarks.slice(0, 10).map((lm, li) => (
+                          <div key={li} style={{ minWidth: isMobile ? 200 : 220, maxWidth: isMobile ? 200 : 220, borderRadius: 12, overflow: "hidden", background: css.surface, border: `1px solid ${css.border}`, flexShrink: 0, scrollSnapAlign: "start", transition: "transform 0.15s" }}>
+                            <div style={{ height: 140, position: "relative", overflow: "hidden", background: D ? "#222" : "#f0f0f0" }}>
+                              {lm.photo ? (
+                                <img src={lm.photo} alt={lm.name} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                              ) : (
+                                <div style={{ width: "100%", height: "100%", background: `linear-gradient(135deg, ${D ? "#1a1a1a" : "#e8e8e8"} 25%, ${D ? "#222" : "#f2f2f2"} 50%, ${D ? "#1a1a1a" : "#e8e8e8"} 75%)`, backgroundSize: "200% 100%", animation: "c-shimmer 1.5s ease-in-out infinite", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                  <span style={{ fontSize: 10, color: css.text3, opacity: 0.5 }}>Loading...</span>
+                                </div>
+                              )}
+                              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "24px 10px 8px", background: "linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.6) 100%)" }}>
+                                <div style={{ fontSize: 12, fontWeight: 600, color: "#fff" }}>{lm.name}</div>
+                              </div>
+                            </div>
+                            <div style={{ padding: "8px 10px" }}>
+                              <div style={{ fontSize: 10, color: css.text3, fontWeight: 500 }}>{lm.city}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
+
+        </>}
+
+        {/* ── Inbox Tab — Booking + Expense Inboxes ── */}
+        {dashSubTab === "inbox" && (
+          <div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <h3 style={{ fontSize: 14, fontWeight: 700, color: css.text, margin: 0, letterSpacing: "-0.01em" }}>Booking Inbox</h3>
@@ -5532,7 +7088,6 @@ Start by introducing yourself briefly in-character with personality, and give an
               <p style={{ fontSize: 12, color: css.text3, margin: 0 }}>Forward a confirmation email to trips@gocontinuum.app</p>
             </div>
           )}
-        </div>
 
         {/* ── Expense Inbox — unassigned expenses ── */}
         {(() => {
@@ -5544,49 +7099,74 @@ Start by introducing yourself briefly in-character with personality, and give an
                   <h3 style={{ fontSize: 14, fontWeight: 700, color: css.text, margin: 0, letterSpacing: "-0.01em" }}>Expense Inbox</h3>
                   {inboxExpenses.length > 0 && <span style={{ fontSize: 10, fontWeight: 700, color: lp.teal, background: lp.tealDim, padding: "2px 8px", borderRadius: 10 }}>{inboxExpenses.length}</span>}
                 </div>
-                <button onClick={() => { setShowAddExpense("_inbox"); setNewExpense(BLANK_EXPENSE); setEditExpenseId(null); }} style={{
-                  padding: "8px 16px", border: `1px solid ${lp.teal}`, background: "transparent", color: lp.teal,
-                  fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: lp.sans, borderRadius: 0,
-                  transition: "all 0.12s ease", textTransform: "uppercase", letterSpacing: "0.04em",
-                }} onMouseEnter={e => { e.currentTarget.style.background = lp.teal; e.currentTarget.style.color = "#fff"; }} onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = lp.teal; }}>
-                  + Add Expense
-                </button>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => setShowReceiptQR(true)} style={{
+                    padding: "8px 14px", border: `1px solid ${css.border}`, background: css.surface, color: css.text2,
+                    fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: lp.sans, borderRadius: 8,
+                    transition: "all 0.12s ease", display: "flex", alignItems: "center", gap: 6,
+                  }} onMouseEnter={e => { e.currentTarget.style.borderColor = css.accent; e.currentTarget.style.color = css.accent; }} onMouseLeave={e => { e.currentTarget.style.borderColor = css.border; e.currentTarget.style.color = css.text2; }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                    Receipt QR
+                  </button>
+                  <button onClick={() => { setShowAddExpense("_inbox"); setNewExpense(BLANK_EXPENSE); setEditExpenseId(null); }} style={{
+                    padding: "8px 16px", border: `1px solid ${lp.teal}`, background: "transparent", color: lp.teal,
+                    fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: lp.sans, borderRadius: 0,
+                    transition: "all 0.12s ease", textTransform: "uppercase", letterSpacing: "0.04em",
+                  }} onMouseEnter={e => { e.currentTarget.style.background = lp.teal; e.currentTarget.style.color = "#fff"; }} onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = lp.teal; }}>
+                    + Add Expense
+                  </button>
+                </div>
               </div>
+              {userForwardingAddress && (
+                <div style={{ marginBottom: 14, padding: "10px 14px", borderRadius: 10, background: lp.surface, border: `1px solid ${lp.border}`, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={lp.dim} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                  <span style={{ fontSize: 11, color: lp.dim }}>Forward receipts to:</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: lp.teal, fontFamily: lp.mono, cursor: "pointer", wordBreak: "break-all" }}
+                    onClick={() => { navigator.clipboard?.writeText("expenses@gocontinuum.app"); }}
+                    title="Click to copy">
+                    expenses@gocontinuum.app
+                  </span>
+                  <span style={{ fontSize: 10, color: lp.dim }}>tap to copy</span>
+                </div>
+              )}
               {inboxExpenses.length > 0 ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {inboxExpenses.map(exp => {
                     const cat = EXPENSE_CATEGORIES.find(c => c.id === exp.category);
                     return (
-                      <div key={exp.id} style={{ background: lp.surface, border: `1px solid ${lp.border}`, borderRadius: 12, padding: "12px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
-                            {cat && <span style={{ fontSize: 10, fontWeight: 700, color: cat.color, background: `${cat.color}15`, padding: "2px 8px", borderRadius: 6 }}>{cat.label}</span>}
-                            <span style={{ fontSize: 13, fontWeight: 600, color: lp.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.description || "Expense"}</span>
+                      <div key={exp.id} style={{ background: lp.surface, border: `1px solid ${lp.border}`, borderRadius: 12, padding: isMobile ? "12px" : "12px 16px" }} onClick={() => setViewExpenseId(exp.id)}>
+                        {/* Top row: description + amount */}
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3, flexWrap: "wrap" }}>
+                              {cat && <span style={{ fontSize: 9, fontWeight: 700, color: cat.color, background: `${cat.color}15`, padding: "2px 6px", borderRadius: 4 }}>{cat.label}</span>}
+                              <span style={{ fontSize: isMobile ? 12 : 13, fontWeight: 600, color: lp.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.description || "Expense"}</span>
+                            </div>
+                            <div style={{ fontSize: 11, color: lp.dim, display: "flex", gap: 6, flexWrap: "wrap" }}>
+                              {exp.date && <span>{new Date(exp.date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>}
+                              {exp.receipt && <span style={{ color: "#22c55e" }}>Receipt</span>}
+                            </div>
                           </div>
-                          <div style={{ fontSize: 11, color: lp.dim, display: "flex", gap: 8, flexWrap: "wrap" }}>
-                            {exp.date && <span>{new Date(exp.date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>}
-                            {exp.individuals && exp.individuals !== "Self" && <span>{exp.individuals}</span>}
-                            {exp.receipt && <span style={{ color: "#22c55e" }}>Receipt</span>}
+                          <div style={{ textAlign: "right", flexShrink: 0 }}>
+                            <div style={{ fontSize: isMobile ? 13 : 14, fontWeight: 700, color: lp.text, fontFamily: lp.mono }}>{exp.amount?.toLocaleString(undefined, { minimumFractionDigits: 2 })} {exp.currency || "USD"}</div>
                           </div>
                         </div>
-                        <div style={{ textAlign: "right", flexShrink: 0 }}>
-                          <div style={{ fontSize: 14, fontWeight: 700, color: lp.text, fontFamily: lp.mono }}>{exp.amount?.toLocaleString(undefined, { minimumFractionDigits: 2 })} {exp.currency || "USD"}</div>
-                          {exp.currency !== "USD" && exp.usdReimbursement && <div style={{ fontSize: 10, color: lp.dim }}>{parseFloat(exp.usdReimbursement).toLocaleString(undefined, { minimumFractionDigits: 2 })} USD</div>}
-                        </div>
-                        <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+                        {/* Bottom row: actions */}
+                        <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }} onClick={e => e.stopPropagation()}>
                           {trips.length > 0 && (
                             <select onChange={async e => {
                               const tripId = e.target.value; if (!tripId) return;
                               if (user) await supabase.from("expenses").update({ trip_id: tripId }).eq("id", exp.id).eq("user_id", user.id);
                               setExpenses(prev => prev.map(ex => ex.id === exp.id ? { ...ex, tripId } : ex));
                               e.target.value = "";
-                            }} style={{ padding: "5px 8px", borderRadius: 6, border: `1px solid ${lp.border}`, background: "transparent", color: lp.dim, fontSize: 10, cursor: "pointer" }}>
-                              <option value="">Assign...</option>
+                            }} style={{ padding: "6px 10px", borderRadius: 6, border: `1px solid ${lp.border}`, background: "transparent", color: lp.dim, fontSize: 11, cursor: "pointer", flex: isMobile ? "1 1 auto" : "0 0 auto" }}>
+                              <option value="">Assign to trip...</option>
                               {trips.map(t => <option key={t.id} value={t.id}>{t.tripName || t.location || "Trip"}</option>)}
                             </select>
                           )}
-                          <button onClick={() => { setEditExpenseId(exp.id); setShowAddExpense("_inbox"); setNewExpense({ ...exp, fxRate: exp.fxRate || 1 }); }} style={{ padding: "5px 8px", borderRadius: 6, border: `1px solid ${lp.border}`, background: "transparent", color: lp.dim, fontSize: 10, cursor: "pointer" }}>Edit</button>
-                          <button onClick={() => removeExpense(exp.id)} style={{ padding: "5px 8px", borderRadius: 6, border: "1px solid rgba(239,68,68,0.2)", background: "transparent", color: "#ef4444", fontSize: 10, cursor: "pointer" }}>x</button>
+                          <button onClick={() => setViewExpenseId(exp.id)} style={{ padding: "6px 10px", borderRadius: 6, border: `1px solid ${css.accent}30`, background: "transparent", color: css.accent, fontSize: 11, fontWeight: 600, cursor: "pointer" }}>View</button>
+                          <button onClick={() => { setEditExpenseId(exp.id); setShowAddExpense("_inbox"); setNewExpense({ ...exp, fxRate: exp.fxRate || 1 }); }} style={{ padding: "6px 10px", borderRadius: 6, border: `1px solid ${lp.border}`, background: "transparent", color: lp.dim, fontSize: 11, cursor: "pointer" }}>Edit</button>
+                          <button onClick={() => removeExpense(exp.id)} style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid rgba(239,68,68,0.2)", background: "transparent", color: "#ef4444", fontSize: 11, cursor: "pointer" }}>x</button>
                         </div>
                       </div>
                     );
@@ -5602,332 +7182,404 @@ Start by introducing yourself briefly in-character with personality, and give an
           );
         })()}
 
-        {/* Elite Status section removed — focus on trips + expenses */}
-        {false && (
-          <div className="c-a2" style={{ marginTop: 32 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-              <h3 style={{ fontSize: 16, fontWeight: 700, color: lp.text, margin: 0, fontFamily: lp.sans }}>Elite Status</h3>
-              <button onClick={() => setActiveView("programs")} style={{ background: "none", border: "none", color: lp.dim, cursor: "pointer", fontSize: 12, fontWeight: 500, fontFamily: lp.sans, transition: "color 0.15s" }}
-                onMouseEnter={e => e.currentTarget.style.color = lp.text} onMouseLeave={e => e.currentTarget.style.color = lp.dim}>View all →</button>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {[...airlineStatuses, ...hotelStatuses].map(p => {
-                const s = p.status;
-                const pct = s.nextTier ? Math.min((s.projected / s.nextTier.threshold) * 100, 100) : 100;
-                const isHotel = LOYALTY_PROGRAMS.hotels.some(h => h.id === p.id);
-                return (
-                  <div key={p.id} onClick={() => { setSelectedProgram(p.id); setActiveView("programs"); }}
-                    style={{
-                      padding: "14px 18px", borderRadius: 12, background: lp.surface, border: `1px solid ${lp.border}`,
-                      cursor: "pointer", transition: "all 0.2s ease",
-                      display: "flex", alignItems: "center", gap: 14,
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = D ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.12)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = lp.border; e.currentTarget.style.transform = "none"; }}>
-                    {/* Mini progress ring */}
-                    <div style={{ position: "relative", width: 40, height: 40, flexShrink: 0 }}>
-                      <svg width="40" height="40" style={{ transform: "rotate(-90deg)" }}>
-                        <circle cx="20" cy="20" r="16" fill="none" stroke={lp.border2} strokeWidth="3" />
-                        <circle cx="20" cy="20" r="16" fill="none" stroke={p.color} strokeWidth="3"
-                          strokeDasharray={2 * Math.PI * 16} strokeDashoffset={2 * Math.PI * 16 - (2 * Math.PI * 16 * pct / 100)}
-                          strokeLinecap="round" style={{ transition: "stroke-dashoffset 1s ease" }} />
-                      </svg>
-                      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: lp.text, fontFamily: lp.mono }}>
-                        {s.nextTier ? `${Math.round(pct)}%` : "✓"}
-                      </div>
-                    </div>
-                    {/* Program info */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <ProgramLogo prog={p} size={16} />
-                        <span style={{ fontSize: 13, fontWeight: 600, color: lp.text }}>{p.name.split(" ").slice(-1)[0]}</span>
-                        <span style={{ fontSize: 11, color: p.color, fontWeight: 600 }}>{s.currentTier?.name || "Member"}</span>
-                        {s.willAdvance && <span style={{ fontSize: 9, color: lp.green, fontWeight: 600 }}>↑</span>}
-                      </div>
-                      {/* Inline progress bar */}
-                      <div style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 8 }}>
-                        <div style={{ flex: 1, height: 4, borderRadius: 2, background: lp.border2, overflow: "hidden" }}>
-                          <div style={{ width: `${pct}%`, height: "100%", borderRadius: 2, background: p.color, transition: "width 0.8s ease" }} />
-                        </div>
-                        <span style={{ fontSize: 10, color: lp.dim, fontFamily: lp.mono, flexShrink: 0 }}>
-                          {s.nextTier ? `${s.projected.toLocaleString()} / ${s.nextTier.threshold.toLocaleString()}${isHotel ? " nts" : ""}` : "Max"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
           </div>
         )}
+
+        {/* ── Timeline Tab — vertical chronological view ── */}
+        {dashSubTab === "timeline" && (() => {
+          const allSorted = [...upcomingTripsFiltered, ...pastTripsFiltered].sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999"));
+          const yearGroups = {};
+          allSorted.forEach(trip => {
+            const yr = (trip.date || "").slice(0, 4) || "Unknown";
+            if (!yearGroups[yr]) yearGroups[yr] = [];
+            yearGroups[yr].push(trip);
+          });
+          return (
+            <div>
+              {Object.entries(yearGroups).sort(([a], [b]) => a.localeCompare(b)).map(([year, yTrips]) => (
+                <div key={year} style={{ marginBottom: 32 }}>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: css.text, marginBottom: 16, letterSpacing: "-0.02em" }}>{year}</div>
+                  <div style={{ position: "relative", paddingLeft: 28 }}>
+                    {/* Vertical line */}
+                    <div style={{ position: "absolute", left: 7, top: 8, bottom: 8, width: 2, background: css.border, borderRadius: 1 }} />
+                    {yTrips.map((trip, idx) => {
+                      const realSegs = (trip.segments || []).filter(s => !s._isMeta);
+                      const end = getTripEndDate(trip);
+                      const isPast = end && end < todayStr;
+                      return (
+                        <div key={trip.id} style={{ position: "relative", marginBottom: idx < yTrips.length - 1 ? 20 : 0 }}>
+                          {/* Dot */}
+                          <div style={{ position: "absolute", left: -22, top: 6, width: 12, height: 12, borderRadius: "50%", background: isPast ? css.text3 : css.accent, border: `2px solid ${css.bg}` }} />
+                          <div onClick={() => { setTripDetailId(trip.id); setTripDetailSegIdx(0); setActiveView("trips"); }}
+                            style={{ padding: "14px 18px", borderRadius: 12, background: css.surface, border: `1px solid ${css.border}`, cursor: "pointer", transition: "all 0.15s" }}
+                            onMouseEnter={e => { e.currentTarget.style.borderColor = css.accent; e.currentTarget.style.boxShadow = css.shadowHover; }}
+                            onMouseLeave={e => { e.currentTarget.style.borderColor = css.border; e.currentTarget.style.boxShadow = "none"; }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: 14, fontWeight: 600, color: isPast ? css.text2 : css.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                  {trip.tripName || trip.trip_name || trip.location || "Trip"}
+                                </div>
+                                <div style={{ fontSize: 11, color: css.text3, marginTop: 3, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                                  <span>{formatTripDates(trip)}</span>
+                                  {trip.location && <span>· {trip.location}</span>}
+                                  {realSegs.length > 0 && <span>· {realSegs.length} segment{realSegs.length > 1 ? "s" : ""}</span>}
+                                </div>
+                              </div>
+                              <span style={{ fontSize: 9, fontWeight: 700, color: isPast ? css.text3 : (trip.status === "confirmed" ? lp.green : "#F59E0B"), textTransform: "uppercase", letterSpacing: "0.06em", flexShrink: 0 }}>
+                                {isPast ? "Past" : trip.status}
+                              </span>
+                            </div>
+                            {/* Segment type pills */}
+                            {realSegs.length > 0 && (
+                              <div style={{ display: "flex", gap: 4, marginTop: 8, flexWrap: "wrap" }}>
+                                {[...new Set(realSegs.map(s => s.type))].map(type => (
+                                  <span key={type} style={{ fontSize: 10, color: css.text2, background: css.surface2, padding: "2px 8px", borderRadius: 4, textTransform: "capitalize" }}>{type}</span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+              {allSorted.length === 0 && (
+                <div style={{ padding: "40px 20px", textAlign: "center", borderRadius: 14, background: css.surface, border: `1px solid ${css.border}` }}>
+                  <p style={{ fontSize: 13, color: css.text3 }}>No trips to show on timeline</p>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
+        {/* ── Reports Tab — expense summaries ── */}
+        {dashSubTab === "reports" && (() => {
+          const totalSpent = expenses.reduce((sum, e) => sum + (e.usdReimbursement ? parseFloat(e.usdReimbursement) : (e.amount || 0)), 0);
+          const catBreakdown = EXPENSE_CATEGORIES.map(cat => ({
+            ...cat,
+            total: expenses.filter(e => e.category === cat.id).reduce((sum, e) => sum + (e.usdReimbursement ? parseFloat(e.usdReimbursement) : (e.amount || 0)), 0),
+            count: expenses.filter(e => e.category === cat.id).length,
+          })).filter(c => c.count > 0).sort((a, b) => b.total - a.total);
+          const tripCosts = trips.map(trip => {
+            const tripExpenses = expenses.filter(e => e.tripId === trip.id || e.trip_id === trip.id);
+            return { ...trip, total: tripExpenses.reduce((sum, e) => sum + (e.usdReimbursement ? parseFloat(e.usdReimbursement) : (e.amount || 0)), 0), count: tripExpenses.length };
+          }).filter(t => t.count > 0).sort((a, b) => b.total - a.total);
+          const maxCatTotal = catBreakdown.length > 0 ? catBreakdown[0].total : 1;
+          return (
+            <div>
+              {/* Summary cards */}
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(3, 1fr)", gap: 12, marginBottom: 28 }}>
+                <div style={{ padding: "18px 20px", borderRadius: 12, background: css.surface, border: `1px solid ${css.border}` }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Total Spent</div>
+                  <div style={{ fontSize: 24, fontWeight: 700, color: css.text, fontFamily: lp.mono }}>${totalSpent.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                </div>
+                <div style={{ padding: "18px 20px", borderRadius: 12, background: css.surface, border: `1px solid ${css.border}` }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Expenses</div>
+                  <div style={{ fontSize: 24, fontWeight: 700, color: css.text }}>{expenses.length}</div>
+                </div>
+                <div style={{ padding: "18px 20px", borderRadius: 12, background: css.surface, border: `1px solid ${css.border}` }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Categories</div>
+                  <div style={{ fontSize: 24, fontWeight: 700, color: css.text }}>{catBreakdown.length}</div>
+                </div>
+              </div>
+
+              {/* Spending by category */}
+              {catBreakdown.length > 0 && (
+                <div style={{ marginBottom: 28 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: css.text, marginBottom: 14 }}>Spending by Category</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {catBreakdown.map(cat => (
+                      <div key={cat.id} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <div style={{ width: 80, fontSize: 11, fontWeight: 600, color: css.text2, flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{cat.label}</div>
+                        <div style={{ flex: 1, height: 8, borderRadius: 4, background: css.surface2, overflow: "hidden" }}>
+                          <div style={{ width: `${(cat.total / maxCatTotal) * 100}%`, height: "100%", borderRadius: 4, background: cat.color, transition: "width 0.6s ease" }} />
+                        </div>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: css.text, fontFamily: lp.mono, flexShrink: 0, minWidth: 70, textAlign: "right" }}>${cat.total.toLocaleString(undefined, { minimumFractionDigits: 0 })}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Cost by trip */}
+              {tripCosts.length > 0 && (
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: css.text, marginBottom: 14 }}>Cost by Trip</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {tripCosts.slice(0, 10).map(trip => (
+                      <div key={trip.id} onClick={() => { setTripDetailId(trip.id); setTripDetailSegIdx(0); setActiveView("trips"); }}
+                        style={{ padding: "12px 16px", borderRadius: 12, background: css.surface, border: `1px solid ${css.border}`, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", transition: "all 0.15s" }}
+                        onMouseEnter={e => e.currentTarget.style.borderColor = css.accent}
+                        onMouseLeave={e => e.currentTarget.style.borderColor = css.border}>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: css.text }}>{trip.tripName || trip.trip_name || trip.location || "Trip"}</div>
+                          <div style={{ fontSize: 11, color: css.text3, marginTop: 2 }}>{trip.count} expense{trip.count > 1 ? "s" : ""} · {formatTripDates(trip)}</div>
+                        </div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: css.text, fontFamily: lp.mono }}>${trip.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {expenses.length === 0 && (
+                <div style={{ padding: "40px 20px", textAlign: "center", borderRadius: 14, background: css.surface, border: `1px solid ${css.border}` }}>
+                  <p style={{ fontSize: 13, color: css.text3 }}>No expenses recorded yet</p>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
+        {/* ── Activity Tab — recent actions feed ── */}
+        {dashSubTab === "activity" && (() => {
+          // Build activity feed from trips, expenses, and itineraries
+          const activityItems = [];
+          trips.forEach(trip => {
+            activityItems.push({
+              type: "trip_created",
+              label: `Trip created: ${trip.tripName || trip.trip_name || trip.location || "Trip"}`,
+              date: trip.created_at || trip.date || "",
+              icon: "trip",
+              trip,
+            });
+          });
+          expenses.forEach(exp => {
+            activityItems.push({
+              type: "expense_added",
+              label: `Expense: ${exp.description || "Expense"} — $${(exp.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} ${exp.currency || "USD"}`,
+              date: exp.created_at || exp.date || "",
+              icon: "expense",
+            });
+          });
+          savedItineraries.forEach(itin => {
+            activityItems.push({
+              type: "email_received",
+              label: `Booking received: ${itin.subject || "Email"}`,
+              date: itin.created_at || "",
+              icon: "email",
+            });
+          });
+          activityItems.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+
+          const iconColor = { trip: css.accent, expense: "#3b82f6", email: "#0EA5A0", share: "#8b5cf6" };
+          const iconPaths = {
+            trip: <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>,
+            expense: <><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></>,
+            email: <><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></>,
+          };
+
+          return (
+            <div>
+              {activityItems.length > 0 ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                  {activityItems.slice(0, 30).map((item, idx) => {
+                    const dateStr = item.date ? new Date(item.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
+                    const timeStr = item.date && item.date.includes("T") ? new Date(item.date).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) : "";
+                    return (
+                      <div key={idx} style={{
+                        display: "flex", gap: 14, padding: "14px 0",
+                        borderBottom: idx < activityItems.length - 1 ? `1px solid ${css.border}` : "none",
+                      }}>
+                        <div style={{
+                          width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
+                          background: `${iconColor[item.icon] || css.text3}15`,
+                          border: `1px solid ${iconColor[item.icon] || css.text3}30`,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                        }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={iconColor[item.icon] || css.text3} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                            {iconPaths[item.icon] || iconPaths.trip}
+                          </svg>
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, color: css.text, lineHeight: 1.4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.label}</div>
+                          <div style={{ fontSize: 11, color: css.text3, marginTop: 2 }}>
+                            {dateStr}{timeStr && ` at ${timeStr}`}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div style={{ padding: "40px 20px", textAlign: "center", borderRadius: 14, background: css.surface, border: `1px solid ${css.border}` }}>
+                  <p style={{ fontSize: 13, color: css.text3 }}>No activity yet</p>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
       </div>
     );
   };
 
   const renderPrograms = (_previewSub = null) => {
-    // _previewSub is used by the nav dropdown live preview to force a specific sub-view
-    const _subView = _previewSub || programSubView;
-    // Delegate alliance benefits sub-view to renderAlliances
-    if (_subView === "alliances") return renderAlliances();
+    // Simple single-page program manager
+    const allAirlines = LOYALTY_PROGRAMS.airlines;
+    const allHotels = LOYALTY_PROGRAMS.hotels;
+    const allCards = LOYALTY_PROGRAMS.creditCards;
+    const linkedCount = Object.keys(linkedAccounts).length;
 
-    const customByCategory = {
-      airline: customPrograms.filter(p => p.category === "airline"),
-      hotel: customPrograms.filter(p => p.category === "hotel"),
-      rental: customPrograms.filter(p => p.category === "rental"),
-      card: customPrograms.filter(p => p.category === "card"),
+    // Add program — saves to Supabase for cross-device sync
+    const addProgram = async (type, programId, tier) => {
+      if (!programId) return;
+      const now = new Date().toISOString();
+      setLinkedAccounts(prev => ({
+        ...prev,
+        [programId]: { ...(prev[programId] || {}), memberId: prev[programId]?.memberId || "", currentTier: tier || "", updatedAt: now },
+      }));
+      if (user) {
+        await supabase.from("linked_accounts").upsert({
+          user_id: user.id, program_id: programId, member_id: linkedAccounts[programId]?.memberId || "",
+          current_tier: tier || "", tier_credits: 0, points_balance: 0, current_nights: 0, current_rentals: 0, updated_at: now,
+        }, { onConflict: "user_id,program_id" });
+      }
+    };
+    const removeProgram = async (programId) => {
+      setLinkedAccounts(prev => { const n = { ...prev }; delete n[programId]; return n; });
+      if (user) {
+        await supabase.from("linked_accounts").delete().eq("user_id", user.id).eq("program_id", programId);
+      }
     };
 
-    const SUB_TABS = [
-      { id: "airlines",     label: "Airlines",                 programs: [...LOYALTY_PROGRAMS.airlines, ...customByCategory.airline],   isCard: false },
-      { id: "hotels",       label: "Hotels",                   programs: [...LOYALTY_PROGRAMS.hotels, ...customByCategory.hotel],       isCard: false },
-      { id: "credit_cards", label: "Credit Cards",             programs: [...LOYALTY_PROGRAMS.creditCards, ...customByCategory.card],   isCard: true  },
-      { id: "rentals",      label: "Car Rental Programs",      programs: [...LOYALTY_PROGRAMS.rentals, ...customByCategory.rental],     isCard: false },
-      { id: "alliances",    label: "Airline Alliance Benefits", programs: [],                                                           isCard: false },
-    ];
-    const activeSub = SUB_TABS.find(t => t.id === _subView) || SUB_TABS[0];
-    const linkedCount = Object.keys(linkedAccounts).length;
+    const addType = progAddType;
+    const setAddType = (v) => { setProgAddType(v); setProgAddId(""); setProgAddTier(""); };
+    const addProgramId = progAddId;
+    const setAddProgramId = (v) => { setProgAddId(v); setProgAddTier(""); };
+    const addTier = progAddTier;
+    const setAddTier = setProgAddTier;
+
+    const programOptions = addType === "airline" ? allAirlines : addType === "hotel" ? allHotels : allCards;
+    const selectedProg = programOptions.find(p => p.id === addProgramId);
+    const tierOptions = selectedProg?.tiers || [];
+
+    const handleAdd = () => {
+      if (!addProgramId) return;
+      addProgram(addType, addProgramId, addType === "card" ? "" : addTier);
+      setProgAddId(""); setProgAddTier("");
+    };
+
+    // Group linked programs by type
+    const linkedAirlines = allAirlines.filter(p => linkedAccounts[p.id]);
+    const linkedHotels = allHotels.filter(p => linkedAccounts[p.id]);
+    const linkedCards = allCards.filter(p => linkedAccounts[p.id]);
 
     return (
       <div>
         {/* Page header */}
-        <div className="c-a1" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24, gap: 16 }}>
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: css.text3, marginBottom: 8 }}>Loyalty Portfolio</div>
-            <h2 style={{ fontFamily: "'Instrument Sans', 'Outfit', sans-serif", fontSize: isMobile ? 28 : 36, fontWeight: 600, color: css.text, margin: 0, lineHeight: 1.1 }}>{activeSub.label}</h2>
-            <p style={{ color: css.text2, fontSize: 13, margin: "8px 0 0", fontFamily: "'Instrument Sans', 'Outfit', sans-serif" }}>
-              {linkedCount} linked · {Object.values(customByCategory).flat().length} custom programs
-            </p>
-          </div>
-          <button onClick={() => setShowAddProgram(true)} className="c-btn-primary" style={{
-            padding: "10px 22px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600,
-            background: css.accent, color: "#fff", flexShrink: 0, fontFamily: "'Instrument Sans', 'Outfit', sans-serif",
-          }}>+ Add Program</button>
+        <div className="c-a1" style={{ marginBottom: 28 }}>
+          <h2 style={{ fontSize: isMobile ? 24 : 32, fontWeight: 700, color: css.text, margin: 0, letterSpacing: "-0.02em" }}>My Programs</h2>
+          <p style={{ color: css.text3, fontSize: 13, margin: "6px 0 0" }}>{linkedCount} program{linkedCount !== 1 ? "s" : ""} added</p>
         </div>
 
-        {/* Sub-tabs — desktop only (mobile uses nav row) */}
-        {!isMobile && (
-          <div style={{ display: "flex", gap: 0, marginBottom: 28, borderBottom: `1px solid ${css.border}` }}>
-            {SUB_TABS.map(tab => (
-              <button key={tab.id} onClick={() => setProgramSubView(tab.id)} style={{
-                padding: "9px 20px", border: "none", cursor: "pointer", background: "transparent",
-                borderBottom: _subView === tab.id ? `2px solid ${css.accent}` : "2px solid transparent",
-                color: _subView === tab.id ? css.accent : css.text3,
-                fontSize: 13, fontWeight: _subView === tab.id ? 600 : 400,
-                fontFamily: "'Instrument Sans', 'Outfit', sans-serif", transition: "all 0.15s",
-              }}>{tab.label}</button>
-            ))}
+        {/* ── Add Program Form ── */}
+        <div className="c-a2" style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: isMobile ? "20px 16px" : "24px 28px", marginBottom: 32, boxShadow: css.shadow }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: css.text, marginBottom: 16 }}>Add a Program</div>
+          <div style={{ display: "flex", gap: isMobile ? 8 : 12, flexWrap: "wrap", alignItems: "flex-end" }}>
+            {/* Box 1: Type */}
+            <div style={{ flex: isMobile ? "1 1 100%" : "1 1 140px", minWidth: isMobile ? 0 : 140 }}>
+              <label style={{ fontSize: 10, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>Type</label>
+              <select value={addType} onChange={e => { setAddType(e.target.value); setAddProgramId(""); setAddTier(""); }} style={{ width: "100%", padding: "10px 12px", background: css.surface2, border: `1px solid ${css.border}`, borderRadius: 8, color: css.text, fontSize: 14, fontFamily: "inherit", cursor: "pointer" }}>
+                <option value="airline">Airline</option>
+                <option value="hotel">Hotel</option>
+                <option value="card">Credit Card</option>
+              </select>
+            </div>
+            {/* Box 2: Program */}
+            <div style={{ flex: isMobile ? "1 1 100%" : "2 1 200px", minWidth: isMobile ? 0 : 200 }}>
+              <label style={{ fontSize: 10, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>Program</label>
+              <select value={addProgramId} onChange={e => { setAddProgramId(e.target.value); setAddTier(""); }} style={{ width: "100%", padding: "10px 12px", background: css.surface2, border: `1px solid ${css.border}`, borderRadius: 8, color: css.text, fontSize: 14, fontFamily: "inherit", cursor: "pointer" }}>
+                <option value="">Select {addType === "card" ? "credit card" : addType}...</option>
+                {programOptions.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </div>
+            {/* Box 3: Tier (not for credit cards) */}
+            {addType !== "card" && (
+              <div style={{ flex: isMobile ? "1 1 100%" : "1 1 180px", minWidth: isMobile ? 0 : 180 }}>
+                <label style={{ fontSize: 10, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>Status Level</label>
+                <select value={addTier} onChange={e => setAddTier(e.target.value)} disabled={!addProgramId || tierOptions.length === 0} style={{ width: "100%", padding: "10px 12px", background: css.surface2, border: `1px solid ${css.border}`, borderRadius: 8, color: css.text, fontSize: 14, fontFamily: "inherit", cursor: "pointer", opacity: (!addProgramId || tierOptions.length === 0) ? 0.5 : 1 }}>
+                  <option value="">Member (base)</option>
+                  {tierOptions.map(t => <option key={t.name} value={t.name}>{t.name}</option>)}
+                </select>
+              </div>
+            )}
+            {/* Add button */}
+            <button onClick={handleAdd} disabled={!addProgramId} style={{ padding: "10px 24px", border: "none", borderRadius: 8, background: addProgramId ? css.accent : css.surface2, color: addProgramId ? "#fff" : css.text3, fontSize: 14, fontWeight: 600, cursor: addProgramId ? "pointer" : "default", transition: "all 0.15s", flexShrink: 0, fontFamily: "inherit" }}>Add</button>
+          </div>
+        </div>
+
+        {/* ── Linked Programs List ── */}
+        {linkedAirlines.length > 0 && (
+          <div style={{ marginBottom: 28 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>Airlines</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {linkedAirlines.map(prog => (
+                <div key={prog.id} style={{ display: "flex", alignItems: "center", gap: isMobile ? 8 : 14, padding: isMobile ? "10px 12px" : "14px 18px", borderRadius: 12, background: css.surface, border: `1px solid ${css.border}`, boxShadow: css.shadow, flexWrap: isMobile ? "wrap" : "nowrap" }}>
+                  <ProgramLogo prog={prog} size={28} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: css.text }}>{prog.name}</div>
+                    <div style={{ fontSize: 11, color: css.text3, marginTop: 2 }}>{linkedAccounts[prog.id]?.currentTier || "Member"}</div>
+                  </div>
+                  <select value={linkedAccounts[prog.id]?.currentTier || ""} onChange={e => { const tier = e.target.value; setLinkedAccounts(prev => ({ ...prev, [prog.id]: { ...prev[prog.id], currentTier: tier } })); if (user) supabase.from("linked_accounts").upsert({ user_id: user.id, program_id: prog.id, current_tier: tier, member_id: linkedAccounts[prog.id]?.memberId || "", updated_at: new Date().toISOString() }, { onConflict: "user_id,program_id" }); }} style={{ padding: "6px 10px", borderRadius: 6, border: `1px solid ${css.border}`, background: css.surface2, color: css.text, fontSize: 12, fontFamily: "inherit", cursor: "pointer" }}>
+                    <option value="">Member</option>
+                    {(prog.tiers || []).map(t => <option key={t.name} value={t.name}>{t.name}</option>)}
+                  </select>
+                  <button onClick={() => removeProgram(prog.id)} style={{ padding: "6px 10px", borderRadius: 6, border: `1px solid ${D ? "rgba(239,68,68,0.3)" : "rgba(239,68,68,0.2)"}`, background: "transparent", color: "#ef4444", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>Remove</button>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
-        {/* Program grid for active sub-tab */}
-        {(() => {
-          const cat = activeSub;
-          return (
-          <div style={{ marginBottom: 40 }}>
-            {/* Count row */}
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, paddingBottom: 12, borderBottom: `1px solid ${css.border}` }}>
-              <span style={{ fontSize: 11, color: css.text3, fontFamily: "'Geist Mono', monospace" }}>
-                {cat.programs.filter(p => linkedAccounts[p.id]).length}/{cat.programs.length} linked
-              </span>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 14 }}>
-              {cat.programs.map(prog => {
-                const isLinked = !!linkedAccounts[prog.id];
-                const status = isLinked ? getProjectedStatus(prog.id) : null;
-                const isCard = cat.isCard;
-
-                return (
-                  <div key={prog.id} className="c-card" style={{
-                    background: css.surface, border: `1px solid ${isLinked ? prog.color + "40" : css.border}`,
-                    borderTop: isLinked ? `3px solid ${prog.color}` : `3px solid transparent`,
-                    borderRadius: 14, padding: "20px 22px", transition: "all 0.2s",
-                    boxShadow: D ? "none" : "0 1px 4px rgba(26,21,18,0.05)",
-                  }}>
-                    {/* Card header */}
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <ProgramLogo prog={prog} size={32} />
-                        <div>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: css.text, lineHeight: 1.3 }}>{prog.name}</div>
-                          {isLinked && !isCard && (
-                            <div style={{ fontSize: 10, color: css.text3, fontFamily: "'Geist Mono', monospace", marginTop: 2 }}>
-                              #{linkedAccounts[prog.id].memberId}
-                            </div>
-                          )}
-                          {isCard && prog.annualFee && (
-                            <div style={{ fontSize: 10, color: css.text3, marginTop: 2 }}>${prog.annualFee}/yr</div>
-                          )}
-                        </div>
-                      </div>
-                      {isLinked ? (
-                        <span style={{ fontSize: 10, fontWeight: 700, color: css.success, background: css.successBg, border: `1px solid ${css.success}30`, borderRadius: 20, padding: "3px 9px", flexShrink: 0 }}>Linked</span>
-                      ) : (
-                        <span style={{ fontSize: 10, fontWeight: 600, color: css.text3, background: css.surface2, borderRadius: 20, padding: "3px 9px", flexShrink: 0 }}>Not linked</span>
-                      )}
-                    </div>
-
-                    {/* Tier scroll strip for airline/hotel */}
-                    {isLinked && status && !isCard && prog.tiers?.length > 0 && (() => {
-                      const tiers = prog.tiers;
-                      const current = status.projected;
-                      const activeIdx = tierScrollIdx[prog.id] ?? Math.max(0, tiers.findIndex(t => current < t.threshold));
-                      const safIdx = Math.min(Math.max(activeIdx, 0), tiers.length - 1);
-                      const tier = tiers[safIdx];
-                      const prevThreshold = safIdx > 0 ? tiers[safIdx - 1].threshold : 0;
-                      const achieved = current >= tier.threshold;
-                      const pct = achieved ? 100 : Math.min(((current - prevThreshold) / (tier.threshold - prevThreshold)) * 100, 100);
-                      const toGo = Math.max(tier.threshold - current, 0);
-
-                      return (
-                        <div style={{ marginBottom: 14 }}>
-                          {/* Tier nav: arrows + dots */}
-                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                            <button
-                              onClick={() => setTierScrollIdx(p => ({ ...p, [prog.id]: Math.max(safIdx - 1, 0) }))}
-                              disabled={safIdx === 0}
-                              style={{ width: 22, height: 22, borderRadius: 6, border: `1px solid ${css.border}`, background: "transparent", cursor: safIdx === 0 ? "default" : "pointer", color: safIdx === 0 ? css.border : css.text2, fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
-                            >‹</button>
-                            <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
-                              {tiers.map((t, i) => {
-                                const tierAchieved = current >= t.threshold;
-                                return (
-                                  <button key={i} onClick={() => setTierScrollIdx(p => ({ ...p, [prog.id]: i }))} style={{
-                                    width: i === safIdx ? 20 : 6, height: 6, borderRadius: 3,
-                                    border: "none", cursor: "pointer", padding: 0, transition: "all 0.2s",
-                                    background: tierAchieved ? prog.color : i === safIdx ? prog.color : css.border,
-                                    opacity: i === safIdx ? 1 : 0.5,
-                                  }} />
-                                );
-                              })}
-                            </div>
-                            <button
-                              onClick={() => setTierScrollIdx(p => ({ ...p, [prog.id]: Math.min(safIdx + 1, tiers.length - 1) }))}
-                              disabled={safIdx === tiers.length - 1}
-                              style={{ width: 22, height: 22, borderRadius: 6, border: `1px solid ${css.border}`, background: "transparent", cursor: safIdx === tiers.length - 1 ? "default" : "pointer", color: safIdx === tiers.length - 1 ? css.border : css.text2, fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
-                            >›</button>
-                          </div>
-
-                          {/* Tier card */}
-                          <div style={{ padding: "12px 14px", borderRadius: 10, background: achieved ? `${prog.color}12` : css.surface2, border: `1px solid ${achieved ? prog.color + "40" : css.border}` }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
-                              <div>
-                                <div style={{ fontSize: 13, fontWeight: 700, color: achieved ? prog.color : css.text, fontFamily: "'Inter Tight', Inter, sans-serif" }}>{tier.name}</div>
-                                <div style={{ fontSize: 10, color: css.text3, fontFamily: "Inter, sans-serif", marginTop: 2 }}>{tier.threshold.toLocaleString()} {prog.unit?.split(" ")[0]} required</div>
-                              </div>
-                              {achieved
-                                ? <span style={{ fontSize: 10, fontWeight: 700, color: prog.color, background: `${prog.color}15`, border: `1px solid ${prog.color}40`, borderRadius: 20, padding: "3px 9px", flexShrink: 0 }}>✓ Achieved</span>
-                                : <span style={{ fontSize: 10, color: css.text3, fontFamily: "'Geist Mono', monospace", flexShrink: 0 }}>{toGo.toLocaleString()} to go</span>
-                              }
-                            </div>
-                            <div style={{ width: "100%", height: 5, borderRadius: 3, background: D ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.08)", overflow: "hidden" }}>
-                              <div style={{ width: `${pct}%`, height: "100%", borderRadius: 3, background: prog.color, transition: "width 0.6s ease" }} />
-                            </div>
-                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: css.text3, marginTop: 5, fontFamily: "'Geist Mono', monospace" }}>
-                              <span>{current.toLocaleString()} {prog.unit?.split(" ")[0]}</span>
-                              <span style={{ color: css.text3 }}>{tier.threshold.toLocaleString()}</span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })()}
-
-                    {/* Card balance */}
-                    {isCard && isLinked && (
-                      <div style={{ marginBottom: 14, padding: "10px 14px", background: css.surface2, borderRadius: 8 }}>
-                        <div style={{ fontSize: 20, fontWeight: 600, color: css.text, fontFamily: "'Geist Mono', monospace" }}>
-                          {(linkedAccounts[prog.id]?.pointsBalance || 0).toLocaleString()}
-                          <span style={{ fontSize: 12, fontWeight: 400, color: css.text2, marginLeft: 4 }}>pts</span>
-                        </div>
-                        {prog.perks && <div style={{ fontSize: 10, color: css.text3, marginTop: 4 }}>{prog.perks}</div>}
-                      </div>
-                    )}
-
-                    {/* Tier badges — only shown for unlinked programs */}
-                    {!isCard && prog.tiers && !isLinked && (
-                      <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 14 }}>
-                        {prog.tiers.map((tier, ti) => (
-                          <span key={ti} style={{
-                            fontSize: 9, fontWeight: 600, padding: "2px 8px", borderRadius: 20,
-                            background: css.surface2, color: css.text3, border: `1px solid ${css.border}`,
-                          }}>{tier.name}</span>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Actions */}
-                    {isLinked ? (
-                      <div>
-                        <div style={{ display: "flex", gap: 8, marginBottom: 6 }}>
-                          <button onClick={() => {
-                            const existing = linkedAccounts[prog.id];
-                            const isHotelProg = LOYALTY_PROGRAMS.hotels.some(p => p.id === prog.id);
-                            const isRentalProg = LOYALTY_PROGRAMS.rentals.some(p => p.id === prog.id);
-                            setLinkForm({
-                              memberId: existing?.memberId || "",
-                              pointsBalance: existing?.pointsBalance ? String(existing.pointsBalance) : "",
-                              tierCredits: isHotelProg || isRentalProg ? "" : existing?.tierCredits ? String(existing.tierCredits) : "",
-                              currentNights: isHotelProg ? (existing?.currentNights ? String(existing.currentNights) : "") : "",
-                              currentRentals: isRentalProg ? (existing?.currentRentals ? String(existing.currentRentals) : "") : "",
-                              currentTier: existing?.currentTier || "",
-                            });
-                            setLinkError("");
-                            setShowLinkModal(prog.id);
-                          }} style={{
-                            flex: 1, padding: "8px 0", borderRadius: 8, border: `1px solid ${css.border}`,
-                            background: css.surface2, color: css.text2,
-                            fontSize: 11, fontWeight: 600, cursor: "pointer",
-                          }}>↺ Update Stats</button>
-                          {prog.loginUrl && (
-                            <a href={prog.loginUrl} target="_blank" rel="noopener noreferrer" style={{
-                              padding: "8px 14px", borderRadius: 8, border: `1px solid ${prog.color}40`,
-                              background: `${prog.color}12`, color: css.text, textDecoration: "none",
-                              fontSize: 11, fontWeight: 600, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 4,
-                            }}>View ↗</a>
-                          )}
-                          <button onClick={() => handleUnlinkAccount(prog.id)} style={{
-                            padding: "8px 10px", borderRadius: 8, border: `1px solid rgba(239,68,68,0.3)`,
-                            background: "transparent", color: "#ef4444",
-                            fontSize: 11, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap",
-                          }} title="Unlink program">✕</button>
-                        </div>
-                        {linkedAccounts[prog.id]?.updatedAt && (
-                          <div style={{ fontSize: 10, color: css.text3, fontFamily: "'Geist Mono', monospace", textAlign: "center" }}>
-                            Updated {(() => {
-                              const diff = Math.floor((Date.now() - new Date(linkedAccounts[prog.id].updatedAt)) / 1000);
-                              if (diff < 60) return "just now";
-                              if (diff < 3600) return `${Math.floor(diff/60)}m ago`;
-                              if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
-                              return `${Math.floor(diff/86400)}d ago`;
-                            })()}
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <button onClick={() => {
-                        const existing = linkedAccounts[prog.id];
-                        setLinkForm({
-                          memberId: existing?.memberId || "",
-                          pointsBalance: existing?.pointsBalance ? String(existing.pointsBalance) : "",
-                          tierCredits: existing?.tierCredits ? String(existing.tierCredits) : "",
-                          currentNights: existing?.currentNights ? String(existing.currentNights) : "",
-                          currentRentals: existing?.currentRentals ? String(existing.currentRentals) : "",
-                          currentTier: existing?.currentTier || "",
-                        });
-                        setLinkError("");
-                        setShowLinkModal(prog.id);
-                      }} style={{
-                        width: "100%", padding: "9px 0", borderRadius: 8, border: `1px solid ${css.accentBorder}`,
-                        background: css.accentBg, color: css.accent,
-                        fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all 0.15s",
-                      }}>Link Account →</button>
-                    )}
+        {linkedHotels.length > 0 && (
+          <div style={{ marginBottom: 28 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>Hotels</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {linkedHotels.map(prog => (
+                <div key={prog.id} style={{ display: "flex", alignItems: "center", gap: isMobile ? 8 : 14, padding: isMobile ? "10px 12px" : "14px 18px", borderRadius: 12, background: css.surface, border: `1px solid ${css.border}`, boxShadow: css.shadow, flexWrap: isMobile ? "wrap" : "nowrap" }}>
+                  <ProgramLogo prog={prog} size={28} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: css.text }}>{prog.name}</div>
+                    <div style={{ fontSize: 11, color: css.text3, marginTop: 2 }}>{linkedAccounts[prog.id]?.currentTier || "Member"}</div>
                   </div>
-                );
-              })}
+                  <select value={linkedAccounts[prog.id]?.currentTier || ""} onChange={e => { const tier = e.target.value; setLinkedAccounts(prev => ({ ...prev, [prog.id]: { ...prev[prog.id], currentTier: tier } })); if (user) supabase.from("linked_accounts").upsert({ user_id: user.id, program_id: prog.id, current_tier: tier, member_id: linkedAccounts[prog.id]?.memberId || "", updated_at: new Date().toISOString() }, { onConflict: "user_id,program_id" }); }} style={{ padding: "6px 10px", borderRadius: 6, border: `1px solid ${css.border}`, background: css.surface2, color: css.text, fontSize: 12, fontFamily: "inherit", cursor: "pointer" }}>
+                    <option value="">Member</option>
+                    {(prog.tiers || []).map(t => <option key={t.name} value={t.name}>{t.name}</option>)}
+                  </select>
+                  <button onClick={() => removeProgram(prog.id)} style={{ padding: "6px 10px", borderRadius: 6, border: `1px solid ${D ? "rgba(239,68,68,0.3)" : "rgba(239,68,68,0.2)"}`, background: "transparent", color: "#ef4444", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>Remove</button>
+                </div>
+              ))}
             </div>
           </div>
-        );
-        })()}
+        )}
+
+        {linkedCards.length > 0 && (
+          <div style={{ marginBottom: 28 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>Credit Cards</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {linkedCards.map(prog => (
+                <div key={prog.id} style={{ display: "flex", alignItems: "center", gap: isMobile ? 8 : 14, padding: isMobile ? "10px 12px" : "14px 18px", borderRadius: 12, background: css.surface, border: `1px solid ${css.border}`, boxShadow: css.shadow, flexWrap: isMobile ? "wrap" : "nowrap" }}>
+                  <ProgramLogo prog={prog} size={28} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: css.text }}>{prog.name}</div>
+                    {prog.annualFee && <div style={{ fontSize: 11, color: css.text3, marginTop: 2 }}>${prog.annualFee}/yr</div>}
+                  </div>
+                  <button onClick={() => removeProgram(prog.id)} style={{ padding: "6px 10px", borderRadius: 6, border: `1px solid ${D ? "rgba(239,68,68,0.3)" : "rgba(239,68,68,0.2)"}`, background: "transparent", color: "#ef4444", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>Remove</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {linkedCount === 0 && (
+          <div style={{ padding: "48px 20px", textAlign: "center", borderRadius: 14, background: css.surface, border: `1px solid ${css.border}` }}>
+            <div style={{ fontSize: 15, fontWeight: 600, color: css.text, marginBottom: 8 }}>No programs added yet</div>
+            <p style={{ fontSize: 13, color: css.text3, margin: 0 }}>Use the form above to add your airline, hotel, and credit card programs</p>
+          </div>
+        )}
+
       </div>
     );
   };
@@ -5937,8 +7589,8 @@ Start by introducing yourself briefly in-character with personality, and give an
 
     // ── Trip Detail View — Full-screen timeline layout ──
     if (tripDetailId) {
-      const trip = trips.find(t => t.id === tripDetailId);
-      if (!trip) { setTripDetailId(null); return null; }
+      const trip = [...trips, ...sharedTrips].find(t => t.id === tripDetailId);
+      if (!trip) return null;
       const prog = allPrograms.find(p => p.id === trip.program);
       const sColor = trip.status === "confirmed" ? css.success : trip.status === "planned" ? css.warning : css.accent;
       const sBg = trip.status === "confirmed" ? css.successBg : trip.status === "planned" ? css.warningBg : css.accentBg;
@@ -6196,14 +7848,10 @@ Start by introducing yourself briefly in-character with personality, and give an
                 // Resolve hotel for this night, then fall back to city/airport
                 const dayHotel = dateStr !== "undated" ? resolveHotelForDate(realSegs, dateStr) : null;
                 const dayCity = dateStr !== "undated" ? resolveCityForDate(realSegs, dateStr) : { city: "", airportCode: "" };
-                // Weather key: hotel location → hotel property name → city → airport code
-                const weatherLookup = dayHotel?.location || dayHotel?.name || dayCity.city || dayCity.airportCode || "";
-                const wxKey = `${weatherLookup}_${dateStr}`;
+                // Weather key: prefer airport code (always geocodes) → city → trip location
+                const weatherCity = dayCity.airportCode || dayCity.city || (dayHotel?.location ? dayHotel.location.split(",")[0].trim() : "") || trip.location?.split(",")[0]?.trim() || "";
+                const wxKey = `${weatherCity}_${dateStr}`;
                 const wx = weatherCache[wxKey] || null;
-                if (weatherLookup && dateStr !== "undated" && !wx && !weatherLoading.current[wxKey]) {
-                  weatherLoading.current[wxKey] = true;
-                  fetchWeather(weatherLookup, dateStr);
-                }
                 const toF = (c) => Math.round(c * 9 / 5 + 32);
                 const fmtTemp = (c) => tempUnit === "F" ? `${toF(c)}°` : `${Math.round(c)}°`;
                 // Display label: hotel name if staying somewhere, otherwise city/airport
@@ -6218,14 +7866,16 @@ Start by introducing yourself briefly in-character with personality, and give an
                         <span style={{ fontSize: 12, color: css.text3, fontWeight: 600, letterSpacing: "0.02em", flexShrink: 0 }}>— {dayLabel}</span>
                         {dayLocationLabel && <span style={{ fontSize: 11, fontWeight: 600, color: css.text2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>· {dayLocationLabel}</span>}
                       </div>
-                      {wx && (
-                        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontFamily: "'Geist Mono', monospace", color: css.text2, flexShrink: 0 }} title={wx.isHistorical ? "Typical weather (last year)" : "Forecast"}>
+                      {wx ? (
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontFamily: "'Geist Mono', monospace", color: css.text2, flexShrink: 0 }} title={wx.isHistorical ? `Expected weather (based on ${wx.cityName || "location"} last year)` : `Weather forecast for ${wx.cityName || "location"}`}>
                           <span style={{ fontSize: 15 }}>{weatherIcon(wx.code).icon}</span>
                           <span style={{ fontWeight: 700 }}>{fmtTemp(wx.high)}</span>
                           <span style={{ color: css.text3, fontWeight: 500 }}>{fmtTemp(wx.low)}</span>
-                          {wx.isHistorical && <span style={{ fontSize: 9, color: css.text3, fontWeight: 500 }}>typ.</span>}
+                          <span style={{ fontSize: 9, color: wx.isHistorical ? css.warning : css.success, fontWeight: 600 }}>{wx.isHistorical ? "Expected" : "Forecast"}</span>
                         </div>
-                      )}
+                      ) : weatherCity ? (
+                        <span style={{ fontSize: 10, color: css.text3, fontStyle: "italic", flexShrink: 0 }}>Loading weather for {weatherCity}...</span>
+                      ) : null}
                     </div>
 
                     {/* Timeline items */}
@@ -6390,11 +8040,34 @@ Start by introducing yourself briefly in-character with personality, and give an
                 const cat = EXPENSE_CATEGORIES.find(c => c.id === exp.category);
                 return (
                   <div key={exp.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderBottom: `1px solid ${css.border}` }}>
+                    {exp.receiptImage?.data && exp.receiptImage.type?.startsWith("image/") && (
+                      <div style={{ flexShrink: 0, position: "relative" }}>
+                        <img src={exp.receiptImage.data} alt="" style={{ width: 36, height: 36, objectFit: "cover", borderRadius: 4, border: `1px solid ${css.border}`, cursor: "pointer" }} onClick={() => setViewExpenseId(exp.id)} />
+                        <button onClick={(e) => { e.stopPropagation(); setCropExpenseId(exp.id); setCropStart(null); setCropEnd(null); }} style={{ position: "absolute", bottom: -3, right: -3, width: 16, height: 16, borderRadius: 3, border: `1px solid ${css.border}`, background: css.surface, color: css.text3, fontSize: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }} title="Crop">
+                          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2v14a2 2 0 002 2h14"/><path d="M18 22V8a2 2 0 00-2-2H2"/></svg>
+                        </button>
+                      </div>
+                    )}
                     {cat && <span style={{ fontSize: 9, fontWeight: 700, color: cat.color, background: `${cat.color}15`, padding: "2px 6px", flexShrink: 0 }}>{cat.label}</span>}
                     <span style={{ fontSize: 12, color: css.text2, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.description || exp.category}</span>
                     <span style={{ fontSize: 12, fontWeight: 600, color: css.text, fontFamily: "'Geist Mono', monospace", flexShrink: 0 }}>{exp.amount?.toLocaleString()} {exp.currency || "USD"}</span>
                     <button onClick={() => setViewExpenseId(exp.id)} style={{ padding: "3px 8px", border: `1px solid ${css.accent}30`, background: "transparent", color: css.accent, fontSize: 10, fontWeight: 600, cursor: "pointer", flexShrink: 0 }}>View</button>
                     <button onClick={() => { setEditExpenseId(exp.id); setShowAddExpense(trip.id); setNewExpense({ ...exp, fxRate: exp.fxRate || 1 }); }} style={{ padding: "3px 8px", border: `1px solid ${css.border}`, background: "transparent", color: css.text3, fontSize: 10, fontWeight: 600, cursor: "pointer", flexShrink: 0 }}>Edit</button>
+                    <select onChange={async e => {
+                      const newTripId = e.target.value; if (!newTripId) return;
+                      if (newTripId === "_unassign") {
+                        if (user) await supabase.from("expenses").update({ trip_id: null }).eq("id", exp.id).eq("user_id", user.id);
+                        setExpenses(prev => prev.map(ex => ex.id === exp.id ? { ...ex, tripId: null } : ex));
+                      } else {
+                        if (user) await supabase.from("expenses").update({ trip_id: newTripId }).eq("id", exp.id).eq("user_id", user.id);
+                        setExpenses(prev => prev.map(ex => ex.id === exp.id ? { ...ex, tripId: newTripId } : ex));
+                      }
+                      e.target.value = "";
+                    }} style={{ padding: "3px 6px", borderRadius: 4, border: `1px solid ${css.border}`, background: "transparent", color: css.text3, fontSize: 10, cursor: "pointer", flexShrink: 0 }}>
+                      <option value="">Transfer...</option>
+                      <option value="_unassign">Unassign (back to inbox)</option>
+                      {trips.filter(t => t.id !== trip.id).map(t => <option key={t.id} value={t.id}>{t.tripName || t.trip_name || t.location || "Trip"}</option>)}
+                    </select>
                     <button onClick={() => removeExpense(exp.id)} style={{ padding: "3px 8px", border: "1px solid rgba(239,68,68,0.2)", background: "transparent", color: "#ef4444", fontSize: 10, fontWeight: 600, cursor: "pointer", flexShrink: 0, opacity: 0.6 }}>Delete</button>
                   </div>
                 );
@@ -6407,13 +8080,18 @@ Start by introducing yourself briefly in-character with personality, and give an
 
     return (
     <div>
+      {/* ── Hero banner image ── */}
+      <div style={{ margin: isMobile ? "0 -16px 0" : "0 -48px 0", position: "relative", height: isMobile ? 160 : 240, overflow: "hidden" }}>
+        <img src="/hero-trips.jpg" alt="Trips" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 40%", display: "block" }} />
+        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: isMobile ? 60 : 80, background: D ? "linear-gradient(transparent, #0f0f0f)" : "linear-gradient(transparent, #ffffff)" }} />
+      </div>
+
       {/* Page header */}
-      <div className="c-a1" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 28, gap: 16, flexWrap: "wrap" }}>
+      <div className="c-a1" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 20, gap: 16, flexWrap: "wrap" }}>
         <div>
-          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: css.text3, marginBottom: 8 }}>2026 Travel Plan</div>
-          <h2 style={{ fontFamily: "'Instrument Sans', 'Outfit', sans-serif", fontSize: isMobile ? 28 : 36, fontWeight: 600, color: css.text, margin: 0, lineHeight: 1.1 }}>Your Trips</h2>
-          <p style={{ color: css.text2, fontSize: 13, margin: "8px 0 0" }}>
-            {trips.length} trips · {trips.filter(t => t.status === "confirmed").length} confirmed
+          <h2 style={{ fontSize: isMobile ? 22 : 32, fontWeight: 700, color: css.text, margin: 0, letterSpacing: "-0.02em" }}>Your Trips</h2>
+          <p style={{ color: css.text3, fontSize: 13, margin: "6px 0 0" }}>
+            {trips.length} trip{trips.length !== 1 ? "s" : ""} · {trips.filter(t => t.status === "confirmed").length} confirmed
             {grandTotal > 0 && <span style={{ marginLeft: 10, color: css.accent, fontFamily: "'Geist Mono', monospace" }}>${grandTotal.toLocaleString()} total spend</span>}
           </p>
         </div>
@@ -6441,14 +8119,14 @@ Start by introducing yourself briefly in-character with personality, and give an
                 padding: "5px 10px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600,
                 background: tripsView === v ? css.surface : "transparent",
                 color: tripsView === v ? css.text : css.text3,
-                boxShadow: tripsView === v ? "0 1px 3px rgba(0,0,0,0.15)" : "none",
+                boxShadow: tripsView === v ? "0 1px 3px rgba(0,0,0,0.2)" : "none",
                 transition: "all 0.15s",
               }}>{icon}</button>
             ))}
           </div>
           <button onClick={() => setShowImportItinerary(true)} style={{
             display: "flex", alignItems: "center", gap: 7, padding: "10px 16px", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 600,
-            background: css.accentBg, border: `1px solid ${css.accentBorder}`, color: css.accent, transition: "all 0.15s",
+            background: css.surface2, border: `1px solid ${css.border}`, color: css.text2, transition: "all 0.15s",
           }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
@@ -6615,7 +8293,7 @@ Start by introducing yourself briefly in-character with personality, and give an
 
       {/* Trip Cards — Upcoming */}
       {upcomingTripsFiltered.length > 0 && (
-        <div style={{ fontSize: 10, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.12em", fontFamily: "'Geist Mono', monospace", marginBottom: 8 }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "0.12em", fontFamily: "'Geist Mono', monospace", marginBottom: 8, textShadow: "0 1px 4px rgba(0,0,0,0.3)" }}>
           Upcoming · {upcomingTripsFiltered.length}
         </div>
       )}
@@ -6633,9 +8311,10 @@ Start by introducing yourself briefly in-character with personality, and give an
 
           return (
             <div key={trip.id} style={{
-              background: css.surface, border: `1px solid ${isExpanded ? css.accentBorder : css.border}`,
+              background: css.surface,
+              border: `1px solid ${isExpanded ? css.accentBorder : css.border}`,
               borderRadius: 14, overflow: "hidden",
-              boxShadow: D ? "none" : isExpanded ? "0 4px 20px rgba(212,116,45,0.1)" : "0 1px 4px rgba(26,21,18,0.04)",
+              boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
               transition: "border-color 0.2s, box-shadow 0.2s",
             }}>
               {/* Trip header row */}
@@ -7064,7 +8743,10 @@ Start by introducing yourself briefly in-character with personality, and give an
   );
   };
 
-  const renderExpenses = () => { setActiveView("trips"); return null; };
+  const renderExpenses = () => {
+    // Redirect handled by navItem click
+    return null;
+  };
 
 
   const renderOptimizer = (_previewTab = null) => {
@@ -8522,6 +10204,10 @@ Start by introducing yourself briefly in-character with personality, and give an
                       <div style={{ fontSize: 9, color: css.text3, marginBottom: 8 }}>USD</div>
                       <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
                         <button onClick={async () => await buildPrintReport(report.title, exps)} style={{ padding: "5px 12px", borderRadius: 8, border: "none", background: css.accent, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>Print</button>
+                        <button onClick={() => { setForwardReportId(report.id); setForwardEmail(""); setForwardStatus(""); }} style={{ padding: "5px 12px", borderRadius: 8, border: `1px solid ${css.border}`, background: "transparent", color: css.text2, fontSize: 11, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                          Forward
+                        </button>
                         <button onClick={() => openBuilder(report)} style={{ padding: "5px 12px", borderRadius: 8, border: `1px solid ${css.border}`, background: "transparent", color: css.text2, fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Edit</button>
                         <button onClick={() => deleteReport(report.id)} style={{ width: 26, height: 26, borderRadius: 8, border: `1px solid rgba(239,68,68,0.2)`, background: "rgba(239,68,68,0.06)", color: "#ef4444", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
                       </div>
@@ -8685,6 +10371,78 @@ Start by introducing yourself briefly in-character with personality, and give an
             </div>
           </div>
         )}
+
+        {/* Forward Report Modal */}
+        {forwardReportId && (() => {
+          const report = standaloneReports.find(r => r.id === forwardReportId);
+          if (!report) return null;
+          const exps = getReportExpenses(report);
+          const total = exps.reduce((s, e) => s + e.amount * (e.fxRate || 1), 0);
+
+          const handleForward = async () => {
+            if (!forwardEmail.trim()) return;
+            setForwardStatus("sending");
+            const rows = exps.map(e => {
+              const cat = EXPENSE_CATEGORIES.find(c => c.id === e.category);
+              return `<tr style="border-bottom:1px solid #eee"><td style="padding:8px 12px;font-size:13px">${e.date || ""}</td><td style="padding:8px 12px;font-size:13px">${cat?.label || ""}</td><td style="padding:8px 12px;font-size:13px">${e.description || ""}</td><td style="padding:8px 12px;font-size:13px;text-align:right;font-family:monospace">$${(e.amount * (e.fxRate || 1)).toFixed(2)}</td><td style="padding:8px 12px;font-size:13px">${e.receipt ? "Yes" : "No"}</td></tr>`;
+            }).join("");
+            const html = `<div style="font-family:-apple-system,BlinkMacSystemFont,sans-serif;max-width:700px;margin:0 auto"><div style="background:#D4742D;color:#fff;padding:20px 24px;border-radius:12px 12px 0 0"><h1 style="margin:0;font-size:20px">${report.title.replace(/</g,"&lt;")}</h1><p style="margin:6px 0 0;font-size:13px;opacity:0.85">${exps.length} items · Sent from Continuum</p></div><div style="border:1px solid #eee;border-top:none;border-radius:0 0 12px 12px"><table style="width:100%;border-collapse:collapse"><thead><tr style="background:#f8f8f8"><th style="padding:10px 12px;text-align:left;font-size:11px;color:#888;text-transform:uppercase">Date</th><th style="padding:10px 12px;text-align:left;font-size:11px;color:#888;text-transform:uppercase">Category</th><th style="padding:10px 12px;text-align:left;font-size:11px;color:#888;text-transform:uppercase">Description</th><th style="padding:10px 12px;text-align:right;font-size:11px;color:#888;text-transform:uppercase">Amount</th><th style="padding:10px 12px;text-align:left;font-size:11px;color:#888;text-transform:uppercase">Receipt</th></tr></thead><tbody>${rows}</tbody><tfoot><tr style="background:#f8f8f8;font-weight:700"><td colspan="3" style="padding:12px;font-size:14px">Total</td><td style="padding:12px;font-size:14px;text-align:right;font-family:monospace">$${total.toFixed(2)}</td><td></td></tr></tfoot></table></div><p style="font-size:11px;color:#999;margin-top:16px;text-align:center">Sent via <a href="https://gocontinuum.app" style="color:#D4742D">Continuum</a></p></div>`;
+            try {
+              const resp = await fetch("/api/forward-report", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ recipientEmail: forwardEmail.trim(), reportTitle: report.title, reportHtml: html, senderName: user?.user_metadata?.first_name || "", senderEmail: user?.email || "" }),
+              });
+              const data = await resp.json();
+              if (data.method === "mailto" || data.fallback) {
+                const subject = encodeURIComponent(`Expense Report: ${report.title}`);
+                const body = encodeURIComponent(`Expense Report: ${report.title}\n\nTotal: $${total.toFixed(2)}\nItems: ${exps.length}\n\n${exps.map(e => `${e.date || ""} - ${e.description || ""} - $${(e.amount*(e.fxRate||1)).toFixed(2)}`).join("\n")}\n\nSent from Continuum`);
+                window.open(`mailto:${forwardEmail.trim()}?subject=${subject}&body=${body}`, "_self");
+                setForwardStatus("sent");
+              } else if (data.success) { setForwardStatus("sent"); }
+              else { setForwardStatus("error"); }
+            } catch { setForwardStatus("error"); }
+          };
+
+          return (
+            <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9000, padding: 20 }}>
+              <div onClick={e => e.stopPropagation()} style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 16, padding: "28px 24px", width: "100%", maxWidth: 440 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                  <h3 style={{ fontSize: 18, fontWeight: 700, color: css.text, margin: 0 }}>Forward Report</h3>
+                  <button onClick={() => setForwardReportId(null)} style={{ width: 32, height: 32, border: "none", background: "transparent", color: css.text3, fontSize: 18, cursor: "pointer" }}>x</button>
+                </div>
+                <div style={{ background: css.surface2, borderRadius: 10, padding: "14px 16px", marginBottom: 20 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: css.text }}>{report.title}</div>
+                  <div style={{ fontSize: 12, color: css.text3, marginTop: 4 }}>{exps.length} expense{exps.length !== 1 ? "s" : ""} · ${total.toLocaleString(undefined, { minimumFractionDigits: 2 })} USD{exps.filter(e => e.receipt).length > 0 ? ` · ${exps.filter(e => e.receipt).length} receipt${exps.filter(e => e.receipt).length !== 1 ? "s" : ""}` : ""}</div>
+                </div>
+                {forwardStatus === "sent" ? (
+                  <div style={{ textAlign: "center", padding: "20px 0" }}>
+                    <div style={{ fontSize: 15, fontWeight: 600, color: css.success, marginBottom: 4 }}>Report Sent</div>
+                    <p style={{ fontSize: 13, color: css.text3 }}>Forwarded to {forwardEmail}</p>
+                    <button onClick={() => setForwardReportId(null)} style={{ marginTop: 16, padding: "10px 24px", borderRadius: 8, border: "none", background: css.accent, color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Done</button>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ marginBottom: 16 }}>
+                      <label style={{ fontSize: 10, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>Recipient Email</label>
+                      <input type="email" value={forwardEmail} onChange={e => setForwardEmail(e.target.value)} placeholder="finance@company.com" autoFocus
+                        style={{ width: "100%", padding: "12px 14px", background: css.surface2, border: `1px solid ${css.border}`, borderRadius: 8, color: css.text, fontSize: 14, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }} />
+                    </div>
+                    <p style={{ fontSize: 11, color: css.text3, marginBottom: 16 }}>The full expense report with all line items and receipt indicators will be sent as a formatted email.</p>
+                    <div style={{ display: "flex", gap: 10 }}>
+                      <button onClick={() => setForwardReportId(null)} style={{ flex: 1, padding: "11px 0", borderRadius: 8, border: `1px solid ${css.border}`, background: "transparent", color: css.text2, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
+                      <button onClick={handleForward} disabled={!forwardEmail.trim() || forwardStatus === "sending"} style={{ flex: 1, padding: "11px 0", borderRadius: 8, border: "none", background: forwardEmail.trim() ? css.accent : css.surface2, color: forwardEmail.trim() ? "#fff" : css.text3, fontSize: 13, fontWeight: 700, cursor: forwardEmail.trim() ? "pointer" : "default", opacity: forwardStatus === "sending" ? 0.6 : 1 }}>
+                        {forwardStatus === "sending" ? "Sending..." : "Send Report"}
+                      </button>
+                    </div>
+                    {forwardStatus === "error" && <p style={{ fontSize: 11, color: "#ef4444", marginTop: 8, textAlign: "center" }}>Failed to send. Please try again.</p>}
+                  </>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+
       </div>
     );
   };
@@ -9170,7 +10928,7 @@ Start by introducing yourself briefly in-character with personality, and give an
       }
     });
 
-    const today = new Date("2026-03-08");
+    const today = new Date();
     const daysBetween = (a, b) => Math.round((b - a) / 86400000);
 
     // ── Sub-tab: Status Countdown ─────────────────────────────────
@@ -9965,6 +11723,336 @@ Start by introducing yourself briefly in-character with personality, and give an
   };
 
   // ============================================================
+  // LOUNGES TAB
+  // ============================================================
+  const renderLounges = () => {
+    const D = darkMode;
+    const lounges = loungeAirport ? (LOUNGE_DATABASE[loungeAirport] || []) : [];
+    const airportCodes = Object.keys(LOUNGE_DATABASE).sort();
+
+    const handleSearch = () => {
+      const code = loungeSearchCode.trim().toUpperCase();
+      if (LOUNGE_DATABASE[code]) {
+        setLoungeAirport(code);
+        setLoungeExpandedId(null);
+      }
+    };
+
+    const saveLoungeVisit = (visit) => {
+      const updated = [visit, ...loungeVisits];
+      setLoungeVisits(updated);
+      localStorage.setItem("continuum_lounge_visits", JSON.stringify(updated));
+    };
+
+    const removeLoungeVisit = (idx) => {
+      const updated = loungeVisits.filter((_, i) => i !== idx);
+      setLoungeVisits(updated);
+      localStorage.setItem("continuum_lounge_visits", JSON.stringify(updated));
+    };
+
+    const networkLabel = (n) => {
+      const map = { centurion: "Amex Centurion", capital_one: "Capital One", priority_pass: "Priority Pass", delta_sky_club: "Delta Sky Club", admirals_club: "Admirals Club", flagship: "AA Flagship First Dining", polaris: "United Polaris", united_club: "United Club", alaska_lounge: "Alaska Lounge", cathay_lounge: "Cathay Pacific", singapore_lounge: "Singapore Airlines", generic_airline: "Airline Lounge", plaza_premium: "Plaza Premium", turkish_lounge: "Turkish Airlines", emirates_lounge: "Emirates", qantas_lounge: "Qantas", chase_sapphire_lounge: "Chase Sapphire Lounge", greenwich_lounge: "Greenwich Lounge", soho_lounge: "Soho Lounge", chelsea_lounge: "Chelsea Lounge" };
+      return map[n] || n;
+    };
+
+    const networkColor = (n) => {
+      const map = { centurion: "#006FCF", capital_one: "#D03027", priority_pass: "#6B4E2E", delta_sky_club: "#003366", admirals_club: "#0078D2", flagship: "#0078D2", polaris: "#002244", united_club: "#002244", alaska_lounge: "#01426A", cathay_lounge: "#006564", singapore_lounge: "#003876", generic_airline: "#666", plaza_premium: "#8B6F47", turkish_lounge: "#C8102E", emirates_lounge: "#D71920", qantas_lounge: "#E0162B", chase_sapphire_lounge: "#1A1F36", greenwich_lounge: "#0078D2", soho_lounge: "#0078D2", chelsea_lounge: "#0078D2" };
+      return map[n] || css.accent;
+    };
+
+    const renderStars = (rating) => {
+      const full = Math.floor(rating);
+      const half = rating - full >= 0.3;
+      const stars = [];
+      for (let i = 0; i < 5; i++) {
+        if (i < full) stars.push(<svg key={i} width="14" height="14" viewBox="0 0 24 24" fill={css.accent} stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>);
+        else if (i === full && half) stars.push(<svg key={i} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="none"><defs><clipPath id={`half${i}`}><rect x="0" y="0" width="12" height="24"/></clipPath></defs><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill={css.accent} clipPath={`url(#half${i})`}/><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="none" stroke={css.border} strokeWidth="1.5"/></svg>);
+        else stars.push(<svg key={i} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={css.border} strokeWidth="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>);
+      }
+      return <span style={{ display: "inline-flex", alignItems: "center", gap: 1 }}>{stars}</span>;
+    };
+
+    // Build airline options from all airlines in LOYALTY_PROGRAMS
+    const allAirlineOptions = LOYALTY_PROGRAMS.airlines.map(a => ({ id: a.id, name: a.name }));
+
+    return (
+      <div>
+        {/* Header */}
+        <div className="c-a1" style={{ marginBottom: 24 }}>
+          <h2 style={{ fontSize: isMobile ? 24 : 32, fontWeight: 700, color: css.text, margin: 0, letterSpacing: "-0.02em" }}>Lounges</h2>
+          <p style={{ color: css.text3, fontSize: 13, margin: "6px 0 0" }}>Access based on your programs. {Object.keys(linkedAccounts).length} program{Object.keys(linkedAccounts).length !== 1 ? "s" : ""} linked.</p>
+        </div>
+
+        {/* Flight context — what are you flying? */}
+        <div className="c-a2" style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: isMobile ? "16px" : "20px 24px", marginBottom: 24, boxShadow: css.shadow }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: css.text, marginBottom: 14 }}>What are you flying?</div>
+          <div style={{ display: "flex", gap: isMobile ? 8 : 12, flexWrap: "wrap", alignItems: "flex-end" }}>
+            <div style={{ flex: isMobile ? "1 1 100%" : "1 1 180px", minWidth: isMobile ? 0 : 160 }}>
+              <label style={{ fontSize: 10, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>Airline</label>
+              <select value={loungeFlightAirline} onChange={e => setLoungeFlightAirline(e.target.value)} style={{ width: "100%", padding: "10px 12px", background: css.surface2, border: `1px solid ${css.border}`, borderRadius: 8, color: css.text, fontSize: 13, fontFamily: "inherit", cursor: "pointer" }}>
+                <option value="">Any airline</option>
+                {allAirlineOptions.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+              </select>
+            </div>
+            <div style={{ flex: isMobile ? "1 1 48%" : "1 1 160px", minWidth: isMobile ? 0 : 140 }}>
+              <label style={{ fontSize: 10, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>Class</label>
+              <select value={loungeFlightClass} onChange={e => setLoungeFlightClass(e.target.value)} style={{ width: "100%", padding: "10px 12px", background: css.surface2, border: `1px solid ${css.border}`, borderRadius: 8, color: css.text, fontSize: 13, fontFamily: "inherit", cursor: "pointer" }}>
+                <option value="economy">Economy</option>
+                <option value="premium_economy">Premium Economy</option>
+                <option value="business">Business</option>
+                <option value="first">First</option>
+              </select>
+            </div>
+            <div style={{ flex: isMobile ? "1 1 48%" : "1 1 160px", minWidth: isMobile ? 0 : 140 }}>
+              <label style={{ fontSize: 10, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>Route</label>
+              <select value={loungeAccessRoute} onChange={e => setLoungeAccessRoute(e.target.value)} style={{ width: "100%", padding: "10px 12px", background: css.surface2, border: `1px solid ${css.border}`, borderRadius: 8, color: css.text, fontSize: 13, fontFamily: "inherit", cursor: "pointer" }}>
+                <option value="domestic">Domestic</option>
+                <option value="international">International</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div>
+            {/* Searchable airport dropdown */}
+            <div style={{ position: "relative", marginBottom: 24, maxWidth: 420 }}>
+              <input
+                value={loungeSearchCode}
+                onChange={e => { setLoungeSearchCode(e.target.value); setLoungeDropdownOpen(true); }}
+                onFocus={() => setLoungeDropdownOpen(true)}
+                placeholder="Search airport name or IATA code..."
+                style={{
+                  width: "100%", padding: "12px 14px", borderRadius: 10,
+                  border: `1px solid ${loungeDropdownOpen ? css.accent : css.border}`,
+                  background: css.surface, color: css.text, fontSize: 14,
+                  fontFamily: "'Instrument Sans', 'Outfit', sans-serif",
+                  outline: "none", boxSizing: "border-box", transition: "border-color 0.15s",
+                }}
+              />
+              {loungeAirport && !loungeDropdownOpen && (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: css.accent, fontFamily: "'Space Mono', monospace" }}>{loungeAirport}</span>
+                  <span style={{ fontSize: 12, color: css.text2 }}>{AIRPORT_CITY[loungeAirport] || ""}</span>
+                  <button onClick={() => { setLoungeAirport(null); setLoungeSearchCode(""); setLoungeExpandedId(null); }} style={{
+                    background: "none", border: "none", cursor: "pointer", color: css.text3, fontSize: 11, padding: "2px 6px",
+                  }}>Clear</button>
+                </div>
+              )}
+              {loungeDropdownOpen && (() => {
+                const query = loungeSearchCode.trim().toLowerCase();
+                const filtered = airportCodes.filter(code => {
+                  const city = (AIRPORT_CITY[code] || "").toLowerCase();
+                  return code.toLowerCase().includes(query) || city.includes(query);
+                }).sort((a, b) => {
+                  const cityA = AIRPORT_CITY[a] || a;
+                  const cityB = AIRPORT_CITY[b] || b;
+                  return cityA.localeCompare(cityB);
+                });
+                if (filtered.length === 0) return null;
+                return (
+                  <div style={{
+                    position: "absolute", top: "100%", left: 0, right: 0, marginTop: 4, zIndex: 200,
+                    background: css.surface, border: `1px solid ${css.border}`, borderRadius: 10,
+                    boxShadow: D ? "0 8px 24px rgba(0,0,0,0.6)" : "0 8px 24px rgba(0,0,0,0.12)",
+                    maxHeight: 280, overflowY: "auto",
+                  }}>
+                    {filtered.map(code => {
+                      const isActive = loungeAirport === code;
+                      return (
+                        <button key={code} onClick={() => {
+                          setLoungeAirport(code);
+                          setLoungeExpandedId(null);
+                          setLoungeSearchCode(code + " - " + (AIRPORT_CITY[code] || code));
+                          setLoungeDropdownOpen(false);
+                        }} style={{
+                          display: "flex", alignItems: "center", gap: 10, width: "100%",
+                          padding: "10px 14px", border: "none", cursor: "pointer", textAlign: "left",
+                          background: isActive ? css.accentBg : "transparent",
+                          color: isActive ? css.accent : css.text,
+                          fontSize: 13, fontFamily: "'Instrument Sans', 'Outfit', sans-serif",
+                          borderBottom: `1px solid ${css.border}`, transition: "background 0.1s",
+                        }}
+                          onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = css.surface2; }}
+                          onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
+                        >
+                          <span style={{ fontWeight: 700, fontFamily: "'Space Mono', monospace", fontSize: 12, minWidth: 36 }}>{code}</span>
+                          <span style={{ color: isActive ? css.accent : css.text2 }}>{AIRPORT_CITY[code] || code}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+              {loungeDropdownOpen && (
+                <div onClick={() => setLoungeDropdownOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 199 }} />
+              )}
+            </div>
+
+            {/* Lounge list — accessible first, then others */}
+            {loungeAirport && (() => {
+              // Force recalculation when flight context changes (referenced for reactivity)
+              void loungeFlightAirline; void loungeFlightClass;
+              // Sort: accessible lounges first (by rating desc), then inaccessible
+              const loungesWithAccess = lounges.map(l => ({ ...l, _access: getLoungeAccess(l.network, l) }));
+              const accessible = loungesWithAccess.filter(l => l._access.length > 0).sort((a, b) => b.rating - a.rating);
+              return (
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: css.text2, marginBottom: 16 }}>
+                  {accessible.length > 0 ? `${accessible.length} lounge${accessible.length !== 1 ? "s" : ""} you can access at ${loungeAirport}` : `No accessible lounges at ${loungeAirport}`}
+                </div>
+                {accessible.length === 0 && (
+                  <div style={{ padding: "40px 20px", textAlign: "center", borderRadius: 14, background: css.surface, border: `1px solid ${css.border}` }}>
+                    <p style={{ fontSize: 13, color: css.text3, margin: 0 }}>You don't have access to any lounges at this airport with your current programs and flight</p>
+                  </div>
+                )}
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {accessible.map(lounge => {
+                    const expanded = loungeExpandedId === lounge.id;
+                    const accessRules = lounge._access;
+                    const hasAccess = accessRules.length > 0;
+                    const nColor = networkColor(lounge.network);
+
+                    // Trigger photo fetch on expand
+                    // Photo fetch moved to useEffect below
+
+                    return (
+                      <div key={lounge.id} style={{
+                        background: css.surface, border: `1px solid ${expanded ? css.accentBorder : css.border}`,
+                        borderRadius: 12, overflow: "hidden", transition: "all 0.2s",
+                      }}>
+                        {/* Collapsed header */}
+                        <div onClick={() => setLoungeExpandedId(expanded ? null : lounge.id)} style={{
+                          padding: "14px 18px", cursor: "pointer", display: "flex", alignItems: "center", gap: 14,
+                        }}>
+                          {/* Network color bar */}
+                          <div style={{ width: 4, height: 40, borderRadius: 2, background: nColor, flexShrink: 0 }} />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                              <span style={{ fontSize: 15, fontWeight: 600, color: css.text }}>{lounge.name}</span>
+                              {hasAccess && (
+                                <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: css.successBg, color: css.success, border: `1px solid ${css.success}30`, letterSpacing: "0.03em" }}>ACCESS</span>
+                              )}
+                            </div>
+                            <div style={{ display: "flex", gap: 12, marginTop: 4, fontSize: 12, color: css.text3 }}>
+                              <span>Terminal {lounge.terminal}</span>
+                              <span style={{ color: nColor, fontWeight: 600 }}>{networkLabel(lounge.network)}</span>
+                            </div>
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                              {renderStars(lounge.rating)}
+                              <span style={{ fontSize: 12, fontWeight: 600, color: css.text2, marginLeft: 4 }}>{lounge.rating}</span>
+                            </div>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={css.text3} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: expanded ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>
+                              <polyline points="6 9 12 15 18 9" />
+                            </svg>
+                          </div>
+                        </div>
+
+                        {/* Expanded content */}
+                        {expanded && (
+                          <div style={{ padding: "0 18px 18px", borderTop: `1px solid ${css.border}` }}>
+                            {/* Photo */}
+                            {loungePhotos[lounge.id] && (
+                              <div style={{ margin: "14px 0", borderRadius: 8, overflow: "hidden", height: 180 }}>
+                                <img src={loungePhotos[lounge.id]} alt={lounge.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                              </div>
+                            )}
+
+                            {/* Details grid */}
+                            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16, marginTop: 14 }}>
+                              <div>
+                                <div style={{ fontSize: 11, fontWeight: 600, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Details</div>
+                                <div style={{ fontSize: 13, color: css.text2, lineHeight: 1.8 }}>
+                                  <div><span style={{ color: css.text3 }}>Location:</span> {lounge.location}</div>
+                                  <div><span style={{ color: css.text3 }}>Hours:</span> {lounge.hours}</div>
+                                  <div><span style={{ color: css.text3 }}>Network:</span> <span style={{ color: nColor, fontWeight: 600 }}>{networkLabel(lounge.network)}</span></div>
+                                </div>
+                              </div>
+                              <div>
+                                <div style={{ fontSize: 11, fontWeight: 600, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Amenities</div>
+                                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                                  {lounge.amenities.map(a => (
+                                    <span key={a} style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 8px", borderRadius: 6, background: css.surface2, fontSize: 11, color: css.text2 }}>
+                                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d={AMENITY_ICONS[a] || "M12 12m-9 0a9 9 0 1018 0 9 9 0 10-18 0"} />
+                                      </svg>
+                                      {AMENITY_LABELS[a] || a}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Access rules */}
+                            {accessRules.length > 0 && (
+                              <div style={{ marginTop: 16 }}>
+                                <div style={{ fontSize: 11, fontWeight: 600, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Your Access</div>
+                                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                                  {accessRules.map((rule, ri) => (
+                                    <div key={ri} style={{ padding: "8px 12px", borderRadius: 8, background: css.successBg, border: `1px solid ${css.success}20`, display: "flex", alignItems: "center", gap: 10 }}>
+                                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={css.success} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
+                                        <polyline points="22 4 12 14.01 9 11.01" />
+                                      </svg>
+                                      <div style={{ flex: 1 }}>
+                                        <span style={{ fontSize: 12, fontWeight: 600, color: css.success }}>
+                                          {rule.source === "card" ? rule.cardName : `${rule.airlineName} ${rule.tier}`}
+                                        </span>
+                                        <span style={{ fontSize: 11, color: css.text3, marginLeft: 8 }}>{rule.guestNote}</span>
+                                        {rule.condition && <span style={{ fontSize: 10, color: css.warning, marginLeft: 6 }}>(Conditional)</span>}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Log visit button */}
+                            <div style={{ marginTop: 16, display: "flex", gap: 8 }}>
+                              <button onClick={(e) => { e.stopPropagation(); saveLoungeVisit({ loungeId: lounge.id, loungeName: lounge.name, airport: loungeAirport, date: new Date().toISOString().split("T")[0], network: lounge.network }); }} style={{
+                                padding: "8px 16px", borderRadius: 8, border: `1px solid ${css.accentBorder}`,
+                                background: css.accentBg, color: css.accent, fontSize: 12, fontWeight: 600,
+                                cursor: "pointer",
+                              }}>Log Visit</button>
+                              {lounge.placeQuery && (
+                                <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lounge.placeQuery)}`} target="_blank" rel="noopener noreferrer" style={{
+                                  padding: "8px 16px", borderRadius: 8, border: `1px solid ${css.border}`,
+                                  background: css.surface, color: css.text2, fontSize: 12, fontWeight: 600,
+                                  textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4,
+                                }}>
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                  Google Maps
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              );
+            })()}
+
+            {/* Empty state */}
+            {!loungeAirport && (
+              <div style={{ textAlign: "center", padding: "60px 20px", color: css.text3 }}>
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke={css.text3} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.4, marginBottom: 16 }}>
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+                  <circle cx="12" cy="10" r="3" />
+                </svg>
+                <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 4 }}>Search for an airport</div>
+                <div style={{ fontSize: 13 }}>Search for an airport by name or IATA code above to browse lounges</div>
+              </div>
+            )}
+          </div>
+      </div>
+    );
+  };
+
+  // ============================================================
   // NAV CONFIG
   // ============================================================
   // SVG icon components for sidebar — clean, minimal stroke icons
@@ -9975,16 +12063,18 @@ Start by introducing yourself briefly in-character with personality, and give an
     { id: "dashboard", label: "Dashboard", icon: <NavIcon d={<><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="4" rx="1"/><rect x="14" y="11" width="7" height="10" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></>} /> },
     { id: "trips", label: "Trips", icon: <NavIcon d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1L11 12l-2 3H6l-2 2 4-1 4-1 2 7.5 2-2v-3l-3-2 4.8-7.3" /> },
     { id: "expensereports", label: "Expenses", icon: <NavIcon d={<><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></>} /> },
+    { id: "programs", label: "Programs", icon: <NavIcon d={<><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></>} /> },
+    { id: "lounges", label: "Lounges", icon: <NavIcon d={<><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></>} /> },
   ];
 
-  const viewRenderers = { dashboard: renderDashboard, programs: renderPrograms, trips: renderTrips, expensereports: renderExpenseReports, expenses: renderExpenses, optimizer: renderOptimizer, insights: renderInsights, reports: renderReports, alliances: renderAlliances, news: renderNews, premium: renderPremium };
+  const viewRenderers = { dashboard: renderDashboard, programs: renderPrograms, trips: renderTrips, expensereports: renderExpenseReports, expenses: renderExpenses, optimizer: renderOptimizer, insights: renderInsights, reports: renderReports, alliances: renderAlliances, news: renderNews, premium: renderPremium, lounges: renderLounges };
 
   // ============================================================
   // MAIN LAYOUT — Warm Editorial Design System
   // ============================================================
   const D = darkMode;
   const css = {
-    bg: D ? "#0f0f0f" : "#f7f7f7",
+    bg: D ? "#0f0f0f" : "#ffffff",
     surface: D ? "#1a1a1a" : "#ffffff",
     surface2: D ? "#222222" : "#f2f2f2",
     surface3: D ? "#2a2a2a" : "#e8e8e8",
@@ -10118,6 +12208,7 @@ Start by introducing yourself briefly in-character with personality, and give an
         input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         input[type=number] { -moz-appearance: textfield; }
         @keyframes c-pulse { 0%,100% { opacity:0.6; transform:scale(1); } 50% { opacity:1; transform:scale(1.2); } }
+        @keyframes c-shimmer { 0% { background-position:200% 0; } 100% { background-position:-200% 0; } }
         .c-a1 { animation: c-fade-up 0.45s ease 0.05s backwards; }
         .c-a2 { animation: c-fade-up 0.45s ease 0.1s backwards; }
         .c-a3 { animation: c-fade-up 0.45s ease 0.15s backwards; }
@@ -10151,81 +12242,45 @@ Start by introducing yourself briefly in-character with personality, and give an
             <button onClick={openSettings} style={{ width: 34, height: 34, borderRadius: "50%", border: `1px solid ${css.border}`, background: "transparent", color: css.text3, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <NavIcon d={<><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></>} size={16} />
             </button>
-            <div onClick={handleLogout} title="Sign out" style={{ width: 34, height: 34, borderRadius: "50%", flexShrink: 0, cursor: "pointer", background: `linear-gradient(135deg, ${css.accent}, #C9A84C)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff" }}>
+            <div onClick={openSettings} title="Settings" style={{ width: 34, height: 34, borderRadius: "50%", flexShrink: 0, cursor: "pointer", background: `linear-gradient(135deg, ${css.accent}, #C9A84C)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff" }}>
               {(user?.user_metadata?.first_name?.[0] || user?.user_metadata?.name?.[0] || "U").toUpperCase()}
             </div>
           </div>
         </div>
       </header>
 
-      {/* ── Fixed background image (dashboard only) ── */}
-      {activeView === "dashboard" && (
-        <div style={{ position: "fixed", inset: 0, zIndex: -1, pointerEvents: "none" }}>
-          <div style={{ position: "absolute", inset: 0, backgroundImage: "url('https://images.unsplash.com/photo-1506929562872-bb421503ef21?w=1920&q=85&auto=format&fit=crop')", backgroundSize: "cover", backgroundPosition: "center 30%", backgroundAttachment: "fixed" }} />
-          <div style={{ position: "absolute", inset: 0, background: D
-            ? "linear-gradient(180deg, rgba(15,15,15,0.4) 0%, rgba(15,15,15,0.85) 30%, rgba(15,15,15,0.97) 60%)"
-            : "linear-gradient(180deg, rgba(247,247,247,0.3) 0%, rgba(247,247,247,0.8) 25%, rgba(247,247,247,0.96) 50%, rgba(247,247,247,1) 70%)"
-          }} />
-        </div>
-      )}
+      {/* Background image removed — hero image is now inline in dashboard */}
 
-      {/* ── Sub-navigation bar (dashboard) ── */}
-      {activeView === "dashboard" && (
-        <div style={{ borderBottom: `1px solid ${css.border}`, background: css.surface, flexShrink: 0 }}>
-          <div style={{ maxWidth: 1600, margin: "0 auto", display: "flex", alignItems: "center", padding: isMobile ? "0 8px" : "0 32px", gap: 0, overflowX: "auto" }}>
-            {[{ id: "overview", label: "Overview", icon: <NavIcon d={<><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="4" rx="1"/><rect x="14" y="11" width="7" height="10" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></>} size={18} /> },
-              { id: "timeline", label: "Timeline", icon: <NavIcon d={<><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></>} size={18} /> },
-              { id: "reports", label: "Reports", icon: <NavIcon d={<><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></>} size={18} /> },
-              { id: "activity", label: "Activity", icon: <NavIcon d={<><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></>} size={18} /> },
-            ].map(tab => {
-              const isActive = dashSubTab === tab.id;
-              return (
-                <button key={tab.id} onClick={() => setDashSubTab(tab.id)} style={{
-                  display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
-                  padding: isMobile ? "10px 16px" : "12px 24px", border: "none", cursor: "pointer",
-                  background: "transparent", color: isActive ? css.text : css.text3,
-                  fontSize: 12, fontWeight: isActive ? 600 : 400, position: "relative", transition: "color 0.15s",
-                  borderBottom: isActive ? `2px solid ${css.accent}` : "2px solid transparent",
-                  marginBottom: -1, whiteSpace: "nowrap",
-                }}>
-                  <span style={{ opacity: isActive ? 1 : 0.5 }}>{tab.icon}</span>
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      {/* Sub-nav tabs moved into dashboard content area */}
 
       {/* ── Main Content ── */}
       <main style={{ flex: 1, overflowY: "auto", position: "relative" }}>
-        <div style={{ maxWidth: 1400, margin: "0 auto", padding: isMobile ? "20px 16px 120px" : "32px 48px 120px" }}>
+        <div style={{ maxWidth: 1400, margin: "0 auto", padding: isMobile ? "20px 16px 80px" : "32px 48px 80px" }}>
           {viewRenderers[activeView]?.()}
         </div>
       </main>
 
-      {/* ── Floating Bottom Navigation Bar ── */}
+      {/* ── Bottom Navigation Bar (full-width) ── */}
       <div style={{
-        position: "fixed", bottom: isMobile ? 16 : 20, left: "50%", transform: "translateX(-50%)", zIndex: 150,
-        background: D ? "rgba(20,20,20,0.92)" : "rgba(255,255,255,0.92)",
+        position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 150,
+        background: D ? "rgba(20,20,20,0.97)" : "rgba(255,255,255,0.97)",
         backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
-        borderRadius: 50, border: `1px solid ${D ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)"}`,
-        display: "flex", alignItems: "stretch",
-        boxShadow: D ? "0 4px 24px rgba(0,0,0,0.5)" : "0 4px 24px rgba(0,0,0,0.12)",
-        padding: "4px 8px",
+        borderTop: `1px solid ${css.border}`,
+        display: "flex", alignItems: "stretch", justifyContent: "center",
+        paddingBottom: "env(safe-area-inset-bottom)",
       }}>
         {navItems.map(item => {
           const isActive = activeView === item.id;
           return (
-            <button key={item.id} onClick={() => setActiveView(item.id)} style={{
+            <button key={item.id} onClick={() => { setActiveView(item.id); if (item.id === "dashboard") setDashSubTab("overview"); }} style={{
               display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-              gap: 2, padding: isMobile ? "8px 16px" : "8px 24px", border: "none", cursor: "pointer",
-              background: isActive ? (D ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.06)") : "transparent",
-              borderRadius: 40, color: isActive ? css.accent : css.text3,
-              transition: "all 0.15s",
+              gap: 2, padding: isMobile ? "8px 0" : "10px 0", border: "none", cursor: "pointer",
+              background: "transparent", flex: 1, maxWidth: 120,
+              color: isActive ? css.accent : css.text3,
+              transition: "all 0.15s", fontFamily: "inherit",
             }}>
               <span style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>{item.icon}</span>
-              <span style={{ fontSize: 9, fontWeight: isActive ? 600 : 400 }}>
+              <span style={{ fontSize: 10, fontWeight: isActive ? 600 : 400 }}>
                 {item.label === "Expense Reports" ? "Expenses" : item.label}
               </span>
             </button>
@@ -10236,6 +12291,145 @@ Start by introducing yourself briefly in-character with personality, and give an
             {/* ============================================================ */}
       {/* MODALS */}
       {/* ============================================================ */}
+
+      {/* ── Receipt Crop Modal ── */}
+      {cropExpenseId && (() => {
+        const exp = expenses.find(e => e.id === cropExpenseId);
+        if (!exp?.receiptImage?.data) return null;
+
+        const getPos = (clientX, clientY) => {
+          const container = cropContainerRef.current;
+          const img = cropImgRef.current;
+          if (!container || !img) return { x: 0, y: 0 };
+          const containerRect = container.getBoundingClientRect();
+          const x = clientX - containerRect.left + container.scrollLeft;
+          const y = clientY - containerRect.top + container.scrollTop;
+          return { x: Math.max(0, Math.min(x, img.offsetWidth)), y: Math.max(0, Math.min(y, img.offsetHeight)) };
+        };
+
+        // Simple edge scroll — nudge container a small fixed amount when near edges
+        const edgeScroll = (clientY) => {
+          const container = cropContainerRef.current;
+          if (!container) return;
+          const rect = container.getBoundingClientRect();
+          const edgeZone = 50;
+          if (clientY > rect.bottom - edgeZone) {
+            container.scrollTop += 4;
+          } else if (clientY < rect.top + edgeZone) {
+            container.scrollTop -= 4;
+          }
+        };
+
+        const handleMouseDown = (e) => {
+          const pos = getPos(e.clientX, e.clientY);
+          setCropStart(pos);
+          setCropEnd(pos);
+          setCropDragging(true);
+          e.preventDefault();
+        };
+        const handleMouseMove = (e) => {
+          if (!cropDragging) return;
+          setCropEnd(getPos(e.clientX, e.clientY));
+          edgeScroll(e.clientY);
+        };
+        const handleMouseUp = () => { setCropDragging(false); };
+        const handleTouchStart = (e) => { const t = e.touches[0]; const pos = getPos(t.clientX, t.clientY); setCropStart(pos); setCropEnd(pos); setCropDragging(true); e.preventDefault(); };
+        const handleTouchMove = (e) => { if (!cropDragging) return; const t = e.touches[0]; setCropEnd(getPos(t.clientX, t.clientY)); edgeScroll(t.clientY); };
+        const handleTouchEnd = () => { setCropDragging(false); };
+
+        const saveCrop = async () => {
+          if (!cropStart || !cropEnd || !cropImgRef.current) return;
+          const img = cropImgRef.current;
+          const scaleX = img.naturalWidth / img.offsetWidth;
+          const scaleY = img.naturalHeight / img.offsetHeight;
+          const sx = Math.min(cropStart.x, cropEnd.x) * scaleX;
+          const sy = Math.min(cropStart.y, cropEnd.y) * scaleY;
+          const sw = Math.abs(cropEnd.x - cropStart.x) * scaleX;
+          const sh = Math.abs(cropEnd.y - cropStart.y) * scaleY;
+          if (sw < 10 || sh < 10) return;
+          const canvas = document.createElement("canvas");
+          canvas.width = sw; canvas.height = sh;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
+          // Use lower quality JPEG to reduce size for Supabase storage
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+          const croppedImage = { name: `cropped-receipt-${Date.now()}.jpg`, size: dataUrl.length, type: "image/jpeg", data: dataUrl };
+          // Update local state immediately
+          setExpenses(prev => prev.map(e => e.id === cropExpenseId ? { ...e, receipt: true, receiptImage: croppedImage } : e));
+          // Save to Supabase and wait for confirmation
+          if (user) {
+            const { error } = await supabase.from("expenses").update({ receipt: true, receipt_image: croppedImage }).eq("id", cropExpenseId).eq("user_id", user.id);
+            if (error) console.error("Failed to save cropped receipt:", error.message);
+          }
+          setCropExpenseId(null);
+        };
+
+        const cropRect = cropStart && cropEnd ? {
+          left: Math.min(cropStart.x, cropEnd.x),
+          top: Math.min(cropStart.y, cropEnd.y),
+          width: Math.abs(cropEnd.x - cropStart.x),
+          height: Math.abs(cropEnd.y - cropStart.y),
+        } : null;
+
+        return (
+          <div style={{ position: "fixed", inset: 0, zIndex: 9500, background: "rgba(0,0,0,0.85)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 20 }}>
+            <div style={{ background: css.surface, borderRadius: 14, padding: "20px", maxWidth: 700, width: "100%", maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: css.text }}>Crop Receipt</div>
+                <button onClick={() => setCropExpenseId(null)} style={{ width: 32, height: 32, border: "none", background: "transparent", color: css.text3, fontSize: 18, cursor: "pointer" }}>x</button>
+              </div>
+              <p style={{ fontSize: 12, color: css.text3, marginBottom: 12 }}>Click and drag to select the area you want to keep, then click Save.</p>
+              <div ref={cropContainerRef} style={{ position: "relative", overflow: "auto", flex: 1, cursor: "crosshair", userSelect: "none", WebkitUserSelect: "none", touchAction: "none", WebkitTouchCallout: "none" }}
+                onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}
+                onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
+                <img ref={cropImgRef} src={exp.receiptImage.data} alt="Receipt" style={{ width: "100%", height: "auto", display: "block", pointerEvents: "none" }} crossOrigin="anonymous" />
+                {/* Darkened overlay outside crop area */}
+                {cropRect && cropRect.width > 5 && cropRect.height > 5 && (
+                  <>
+                    <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: cropRect.top, background: "rgba(0,0,0,0.5)" }} />
+                    <div style={{ position: "absolute", top: cropRect.top, left: 0, width: cropRect.left, height: cropRect.height, background: "rgba(0,0,0,0.5)" }} />
+                    <div style={{ position: "absolute", top: cropRect.top, left: cropRect.left + cropRect.width, right: 0, height: cropRect.height, background: "rgba(0,0,0,0.5)" }} />
+                    <div style={{ position: "absolute", top: cropRect.top + cropRect.height, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.5)" }} />
+                    <div style={{ position: "absolute", top: cropRect.top, left: cropRect.left, width: cropRect.width, height: cropRect.height, border: "2px dashed #fff", boxSizing: "border-box" }} />
+                  </>
+                )}
+              </div>
+              <div style={{ display: "flex", gap: 10, marginTop: 14, justifyContent: "flex-end" }}>
+                <button onClick={() => { setCropStart(null); setCropEnd(null); }} style={{ padding: "9px 18px", borderRadius: 8, border: `1px solid ${css.border}`, background: "transparent", color: css.text2, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Reset</button>
+                <button onClick={() => setCropExpenseId(null)} style={{ padding: "9px 18px", borderRadius: 8, border: `1px solid ${css.border}`, background: "transparent", color: css.text2, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
+                <button onClick={saveCrop} disabled={!cropRect || cropRect.width < 10 || cropRect.height < 10} style={{ padding: "9px 18px", borderRadius: 8, border: "none", background: (cropRect && cropRect.width >= 10) ? css.accent : css.surface2, color: (cropRect && cropRect.width >= 10) ? "#fff" : css.text3, fontSize: 13, fontWeight: 700, cursor: (cropRect && cropRect.width >= 10) ? "pointer" : "default" }}>Save Crop</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── Receipt QR Code Modal ── */}
+      {showReceiptQR && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+          onClick={() => setShowReceiptQR(false)}>
+          <div onClick={e => e.stopPropagation()} style={{
+            width: "100%", maxWidth: 380, background: D ? "#141414" : "#fff", borderRadius: 20,
+            border: `1px solid ${D ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"}`, padding: "32px 24px", textAlign: "center",
+          }}>
+            <button onClick={() => setShowReceiptQR(false)} style={{ position: "absolute", top: 16, right: 16, width: 32, height: 32, border: "none", background: "transparent", color: css.text3, fontSize: 20, cursor: "pointer" }}>x</button>
+            <div style={{ fontSize: 18, fontWeight: 700, color: css.text, marginBottom: 8 }}>Receipt QR Code</div>
+            <p style={{ fontSize: 13, color: css.text3, marginBottom: 20, lineHeight: 1.5 }}>Show this to your server. They scan it, enter the receipt details, and it appears in your Expense Inbox automatically.</p>
+            {receiptQRDataUrl ? (
+              <img src={receiptQRDataUrl} alt="Receipt QR Code" style={{ width: 240, height: 240, display: "block", margin: "0 auto 16px", borderRadius: 12, background: "#fff" }} />
+            ) : userForwardingAddress ? (
+              <div style={{ width: 240, height: 240, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", background: css.surface2, borderRadius: 12 }}>
+                <span style={{ fontSize: 13, color: css.text3 }}>Generating...</span>
+              </div>
+            ) : (
+              <div style={{ width: 240, height: 240, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", background: css.surface2, borderRadius: 12 }}>
+                <span style={{ fontSize: 13, color: css.text3 }}>Loading account info...</span>
+              </div>
+            )}
+            <p style={{ fontSize: 11, color: css.text3 }}>The QR code links to a simple form — no app or account needed for the server.</p>
+          </div>
+        </div>
+      )}
 
       {/* ── Create Trip Modal (simplified) ── */}
       {showCreateTrip && (
@@ -10422,7 +12616,28 @@ Start by introducing yourself briefly in-character with personality, and give an
                           </button>
                         </div>
                       </div>
-                      {leg.lookupMsg && <div style={{ fontSize: 10, color: leg.lookupMsg.startsWith("Found") ? css.success : css.text3, fontFamily: "'Geist Mono', monospace", marginBottom: 8 }}>{leg.lookupMsg}</div>}
+                      {leg.lookupMsg && <div style={{ fontSize: 10, color: leg.lookupMsg.startsWith("Selected") || leg.lookupMsg.startsWith("Found") ? css.success : leg.lookupMsg.includes("routes found") ? css.accent : css.text3, fontFamily: "'Geist Mono', monospace", marginBottom: 8 }}>{leg.lookupMsg}</div>}
+                      {/* Route selector when multiple routes found */}
+                      {flightRouteOptions[legIdx] && (
+                        <div style={{ marginBottom: 10, display: "flex", flexDirection: "column", gap: 6 }}>
+                          {flightRouteOptions[legIdx].map((opt, oi) => (
+                            <button key={oi} onClick={() => applyFlightRouteOption(legIndex, opt)} style={{
+                              display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
+                              padding: "10px 14px", borderRadius: 8, border: `1px solid ${css.border}`,
+                              background: css.surface, cursor: "pointer", fontFamily: "inherit", textAlign: "left",
+                              transition: "all 0.15s",
+                            }}
+                              onMouseEnter={e => { e.currentTarget.style.borderColor = css.accent; e.currentTarget.style.background = css.accentBg; }}
+                              onMouseLeave={e => { e.currentTarget.style.borderColor = css.border; e.currentTarget.style.background = css.surface; }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                <span style={{ fontSize: 14, fontWeight: 700, color: css.text, fontFamily: "'Geist Mono', monospace" }}>{opt.dep} → {opt.arr}</span>
+                                {opt.depTime && <span style={{ fontSize: 11, color: css.text3 }}>{opt.depTime} — {opt.arrTime}</span>}
+                              </div>
+                              {opt.aircraft && <span style={{ fontSize: 10, color: css.text3 }}>{opt.aircraft}</span>}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                       {/* Times + Terminals + Arrival Date */}
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 6, marginBottom: 6 }}>
                         {[
@@ -10737,7 +12952,7 @@ Start by introducing yourself briefly in-character with personality, and give an
       {/* ── Trip Summary Popup (from Dashboard) ── */}
       {tripSummaryId && (() => {
         const trip = trips.find(t => t.id === tripSummaryId);
-        if (!trip) { setTripSummaryId(null); return null; }
+        if (!trip) return null;
         const allSegs = (trip.segments && trip.segments.length > 0) ? trip.segments : [{ ...trip, type: trip.type || "flight" }];
         const flightSegs = allSegs.filter(s => s.type === "flight");
         const hotelSegs = allSegs.filter(s => s.type === "hotel");
@@ -10933,6 +13148,53 @@ Start by introducing yourself briefly in-character with personality, and give an
                     <button onClick={saveProfile} disabled={settingsSaving} style={{ padding: "9px 20px", borderRadius: 6, border: "none", background: css.accent, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", opacity: settingsSaving ? 0.7 : 1, fontFamily: "Inter, sans-serif" }}>
                       {settingsSaving ? "Saving..." : "Save Name"}
                     </button>
+
+                    {/* Authorized Forwarding Emails */}
+                    <div style={{ ...sectionHead, marginTop: 28 }}>Forwarding Emails</div>
+                    <p style={{ fontSize: 11, color: css.text3, marginBottom: 12, lineHeight: 1.5, fontFamily: "Inter, sans-serif" }}>
+                      Add email addresses that can forward booking confirmations and expense receipts to your Continuum inbox. Forward to: <strong style={{ color: css.accent, fontFamily: "'Geist Mono', monospace" }}>{userForwardingAddress}@trips.gocontinuum.app</strong>
+                    </p>
+                    <div style={{ marginBottom: 12 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", background: D ? "#13111C" : "#f4f4f8", borderRadius: 6, marginBottom: 6 }}>
+                        <span style={{ fontSize: 12, color: css.text, fontFamily: "Inter, sans-serif", flex: 1 }}>{user?.email}</span>
+                        <span style={{ fontSize: 9, color: css.success, fontWeight: 700, textTransform: "uppercase" }}>Primary</span>
+                      </div>
+                      {(settingsForm.additionalEmails || []).map((email, idx) => (
+                        <div key={idx} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", background: D ? "#13111C" : "#f4f4f8", borderRadius: 6, marginBottom: 6 }}>
+                          <span style={{ fontSize: 12, color: css.text, fontFamily: "Inter, sans-serif", flex: 1 }}>{email}</span>
+                          <button onClick={async () => {
+                            const updated = (settingsForm.additionalEmails || []).filter((_, i) => i !== idx);
+                            setSettingsForm(f => ({ ...f, additionalEmails: updated }));
+                            if (user) {
+                              await supabase.from("user_forwarding_addresses").delete().eq("user_id", user.id).eq("email", email).neq("forwarding_address", userForwardingAddress);
+                            }
+                            setSettingsMsg({ type: "success", text: `Removed ${email}` });
+                          }} style={{ border: "none", background: "transparent", color: "#ef4444", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>Remove</button>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <input id="add-fwd-email" type="email" placeholder="Add another email..." style={{ ...sf, flex: 1, marginTop: 0 }} />
+                      <button onClick={async () => {
+                        const input = document.getElementById("add-fwd-email");
+                        const email = input?.value?.trim().toLowerCase();
+                        if (!email || !email.includes("@")) { setSettingsMsg({ type: "error", text: "Enter a valid email" }); return; }
+                        if (email === user?.email?.toLowerCase()) { setSettingsMsg({ type: "error", text: "This is already your primary email" }); return; }
+                        if ((settingsForm.additionalEmails || []).includes(email)) { setSettingsMsg({ type: "error", text: "Email already added" }); return; }
+                        // Save to Supabase — create a new forwarding address entry pointing to the same user
+                        if (user) {
+                          await supabase.from("user_forwarding_addresses").upsert({
+                            user_id: user.id,
+                            email: email,
+                            forwarding_address: userForwardingAddress, // Same token — routes to same inbox
+                            verified: true,
+                          }, { onConflict: "user_id,email" });
+                        }
+                        setSettingsForm(f => ({ ...f, additionalEmails: [...(f.additionalEmails || []), email] }));
+                        if (input) input.value = "";
+                        setSettingsMsg({ type: "success", text: `Added ${email} — forwards will now be received` });
+                      }} style={{ padding: "9px 16px", borderRadius: 6, border: "none", background: css.accent, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "Inter, sans-serif", flexShrink: 0 }}>Add</button>
+                    </div>
                   </div>
                 )}
 
@@ -11808,7 +14070,7 @@ Start by introducing yourself briefly in-character with personality, and give an
       {/* Expense Detail View Modal */}
       {viewExpenseId && (() => {
         const exp = expenses.find(e => e.id === viewExpenseId);
-        if (!exp) { setViewExpenseId(null); return null; }
+        if (!exp) return null;
         const cat = EXPENSE_CATEGORIES.find(c => c.id === exp.category);
         const trip = trips.find(t => t.id === exp.tripId);
         const rows = [
@@ -11847,12 +14109,48 @@ Start by introducing yourself briefly in-character with personality, and give an
                 <div style={{ marginTop: 20 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Receipt</div>
                   {exp.receiptImage.type?.startsWith("image/") ? (
-                    <img src={exp.receiptImage.data} alt="Receipt" style={{ width: "100%", maxHeight: 500, objectFit: "contain", border: `1px solid ${css.border}`, background: D ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)" }} />
+                    <div>
+                      <img src={exp.receiptImage.data} alt="Receipt" style={{ width: "100%", maxHeight: 500, objectFit: "contain", border: `1px solid ${css.border}`, background: D ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)" }} />
+                      <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                        <button onClick={() => { setCropExpenseId(exp.id); setCropStart(null); setCropEnd(null); }} style={{ padding: "6px 14px", borderRadius: 6, border: `1px solid ${css.border}`, background: "transparent", color: css.text2, fontSize: 11, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2v14a2 2 0 002 2h14"/><path d="M18 22V8a2 2 0 00-2-2H2"/></svg>
+                          Crop
+                        </button>
+                      </div>
+                    </div>
                   ) : exp.receiptImage.type === "application/pdf" ? (
                     <div style={{ padding: "20px", border: `1px solid ${css.border}`, background: D ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)", textAlign: "center" }}>
                       <div style={{ fontSize: 13, fontWeight: 600, color: css.text2, marginBottom: 8 }}>{exp.receiptImage.name}</div>
                       <div style={{ fontSize: 11, color: css.text3 }}>{(exp.receiptImage.size / 1024).toFixed(0)} KB · PDF</div>
                       <a href={exp.receiptImage.data} download={exp.receiptImage.name} style={{ display: "inline-block", marginTop: 10, padding: "8px 16px", border: `1px solid ${css.accent}`, color: css.accent, fontSize: 11, fontWeight: 700, textDecoration: "none", cursor: "pointer" }}>Download PDF</a>
+                    </div>
+                  ) : exp.receiptImage.type === "text/html" ? (
+                    <div style={{ border: `1px solid ${css.border}`, borderRadius: 8, overflow: "hidden", background: "#fff" }}>
+                      <iframe id={`receipt-iframe-${exp.id}`} srcDoc={exp.receiptImage.data?.startsWith("data:") ? atob(exp.receiptImage.data.split(",")[1] || "") : exp.receiptImage.data} style={{ width: "100%", height: 500, border: "none" }} title="Receipt" sandbox="allow-same-origin" />
+                      <div style={{ padding: "8px 12px", borderTop: `1px solid ${css.border}`, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 11, color: css.text3 }}>Email Receipt</span>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <button onClick={async () => {
+                            // Auto-convert HTML to image and open crop
+                            try {
+                              const iframe = document.getElementById(`receipt-iframe-${exp.id}`);
+                              if (!iframe?.contentDocument?.body) return;
+                              const html2canvas = (await import("html2canvas")).default;
+                              const canvas = await html2canvas(iframe.contentDocument.body, { useCORS: true, scale: 2, width: iframe.contentDocument.body.scrollWidth, height: iframe.contentDocument.body.scrollHeight, windowWidth: iframe.contentDocument.body.scrollWidth });
+                              const dataUrl = canvas.toDataURL("image/png", 0.92);
+                              const newImg = { name: `receipt-${Date.now()}.png`, size: dataUrl.length, type: "image/png", data: dataUrl };
+                              setExpenses(prev => prev.map(ex => ex.id === exp.id ? { ...ex, receiptImage: newImg } : ex));
+                              if (user) supabase.from("expenses").update({ receipt_image: newImg }).eq("id", exp.id).eq("user_id", user.id);
+                              // Open crop modal
+                              setTimeout(() => { setCropExpenseId(exp.id); setCropStart(null); setCropEnd(null); }, 100);
+                            } catch (e) { console.error("Screenshot failed:", e); }
+                          }} style={{ padding: "4px 12px", borderRadius: 4, border: `1px solid ${css.border}`, background: "transparent", color: css.text2, fontSize: 10, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2v14a2 2 0 002 2h14"/><path d="M18 22V8a2 2 0 00-2-2H2"/></svg>
+                            Crop
+                          </button>
+                          <button onClick={() => { const w = window.open("", "_blank"); if (w) { w.document.write(exp.receiptImage.data?.startsWith("data:") ? atob(exp.receiptImage.data.split(",")[1] || "") : ""); w.document.close(); } }} style={{ padding: "4px 12px", borderRadius: 4, border: `1px solid ${css.accent}`, background: "transparent", color: css.accent, fontSize: 10, fontWeight: 600, cursor: "pointer" }}>Open Full Size</button>
+                        </div>
+                      </div>
                     </div>
                   ) : (
                     <div style={{ padding: "16px", border: `1px solid ${css.border}`, fontSize: 12, color: css.text3 }}>
@@ -11866,6 +14164,24 @@ Start by introducing yourself briefly in-character with personality, and give an
                   <span style={{ fontSize: 12, color: css.text3 }}>No receipt attached</span>
                 </div>
               )}
+
+              {/* Transfer to trip */}
+              <div style={{ marginTop: 20 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>
+                  {exp.tripId ? "Transfer to Another Trip" : "Assign to Trip"}
+                </div>
+                <select onChange={async e => {
+                  const newTripId = e.target.value; if (!newTripId) return;
+                  const actualTripId = newTripId === "_unassign" ? null : newTripId;
+                  if (user) await supabase.from("expenses").update({ trip_id: actualTripId }).eq("id", exp.id).eq("user_id", user.id);
+                  setExpenses(prev => prev.map(ex => ex.id === exp.id ? { ...ex, tripId: actualTripId } : ex));
+                  e.target.value = "";
+                }} style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: `1px solid ${css.border}`, background: css.surface2, color: css.text, fontSize: 13, fontFamily: "inherit", cursor: "pointer" }}>
+                  <option value="">{exp.tripId ? `Currently: ${trip?.tripName || trip?.location || "Trip"}` : "Select a trip..."}</option>
+                  {exp.tripId && <option value="_unassign">Unassign (back to inbox)</option>}
+                  {trips.filter(t => t.id !== exp.tripId).map(t => <option key={t.id} value={t.id}>{t.tripName || t.trip_name || t.location || "Trip"}</option>)}
+                </select>
+              </div>
 
               {/* Actions */}
               <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
@@ -11980,15 +14296,54 @@ Start by introducing yourself briefly in-character with personality, and give an
               <input value={newExpense.notes} onChange={e => setNewExpense(p => ({ ...p, notes: e.target.value }))} placeholder="Business purpose, attendees, etc." style={eInp} />
             </div>
 
-            {/* Receipt Upload / Camera */}
-            <div style={{ marginBottom: 20 }}>
+            {/* Receipt Upload / Camera / Paste */}
+            <div style={{ marginBottom: 20 }} onPaste={e => {
+              const items = e.clipboardData?.items;
+              if (!items) return;
+              for (const item of items) {
+                if (item.type.startsWith("image/")) {
+                  e.preventDefault();
+                  const file = item.getAsFile();
+                  if (!file) return;
+                  const reader = new FileReader();
+                  reader.onload = (ev) => setNewExpense(p => ({ ...p, receipt: true, receiptImage: { name: `pasted-receipt-${Date.now()}.png`, size: file.size, type: file.type, data: ev.target.result } }));
+                  reader.readAsDataURL(file);
+                  return;
+                }
+              }
+            }}>
               <span style={{ ...eLbl, marginBottom: 8 }}>Receipt</span>
-              
+
               {!newExpense.receiptImage ? (
-                <div style={{ display: "flex", gap: 10 }}>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  {/* Paste from clipboard */}
+                  <div onClick={() => {
+                    navigator.clipboard?.read?.().then(items => {
+                      for (const item of items) {
+                        const imageType = item.types.find(t => t.startsWith("image/"));
+                        if (imageType) {
+                          item.getType(imageType).then(blob => {
+                            const reader = new FileReader();
+                            reader.onload = (ev) => setNewExpense(p => ({ ...p, receipt: true, receiptImage: { name: `pasted-receipt-${Date.now()}.png`, size: blob.size, type: blob.type, data: ev.target.result } }));
+                            reader.readAsDataURL(blob);
+                          });
+                          return;
+                        }
+                      }
+                    }).catch(() => {});
+                  }} tabIndex={0} style={{
+                    flex: 1, minWidth: 80, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
+                    padding: "18px 12px", border: `2px dashed ${css.accent}30`, background: `${css.accent}08`,
+                    cursor: "pointer", transition: "all 0.2s",
+                  }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={css.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: css.accent }}>Paste</span>
+                    <span style={{ fontSize: 9, color: css.text3 }}>Ctrl+V / Cmd+V</span>
+                  </div>
+
                   {/* Upload file button */}
                   <label style={{
-                    flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
+                    flex: 1, minWidth: 80, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
                     padding: "18px 12px", border: `2px dashed ${css.accent}30`, background: `${css.accent}08`,
                     cursor: "pointer", transition: "all 0.2s",
                   }}>
