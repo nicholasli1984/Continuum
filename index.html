@@ -50,6 +50,17 @@
   <body>
     <div id="root"></div>
     <script>
+      // Validate localStorage JSON — corrupted data crashes React before mounting
+      (function() {
+        var keys = ["continuum_visa_cache","continuum_packing_lists","continuum_custom_pack_items",
+          "continuum_lounge_visits","continuum_card_benefit_values","continuum_card_custom_benefits",
+          "continuum_expenses_guest"];
+        keys.forEach(function(k) {
+          try { var v = localStorage.getItem(k); if (v) JSON.parse(v); }
+          catch(e) { localStorage.removeItem(k); }
+        });
+      })();
+
       // Cache management: purge stale SW caches, reload once if needed.
       // Uses two localStorage keys to prevent infinite reload loops.
       (function() {
