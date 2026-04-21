@@ -4804,7 +4804,6 @@ Start by introducing yourself briefly in-character with personality, and give an
 
   const pastTripsFiltered = filteredTrips.filter(t => { const end = getTripEndDate(t); return end && end < todayStr; }).sort((a, b) => (b.date || "").localeCompare(a.date || ""));
 
-  const renderDashboard = () => {
   const renderDashboard = () => renderDashboardPage({
     css, isMobile, user, trips, expenses, sharedTrips, darkMode,
     dashSubTab, setDashSubTab, savedItineraries, setSavedItineraries,
