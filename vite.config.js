@@ -1,3 +1,4 @@
+// Continuum build config — updated 2026-04-21
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
@@ -12,8 +13,8 @@ export default defineConfig({
         name: 'Continuum — Elite Status Intelligence',
         short_name: 'Continuum',
         description: 'Track your airline, hotel, and rental car elite status across every loyalty program.',
-        theme_color: '#0D0B10',
-        background_color: '#0D0B10',
+        theme_color: '#ffffff',
+        background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait',
         scope: '/',
@@ -35,8 +36,19 @@ export default defineConfig({
         },
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        skipWaiting: true,
+        clientsClaim: true,
+        importScripts: ['/push-sw.js'],
+        globPatterns: ['**/*.{js,css,ico,png,svg,woff2}'],
+        // index.html is NOT precached — served via NetworkFirst runtime route
+        // so new deploys always propagate immediately
+        navigateFallback: null,
         runtimeCaching: [
+          {
+            urlPattern: ({ request }) => request.mode === 'navigate',
+            handler: 'NetworkFirst',
+            options: { cacheName: 'html-cache', expiration: { maxEntries: 1, maxAgeSeconds: 3600 }, networkTimeoutSeconds: 3 },
+          },
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: 'CacheFirst',
