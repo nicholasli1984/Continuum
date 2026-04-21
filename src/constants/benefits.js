@@ -1,5 +1,8 @@
 // Alliance benefits comparison data
 
+// Helper used by HOME_BENEFITS and RECIP_BENEFITS
+const _b = (v, d, ok) => ({ v, d, ok: !!ok });
+
 export const ALLIANCE_MBR = {
   ua:           { alliance:"star",     color:"#002244", tierMap:{ Silver:"sa_silver", Gold:"sa_gold", Platinum:"sa_gold", "1K":"sa_gold" }},
   aeroplan:     { alliance:"star",     color:"#F01428", tierMap:{ "25K":"sa_silver","35K":"sa_gold","50K":"sa_gold","75K":"sa_gold","100K":"sa_gold" }},
