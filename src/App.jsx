@@ -4825,6 +4825,32 @@ Start by introducing yourself briefly in-character with personality, and give an
     lp: { ...css, bg: css.bg, surface: css.surface, surface2: css.surface2, border: css.border, border2: darkMode ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.12)", text: css.text, text2: css.text2, dim: css.text3, teal: css.accent, tealDim: css.accentBg, tealBord: css.accentBorder, red: darkMode ? "#ef4444" : "#dc2626", green: css.success, mono: "'Geist Mono', 'JetBrains Mono', ui-monospace, monospace", sans: "'Instrument Sans', 'Outfit', sans-serif" },
   });
 
+  const renderTrips = () => renderTripsPage({
+    css, isMobile, user, trips, expenses, sharedTrips, linkedAccounts, allPrograms,
+    darkMode, tripDetailId, setTripDetailId, setTripDetailSegIdx,
+    expenseViewTrip, setExpenseViewTrip, expandedCardId, setExpandedCardId,
+    calendarPopover, setCalendarPopover,
+    setShowAddExpense, setNewExpense, setEditExpenseId, setShowAddSegment, setShowCreateTrip,
+    setShowExpenseReport, setShowShareModal, setShareEmail, setShareStatus, setSharePermission,
+    openEditTrip, removeTrip, removeExpense, editSegment, deleteSegment, showConfirm,
+    getTripExpenses, getTripTotal, getTripName, formatTripDates,
+    getTripGoogleCalUrl, getTripOutlookUrl, downloadTripICS,
+    EXPENSE_CATEGORIES, SegIcon, segTypeInfo, segTime, segTitle, segSubtitle, segLocation,
+    getFlightLiveStatus, weatherCache, tempUnit, setTempUnit,
+    checkVisa, visaCache, visaLoading, packingLists, savePackingLists,
+    packExpanded, setPackExpanded, customPackItems, setCustomPackItems, getPackingItems,
+    lastDateRef, settingsForm, BLANK_EXPENSE,
+    searchQuery, setSearchQuery, filterStatus, setFilterStatus, tripsView, setTripsView,
+    pastTripsExpanded, setPastTripsExpanded, hotelSectionOpen, setHotelSectionOpen,
+    tripSummaryId, setTripSummaryId, showImportItinerary, setShowImportItinerary,
+    cropExpenseId, setCropExpenseId, cropRect, setCropRect, cropStartRef, cropEndRef,
+    setViewExpenseId, setActiveView,
+    AIRPORT_CITY, AIRLINE_CS, HOTEL_CS, OTA_CS,
+    calViewMonth, setCalViewMonth,
+    layoverMap: new Map(), flightType, setFlightType,
+    generateFlightyICS, togglePackItem,
+  });
+
   const renderPrograms = (_previewSub = null) => renderProgramsPage({ css, isMobile, darkMode, user, linkedAccounts, setLinkedAccounts, supabase, progAddType, setProgAddType, progAddId, setProgAddId, progAddTier, setProgAddTier, ProgramLogo, expandedCardId, setExpandedCardId, cardBenefitValues, setCardBenefitValue, cardCustomBenefits, addCustomBenefit, updateCustomBenefit, removeCustomBenefit, getCardNetValue, showConfirm }, _previewSub);
   const renderExpenses = () => {
     // Redirect handled by navItem click
