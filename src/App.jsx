@@ -2,24 +2,7 @@
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { ComposableMap, Geographies, Geography, Marker, Line } from "react-simple-maps";
 import { supabase } from "./supabase";
-
-// Extracted data constants
-import { AIRPORT_COORDS, AIRPORT_CITY, CITY_THEMES } from "./constants/airline-data";
-import { CABIN_LABELS, AIRLINE_BOOKING_CLASS_MAP, BOOKING_CLASS_MAP_GENERIC, BOOKING_CLASS_RATES, PARTNER_CLASS_RATES, PARTNER_EARN_RATES, ELITE_BONUS_PCT, AIRLINE_CS, HOTEL_CS, OTA_CS, AIRCRAFT_TYPES, CC_SPENDING_CATS, CC_TRANSFER_PARTNERS, CC_BONUS_EXPANDED, LANDMARK_FALLBACK_PHOTOS } from "./constants/airline-data";
-import { PROGRAM_DIRECTORY, LOYALTY_PROGRAMS, PROGRAM_LOGO_DOMAINS } from "./constants/programs";
-import { LOUNGE_DATABASE, CARD_LOUNGE_ACCESS, ELITE_LOUNGE_ACCESS, ELITE_ALLIANCE_MAP, AIRLINE_ALLIANCE, ALLIANCE_LOUNGE_ACCESS, AMENITY_ICONS, AMENITY_LABELS } from "./constants/lounges";
-import { ALLIANCE_MBR, ALLIANCE_LABELS, ALLIANCE_TIER_LABELS, ALLIANCE_TIER_COLORS, BENEFIT_ROWS, HOME_BENEFITS, RECIP_BENEFITS, SAMPLE_USER, CREDIT_CARD_OFFERS, EXPIRATION_RULES, REDEMPTION_VALUES } from "./constants/benefits";
-import { renderOptimizer as renderOptimizerPage } from "./pages/Optimizer";
-import { renderTrips as renderTripsPage } from "./pages/Trips";
-import { renderDashboard as renderDashboardPage } from "./pages/Dashboard";
-import { renderInsights as renderInsightsPage } from "./pages/Insights";
-import { renderExpenseReports as renderExpenseReportsPage } from "./pages/ExpenseReports";
-import { renderLounges as renderLoungesPage } from "./pages/Lounges";
-import { renderPrograms as renderProgramsPage } from "./pages/Programs";
-import { renderAlliances as renderAlliancesPage } from "./pages/Alliances";
-import { renderReports as renderReportsPage } from "./pages/Reports";
-import { renderNews as renderNewsPage } from "./pages/News";
-import { renderPremium as renderPremiumPage } from "./pages/Premium";
+// QR code generated via Google Charts API (no npm dependency)
 
 // ============================================================
 // LOGO COMPONENT — Geometric travel icon in Neuron brand style
@@ -85,10 +68,101 @@ const LiveClock = () => {
 
 // Comprehensive program directory with login/status URLs
 // ── Airport coordinates (IATA → [lng, lat]) ──────────────────
+const AIRPORT_COORDS = {
+  // North America
+  ATL:[-84.428,33.637],BOS:[-71.005,42.365],CLT:[-80.943,35.214],DEN:[-104.674,39.856],DFW:[-97.038,32.897],
+  DTW:[-83.353,42.212],EWR:[-74.169,40.689],FLL:[-80.153,26.073],HNL:[-157.922,21.319],IAD:[-77.456,38.945],
+  IAH:[-95.341,29.984],JFK:[-73.779,40.640],LAX:[-118.408,33.943],LGA:[-73.872,40.777],MCO:[-81.309,28.429],
+  MDW:[-87.752,41.786],MIA:[-80.290,25.796],MSP:[-93.222,44.883],ORD:[-87.904,41.980],PDX:[-122.598,45.589],
+  PHL:[-75.241,39.872],PHX:[-112.012,33.435],SAN:[-117.190,32.734],SEA:[-122.309,47.450],SFO:[-122.375,37.619],
+  SJC:[-121.929,37.363],SLC:[-111.978,40.789],TPA:[-82.533,27.976],YUL:[-73.741,45.470],YVR:[-123.184,49.195],
+  YYZ:[-79.631,43.677],YYC:[-114.020,51.131],YOW:[-75.669,45.323],YHZ:[-63.510,44.880],
+  BDA:[-64.679,32.364],NAS:[-77.466,25.039],MBJ:[-77.913,18.504],KIN:[-76.788,17.936],
+  POS:[-61.337,10.595],BGI:[-59.493,13.075],SJU:[-66.002,18.439],STT:[-64.973,18.337],
+  PTY:[-79.384,9.072],SXM:[-63.109,18.041],ANU:[-61.793,17.137],GCM:[-81.358,19.293],
+  MEX:[-99.072,19.436],CUN:[-86.877,21.037],GRU:[-46.473,-23.432],
+  GIG:[-43.244,-22.810],BOG:[-74.149,4.702],LIM:[-77.115,-12.022],SCL:[-70.787,-33.393],EZE:[-58.535,-34.822],
+  // Europe
+  AMS:[4.764,52.310],ARN:[17.919,59.652],ATH:[23.944,37.937],BCN:[2.078,41.297],BRU:[4.484,50.901],
+  CDG:[2.550,49.013],CPH:[12.656,55.618],DUB:[-6.270,53.421],DUS:[6.757,51.290],EDI:[-3.373,55.950],
+  FCO:[12.252,41.800],FRA:[8.571,50.026],GVA:[6.109,46.238],HAM:[9.988,53.630],HEL:[24.963,60.317],
+  IST:[28.820,40.976],LHR:[-0.461,51.477],LIS:[-9.136,38.774],MAD:[-3.567,40.472],MAN:[-2.275,53.354],
+  MUC:[11.786,48.354],OSL:[11.100,60.197],PRG:[14.260,50.100],SVO:[37.415,55.973],VIE:[16.570,48.110],
+  ZRH:[8.549,47.458],WAW:[14.162,52.166],BUD:[19.256,47.437],LYS:[5.081,45.726],NCE:[7.215,43.658],
+  // Asia Pacific
+  BKK:[100.747,13.681],CAN:[113.299,23.392],CGK:[106.656,-6.126],CJU:[126.493,33.511],CTU:[103.947,30.578],
+  DEL:[77.103,28.556],DPS:[115.167,-8.748],GMP:[126.791,37.559],HAN:[105.807,21.221],HKG:[113.915,22.309],
+  ICN:[126.451,37.463],KIX:[135.244,34.427],KUL:[101.710,2.743],MNL:[121.020,14.509],NRT:[140.386,35.765],
+  PEK:[116.585,40.080],PVG:[121.805,31.143],RGN:[96.133,16.907],SGN:[106.652,10.819],SIN:[103.994,1.350],
+  SZX:[113.811,22.639],TPE:[121.233,25.077],XIY:[108.752,34.447],XMN:[118.128,24.544],HND:[139.781,35.549],
+  KHH:[120.350,22.577],OKA:[127.646,26.196],CKG:[106.642,29.720],WUH:[114.208,30.784],
+  // Middle East & Africa
+  AUH:[54.651,24.433],CAI:[31.400,30.122],CMN:[-7.590,33.368],DOH:[51.608,25.261],DXB:[55.364,25.253],
+  JED:[39.157,21.680],JNB:[28.246,-26.133],KWI:[47.969,29.227],LOS:[3.321,6.577],NBO:[36.925,-1.319],
+  RUH:[46.699,24.958],ADD:[38.799,8.978],CPT:[18.602,-33.965],
+  // Oceania
+  AKL:[174.792,-37.008],BNE:[153.117,-27.384],CBR:[149.195,-35.307],MEL:[144.843,-37.673],
+  PER:[115.967,-31.940],SYD:[151.177,-33.946],CHC:[172.532,-43.490],
+};
 
 // ── Airport → City name mapping ──
+const AIRPORT_CITY = {
+  ATL:"Atlanta",BOS:"Boston",CLT:"Charlotte",DEN:"Denver",DFW:"Dallas",DTW:"Detroit",EWR:"New York",FLL:"Fort Lauderdale",
+  HNL:"Honolulu",IAD:"Washington DC",IAH:"Houston",JFK:"New York",LAX:"Los Angeles",LGA:"New York",MCO:"Orlando",
+  MIA:"Miami",MSP:"Minneapolis",ORD:"Chicago",PDX:"Portland",PHL:"Philadelphia",PHX:"Phoenix",SAN:"San Diego",
+  SEA:"Seattle",SFO:"San Francisco",SJC:"San Jose",SLC:"Salt Lake City",TPA:"Tampa",YUL:"Montreal",YVR:"Vancouver",
+  YYZ:"Toronto",YYC:"Calgary",BDA:"Bermuda",NAS:"Nassau",MBJ:"Montego Bay",SJU:"San Juan",
+  MEX:"Mexico City",CUN:"Cancun",GRU:"São Paulo",GIG:"Rio de Janeiro",BOG:"Bogota",LIM:"Lima",SCL:"Santiago",EZE:"Buenos Aires",
+  AMS:"Amsterdam",ARN:"Stockholm",ATH:"Athens",BCN:"Barcelona",BRU:"Brussels",CDG:"Paris",CPH:"Copenhagen",DUB:"Dublin",
+  EDI:"Edinburgh",FCO:"Rome",FRA:"Frankfurt",GVA:"Geneva",HEL:"Helsinki",IST:"Istanbul",LHR:"London",LIS:"Lisbon",
+  MAD:"Madrid",MAN:"Manchester",MUC:"Munich",OSL:"Oslo",PRG:"Prague",VIE:"Vienna",ZRH:"Zurich",WAW:"Warsaw",BUD:"Budapest",NCE:"Nice",
+  BKK:"Bangkok",CGK:"Jakarta",DEL:"Delhi",DPS:"Bali",HKG:"Hong Kong",ICN:"Seoul",KIX:"Osaka",KUL:"Kuala Lumpur",
+  MNL:"Manila",NRT:"Tokyo",PEK:"Beijing",PVG:"Shanghai",SGN:"Ho Chi Minh City",SIN:"Singapore",TPE:"Taipei",HND:"Tokyo",
+  OKA:"Okinawa",AUH:"Abu Dhabi",CAI:"Cairo",DOH:"Doha",DXB:"Dubai",JNB:"Johannesburg",NBO:"Nairobi",CPT:"Cape Town",
+  AKL:"Auckland",BNE:"Brisbane",MEL:"Melbourne",SYD:"Sydney",PER:"Perth",
+  PTY:"Panama City",CAN:"Guangzhou",BOM:"Mumbai",
+  LAS:"Las Vegas",DCA:"Washington DC",MSY:"New Orleans",BNA:"Nashville",AUS:"Austin",STL:"St Louis",
+  PIT:"Pittsburgh",MKE:"Milwaukee",CLE:"Cleveland",IND:"Indianapolis",CMH:"Columbus",OAK:"Oakland",SMF:"Sacramento",
+  JAX:"Jacksonville",RSW:"Fort Myers",RDU:"Raleigh-Durham",ADD:"Addis Ababa",CMB:"Colombo",MLE:"Malé",
+  HAN:"Hanoi",RGN:"Yangon",BKI:"Kota Kinabalu",PNH:"Phnom Penh",BER:"Berlin",
+};
 
 // ── City gradient themes — warm/cool palettes per destination ──
+const CITY_THEMES = {
+  "Tokyo":     { g1: "#1a0a2e", g2: "#16213e", g3: "#e94560", accent: "#e94560" },
+  "Osaka":     { g1: "#1a0a2e", g2: "#2d1b4e", g3: "#f97316", accent: "#f97316" },
+  "Kyoto":     { g1: "#1a0a2e", g2: "#1e3a2f", g3: "#a3c4a3", accent: "#8fbc8f" },
+  "Paris":     { g1: "#1a1a2e", g2: "#2d2b55", g3: "#c4a35a", accent: "#c4a35a" },
+  "London":    { g1: "#0f1923", g2: "#1a2a3a", g3: "#4a7c8c", accent: "#5d9eaf" },
+  "New York":  { g1: "#0a0a14", g2: "#1a1a2e", g3: "#ff6b35", accent: "#ff6b35" },
+  "Hong Kong": { g1: "#0a0a1a", g2: "#1a0f2e", g3: "#e040fb", accent: "#e040fb" },
+  "Singapore": { g1: "#0a1628", g2: "#1a2e4a", g3: "#00bfa5", accent: "#00bfa5" },
+  "Dubai":     { g1: "#1a1008", g2: "#2e1a0a", g3: "#d4a84b", accent: "#d4a84b" },
+  "Bangkok":   { g1: "#1a0f08", g2: "#2e1e14", g3: "#f59e0b", accent: "#f59e0b" },
+  "Sydney":    { g1: "#0a1628", g2: "#142e4a", g3: "#3b82f6", accent: "#3b82f6" },
+  "Rome":      { g1: "#1a1008", g2: "#2e1a0e", g3: "#c2956a", accent: "#c2956a" },
+  "Barcelona": { g1: "#1a0a14", g2: "#2e1428", g3: "#e85d75", accent: "#e85d75" },
+  "Amsterdam": { g1: "#0a1418", g2: "#142832", g3: "#ff8c42", accent: "#ff8c42" },
+  "Seoul":     { g1: "#0f0a1e", g2: "#1a1436", g3: "#7c3aed", accent: "#7c3aed" },
+  "Istanbul":  { g1: "#1a0f14", g2: "#2e1a28", g3: "#dc626b", accent: "#dc626b" },
+  "Lisbon":    { g1: "#1a1410", g2: "#2e2418", g3: "#f0c040", accent: "#f0c040" },
+  "Miami":     { g1: "#0a141e", g2: "#0e2838", g3: "#06d6a0", accent: "#06d6a0" },
+  "San Francisco":{ g1: "#1a0a14", g2: "#2e1428", g3: "#ff6b6b", accent: "#ff6b6b" },
+  "Los Angeles":{ g1: "#1a1008", g2: "#2e1e14", g3: "#fbbf24", accent: "#fbbf24" },
+  "Toronto":   { g1: "#0a0f1a", g2: "#141e2e", g3: "#ef4444", accent: "#ef4444" },
+  "Vancouver": { g1: "#0a1418", g2: "#14282e", g3: "#10b981", accent: "#10b981" },
+  "Bermuda":   { g1: "#0a1a1e", g2: "#0e2e38", g3: "#22d3ee", accent: "#22d3ee" },
+  "Taipei":    { g1: "#0f0a1e", g2: "#1a1436", g3: "#818cf8", accent: "#818cf8" },
+  "Shanghai":  { g1: "#0a0a14", g2: "#14142e", g3: "#f43f5e", accent: "#f43f5e" },
+  "Bali":      { g1: "#0a1a14", g2: "#142e24", g3: "#34d399", accent: "#34d399" },
+  "Prague":    { g1: "#0f0a14", g2: "#1e142e", g3: "#a78bfa", accent: "#a78bfa" },
+  "Budapest":  { g1: "#0f0a14", g2: "#1e142e", g3: "#c084fc", accent: "#c084fc" },
+  "Vienna":    { g1: "#14100a", g2: "#281e14", g3: "#d4a84b", accent: "#d4a84b" },
+  "Athens":    { g1: "#0a1420", g2: "#142838", g3: "#38bdf8", accent: "#38bdf8" },
+  "Honolulu":  { g1: "#0a1a1e", g2: "#0e2e3a", g3: "#2dd4bf", accent: "#2dd4bf" },
+  "Doha":      { g1: "#1a1408", g2: "#2e240e", g3: "#eab308", accent: "#eab308" },
+  _fallback:   { g1: "#0a0a14", g2: "#141428", g3: "#D4742D", accent: "#D4742D" },
+};
 
 // Haversine great-circle distance in miles
 const haversineDistance = (c1, c2) => {
@@ -133,10 +207,504 @@ const defaultSegment = () => ({
   customProgramName: "",
 });
 
+const PROGRAM_DIRECTORY = {
+  airlines: [
+    { id: "aa", name: "American Airlines AAdvantage", logo: "—", color: "#0078D2", accent: "#C8102E", unit: "Loyalty Points", loginUrl: "https://www.aa.com/loyalty/login", tiers: [
+      { name: "Gold", threshold: 40000, perks: "Priority boarding, free checked bag, 40% bonus miles" },
+      { name: "Platinum", threshold: 75000, perks: "Upgrades, 60% bonus, Admiral's Club day passes" },
+      { name: "Platinum Pro", threshold: 125000, perks: "Premium upgrades, 80% bonus, complimentary MCE" },
+      { name: "Executive Platinum", threshold: 200000, perks: "Systemwide upgrades, 120% bonus, ConciergeKey eligible" },
+    ], earnRate: { domestic: 5, international: 10, premium: 20 } },
+    { id: "dl", name: "Delta SkyMiles", logo: "🔺", color: "#003366", accent: "#C8102E", unit: "MQDs ($)", loginUrl: "https://www.delta.com/myprofile/personal-details", tiers: [
+      { name: "Silver Medallion", threshold: 5000, perks: "Unlimited upgrades, 40% bonus miles, Sky Priority" },
+      { name: "Gold Medallion", threshold: 10000, perks: "SkyTeam Elite Plus, 60% bonus, Sky Priority" },
+      { name: "Platinum Medallion", threshold: 15000, perks: "Choice Benefits, 80% bonus, waived fees" },
+      { name: "Diamond Medallion", threshold: 28000, perks: "Global upgrades, 120% bonus, Delta ONE access" },
+    ], earnRate: { domestic: 5, international: 10, premium: 18 } },
+    { id: "ua", name: "United MileagePlus", logo: "🌐", color: "#002244", accent: "#0066CC", unit: "PQPs", loginUrl: "https://www.united.com/en/us/mileageplus", tiers: [
+      { name: "Premier Silver", threshold: 5000, perks: "Economy Plus, priority boarding, 1 bag free" },
+      { name: "Premier Gold", threshold: 10000, perks: "Star Alliance Gold, United Club passes" },
+      { name: "Premier Platinum", threshold: 15000, perks: "Regional upgrades, 2 GPUs" },
+      { name: "Premier 1K", threshold: 22000, perks: "Global upgrades, PlusPoints, Premier Access" },
+    ], earnRate: { domestic: 5, international: 11, premium: 22 } },
+    { id: "sw", name: "Southwest Rapid Rewards", logo: "❤️", color: "#304CB2", accent: "#FFBF27", unit: "Points", loginUrl: "https://www.southwest.com/rapid-rewards/myaccount", tiers: [
+      { name: "A-List", threshold: 35000, perks: "Priority boarding, same-day standby, 25% bonus" },
+      { name: "A-List Preferred", threshold: 70000, perks: "Free WiFi, 100% bonus points, all A-List perks" },
+      { name: "Companion Pass", threshold: 135000, perks: "Designated companion flies free on every flight" },
+    ], earnRate: { domestic: 6, international: 6, premium: 12 } },
+    { id: "b6", name: "JetBlue TrueBlue", logo: "💙", color: "#003876", accent: "#0033A0", unit: "Tiles", loginUrl: "https://trueblue.jetblue.com/", tiers: [
+      { name: "Mosaic 1", threshold: 50, perks: "Free checked bags, Even More Space, early boarding ($5,000 JetBlue spend)" },
+      { name: "Mosaic 2", threshold: 100, perks: "All Mosaic 1 + free same-day changes, Mint upgrades ($10,000 spend)" },
+      { name: "Mosaic 3", threshold: 150, perks: "Guaranteed Even More Space, complimentary Mint upgrades ($15,000 spend)" },
+      { name: "Mosaic 4", threshold: 250, perks: "Highest upgrade priority, 4 guest passes per year ($25,000 spend)" },
+    ], earnRate: { domestic: 5, international: 6, premium: 10 } },
+    { id: "atmos", name: "Alaska Airlines Mileage Plan", logo: "🏔️", color: "#01426A", accent: "#64CCC9", unit: "EQMs", loginUrl: "https://www.alaskaair.com/account/overview", tiers: [
+      { name: "MVP", threshold: 20000, perks: "Priority boarding, upgrade eligibility, 50% bonus miles" },
+      { name: "MVP Gold", threshold: 40000, perks: "Lounge passes, upgrades, 100% bonus miles" },
+      { name: "MVP Gold 75K", threshold: 75000, perks: "4 complimentary upgrades, lounge membership, 125% bonus miles" },
+    ], earnRate: { domestic: 5, international: 10, premium: 20 } },
+    { id: "frontier", name: "Frontier Miles", logo: "🦅", color: "#006845", accent: "#FFD700", unit: "Miles", loginUrl: "https://www.flyfrontier.com/myfrontier/my-account/", tiers: [
+      { name: "Elite 20K", threshold: 20000, perks: "Free carry-on, seat selection, shortcut boarding" },
+      { name: "Elite 50K", threshold: 50000, perks: "Free checked bag, priority boarding, buddy pass" },
+      { name: "Elite 100K", threshold: 100000, perks: "Unlimited buddy passes, fee waivers, all perks" },
+    ], earnRate: { domestic: 5, international: 5, premium: 10 } },
+    { id: "spirit", name: "Spirit Airlines", logo: "💛", color: "#FFD700", accent: "#000000", unit: "Points", loginUrl: "https://www.spirit.com/account", tiers: [
+      { name: "Silver", threshold: 2000, perks: "Shortcut boarding, free seat selection" },
+      { name: "Gold", threshold: 5000, perks: "Free checked bag, zone 2 boarding" },
+    ], earnRate: { domestic: 4, international: 4, premium: 8 } },
+    { id: "flying_blue", name: "Air France/KLM Flying Blue", logo: "🔵", color: "#002157", accent: "#00A1E0", unit: "XP", loginUrl: "https://www.flyingblue.com/en/account/login", tiers: [
+      { name: "Silver", threshold: 100, perks: "SkyTeam Elite, priority boarding, extra baggage" },
+      { name: "Gold", threshold: 180, perks: "SkyTeam Elite Plus, lounge access, priority everything" },
+      { name: "Platinum", threshold: 300, perks: "Guaranteed seats, companion lounge, 100% bonus" },
+      { name: "Ultimate", threshold: 450, perks: "La Première access, dedicated hotline, all Platinum perks" },
+    ], earnRate: { domestic: 4, international: 8, premium: 16 } },
+    { id: "ba_avios", name: "British Airways Executive Club", logo: "🇬🇧", color: "#075AAA", accent: "#EB2226", unit: "Tier Points", loginUrl: "https://www.britishairways.com/travel/loginr/public/en_us", tiers: [
+      { name: "Bronze", threshold: 300, perks: "Priority standby, bonus Avios" },
+      { name: "Silver", threshold: 600, perks: "Lounge access, extra baggage, priority boarding" },
+      { name: "Gold", threshold: 1500, perks: "First class lounge, guaranteed seat, concierge" },
+    ], earnRate: { domestic: 5, international: 10, premium: 20 } },
+    { id: "aeroplan", name: "Air Canada Aeroplan", logo: "🍁", color: "#F01428", accent: "#000000", unit: "SQM", loginUrl: "https://www.aircanada.com/aeroplan/member/profile", tiers: [
+      { name: "25K", threshold: 25000, perks: "Priority check-in, eUpgrades, Star Alliance Silver" },
+      { name: "35K", threshold: 35000, perks: "Maple Leaf Lounge, priority everything" },
+      { name: "50K", threshold: 50000, perks: "Star Alliance Gold, intl lounges, priority rebooking" },
+      { name: "75K", threshold: 75000, perks: "Super eUpgrades, preferred seats, concierge" },
+      { name: "100K", threshold: 100000, perks: "Priority rewards, global lounge, all benefits" },
+    ], earnRate: { domestic: 5, international: 10, premium: 20 } },
+    { id: "emirates_skywards", name: "Emirates Skywards", logo: "🕌", color: "#D71A21", accent: "#9B8860", unit: "Tier Miles", loginUrl: "https://www.emirates.com/account/english/login/", tiers: [
+      { name: "Silver", threshold: 25000, perks: "Priority check-in, extra baggage, bonus miles" },
+      { name: "Gold", threshold: 50000, perks: "Lounge access, guaranteed seats, upgrades" },
+      { name: "Platinum", threshold: 150000, perks: "First class lounge, chauffeur, companion tickets" },
+    ], earnRate: { domestic: 5, international: 10, premium: 20 } },
+    { id: "turkish_miles", name: "Turkish Airlines Miles&Smiles", logo: "🌙", color: "#C8102E", accent: "#003876", unit: "Miles", loginUrl: "https://www.turkishairlines.com/en-us/miles-and-smiles/account/", tiers: [
+      { name: "Classic Plus", threshold: 25000, perks: "Priority check-in, extra baggage" },
+      { name: "Elite", threshold: 40000, perks: "Star Alliance Gold, lounge, upgrades" },
+      { name: "Elite Plus", threshold: 80000, perks: "Priority everything, guaranteed economy, CIP lounge" },
+    ], earnRate: { domestic: 5, international: 10, premium: 15 } },
+    { id: "qantas_ff", name: "Qantas Frequent Flyer", logo: "🦘", color: "#E0001B", accent: "#1A1F36", unit: "Status Credits", loginUrl: "https://www.qantas.com/fflyer/do/login/myaccount", tiers: [
+      { name: "Silver", threshold: 300, perks: "Priority boarding, bonus points, oneworld Ruby" },
+      { name: "Gold", threshold: 700, perks: "Qantas Club, upgrades, oneworld Sapphire" },
+      { name: "Platinum", threshold: 1400, perks: "First lounges, complimentary upgrades, oneworld Emerald" },
+    ], earnRate: { domestic: 5, international: 10, premium: 20 } },
+    { id: "singapore_kf", name: "Singapore KrisFlyer", logo: "🦁", color: "#FDB813", accent: "#003876", unit: "Elite Miles", loginUrl: "https://www.singaporeair.com/en_UK/ppsclub-krisflyer/my-profile/", tiers: [
+      { name: "Elite Silver", threshold: 25000, perks: "Priority check-in, Star Alliance Silver" },
+      { name: "Elite Gold", threshold: 50000, perks: "Lounge access, Star Alliance Gold, upgrades" },
+    ], earnRate: { domestic: 5, international: 10, premium: 20 } },
+    { id: "etihad_guest", name: "Etihad Guest", logo: "🏛️", color: "#BD8B13", accent: "#1A1F36", unit: "Tier Miles", loginUrl: "https://www.etihadguest.com/en/login.html", tiers: [
+      { name: "Silver", threshold: 25000, perks: "Priority check-in, bonus miles" },
+      { name: "Gold", threshold: 50000, perks: "Lounge access, upgrades, extra baggage" },
+      { name: "Platinum", threshold: 125000, perks: "First class lounges, companion ticket, chauffeur" },
+    ], earnRate: { domestic: 5, international: 10, premium: 20 } },
+    { id: "virgin_fc", name: "Virgin Atlantic Flying Club", logo: "❤️‍🔥", color: "#E50000", accent: "#660000", unit: "Tier Points", loginUrl: "https://www.virginatlantic.com/mytrips/en/gb/login", tiers: [
+      { name: "Silver", threshold: 400, perks: "Priority boarding, extra bag, seat selection" },
+      { name: "Gold", threshold: 800, perks: "Clubhouse access, premium check-in, upgrades" },
+    ], earnRate: { domestic: 5, international: 10, premium: 20 } },
+    { id: "cathay_mp", name: "Cathay Pacific Asia Miles", logo: "🌏", color: "#006564", accent: "#A6815B", unit: "Status Points", loginUrl: "https://www.cathaypacific.com/cx/en_US/sign-in.html", tiers: [
+      { name: "Silver", threshold: 300, perks: "Priority check-in, lounge access, extra baggage" },
+      { name: "Gold", threshold: 600, perks: "First lounges, upgrades, oneworld Sapphire" },
+      { name: "Diamond", threshold: 1200, perks: "Premium lounges, highest priority, oneworld Emerald" },
+    ], earnRate: { domestic: 5, international: 10, premium: 20 } },
+    // ── Asia-Pacific ──
+    { id: "jal", name: "Japan Airlines JAL Mileage Bank", logo: "🗾", color: "#C8102E", accent: "#1A1F36", unit: "FLY ON Points", loginUrl: "https://www.jal.co.jp/en/mileage/", tiers: [
+      { name: "Crystal", threshold: 30000, perks: "Priority boarding, bonus miles, oneworld Ruby" },
+      { name: "Sapphire", threshold: 50000, perks: "Lounge access, upgrades, oneworld Sapphire" },
+      { name: "JGC Premier", threshold: 80000, perks: "First class lounges, guaranteed seats, oneworld Emerald" },
+    ], earnRate: { domestic: 5, international: 10, premium: 20 } },
+    { id: "ana", name: "ANA Mileage Club", logo: "🏯", color: "#003A6D", accent: "#9DC3E6", unit: "Premium Points", loginUrl: "https://www.ana.co.jp/en/us/amc/", tiers: [
+      { name: "Bronze", threshold: 30000, perks: "Priority boarding, bonus miles, Star Alliance Silver" },
+      { name: "Platinum", threshold: 50000, perks: "Lounges, upgrades, Star Alliance Gold" },
+      { name: "Diamond", threshold: 100000, perks: "ANA Suite, guaranteed seats, all Platinum perks" },
+    ], earnRate: { domestic: 5, international: 10, premium: 20 } },
+    { id: "eva_air", name: "EVA Air Infinity MileageLands", logo: "🟢", color: "#007D40", accent: "#C8A951", unit: "Mileage Credits", loginUrl: "https://www.evaair.com/en-global/member/", tiers: [
+      { name: "Silver", threshold: 30000, perks: "Priority boarding, extra baggage, Star Alliance Silver" },
+      { name: "Gold", threshold: 50000, perks: "Lounge access, upgrades, Star Alliance Gold" },
+      { name: "Diamond", threshold: 100000, perks: "Premium lounge, highest priority, all perks" },
+    ], earnRate: { domestic: 5, international: 10, premium: 20 } },
+    { id: "korean_air", name: "Korean Air SKYPASS", logo: "🇰🇷", color: "#003087", accent: "#C8102E", unit: "Miles", loginUrl: "https://www.koreanair.com/content/koreanair/en/skypass/login.html", tiers: [
+      { name: "Morning Calm", threshold: 30000, perks: "Priority boarding, extra bag, bonus miles" },
+      { name: "Morning Calm Premium", threshold: 50000, perks: "Lounge access, upgrades, SkyTeam Elite Plus" },
+      { name: "Million Miler", threshold: 1000000, perks: "Lifetime status, top tier lounge, all perks" },
+    ], earnRate: { domestic: 5, international: 10, premium: 20 } },
+    { id: "asiana", name: "Asiana Airlines Asiana Club", logo: "🌸", color: "#1A3668", accent: "#C8102E", unit: "Miles", loginUrl: "https://flyasiana.com/C/US/EN/member/memberLogin", tiers: [
+      { name: "Silver", threshold: 20000, perks: "Priority boarding, extra baggage, bonus miles" },
+      { name: "Gold", threshold: 40000, perks: "Lounge access, upgrades, SkyTeam Elite" },
+      { name: "Diamond", threshold: 80000, perks: "First lounge, guaranteed availability, all perks" },
+    ], earnRate: { domestic: 5, international: 10, premium: 20 } },
+    { id: "hk_airlines", name: "Hong Kong Airlines Fortune Wings Club", logo: "🐉", color: "#CC0000", accent: "#FFD700", unit: "Miles", loginUrl: "https://www.hkairlines.com/en_HK/fortune-wings-club/", tiers: [
+      { name: "Silver", threshold: 20000, perks: "Priority boarding, extra baggage" },
+      { name: "Gold", threshold: 40000, perks: "Lounge access, upgrades, priority check-in" },
+    ], earnRate: { domestic: 5, international: 10, premium: 18 } },
+    { id: "hk_express", name: "HK Express MegaHub", logo: "🟠", color: "#FF6600", accent: "#1A1F36", unit: "Points", loginUrl: "https://www.hkexpress.com/en-hk/member/", tiers: [], earnRate: { domestic: 4, international: 4, premium: 8 } },
+    { id: "air_china", name: "Air China PhoenixMiles", logo: "🐦", color: "#CC0000", accent: "#FFD700", unit: "Miles", loginUrl: "https://www.airchina.us/US/GB/member/login/", tiers: [
+      { name: "Silver", threshold: 25000, perks: "Priority boarding, extra bag, Star Alliance Silver" },
+      { name: "Gold", threshold: 50000, perks: "Lounge access, upgrades, Star Alliance Gold" },
+      { name: "Platinum", threshold: 100000, perks: "First lounge, guaranteed seats, highest priority" },
+    ], earnRate: { domestic: 5, international: 10, premium: 18 } },
+    { id: "china_eastern", name: "China Eastern Eastern Miles", logo: "🔴", color: "#CC0000", accent: "#003876", unit: "Miles", loginUrl: "https://us.ceair.com/newCEAir/member/login.html", tiers: [
+      { name: "Silver", threshold: 25000, perks: "Priority boarding, bonus miles, SkyTeam Silver" },
+      { name: "Gold", threshold: 50000, perks: "Lounge access, upgrades, SkyTeam Elite Plus" },
+      { name: "Platinum", threshold: 100000, perks: "First lounge, highest priority, all perks" },
+    ], earnRate: { domestic: 5, international: 10, premium: 18 } },
+    { id: "china_southern", name: "China Southern Sky Pearl", logo: "🌺", color: "#003876", accent: "#C8102E", unit: "Miles", loginUrl: "https://www.csair.com/en/", tiers: [
+      { name: "Silver", threshold: 25000, perks: "Priority boarding, extra baggage" },
+      { name: "Gold", threshold: 50000, perks: "Lounge access, upgrades" },
+      { name: "Platinum", threshold: 100000, perks: "First class lounge, highest priority" },
+    ], earnRate: { domestic: 5, international: 10, premium: 18 } },
+    { id: "thai", name: "Thai Airways Royal Orchid Plus", logo: "🌷", color: "#4B0082", accent: "#FFD700", unit: "Miles", loginUrl: "https://www.thaiairways.com/en_TH/rop/rop.page", tiers: [
+      { name: "Silver", threshold: 20000, perks: "Priority boarding, extra bag, Star Alliance Silver" },
+      { name: "Gold", threshold: 50000, perks: "Lounge access, upgrades, Star Alliance Gold" },
+      { name: "Platinum", threshold: 100000, perks: "First lounge, guaranteed availability, all perks" },
+    ], earnRate: { domestic: 5, international: 10, premium: 18 } },
+    { id: "malaysia", name: "Malaysia Airlines Enrich", logo: "🌙", color: "#003876", accent: "#CC0000", unit: "Miles", loginUrl: "https://www.malaysiaairlines.com/my/en/enrich.html", tiers: [
+      { name: "Blue", threshold: 0, perks: "Base tier, earn miles on flights" },
+      { name: "Silver", threshold: 35000, perks: "Priority boarding, bonus miles, oneworld Ruby" },
+      { name: "Gold", threshold: 75000, perks: "Lounge access, upgrades, oneworld Sapphire" },
+      { name: "Platinum", threshold: 150000, perks: "First lounge, highest priority, oneworld Emerald" },
+    ], earnRate: { domestic: 5, international: 10, premium: 20 } },
+    { id: "garuda", name: "Garuda Indonesia GarudaMiles", logo: "🦅", color: "#003876", accent: "#FFD700", unit: "Miles", loginUrl: "https://www.garudaindonesia.com/id/id/informasi/mygaruda", tiers: [
+      { name: "Silver", threshold: 25000, perks: "Priority boarding, extra baggage" },
+      { name: "Gold", threshold: 50000, perks: "Lounge access, upgrades, Sky Team Elite" },
+      { name: "Platinum", threshold: 100000, perks: "First lounge, highest priority, all perks" },
+    ], earnRate: { domestic: 5, international: 10, premium: 18 } },
+    { id: "philippines_air", name: "Philippine Airlines Mabuhay Miles", logo: "🌅", color: "#003876", accent: "#CC0000", unit: "Miles", loginUrl: "https://www.philippineairlines.com/en/ph/home/mabuhay-miles", tiers: [
+      { name: "Elite", threshold: 25000, perks: "Priority boarding, extra bag, lounge access" },
+      { name: "Elite Plus", threshold: 75000, perks: "Guaranteed upgrades, highest priority" },
+    ], earnRate: { domestic: 5, international: 10, premium: 18 } },
+    { id: "vietnam_air", name: "Vietnam Airlines Lotusmiles", logo: "🌸", color: "#CC0000", accent: "#FFD700", unit: "Miles", loginUrl: "https://www.vietnamairlines.com/us/en/member/lotusmiles", tiers: [
+      { name: "Silver", threshold: 20000, perks: "Priority boarding, extra baggage" },
+      { name: "Gold", threshold: 40000, perks: "Lounge access, upgrades, SkyTeam Elite Plus" },
+      { name: "Platinum", threshold: 80000, perks: "First lounge, highest priority, all perks" },
+    ], earnRate: { domestic: 5, international: 10, premium: 18 } },
+    { id: "air_india", name: "Air India Flying Returns", logo: "🇮🇳", color: "#FF6600", accent: "#003876", unit: "Miles", loginUrl: "https://www.airindia.com/flying-returns.htm", tiers: [
+      { name: "Silver", threshold: 25000, perks: "Priority boarding, extra baggage, Star Alliance Silver" },
+      { name: "Gold", threshold: 50000, perks: "Lounge access, upgrades, Star Alliance Gold" },
+      { name: "Maharajah", threshold: 100000, perks: "First class lounge, highest priority, all perks" },
+    ], earnRate: { domestic: 5, international: 10, premium: 18 } },
+    { id: "airasia", name: "AirAsia BIG Loyalty", logo: "🔴", color: "#CC0000", accent: "#FFD700", unit: "BIG Points", loginUrl: "https://www.biglife.com/", tiers: [
+      { name: "BIG Xtra", threshold: 10000, perks: "Priority boarding, seat discount, extra bag" },
+    ], earnRate: { domestic: 4, international: 4, premium: 8 } },
+    { id: "scoot", name: "Scoot Scoot Mates", logo: "—", color: "#FFD700", accent: "#003876", unit: "Points", loginUrl: "https://www.flyscoot.com/en/plan/discover-scoot/scoot-mates", tiers: [], earnRate: { domestic: 4, international: 4, premium: 8 } },
+    { id: "air_nz", name: "Air New Zealand Airpoints", logo: "🥝", color: "#003876", accent: "#C8102E", unit: "Airpoints Dollars", loginUrl: "https://www.airnewzealand.com/airpoints", tiers: [
+      { name: "Silver", threshold: 250, perks: "Priority boarding, lounge access, Star Alliance Silver" },
+      { name: "Gold", threshold: 500, perks: "Koru lounge, upgrades, Star Alliance Gold" },
+      { name: "Elite", threshold: 1000, perks: "Highest priority, guaranteed seat, all perks" },
+    ], earnRate: { domestic: 5, international: 10, premium: 20 } },
+    { id: "jetstar", name: "Jetstar Frequent Flyer", logo: "⭐", color: "#FF6600", accent: "#003876", unit: "Points", loginUrl: "https://www.jetstar.com/au/en/deals/jetstar-frequent-flyer", tiers: [], earnRate: { domestic: 4, international: 4, premium: 8 } },
+    // ── Middle East ──
+    { id: "qatar", name: "Qatar Airways Privilege Club", logo: "🐪", color: "#5C0632", accent: "#8D734A", unit: "Qmiles", loginUrl: "https://www.qatarairways.com/en-us/privilege-club.html", tiers: [
+      { name: "Burgundy", threshold: 0, perks: "Base tier, earn Qmiles on flights" },
+      { name: "Silver", threshold: 200, perks: "Priority boarding, extra bag, oneworld Ruby" },
+      { name: "Gold", threshold: 500, perks: "Al Mourjan lounge, upgrades, oneworld Sapphire" },
+      { name: "Platinum", threshold: 1200, perks: "First class lounge, guaranteed seats, oneworld Emerald" },
+    ], earnRate: { domestic: 5, international: 10, premium: 20 } },
+    { id: "oman_air", name: "Oman Air Sindbad", logo: "🌊", color: "#C8102E", accent: "#003876", unit: "Miles", loginUrl: "https://www.omanair.com/en/sindbad", tiers: [
+      { name: "Silver", threshold: 25000, perks: "Priority boarding, extra baggage" },
+      { name: "Gold", threshold: 50000, perks: "Lounge access, upgrades" },
+      { name: "Platinum", threshold: 100000, perks: "First lounge, highest priority" },
+    ], earnRate: { domestic: 5, international: 10, premium: 18 } },
+    { id: "gulf_air", name: "Gulf Air Falconflyer", logo: "🦅", color: "#CC0000", accent: "#FFD700", unit: "Miles", loginUrl: "https://www.gulfair.com/falconflyer", tiers: [
+      { name: "Silver", threshold: 25000, perks: "Priority boarding, extra baggage" },
+      { name: "Gold", threshold: 50000, perks: "Lounge access, upgrades" },
+      { name: "Platinum", threshold: 100000, perks: "First lounge, highest priority" },
+    ], earnRate: { domestic: 5, international: 10, premium: 18 } },
+    { id: "saudia", name: "Saudia Al-Fursan", logo: "🕌", color: "#006400", accent: "#FFD700", unit: "Miles", loginUrl: "https://www.saudia.com/fly/loyality-program", tiers: [
+      { name: "Silver", threshold: 25000, perks: "Priority boarding, extra baggage, SkyTeam Silver" },
+      { name: "Gold", threshold: 50000, perks: "Lounge access, upgrades, SkyTeam Elite Plus" },
+      { name: "Platinum", threshold: 100000, perks: "First lounge, highest priority, all perks" },
+    ], earnRate: { domestic: 5, international: 10, premium: 18 } },
+    { id: "flynas", name: "Flynas naSmiles", logo: "🌙", color: "#FF6600", accent: "#003876", unit: "Points", loginUrl: "https://www.flynas.com/en/nasmiles", tiers: [], earnRate: { domestic: 4, international: 4, premium: 8 } },
+    { id: "flydubai", name: "flydubai OPEN", logo: "🏙️", color: "#CC0000", accent: "#FFD700", unit: "Miles", loginUrl: "https://www.flydubai.com/en/loyalty/open/", tiers: [], earnRate: { domestic: 4, international: 4, premium: 8 } },
+    // ── Europe ──
+    { id: "lufthansa", name: "Lufthansa Miles & More", logo: "🦅", color: "#003876", accent: "#FFCC00", unit: "Award Miles", loginUrl: "https://www.miles-and-more.com/row/en/login.html", tiers: [
+      { name: "Frequent Traveller", threshold: 35000, perks: "Star Alliance Silver, lounge with guest, extra bag" },
+      { name: "Senator", threshold: 100000, perks: "Lounge anytime, upgrades, Star Alliance Gold" },
+      { name: "HON Circle", threshold: 600000, perks: "HON Circle lounge, First class lounge, guaranteed First" },
+    ], earnRate: { domestic: 5, international: 10, premium: 20 } },
+    { id: "swiss", name: "Swiss SWISS Miles & More", logo: "🇨🇭", color: "#CC0000", accent: "#003876", unit: "Award Miles", loginUrl: "https://www.swiss.com/ch/en/fly/miles-and-more", tiers: [
+      { name: "Frequent Traveller", threshold: 35000, perks: "Star Alliance Silver, lounge access" },
+      { name: "Senator", threshold: 100000, perks: "Lounge, upgrades, Star Alliance Gold" },
+    ], earnRate: { domestic: 5, international: 10, premium: 20 } },
+    { id: "austrian", name: "Austrian Airlines Miles & More", logo: "🇦🇹", color: "#CC0000", accent: "#003876", unit: "Award Miles", loginUrl: "https://www.austrian.com/us/en/miles-and-more", tiers: [
+      { name: "Frequent Traveller", threshold: 35000, perks: "Star Alliance Silver, priority boarding" },
+      { name: "Senator", threshold: 100000, perks: "Lounge, upgrades, Star Alliance Gold" },
+    ], earnRate: { domestic: 5, international: 10, premium: 20 } },
+    { id: "iberia", name: "Iberia Plus", logo: "🇪🇸", color: "#CC0000", accent: "#FFD700", unit: "Avios", loginUrl: "https://www.iberia.com/us/iberia-plus/", tiers: [
+      { name: "Uno", threshold: 20000, perks: "Priority boarding, extra baggage, oneworld Ruby" },
+      { name: "Dos", threshold: 50000, perks: "Lounge access, upgrades, oneworld Sapphire" },
+      { name: "Cuatro", threshold: 100000, perks: "First lounge, guaranteed seats, oneworld Emerald" },
+    ], earnRate: { domestic: 5, international: 10, premium: 20 } },
+    { id: "finnair", name: "Finnair Plus", logo: "🇫🇮", color: "#003876", accent: "#C8102E", unit: "Tier Points", loginUrl: "https://www.finnair.com/int/gb/finnair-plus", tiers: [
+      { name: "Silver", threshold: 200, perks: "Priority boarding, extra bag, oneworld Ruby" },
+      { name: "Gold", threshold: 600, perks: "Lounge access, upgrades, oneworld Sapphire" },
+      { name: "Platinum", threshold: 2000, perks: "First lounge, highest priority, oneworld Emerald" },
+    ], earnRate: { domestic: 5, international: 10, premium: 20 } },
+    { id: "sas", name: "SAS EuroBonus", logo: "🇸🇪", color: "#003876", accent: "#C8102E", unit: "Points", loginUrl: "https://www.flysas.com/en/us/sas-eurobonus/", tiers: [
+      { name: "Silver", threshold: 20000, perks: "Priority boarding, extra bag, Star Alliance Silver" },
+      { name: "Gold", threshold: 45000, perks: "Lounge access, upgrades, Star Alliance Gold" },
+      { name: "Diamond", threshold: 90000, perks: "SAS Gold Lounge, guaranteed seat, highest priority" },
+    ], earnRate: { domestic: 5, international: 10, premium: 18 } },
+    { id: "tap", name: "TAP Air Portugal Miles&Go", logo: "🇵🇹", color: "#003876", accent: "#CC0000", unit: "Miles", loginUrl: "https://www.tapairportugal.com/en/miles-go", tiers: [
+      { name: "Silver", threshold: 10000, perks: "Priority boarding, extra bag, Star Alliance Silver" },
+      { name: "Gold", threshold: 25000, perks: "Lounge access, upgrades, Star Alliance Gold" },
+    ], earnRate: { domestic: 5, international: 10, premium: 18 } },
+    { id: "azores", name: "Azores Airlines SATA Miles", logo: "🌋", color: "#003876", accent: "#009900", unit: "Miles", loginUrl: "https://www.azoresairlines.pt/en", tiers: [
+      { name: "Silver", threshold: 10000, perks: "Priority boarding, extra baggage" },
+      { name: "Gold", threshold: 25000, perks: "Lounge access, seat upgrades" },
+    ], earnRate: { domestic: 5, international: 10, premium: 15 } },
+    { id: "aer_lingus", name: "Aer Lingus AerClub", logo: "🍀", color: "#003876", accent: "#009900", unit: "Avios", loginUrl: "https://www.aerlingus.com/travel-information/aerclub/aerclub-home/", tiers: [
+      { name: "Bronze", threshold: 0, perks: "Earn Avios on flights" },
+      { name: "Silver", threshold: 450, perks: "Priority boarding, extra bag, oneworld Ruby" },
+      { name: "Gold", threshold: 900, perks: "Lounge access, upgrades, oneworld Sapphire" },
+    ], earnRate: { domestic: 5, international: 10, premium: 20 } },
+    { id: "lot", name: "LOT Polish Airlines Miles & More", logo: "🇵🇱", color: "#003876", accent: "#CC0000", unit: "Miles", loginUrl: "https://www.lot.com/us/en/miles-more", tiers: [
+      { name: "Frequent Traveller", threshold: 35000, perks: "Star Alliance Silver, priority boarding" },
+      { name: "Senator", threshold: 100000, perks: "Lounge, upgrades, Star Alliance Gold" },
+    ], earnRate: { domestic: 5, international: 10, premium: 18 } },
+    { id: "aegean", name: "Aegean Airlines Miles+Bonus", logo: "🇬🇷", color: "#003876", accent: "#C8102E", unit: "Miles", loginUrl: "https://www.aegeanair.com/en/milesandbonus/", tiers: [
+      { name: "Silver", threshold: 20000, perks: "Priority boarding, extra bag, Star Alliance Silver" },
+      { name: "Gold", threshold: 50000, perks: "Lounge access, upgrades, Star Alliance Gold" },
+    ], earnRate: { domestic: 5, international: 10, premium: 18 } },
+    { id: "pegasus", name: "Pegasus Airlines BolBol", logo: "🐎", color: "#FF6600", accent: "#003876", unit: "Points", loginUrl: "https://www.flypgs.com/en/bolbol", tiers: [
+      { name: "Standard", threshold: 0, perks: "Earn points on flights and partners" },
+    ], earnRate: { domestic: 4, international: 4, premium: 8 } },
+    { id: "ita_airways", name: "ITA Airways Volare", logo: "🇮🇹", color: "#009246", accent: "#003876", unit: "Points", loginUrl: "https://www.ita-airways.com/en_us/fly-ita/volare.html", tiers: [
+      { name: "Executive", threshold: 20000, perks: "Priority boarding, extra bag, SkyTeam Silver" },
+      { name: "Premium Executive", threshold: 50000, perks: "Lounge access, upgrades, SkyTeam Elite Plus" },
+    ], earnRate: { domestic: 5, international: 10, premium: 18 } },
+    { id: "norwegian", name: "Norwegian Reward", logo: "🇳🇴", color: "#CC0000", accent: "#003876", unit: "CashPoints", loginUrl: "https://www.norwegian.com/en/frequent-flyer/", tiers: [], earnRate: { domestic: 5, international: 5, premium: 10 } },
+    { id: "easyjet", name: "easyJet Flight Club", logo: "🟠", color: "#FF6600", accent: "#003876", unit: "Points", loginUrl: "https://www.easyjet.com/en/cheap-flights/flight-club", tiers: [
+      { name: "Standard", threshold: 0, perks: "Speedy boarding, seat selection discounts" },
+    ], earnRate: { domestic: 4, international: 4, premium: 8 } },
+    { id: "vueling", name: "Vueling Club", logo: "💛", color: "#FFD700", accent: "#003876", unit: "Points", loginUrl: "https://www.vueling.com/en/vueling-services/vueling-club", tiers: [
+      { name: "Silver", threshold: 10000, perks: "Priority boarding, extra bag, oneworld Ruby" },
+      { name: "Gold", threshold: 25000, perks: "Lounge access, upgrades, oneworld Sapphire" },
+    ], earnRate: { domestic: 5, international: 8, premium: 15 } },
+    { id: "brussels", name: "Brussels Airlines Miles & More", logo: "🇧🇪", color: "#003876", accent: "#FFD700", unit: "Miles", loginUrl: "https://www.brusselsairlines.com/en-gb/special-pages/miles-more.aspx", tiers: [
+      { name: "Frequent Traveller", threshold: 35000, perks: "Star Alliance Silver, priority boarding" },
+      { name: "Senator", threshold: 100000, perks: "Lounge, upgrades, Star Alliance Gold" },
+    ], earnRate: { domestic: 5, international: 10, premium: 18 } },
+    // ── Africa ──
+    { id: "ethiopian", name: "Ethiopian Airlines ShebaMiles", logo: "🦁", color: "#009A44", accent: "#FFCD00", unit: "Miles", loginUrl: "https://www.ethiopianairlines.com/en/shebamiles", tiers: [
+      { name: "Silver", threshold: 30000, perks: "Priority boarding, extra baggage, Star Alliance Silver" },
+      { name: "Gold", threshold: 60000, perks: "Lounge access, upgrades, Star Alliance Gold" },
+      { name: "Platinum", threshold: 100000, perks: "First lounge, highest priority, all perks" },
+    ], earnRate: { domestic: 5, international: 10, premium: 18 } },
+    { id: "kenya_airways", name: "Kenya Airways Asante Rewards", logo: "🦒", color: "#CC0000", accent: "#003876", unit: "Points", loginUrl: "https://www.kenya-airways.com/en/flying-with-us/asante/", tiers: [
+      { name: "Silver", threshold: 20000, perks: "Priority boarding, extra bag, SkyTeam Silver" },
+      { name: "Gold", threshold: 50000, perks: "Lounge access, upgrades, SkyTeam Elite Plus" },
+    ], earnRate: { domestic: 5, international: 10, premium: 15 } },
+    { id: "south_african", name: "South African Airways Voyager", logo: "🇿🇦", color: "#003876", accent: "#009A44", unit: "Miles", loginUrl: "https://www.flysaa.com/us/en/book-and-manage/saa-voyager", tiers: [
+      { name: "Silver", threshold: 25000, perks: "Priority boarding, extra bag, Star Alliance Silver" },
+      { name: "Gold", threshold: 50000, perks: "Lounge access, upgrades, Star Alliance Gold" },
+    ], earnRate: { domestic: 5, international: 10, premium: 15 } },
+    { id: "egyptair", name: "EgyptAir EGYPTAIR Plus", logo: "🦅", color: "#003876", accent: "#CC0000", unit: "Miles", loginUrl: "https://www.egyptair.com/en/air/eap/", tiers: [
+      { name: "Silver", threshold: 20000, perks: "Priority boarding, extra baggage, Star Alliance Silver" },
+      { name: "Gold", threshold: 50000, perks: "Lounge access, upgrades, Star Alliance Gold" },
+    ], earnRate: { domestic: 5, international: 10, premium: 15 } },
+    // ── South America ──
+    { id: "latam", name: "LATAM Airlines LATAM Pass", logo: "🌎", color: "#CC0000", accent: "#003876", unit: "Points", loginUrl: "https://www.latamairlines.com/us/en/account/login", tiers: [
+      { name: "Silver", threshold: 50, perks: "Priority boarding, extra bag, oneworld Ruby" },
+      { name: "Gold", threshold: 130, perks: "Lounge access, upgrades, oneworld Sapphire" },
+      { name: "Platinum", threshold: 250, perks: "First lounge, guaranteed seats, oneworld Emerald" },
+    ], earnRate: { domestic: 5, international: 10, premium: 18 } },
+    { id: "gol", name: "GOL Airlines Smiles", logo: "🇧🇷", color: "#FF6600", accent: "#003876", unit: "Miles", loginUrl: "https://www.voegol.com.br/en/smiles", tiers: [
+      { name: "Silver", threshold: 10000, perks: "Priority boarding, extra baggage" },
+      { name: "Gold", threshold: 25000, perks: "Lounge access, upgrades" },
+      { name: "Diamond", threshold: 60000, perks: "Highest priority, guaranteed seats" },
+    ], earnRate: { domestic: 5, international: 10, premium: 15 } },
+    { id: "azul", name: "Azul Brazilian Airlines TudoAzul", logo: "💙", color: "#003876", accent: "#FF6600", unit: "Points", loginUrl: "https://www.voeazul.com.br/en/todo-azul", tiers: [
+      { name: "Safira", threshold: 10000, perks: "Priority boarding, extra bag" },
+      { name: "Diamante", threshold: 30000, perks: "Lounge access, upgrades, all perks" },
+    ], earnRate: { domestic: 5, international: 10, premium: 15 } },
+    { id: "avianca", name: "Avianca LifeMiles", logo: "🌺", color: "#CC0000", accent: "#FFD700", unit: "Miles", loginUrl: "https://www.lifemiles.com/eng/mem/memberlogin.aspx", tiers: [
+      { name: "Silver", threshold: 25000, perks: "Priority boarding, extra bag, Star Alliance Silver" },
+      { name: "Gold", threshold: 50000, perks: "Lounge access, upgrades, Star Alliance Gold" },
+      { name: "Diamond", threshold: 100000, perks: "First lounge, highest priority, all perks" },
+    ], earnRate: { domestic: 5, international: 10, premium: 18 } },
+    { id: "copa", name: "Copa Airlines ConnectMiles", logo: "🌉", color: "#003876", accent: "#CC0000", unit: "Miles", loginUrl: "https://www.copaair.com/en/web/gs/connectmiles", tiers: [
+      { name: "Silver", threshold: 30000, perks: "Priority boarding, extra bag, Star Alliance Silver" },
+      { name: "Gold", threshold: 60000, perks: "Lounge access, upgrades, Star Alliance Gold" },
+      { name: "Platinum", threshold: 100000, perks: "First lounge, highest priority, all perks" },
+    ], earnRate: { domestic: 5, international: 10, premium: 18 } },
+    { id: "aeromexico", name: "Aeromexico Club Premier", logo: "🦅", color: "#003876", accent: "#CC0000", unit: "Miles", loginUrl: "https://www.aeromexico.com/en-us/club-premier", tiers: [
+      { name: "Silver", threshold: 25000, perks: "Priority boarding, extra bag, SkyTeam Silver" },
+      { name: "Gold", threshold: 50000, perks: "Lounge access, upgrades, SkyTeam Elite Plus" },
+      { name: "Titanium", threshold: 100000, perks: "First lounge, highest priority, all perks" },
+    ], earnRate: { domestic: 5, international: 10, premium: 18 } },
+    // ── North America (additional) ──
+    { id: "westjet", name: "WestJet Rewards", logo: "🇨🇦", color: "#003876", accent: "#009A44", unit: "WestJet dollars", loginUrl: "https://www.westjet.com/en-ca/rewards", tiers: [
+      { name: "Silver", threshold: 1000, perks: "Priority boarding, extra bag" },
+      { name: "Gold", threshold: 2000, perks: "Lounge access, upgrades, priority check-in" },
+      { name: "Platinum", threshold: 4000, perks: "Highest priority, guaranteed upgrades, all perks" },
+    ], earnRate: { domestic: 5, international: 5, premium: 10 } },
+    { id: "air_transat", name: "Air Transat Club Transat", logo: "🍁", color: "#CC0000", accent: "#003876", unit: "Points", loginUrl: "https://www.airtransat.com/en-CA/Club-Transat/Overview", tiers: [
+      { name: "Distinction", threshold: 40000, perks: "Priority boarding, bonus points" },
+      { name: "Prestige", threshold: 100000, perks: "Priority everything, upgrades" },
+    ], earnRate: { domestic: 5, international: 5, premium: 10 } },
+    { id: "caribbean", name: "Caribbean Airlines Caribbean Miles", logo: "🌴", color: "#003876", accent: "#CC0000", unit: "Miles", loginUrl: "https://www.caribbean-airlines.com/en/frequent-flyer", tiers: [
+      { name: "Silver", threshold: 15000, perks: "Priority boarding, extra baggage" },
+      { name: "Gold", threshold: 35000, perks: "Lounge access, upgrades" },
+    ], earnRate: { domestic: 5, international: 10, premium: 15 } },
+    { id: "bermudair", name: "BermudAir Frequent Flyer", logo: "🏝️", color: "#003876", accent: "#FF6600", unit: "Points", loginUrl: "https://www.bermudair.com/", tiers: [], earnRate: { domestic: 5, international: 5, premium: 10 } },
+    { id: "breeze", name: "Breeze Airways Breezy Rewards", logo: "🌬️", color: "#00B2E3", accent: "#003876", unit: "BreezePoints", loginUrl: "https://www.flybreeze.com/rewards", tiers: [], earnRate: { domestic: 4, international: 4, premium: 8 } },
+    { id: "sun_country", name: "Sun Country Airlines Sun Country Rewards", logo: "☀️", color: "#003876", accent: "#FFD700", unit: "Points", loginUrl: "https://www.suncountry.com/rewards", tiers: [], earnRate: { domestic: 4, international: 4, premium: 8 } },
+    { id: "allegiant", name: "Allegiant Air Allways Rewards", logo: "🔶", color: "#FF6600", accent: "#003876", unit: "Points", loginUrl: "https://www.allegiantair.com/allways-rewards", tiers: [], earnRate: { domestic: 4, international: 4, premium: 8 } },
+    { id: "contour", name: "Contour Airlines Rewards", logo: "—", color: "#003876", accent: "#FF6600", unit: "Points", loginUrl: "https://contourairlines.com/", tiers: [], earnRate: { domestic: 5, international: 5, premium: 10 } },
+  ],
+  hotels: [
+    { id: "marriott", name: "Marriott Bonvoy", logo: "—", color: "#7C2529", accent: "#B5985A", unit: "Nights", loginUrl: "https://www.marriott.com/loyalty/myAccount/default.mi", tiers: [
+      { name: "Silver Elite", threshold: 10, perks: "10% bonus points, priority late checkout" },
+      { name: "Gold Elite", threshold: 25, perks: "25% bonus, room upgrade, 2pm checkout" },
+      { name: "Platinum Elite", threshold: 50, perks: "50% bonus, suite upgrade, lounge access" },
+      { name: "Titanium Elite", threshold: 75, perks: "75% bonus, United Silver, 48hr guarantee" },
+      { name: "Ambassador Elite", threshold: 100, perks: "Your24, ambassador service, all Titanium perks" },
+    ], earnRate: { standard: 10, premium: 15, luxury: 25 } },
+    { id: "hilton", name: "Hilton Honors", logo: "🌟", color: "#003B5C", accent: "#0099CC", unit: "Nights", loginUrl: "https://www.hilton.com/en/hilton-honors/guest/my-account/", tiers: [
+      { name: "Silver", threshold: 10, perks: "20% bonus, 5th night free on rewards" },
+      { name: "Gold", threshold: 40, perks: "80% bonus, room upgrade, free breakfast" },
+      { name: "Diamond", threshold: 60, perks: "100% bonus, space-available upgrade, exec lounge" },
+      { name: "Diamond Reserve", threshold: 80, perks: "All Diamond perks + enhanced suite upgrades, premium WiFi" },
+    ], earnRate: { standard: 10, premium: 15, luxury: 20 } },
+    { id: "ihg", name: "IHG One Rewards", logo: "🔑", color: "#2E1A47", accent: "#6B3FA0", unit: "Nights", loginUrl: "https://www.ihg.com/rewardsclub/us/en/account/home", tiers: [
+      { name: "Silver Elite", threshold: 10, perks: "20% bonus, late checkout" },
+      { name: "Gold Elite", threshold: 20, perks: "40% bonus, room upgrade" },
+      { name: "Platinum Elite", threshold: 40, perks: "60% bonus, guaranteed availability" },
+      { name: "Diamond Elite", threshold: 70, perks: "100% bonus, suite upgrade, amenity" },
+    ], earnRate: { standard: 10, premium: 15, luxury: 20 } },
+    { id: "hyatt", name: "World of Hyatt", logo: "🏛️", color: "#1C4B82", accent: "#D4A553", unit: "Nights", loginUrl: "https://www.hyatt.com/en-US/member/overview", tiers: [
+      { name: "Discoverist", threshold: 10, perks: "Bottled water, priority late checkout" },
+      { name: "Explorist", threshold: 30, perks: "Room upgrade, 2pm checkout, club lounge" },
+      { name: "Globalist", threshold: 60, perks: "Suite upgrades, free breakfast, parking, waived resort fees" },
+    ], earnRate: { standard: 5, premium: 10, luxury: 15 } },
+    { id: "choice", name: "Choice Privileges", logo: "🏠", color: "#003F87", accent: "#FFB81C", unit: "Nights", loginUrl: "https://www.choicehotels.com/choice-privileges/account", tiers: [
+      { name: "Gold", threshold: 10, perks: "Room upgrade, early check-in, late checkout" },
+      { name: "Platinum", threshold: 20, perks: "Best room guarantee, bonus points" },
+      { name: "Diamond", threshold: 40, perks: "Suite upgrade, guaranteed availability, amenity" },
+    ], earnRate: { standard: 10, premium: 12, luxury: 15 } },
+    { id: "wyndham", name: "Wyndham Rewards", logo: "🌀", color: "#0066B3", accent: "#FF6600", unit: "Nights", loginUrl: "https://www.wyndhamhotels.com/wyndham-rewards/member/dashboard", tiers: [
+      { name: "Blue", threshold: 0, perks: "Member rates, free WiFi" },
+      { name: "Gold", threshold: 5, perks: "1,000 bonus points per stay, late checkout" },
+      { name: "Platinum", threshold: 15, perks: "Best room guarantee, welcome amenity" },
+      { name: "Diamond", threshold: 40, perks: "Suite upgrade, early check-in/late checkout, bonus" },
+    ], earnRate: { standard: 10, premium: 12, luxury: 15 } },
+    { id: "accor", name: "ALL – Accor Live Limitless", logo: "🇫🇷", color: "#1B3160", accent: "#C4A769", unit: "Nights", loginUrl: "https://all.accor.com/loyalty-program/index.en.shtml", tiers: [
+      { name: "Silver", threshold: 10, perks: "Late checkout, welcome drink" },
+      { name: "Gold", threshold: 30, perks: "Room upgrade, early check-in, late checkout" },
+      { name: "Platinum", threshold: 60, perks: "Suite upgrade, breakfast, lounge access" },
+      { name: "Diamond", threshold: 100, perks: "Guaranteed room, premium suite, all perks" },
+    ], earnRate: { standard: 10, premium: 15, luxury: 25 } },
+    { id: "bestwestern", name: "Best Western Rewards", logo: "👑", color: "#003876", accent: "#FFD700", unit: "Nights", loginUrl: "https://www.bestwestern.com/en_US/rewards/member-profile.html", tiers: [
+      { name: "Blue", threshold: 0, perks: "Member rates, points never expire" },
+      { name: "Gold", threshold: 5, perks: "10% bonus, late checkout" },
+      { name: "Platinum", threshold: 7, perks: "15% bonus, room upgrade" },
+      { name: "Diamond", threshold: 15, perks: "30% bonus, suite when available, amenity" },
+      { name: "Diamond Select", threshold: 25, perks: "50% bonus, best room guarantee" },
+    ], earnRate: { standard: 10, premium: 12, luxury: 15 } },
+    { id: "radisson", name: "Radisson Rewards", logo: "🔶", color: "#0C2340", accent: "#D4A553", unit: "Nights", loginUrl: "https://www.radissonhotels.com/en-us/rewards/my-account", tiers: [
+      { name: "Club", threshold: 0, perks: "Member rates, free WiFi" },
+      { name: "Premium", threshold: 5, perks: "Priority check-in, room upgrade" },
+      { name: "VIP", threshold: 30, perks: "Suite upgrade, welcome amenity, guaranteed room" },
+    ], earnRate: { standard: 10, premium: 12, luxury: 15 } },
+    { id: "sonesta", name: "Sonesta Travel Pass", logo: "🌅", color: "#A3238E", accent: "#F7B538", unit: "Nights", loginUrl: "https://www.sonesta.com/sonesta-travel-pass/dashboard", tiers: [
+      { name: "Adventurer", threshold: 0, perks: "Member rates, bonus points" },
+      { name: "Explorer", threshold: 10, perks: "Room upgrade, late checkout, welcome amenity" },
+      { name: "Trailblazer", threshold: 20, perks: "Suite upgrade, free breakfast, priority" },
+    ], earnRate: { standard: 10, premium: 12, luxury: 15 } },
+    { id: "omni", name: "Omni Select Guest", logo: "🎩", color: "#1A1F36", accent: "#C4A769", unit: "Nights", loginUrl: "https://www.omnihotels.com/loyalty", tiers: [
+      { name: "Select Guest", threshold: 0, perks: "Complimentary WiFi, welcome amenity" },
+      { name: "Platinum", threshold: 15, perks: "Room upgrade, late checkout, bonus points" },
+      { name: "Black", threshold: 40, perks: "Suite upgrade, guaranteed room, premium amenity" },
+    ], earnRate: { standard: 10, premium: 12, luxury: 15 } },
+    { id: "airbnb", name: "Airbnb", logo: "🏠", color: "#FF5A5F", accent: "#00A699", unit: "Stays", loginUrl: "https://www.airbnb.com/login", tiers: [], earnRate: { standard: 0, premium: 0, luxury: 0 } },
+    { id: "vrbo", name: "VRBO", logo: "🏡", color: "#1B4CC4", accent: "#FF6600", unit: "Stays", loginUrl: "https://www.vrbo.com/account/login", tiers: [], earnRate: { standard: 0, premium: 0, luxury: 0 } },
+  ],
+  rentals: [
+    { id: "hertz", name: "Hertz Gold Plus Rewards", logo: "—", color: "#FFD700", accent: "#000000", unit: "Rentals", loginUrl: "https://www.hertz.com/rentacar/member/enrollment", tiers: [
+      { name: "Gold", threshold: 0, perks: "Skip the counter, choose your car" },
+      { name: "Five Star", threshold: 10, perks: "Guaranteed upgrades, priority service" },
+      { name: "President's Circle", threshold: 15, perks: "Premium vehicles, dedicated line" },
+    ], earnRate: { standard: 1, premium: 1.5 } },
+    { id: "national", name: "National Emerald Club", logo: "🟢", color: "#006845", accent: "#2ECC71", unit: "Rentals", loginUrl: "https://www.nationalcar.com/en/loyalty.html", tiers: [
+      { name: "Emerald Club", threshold: 0, perks: "Choose any midsize+, bypass counter" },
+      { name: "Emerald Club Executive", threshold: 12, perks: "Free upgrades, guaranteed one-class" },
+      { name: "Emerald Club Executive Elite", threshold: 25, perks: "Premium aisle access, priority" },
+    ], earnRate: { standard: 1, premium: 1.5 } },
+    { id: "avis", name: "Avis Preferred", logo: "🅰️", color: "#D0021B", accent: "#1A1F36", unit: "Rentals", loginUrl: "https://www.avis.com/en/loyalty-profile", tiers: [
+      { name: "Preferred", threshold: 0, perks: "Skip the counter, choose your car" },
+      { name: "Preferred Plus", threshold: 10, perks: "Free upgrade, priority service" },
+      { name: "President's Club", threshold: 20, perks: "Premium vehicles, dedicated line, best rates" },
+    ], earnRate: { standard: 1, premium: 1.5 } },
+    { id: "enterprise", name: "Enterprise Plus", logo: "🚙", color: "#006845", accent: "#FFD700", unit: "Rentals", loginUrl: "https://www.enterprise.com/en/enterprise-plus.html", tiers: [
+      { name: "Plus", threshold: 0, perks: "Earn points on rentals, free days" },
+      { name: "Silver", threshold: 6, perks: "Free upgrade, priority service" },
+      { name: "Gold", threshold: 12, perks: "Free class upgrade, premium service" },
+      { name: "Platinum", threshold: 24, perks: "Top tier service, guaranteed upgrades, dedicated line" },
+    ], earnRate: { standard: 1, premium: 1.5 } },
+    { id: "budget", name: "Budget Fastbreak", logo: "🅱️", color: "#F57C21", accent: "#1A1F36", unit: "Rentals", loginUrl: "https://www.budget.com/en/fast-break", tiers: [
+      { name: "Fastbreak", threshold: 0, perks: "Skip the counter, faster pickup" },
+    ], earnRate: { standard: 1, premium: 1 } },
+    { id: "sixt", name: "Sixt Loyalty", logo: "🔶", color: "#FF6600", accent: "#000000", unit: "Status Points", loginUrl: "https://www.sixt.com/mysixt/", tiers: [
+      { name: "Gold", threshold: 500, perks: "Free upgrade, priority pick-up" },
+      { name: "Platinum", threshold: 2000, perks: "Guaranteed upgrade, VIP service" },
+      { name: "Diamond", threshold: 7000, perks: "Premium fleet, personal manager" },
+    ], earnRate: { standard: 1, premium: 2 } },
+    { id: "turo", name: "Turo", logo: "🔑", color: "#1D3557", accent: "#E63946", unit: "Trips", loginUrl: "https://turo.com/us/en/signin", tiers: [], earnRate: { standard: 1, premium: 1 } },
+  ],
+  creditCards: [
+    { id: "amex_plat", name: "Amex Platinum", logo: "💳", color: "#B4B4B4", accent: "#006FCF", unit: "Membership Rewards", loginUrl: "https://www.americanexpress.com/en-us/account/login", perks: "5x flights, Marriott/Hilton Gold, Centurion Lounge, $200 airline credit", annualFee: 695, bonusCategories: { flights: 5, hotels: 5, dining: 1, other: 1 } },
+    { id: "amex_gold", name: "Amex Gold", logo: "✨", color: "#C5993C", accent: "#006FCF", unit: "Membership Rewards", loginUrl: "https://www.americanexpress.com/en-us/account/login", perks: "4x dining & groceries, $120 dining credit, $120 Uber credit", annualFee: 325, bonusCategories: { flights: 3, dining: 4, other: 1 } },
+    { id: "amex_green", name: "Amex Green", logo: "🌿", color: "#006845", accent: "#006FCF", unit: "Membership Rewards", loginUrl: "https://www.americanexpress.com/en-us/account/login", perks: "3x travel & transit, LoungeBuddy credit, Global Entry credit", annualFee: 150, bonusCategories: { flights: 3, dining: 3, other: 1 } },
+    { id: "chase_sapphire", name: "Chase Sapphire Reserve", logo: "💎", color: "#1A1F36", accent: "#004977", unit: "Ultimate Rewards", loginUrl: "https://www.chase.com/personal/credit-cards/login-account-access", perks: "3x travel/dining, $300 travel credit, Priority Pass, DoorDash", annualFee: 550, bonusCategories: { flights: 3, hotels: 3, dining: 3, other: 1 } },
+    { id: "chase_sapphire_pref", name: "Chase Sapphire Preferred", logo: "💠", color: "#004977", accent: "#1A1F36", unit: "Ultimate Rewards", loginUrl: "https://www.chase.com/personal/credit-cards/login-account-access", perks: "5x travel via Chase, 3x dining/streaming, $50 hotel credit", annualFee: 95, bonusCategories: { flights: 2, hotels: 5, dining: 3, other: 1 } },
+    { id: "cap1_venturex", name: "Capital One Venture X", logo: "🚀", color: "#D03027", accent: "#1A1F36", unit: "Miles", loginUrl: "https://myaccounts.capitalone.com/", perks: "2x everything, 10x hotels/cars via Capital One, $300 travel credit", annualFee: 395, bonusCategories: { flights: 2, hotels: 10, dining: 2, other: 2 } },
+    { id: "cap1_venture", name: "Capital One Venture", logo: "🗺️", color: "#D03027", accent: "#FFFFFF", unit: "Miles", loginUrl: "https://myaccounts.capitalone.com/", perks: "2x on every purchase, transfer to 15+ partners", annualFee: 95, bonusCategories: { flights: 2, hotels: 2, dining: 2, other: 2 } },
+    { id: "citi_premier", name: "Citi Premier", logo: "🏦", color: "#003B70", accent: "#0066CC", unit: "ThankYou Points", loginUrl: "https://www.citi.com/login", perks: "3x travel/gas/restaurants/supermarkets, transfer to AA", annualFee: 95, bonusCategories: { flights: 3, hotels: 3, dining: 3, other: 1 } },
+    { id: "bilt", name: "Bilt Mastercard", logo: "🏠", color: "#000000", accent: "#E0E0E0", unit: "Bilt Points", loginUrl: "https://app.biltrewards.com/", perks: "Points on rent, 3x dining, 2x travel, Hyatt/AA transfers", annualFee: 0, bonusCategories: { flights: 2, hotels: 2, dining: 3, other: 1 } },
+    { id: "delta_reserve", name: "Delta Reserve Amex", logo: "🔺", color: "#003366", accent: "#B4B4B4", unit: "SkyMiles", loginUrl: "https://www.americanexpress.com/en-us/account/login", perks: "3x Delta, Sky Club access, companion cert, Medallion boost", annualFee: 650, bonusCategories: { flights: 3, dining: 1, other: 1 } },
+    { id: "delta_gold", name: "Delta Gold Amex", logo: "🔺", color: "#C5993C", accent: "#003366", unit: "SkyMiles", loginUrl: "https://www.americanexpress.com/en-us/account/login", perks: "2x Delta/restaurants, free checked bag, priority boarding", annualFee: 150, bonusCategories: { flights: 2, dining: 2, other: 1 } },
+    { id: "united_club", name: "United Club Infinite Card", logo: "🌐", color: "#002244", accent: "#B4B4B4", unit: "MileagePlus Miles", loginUrl: "https://www.chase.com/personal/credit-cards/login-account-access", perks: "4x United, 2x travel/dining, United Club membership, free bags", annualFee: 525, bonusCategories: { flights: 4, dining: 2, other: 1 } },
+    { id: "united_explorer", name: "United Explorer Card", logo: "🌐", color: "#0066CC", accent: "#002244", unit: "MileagePlus Miles", loginUrl: "https://www.chase.com/personal/credit-cards/login-account-access", perks: "2x United/dining/hotels, free checked bag, priority boarding", annualFee: 95, bonusCategories: { flights: 2, dining: 2, other: 1 } },
+    { id: "aa_exec", name: "Citi AAdvantage Executive", logo: "—", color: "#0078D2", accent: "#003B70", unit: "AAdvantage Miles", loginUrl: "https://www.citi.com/login", perks: "Admirals Club, 4x AA/hotels, companion cert, Global Entry", annualFee: 595, bonusCategories: { flights: 4, hotels: 4, dining: 1, other: 1 } },
+    { id: "marriott_boundless", name: "Marriott Bonvoy Boundless", logo: "—", color: "#7C2529", accent: "#B5985A", unit: "Bonvoy Points", loginUrl: "https://www.chase.com/personal/credit-cards/login-account-access", perks: "6x Marriott, free night award annually, auto Silver Elite", annualFee: 95, bonusCategories: { flights: 2, hotels: 6, dining: 2, other: 1 } },
+    { id: "ritz_carlton", name: "Ritz-Carlton Credit Card", logo: "—", color: "#1C1C1C", accent: "#C6A96C", unit: "Bonvoy Points", loginUrl: "https://www.chase.com/personal/credit-cards/login-account-access", perks: "6x Marriott, auto Platinum Elite, $300 travel credit, Priority Pass, free night", annualFee: 450, bonusCategories: { flights: 3, hotels: 6, dining: 3, other: 1 } },
+    { id: "hilton_aspire", name: "Hilton Honors Aspire", logo: "🌟", color: "#003B5C", accent: "#FFD700", unit: "Hilton Honors Points", loginUrl: "https://www.americanexpress.com/en-us/account/login", perks: "14x Hilton, auto Diamond, $250 resort credit, free night", annualFee: 550, bonusCategories: { flights: 7, hotels: 14, dining: 7, other: 3 } },
+    { id: "hilton_surpass", name: "Hilton Honors Surpass", logo: "🌟", color: "#0099CC", accent: "#003B5C", unit: "Hilton Honors Points", loginUrl: "https://www.americanexpress.com/en-us/account/login", perks: "12x Hilton, auto Gold, free night after $15k spend", annualFee: 150, bonusCategories: { flights: 6, hotels: 12, dining: 6, other: 3 } },
+    { id: "hyatt_card", name: "World of Hyatt Credit Card", logo: "🏛️", color: "#1C4B82", accent: "#D4A553", unit: "World of Hyatt Points", loginUrl: "https://www.chase.com/personal/credit-cards/login-account-access", perks: "4x Hyatt, auto Discoverist, free night annually, bonus nights", annualFee: 95, bonusCategories: { flights: 2, hotels: 4, dining: 2, other: 1 } },
+    { id: "ihg_premier", name: "IHG One Rewards Premier", logo: "🔑", color: "#2E1A47", accent: "#B4B4B4", unit: "IHG Points", loginUrl: "https://www.chase.com/personal/credit-cards/login-account-access", perks: "10x IHG, 4th night free, auto Platinum, Global Entry", annualFee: 99, bonusCategories: { flights: 2, hotels: 10, dining: 2, other: 1 } },
+    { id: "sw_priority", name: "Southwest Priority Card", logo: "❤️", color: "#304CB2", accent: "#FFBF27", unit: "Rapid Rewards Points", loginUrl: "https://www.chase.com/personal/credit-cards/login-account-access", perks: "3x Southwest, $75 travel credit, 7,500 anniversary points", annualFee: 149, bonusCategories: { flights: 3, dining: 2, other: 1 } },
+    { id: "atmos_summit", name: "Atmos Rewards Summit Visa Infinite", logo: "🏔️", color: "#01426A", accent: "#64CCC9", unit: "Atmos Points", loginUrl: "https://www.alaskaair.com/account/overview", perks: "3x Alaska/Hawaiian, Global Companion Award, status boost", annualFee: 250, bonusCategories: { flights: 3, dining: 2, other: 1 } },
+  ],
+};
 
+const CABIN_LABELS = {
+  basic_economy: "Basic Economy",
+  economy: "Economy",
+  premium_economy: "Premium Economy",
+  business_first: "Business / First",
+};
 
 // Per-airline booking class → cabin mapping (codes vary by carrier)
+const AIRLINE_BOOKING_CLASS_MAP = {
+  aa:  { F:"business_first",A:"business_first",P:"business_first", J:"business_first",D:"business_first",R:"business_first",I:"business_first",C:"business_first", W:"premium_economy", Y:"economy",B:"economy",H:"economy",K:"economy",M:"economy",L:"economy",V:"economy",S:"economy",N:"economy",Q:"economy",O:"economy", G:"basic_economy" },
+  dl:  { J:"business_first",C:"business_first",D:"business_first",I:"business_first",Z:"business_first", W:"premium_economy",P:"premium_economy", Y:"economy",B:"economy",M:"economy",H:"economy",Q:"economy",K:"economy",L:"economy",U:"economy",T:"economy",X:"economy",V:"economy",S:"economy", E:"basic_economy",N:"basic_economy" },
+  ua:  { J:"business_first",C:"business_first",D:"business_first",Z:"business_first",P:"business_first", A:"premium_economy", Y:"economy",B:"economy",M:"economy",E:"economy",U:"economy",H:"economy",Q:"economy",V:"economy",W:"economy",S:"economy",T:"economy",K:"economy",L:"economy",G:"economy",X:"economy", N:"basic_economy" },
+  sw:  { A:"business_first",B:"business_first", Y:"economy",K:"economy",L:"economy",M:"economy",N:"economy",Q:"economy",S:"economy",T:"economy",V:"economy",W:"economy",X:"economy" },
+  b6:  { J:"business_first",C:"business_first",D:"business_first", Y:"economy",B:"economy",H:"economy",K:"economy",M:"economy",L:"economy",V:"economy",S:"economy",Q:"economy",T:"economy",N:"economy", G:"basic_economy",O:"basic_economy" },
+  atmos: { F:"business_first",A:"business_first",C:"business_first",J:"business_first",D:"business_first", P:"premium_economy", Y:"economy",B:"economy",H:"economy",K:"economy",L:"economy",M:"economy",O:"economy",S:"economy",Q:"economy",G:"economy",T:"economy",X:"economy",E:"economy",N:"economy",V:"economy",U:"economy",W:"economy" },
+  ba_avios: { F:"business_first",A:"business_first", J:"business_first",C:"business_first",D:"business_first",I:"business_first",R:"business_first",U:"business_first", W:"premium_economy",T:"premium_economy",P:"premium_economy", Y:"economy",B:"economy",H:"economy",K:"economy",M:"economy",L:"economy",V:"economy",S:"economy",N:"economy",Q:"economy",O:"economy",G:"economy" },
+  aeroplan: { J:"business_first",C:"business_first",D:"business_first",Z:"business_first",P:"business_first", W:"premium_economy", Y:"economy",B:"economy",H:"economy",K:"economy",M:"economy",L:"economy",V:"economy",S:"economy",Q:"economy",T:"economy", E:"basic_economy",G:"basic_economy",N:"basic_economy" },
+  singapore_kf: { F:"business_first",A:"business_first",P:"business_first", J:"business_first",C:"business_first",D:"business_first",I:"business_first",Z:"business_first",U:"business_first", W:"premium_economy",E:"premium_economy", Y:"economy",B:"economy",H:"economy",K:"economy",M:"economy",L:"economy",V:"economy",S:"economy",Q:"economy", N:"basic_economy",G:"basic_economy" },
+  cathay_mp: { F:"business_first",A:"business_first", J:"business_first",C:"business_first",D:"business_first",I:"business_first",R:"business_first",P:"business_first", W:"premium_economy", Y:"economy",B:"economy",H:"economy",K:"economy",M:"economy",L:"economy",V:"economy",S:"economy",N:"economy",Q:"economy",T:"economy",X:"economy",E:"economy",G:"economy",O:"economy" },
+  emirates_skywards: { F:"business_first",A:"business_first", J:"business_first",C:"business_first",D:"business_first",I:"business_first",Z:"business_first", W:"premium_economy",P:"premium_economy", Y:"economy",B:"economy",H:"economy",K:"economy",M:"economy",L:"economy",V:"economy",S:"economy",N:"economy",Q:"economy",T:"economy",X:"economy",G:"economy",O:"economy" },
+  flying_blue: { F:"business_first",A:"business_first", J:"business_first",C:"business_first",D:"business_first",I:"business_first",Z:"business_first", W:"premium_economy",P:"premium_economy", Y:"economy",B:"economy",H:"economy",K:"economy",M:"economy",L:"economy",V:"economy",S:"economy",N:"economy",Q:"economy",T:"economy",X:"economy",E:"economy",G:"economy" },
+  turkish_miles: { F:"business_first",A:"business_first", J:"business_first",C:"business_first",D:"business_first",I:"business_first",Z:"business_first", W:"premium_economy",P:"premium_economy", Y:"economy",B:"economy",H:"economy",K:"economy",M:"economy",L:"economy",V:"economy",S:"economy",N:"economy",Q:"economy",T:"economy",X:"economy",E:"economy",G:"economy" },
+  qantas_ff: { F:"business_first",A:"business_first",P:"business_first", J:"business_first",C:"business_first",D:"business_first",I:"business_first",Z:"business_first",U:"business_first", W:"premium_economy", Y:"economy",B:"economy",H:"economy",K:"economy",M:"economy",L:"economy",V:"economy",S:"economy",N:"economy",Q:"economy",O:"economy",G:"economy" },
+  etihad_guest: { F:"business_first",A:"business_first", J:"business_first",C:"business_first",D:"business_first",I:"business_first",Z:"business_first", W:"premium_economy",P:"premium_economy", Y:"economy",B:"economy",H:"economy",K:"economy",M:"economy",L:"economy",V:"economy",S:"economy",N:"economy",Q:"economy",T:"economy",X:"economy",E:"economy",G:"economy" },
+  virgin_fc: { F:"business_first",A:"business_first", J:"business_first",C:"business_first",D:"business_first",I:"business_first",Z:"business_first",U:"business_first", W:"premium_economy",P:"premium_economy", Y:"economy",B:"economy",H:"economy",K:"economy",M:"economy",L:"economy",V:"economy",S:"economy",N:"economy",Q:"economy",T:"economy",X:"economy",G:"economy" },
+  frontier: { J:"business_first",C:"business_first", Y:"economy",B:"economy",H:"economy",K:"economy",M:"economy",L:"economy",V:"economy",S:"economy",Q:"economy", G:"basic_economy",O:"basic_economy" },
+  spirit:   { J:"business_first", Y:"economy",B:"economy",H:"economy",K:"economy",M:"economy",L:"economy",V:"economy",S:"economy",Q:"economy", G:"basic_economy",O:"basic_economy" },
+};
 // Generic fallback map for airlines not listed above
+const BOOKING_CLASS_MAP_GENERIC = { G:"basic_economy",O:"basic_economy",E:"basic_economy", Y:"economy",B:"economy",H:"economy",K:"economy",M:"economy",L:"economy",V:"economy",S:"economy",Q:"economy",T:"economy",X:"economy",U:"economy",N:"economy", W:"premium_economy", J:"business_first",C:"business_first",D:"business_first",I:"business_first",Z:"business_first",R:"business_first",F:"business_first",A:"business_first",P:"business_first" };
 
 const getBookingClassCabin = (programId, code) => {
   if (!code) return null;
@@ -145,6 +713,21 @@ const getBookingClassCabin = (programId, code) => {
 };
 
 // Per-program per-booking-class status earning rates (per $ spent)
+const BOOKING_CLASS_RATES = {
+  aa:  { F:11,A:11,P:11, J:11,D:11,R:11,I:11,C:11, W:7, Y:5,B:5,H:5,K:5,M:5,L:5,V:5,S:5,N:5,Q:5,O:5, G:0 },
+  dl:  { J:1.5,C:1.5,D:1.5,I:1.5,Z:1.5, P:1.25,W:1.25, Y:1,B:1,M:1,H:1,Q:1,K:1,L:1,U:1,T:1,X:1,V:1,S:1, E:0,N:0 },
+  ua:  { J:2,C:2,D:2,Z:2,P:2,F:2,A:2, W:1.5, Y:1,B:1,M:1,E:1,U:1,H:1,Q:1,V:1,S:1,T:1,K:1,L:1,G:1,X:1, N:0 },
+  sw:  { A:12,B:12, Y:6,K:6,L:6,M:6,N:6,Q:6,S:6,T:6,V:6,W:6,X:6 },
+  b6:  { J:7,C:7,D:7, Y:3,B:3,H:3,K:3,M:3,L:3,V:3,S:3,Q:3,T:3,N:3, G:0,O:0 },
+  atmos: { F:3,A:3,C:3,J:3,D:3, P:2, Y:1,B:1,H:1,K:1,L:1,M:1,O:1,S:1,Q:1,G:1,T:1,X:1,E:1,N:1,V:1,U:1,W:1 },
+  ba_avios: { F:4,A:4, J:3,C:3,D:3,I:3,R:3,U:3, W:2,T:2,P:2, Y:1.25,B:1.25,H:1.25,K:1.25,M:1.25, L:1,V:1,S:1,N:1, Q:0.5, O:0,G:0 },
+  aeroplan: { J:2,C:2,D:2,Z:2,P:2, W:1.5, Y:1,B:1,H:1,K:1,M:1,L:1,V:1,S:1,Q:1,T:1, E:0,G:0,N:0 },
+  singapore_kf: { F:2,A:2,P:2, J:2,C:2,D:2,Z:2,U:2, W:1.5,E:1.5, Y:1,B:1,H:1,K:1,M:1,L:1,V:1,S:1,Q:1, N:0,G:0 },
+  cathay_mp: { F:2,A:2, J:2,C:2,D:2,I:2,R:2,P:2, W:1.5, Y:1,B:1,H:1,K:1,M:1,L:1,V:1,S:1,N:1,Q:1,T:1,X:1,E:0.5,G:0,O:0 },
+  emirates_skywards: { F:2,A:2, J:2,C:2,D:2,I:2,Z:2, W:1.5,P:1.5, Y:1,B:1,H:1,K:1,M:1,L:1,V:1,S:1,N:1,Q:1,T:1,X:1, G:0,O:0 },
+  flying_blue: { F:2,A:2, J:2,C:2,D:2,I:2,Z:2, W:1.5,P:1.5, Y:1,B:1,H:1,K:1,M:1,L:1,V:1,S:1,N:0.5,Q:0.5, T:0,X:0,E:0,G:0 },
+  qantas_ff: { F:2,A:2,P:2, J:2,C:2,D:2,I:2,Z:2,U:2, W:1.5, Y:1,B:1,H:1,K:1,M:1,L:1,V:1,S:1,N:0,Q:0,O:0,G:0 },
+};
 
 // Great-circle distance helper using existing AIRPORT_COORDS + haversineDistance
 const greatCircleMiles = (a, b) => {
@@ -169,7 +752,148 @@ const greatCircleMiles = (a, b) => {
 // ── Per-booking-class earning rates (% of distance) for partner flights ──
 // Used when we have the specific booking class letter; falls back to cabin-level rates otherwise.
 // Format: { creditAirline: { operatingAirline: { bookingClassLetter: earnPct } } }
+const PARTNER_CLASS_RATES = {
+  aa: { // AA partner earning by specific booking class (verified from official sources)
+    // BA/Iberia: REVENUE-BASED since Oct 2023 — 5 LP/$1 for premium cabins, 0 for economy
+    // (handled by _type "fare" override below, not class rates)
+    // Cathay Pacific → AA: DISTANCE-BASED (from wheretocredit.com / FlyerTalk)
+    cathay_mp:{ F:150,A:150, J:125,C:125,D:125,I:125,P:125, W:110,R:110,E:110, Y:100,B:150,H:100,K:100, G:0,L:0,M:0,N:0,O:0,Q:0,S:0,V:0 },
+    // Qantas → AA: DISTANCE-BASED
+    qantas_ff:{ F:150,A:150, J:125,C:125,D:125,I:125, W:110,T:100,R:100, Y:100,B:100, K:50,L:50,M:50,V:50, G:25,N:25,O:25,Q:25,S:25, H:0 },
+    // Other oneworld partners: generic distance-based
+    atmos:    { F:150,A:150, J:125,C:125,D:125, P:110, Y:100,B:100,H:100,K:100,M:100, L:50,V:50,S:50,N:50,Q:50, G:0 },
+  },
+  ba_avios: { // BA Tier Points from partner flights by booking class (TP per 100mi approx)
+    aa: { F:3.5,A:3.5, J:2.8,C:2.5,D:2.5,R:2.0,I:2.0, W:1.4, Y:0.7,B:0.7,H:0.7,K:0.6,M:0.6, L:0.4,V:0.4,S:0.4,N:0.4, G:0 },
+    cathay_mp:{ F:3.5,A:3.5, J:2.8,C:2.5,D:2.5,I:2.0,R:2.0, W:1.4, Y:0.7,B:0.7,H:0.7,K:0.6,M:0.6, L:0.4,V:0.4, G:0 },
+    qantas_ff:{ F:3.5,A:3.5, J:2.8,C:2.5,D:2.5,I:2.0, W:1.4, Y:0.7,B:0.7,H:0.7,K:0.6,M:0.6, L:0.4,V:0.4, G:0 },
+  },
+  cathay_mp: { // Cathay Status Points from partner flights (SP per 100mi approx)
+    aa: { F:1.8,A:1.8, J:1.5,C:1.2,D:1.2,R:0.8,I:0.8, W:0.6, Y:0.3,B:0.3,H:0.25,K:0.25,M:0.2, L:0.1,V:0.1, G:0 },
+    ba_avios:{ F:1.8,A:1.8, J:1.5,C:1.2,D:1.2,R:0.8,I:0.8, W:0.6, Y:0.3,B:0.3,H:0.25,K:0.25,M:0.2, G:0 },
+  },
+};
 
+const PARTNER_EARN_RATES = {
+  aa: { // AAdvantage Loyalty Points
+    // Own-metal: FARE-BASED. 5 LP/$1 base (Gold 7, Plat 8, Plat Pro 9, EP 11 — modeled via elite bonus).
+    // BA/Iberia: REVENUE-BASED since Oct 2023 (5 LP/$1 for premium cabins F/A/J/C/D/R/I/W/E/T; 0 for economy).
+    // Cathay/Qantas/other oneworld: DISTANCE-BASED by booking class.
+    _type: "fare_own",
+    _own:         { business_first: 5, premium_economy: 5, economy: 5, basic_economy: 0 },
+    // BA → AA: REVENUE-BASED (same rate as own-metal, 5 LP/$1 for premium cabins, 0 for economy)
+    ba_avios:     { _fare: true, business_first: 5, premium_economy: 5, economy: 0, basic_economy: 0 },
+    // Cathay → AA: DISTANCE-BASED (from official AA/wheretocredit: F/A 150%, J/C/D/I/P 125%, W/R/E 110%)
+    cathay_mp:    { business_first: 138, premium_economy: 110, economy: 100, basic_economy: 0 },
+    // Qantas → AA: DISTANCE-BASED (F/A 150%, J/C/D/I 125%, W 110%, Y/B 100%, K-V 50%, G-S 25%)
+    qantas_ff:    { business_first: 138, premium_economy: 105, economy: 75, basic_economy: 0 },
+    atmos:        { business_first: 138, premium_economy: 110, economy: 100, basic_economy: 0 },
+    flying_blue:  { business_first: 125, premium_economy: 100, economy: 50, basic_economy: 0 },
+    _default:     { business_first: 125, premium_economy: 100, economy: 75, basic_economy: 0 },
+  },
+  dl: { // Delta MQDs — since 2024, ONLY MQDs qualify (MQMs eliminated)
+    // Own-metal: $1 = 1 MQD (no cabin multiplier). Basic Economy excluded.
+    // Partner: distance × fare class % (reduced rates since 2024)
+    // NO elite tier bonus on MQDs.
+    _type: "revenue",
+    _own:         { business_first: 1, premium_economy: 1, economy: 1, basic_economy: 0 },
+    flying_blue:  { business_first: 150, premium_economy: 100, economy: 75, basic_economy: 0 },
+    aeroplan:     { business_first: 125, premium_economy: 100, economy: 75, basic_economy: 0 },
+    _default:     { business_first: 125, premium_economy: 100, economy: 75, basic_economy: 0 },
+  },
+  ua: { // United PQPs
+    // Own-metal: $1 = 1 PQP (no cabin multiplier). Basic Economy excluded.
+    // Partner: PQP derived from miles earned ÷ 5 (preferred) or ÷ 6 (others), with caps.
+    // Simplified here as % of distance (approximation of miles÷5).
+    // NO elite tier bonus on PQPs.
+    _type: "revenue",
+    _own:         { business_first: 1, premium_economy: 1, economy: 1, basic_economy: 0 },
+    aeroplan:     { business_first: 40, premium_economy: 25, economy: 20, basic_economy: 0 }, // ~miles÷5
+    singapore_kf: { business_first: 40, premium_economy: 25, economy: 20, basic_economy: 0 },
+    turkish_miles:{ business_first: 33, premium_economy: 20, economy: 17, basic_economy: 0 }, // ~miles÷6
+    _default:     { business_first: 33, premium_economy: 20, economy: 17, basic_economy: 0 },
+  },
+  ba_avios: { // BA Tier Points
+    // From April 2025 (own-metal BA/AA/Iberia): 1 TP per GBP 1 of eligible spend + bonus TPs per leg.
+    // Bonus per leg: Long-haul Club World (J) = 400 TP, World Traveller Plus (W) = 275 TP,
+    //   World Traveller (Y) = 150 TP, First = 550 TP. Short-haul: Club Europe = 175, Euro Trav = 75.
+    // Total TP ≈ (fare in GBP × 1) + (legs × cabin bonus). We model as fare-based for own-metal.
+    // For GBP→USD approx: ~0.8 TP per $1 spent. Plus bonus per segment (modeled by adding ~100 TP/seg via rate).
+    // Partner flights: fixed TP per segment by distance band + cabin (NOT revenue).
+    // NO elite tier bonus on Tier Points.
+    _type: "fare_own",
+    _own:         { business_first: 0.8, premium_economy: 0.8, economy: 0.8, basic_economy: 0.3 }, // ~TP per $ (GBP conversion)
+    // Partners: distance-band based, modeled as TP per 100mi (approximate fixed-TP-per-segment)
+    aa:           { business_first: 2.5, premium_economy: 1.4, economy: 0.7, basic_economy: 0 },
+    cathay_mp:    { business_first: 2.5, premium_economy: 1.4, economy: 0.7, basic_economy: 0 },
+    qantas_ff:    { business_first: 2.5, premium_economy: 1.4, economy: 0.7, basic_economy: 0 },
+    _default:     { business_first: 2.2, premium_economy: 1.2, economy: 0.6, basic_economy: 0 },
+  },
+  cathay_mp: { // Cathay Status Points — SEGMENT-BASED (fixed SP per distance band + cabin)
+    // Simplified as % of distance for calculator (approximate)
+    // NO elite tier bonus.
+    _type: "segment",
+    _own:         { business_first: 1.5, premium_economy: 0.8, economy: 0.3, basic_economy: 0.1 }, // SP per 100mi (approx)
+    aa:           { business_first: 1.2, premium_economy: 0.6, economy: 0.25, basic_economy: 0 },
+    ba_avios:     { business_first: 1.2, premium_economy: 0.6, economy: 0.25, basic_economy: 0 },
+    _default:     { business_first: 1.0, premium_economy: 0.5, economy: 0.2, basic_economy: 0 },
+  },
+  qantas_ff: { // Qantas Status Credits — SEGMENT-BASED (fixed SC per route zone + fare)
+    // Simplified as approx SC per 100mi for calculator
+    // NO elite tier bonus on SCs.
+    _type: "segment",
+    _own:         { business_first: 2.0, premium_economy: 1.2, economy: 0.6, basic_economy: 0 },
+    aa:           { business_first: 1.5, premium_economy: 1.0, economy: 0.5, basic_economy: 0 },
+    cathay_mp:    { business_first: 1.5, premium_economy: 1.0, economy: 0.5, basic_economy: 0 },
+    ba_avios:     { business_first: 1.5, premium_economy: 1.0, economy: 0.5, basic_economy: 0 },
+    _default:     { business_first: 1.2, premium_economy: 0.8, economy: 0.4, basic_economy: 0 },
+  },
+  aeroplan: { // Air Canada SQM (Status Qualifying Miles) — DISTANCE-BASED
+    // Also requires SQD ($1=1 on AC metal), but calculator shows SQM only.
+    // NO elite tier bonus.
+    _own:         { business_first: 150, premium_economy: 115, economy: 100, basic_economy: 0 },
+    ua:           { business_first: 150, premium_economy: 100, economy: 100, basic_economy: 0 },
+    _default:     { business_first: 125, premium_economy: 100, economy: 75, basic_economy: 0 },
+  },
+  singapore_kf: { // Singapore KrisFlyer Elite Miles — DISTANCE-BASED by booking class
+    // F/A: 200%, J/C/Z: 150%, D/U: 125%, Economy varies 50-100%
+    // NO elite tier bonus.
+    _own:         { business_first: 175, premium_economy: 125, economy: 75, basic_economy: 0 },
+    ua:           { business_first: 150, premium_economy: 100, economy: 75, basic_economy: 0 },
+    _default:     { business_first: 125, premium_economy: 100, economy: 50, basic_economy: 0 },
+  },
+  emirates_skywards: { // Emirates Tier Miles — DISTANCE-BASED (route-specific, approx values)
+    // Rates vary by specific route; these are median approximations.
+    // Elite bonus on redeemable Skywards Miles only (Silver +30%, Gold +75%, Plat +100%), NOT on Tier Miles.
+    _own:         { business_first: 200, premium_economy: 125, economy: 60, basic_economy: 25 },
+    qantas_ff:    { business_first: 150, premium_economy: 100, economy: 50, basic_economy: 0 },
+    _default:     { business_first: 125, premium_economy: 75, economy: 50, basic_economy: 0 },
+  },
+  flying_blue: { // Flying Blue XP — SEGMENT-BASED (fixed XP per distance band + cabin)
+    // Biz ~3x Economy, First ~3x Business. Approx XP per 1000mi for calculator.
+    // NO elite tier bonus on XP.
+    _type: "segment",
+    _own:         { business_first: 5.0, premium_economy: 2.5, economy: 1.7, basic_economy: 0.7 }, // XP per 1000mi
+    dl:           { business_first: 4.5, premium_economy: 2.0, economy: 1.5, basic_economy: 0 },
+    _default:     { business_first: 4.0, premium_economy: 2.0, economy: 1.2, basic_economy: 0 },
+  },
+  turkish_miles: { // Turkish Status Miles — DISTANCE-BASED
+    // ~100-225% by fare class. Elite/Elite Plus get +25% on Business only.
+    _own:         { business_first: 200, premium_economy: 150, economy: 100, basic_economy: 25 },
+    ua:           { business_first: 175, premium_economy: 125, economy: 100, basic_economy: 0 },
+    _default:     { business_first: 150, premium_economy: 100, economy: 75, basic_economy: 0 },
+  },
+  atmos: { // Alaska Mileage Plan EQMs — DISTANCE-BASED
+    // Own-metal: 100% of distance (min 500 EQM). Partner: varies by cabin + booking channel.
+    // Rates below assume booked on AlaskaAir.com (higher rates).
+    // Elite bonus: MVP +25%, Gold +50%, Gold 75K +50%.
+    _own:         { business_first: 100, premium_economy: 100, economy: 100, basic_economy: 50 },
+    aa:           { business_first: 250, premium_economy: 150, economy: 100, basic_economy: 25 },
+    cathay_mp:    { business_first: 250, premium_economy: 150, economy: 100, basic_economy: 25 },
+    ba_avios:     { business_first: 250, premium_economy: 150, economy: 100, basic_economy: 25 },
+    _default:     { business_first: 125, premium_economy: 100, economy: 50, basic_economy: 25 },
+  },
+};
 
 // ── Elite status bonus multipliers (applied on top of base earning) ──
 // Maps program ID → tier name → bonus % (e.g., 120 = 120% bonus, so total = base × 2.2)
@@ -181,6 +905,21 @@ const greatCircleMiles = (a, b) => {
 //     applies to redeemable miles which count as LP. This is the partner-flight bonus.
 // Alaska: MVP +25%, Gold +50%, Gold 75K +50% on EQMs.
 // All others: 0% bonus on status credits (bonuses apply to redeemable miles only).
+const ELITE_BONUS_PCT = {
+  aa: { "Gold": 40, "Platinum": 60, "Platinum Pro": 80, "Executive Platinum": 120 },
+  atmos: { "MVP": 25, "MVP Gold": 50, "MVP Gold 75K": 50 },
+  // Programs with NO elite bonus on status credits:
+  dl: { "Silver Medallion": 0, "Gold Medallion": 0, "Platinum Medallion": 0, "Diamond Medallion": 0 },
+  ua: { "Premier Silver": 0, "Premier Gold": 0, "Premier Platinum": 0, "Premier 1K": 0 },
+  ba_avios: { "Bronze": 0, "Silver": 0, "Gold": 0 },
+  cathay_mp: { "Green": 0, "Silver": 0, "Gold": 0, "Diamond": 0 },
+  aeroplan: { "25K": 0, "35K": 0, "50K": 0, "75K": 0, "Super Elite 100K": 0 },
+  qantas_ff: { "Silver": 0, "Gold": 0, "Platinum": 0 },
+  singapore_kf: { "Elite Silver": 0, "Elite Gold": 0 },
+  emirates_skywards: { "Silver": 0, "Gold": 0, "Platinum": 0 },
+  flying_blue: { "Silver": 0, "Gold": 0, "Platinum": 0, "Ultimate": 0 },
+  turkish_miles: { "Classic Plus": 0, "Elite": 0, "Elite Plus": 0 },
+};
 
 // Calculate elite credits for a segment, optionally with elite status bonus
 // bookingClass param is the single-letter class code (J, D, Y, etc.) for per-class lookup
@@ -236,8 +975,42 @@ const calcSegmentCredits = (creditAirlineId, operatingAirlineId, cabin, distance
 };
 
 // Build the same shape used by the rest of the app
+const LOYALTY_PROGRAMS = {
+  airlines: [...PROGRAM_DIRECTORY.airlines].sort((a, b) => a.name.localeCompare(b.name)),
+  hotels: [...PROGRAM_DIRECTORY.hotels].sort((a, b) => a.name.localeCompare(b.name)),
+  rentals: [...PROGRAM_DIRECTORY.rentals].sort((a, b) => a.name.localeCompare(b.name)),
+  creditCards: [...PROGRAM_DIRECTORY.creditCards].sort((a, b) => a.name.localeCompare(b.name)),
+};
 
 // Clearbit logo domains keyed by program id
+const PROGRAM_LOGO_DOMAINS = {
+  // Airlines
+  aa: "aa.com", dl: "delta.com", ua: "united.com", sw: "southwest.com",
+  b6: "jetblue.com", atmos: "alaskaair.com", frontier: "flyfrontier.com",
+  spirit: "spirit.com", flying_blue: "airfranceklm.com", ba_avios: "britishairways.com",
+  aeroplan: "aircanada.com", emirates_skywards: "emirates.com",
+  turkish_miles: "turkishairlines.com", qantas_ff: "qantas.com",
+  singapore_kf: "singaporeair.com", etihad_guest: "etihad.com",
+  virgin_fc: "virginatlantic.com", cathay_mp: "cathaypacific.com",
+  // Hotels
+  marriott: "marriott.com", hilton: "hilton.com", ihg: "ihg.com",
+  hyatt: "hyatt.com", choice: "choicehotels.com", wyndham: "wyndhamhotels.com",
+  accor: "accor.com", bestwestern: "bestwestern.com", radisson: "radissonhotels.com",
+  sonesta: "sonesta.com", omni: "omnihotels.com",
+  // Rentals
+  hertz: "hertz.com", national: "nationalcar.com", avis: "avis.com",
+  enterprise: "enterprise.com", budget: "budget.com", sixt: "sixt.com",
+  // Credit cards
+  amex_plat: "americanexpress.com", amex_gold: "americanexpress.com",
+  amex_green: "americanexpress.com", chase_sapphire: "chase.com",
+  chase_sapphire_pref: "chase.com", cap1_venturex: "capitalone.com",
+  cap1_venture: "capitalone.com", citi_premier: "citi.com",
+  bilt: "biltrewards.com", delta_reserve: "delta.com", delta_gold: "delta.com",
+  united_club: "united.com", united_explorer: "united.com", aa_exec: "aa.com",
+  marriott_boundless: "marriott.com", hilton_aspire: "hilton.com",
+  hilton_surpass: "hilton.com", hyatt_card: "hyatt.com", ihg_premier: "ihg.com",
+  sw_priority: "southwest.com", atmos_summit: "alaskaair.com",
+};
 
 const ProgramLogo = ({ prog, size = 32 }) => {
   const [err, setErr] = useState(false);
@@ -258,27 +1031,1019 @@ const ProgramLogo = ({ prog, size = 32 }) => {
 // ============================================================
 // AIRLINE & OTA CUSTOMER SERVICE DATA
 // ============================================================
+const AIRLINE_CS = {
+  aa: { name: "American Airlines", phone: "1-800-433-7300", manage: "https://www.aa.com/reservation/view/find-your-trip" },
+  dl: { name: "Delta Air Lines", phone: "1-800-221-1212", manage: "https://www.delta.com/mytrips/" },
+  ua: { name: "United Airlines", phone: "1-800-864-8331", manage: "https://www.united.com/en/us/managereservation" },
+  sw: { name: "Southwest Airlines", phone: "1-800-435-9792", manage: "https://www.southwest.com/air/manage-reservation/" },
+  b6: { name: "JetBlue", phone: "1-800-538-2583", manage: "https://www.jetblue.com/manage-trips" },
+  atmos: { name: "Alaska Airlines", phone: "1-800-252-7522", manage: "https://www.alaskaair.com/booking/manage-trip" },
+  frontier: { name: "Frontier Airlines", phone: "1-801-401-9000", manage: "https://www.flyfrontier.com/manage-trip/" },
+  spirit: { name: "Spirit Airlines", phone: "1-855-728-3555", manage: "https://www.spirit.com/my-trips" },
+  flying_blue: { name: "Air France / KLM", phone: "1-800-237-2747", manage: "https://www.airfrance.us/FR/en/local/process/standardbookingretrieve/RetrieveBookingAction.do" },
+  ba_avios: { name: "British Airways", phone: "1-800-247-9297", manage: "https://www.britishairways.com/travel/managebooking/public/en_us" },
+  aeroplan: { name: "Air Canada", phone: "1-888-247-2262", manage: "https://www.aircanada.com/ca/en/aco/home/book/manage-bookings.html" },
+  emirates_skywards: { name: "Emirates", phone: "1-800-777-3999", manage: "https://www.emirates.com/us/english/manage-booking/" },
+  turkish_miles: { name: "Turkish Airlines", phone: "1-800-874-8875", manage: "https://www.turkishairlines.com/en-int/any-content/manage-booking/" },
+  qantas_ff: { name: "Qantas", phone: "1-800-227-4500", manage: "https://www.qantas.com/au/en/manage-booking.html" },
+  singapore_kf: { name: "Singapore Airlines", phone: "1-800-742-3333", manage: "https://www.singaporeair.com/en_UK/ppsclub-krisflyer/manage-booking/" },
+  cathay_mp: { name: "Cathay Pacific", phone: "1-800-233-2742", manage: "https://www.cathaypacific.com/cx/en_US/manage-trip/manage-booking.html" },
+};
+const OTA_CS = {
+  expedia: { name: "Expedia", phone: "1-866-310-5768", manage: "https://www.expedia.com/trips" },
+  booking: { name: "Booking.com", phone: "1-888-850-3958", manage: "https://secure.booking.com/mysettings.html" },
+  kayak: { name: "Kayak", phone: "1-855-529-2501", manage: "https://www.kayak.com/trips" },
+  google_flights: { name: "Google Flights", phone: null, manage: null },
+  hopper: { name: "Hopper", phone: "1-833-933-4674", manage: null },
+  priceline: { name: "Priceline", phone: "1-877-477-5807", manage: "https://www.priceline.com/account/trips" },
+  orbitz: { name: "Orbitz", phone: "1-844-674-4891", manage: "https://www.orbitz.com/trips" },
+  travelocity: { name: "Travelocity", phone: "1-888-709-5983", manage: "https://www.travelocity.com/trips" },
+  cheapoair: { name: "CheapOair", phone: "1-800-566-2345", manage: "https://www.cheapoair.com/myaccount/mytrips" },
+  tripcom: { name: "Trip.com", phone: "1-833-896-0077", manage: "https://www.trip.com/account/manage" },
+};
 // Common aircraft types for display
+const AIRCRAFT_TYPES = {
+  "738": "Boeing 737-800", "73H": "Boeing 737-800", "739": "Boeing 737-900",
+  "7M8": "Boeing 737 MAX 8", "7M9": "Boeing 737 MAX 9",
+  "319": "Airbus A319", "320": "Airbus A320", "321": "Airbus A321", "32Q": "Airbus A321neo",
+  "332": "Airbus A330-200", "333": "Airbus A330-300", "339": "Airbus A330-900neo",
+  "359": "Airbus A350-900", "35K": "Airbus A350-1000",
+  "772": "Boeing 777-200", "77W": "Boeing 777-300ER", "789": "Boeing 787-9", "788": "Boeing 787-8",
+  "E75": "Embraer E175", "E90": "Embraer E190", "CR9": "Bombardier CRJ-900", "CRJ": "Bombardier CRJ",
+};
 
 // ============================================================
 // CREDIT CARD TRANSFER PARTNERS & SPENDING CATEGORIES
 // ============================================================
+const CC_SPENDING_CATS = [
+  { id: "dining",    label: "Dining",         icon: "🍽️" },
+  { id: "flights",   label: "Flights",        icon: "—" },
+  { id: "hotels",    label: "Hotels",         icon: "—" },
+  { id: "groceries", label: "Groceries",      icon: "🛒" },
+  { id: "gas",       label: "Gas / Transit",  icon: "⛽" },
+  { id: "streaming", label: "Streaming",      icon: "📺" },
+  { id: "rent",      label: "Rent",           icon: "🏠" },
+  { id: "other",     label: "Everything Else", icon: "💳" },
+];
 // Transfer partner mapping: card currency → airline/hotel programs (1:1 unless noted)
+const CC_TRANSFER_PARTNERS = {
+  amex_plat:        { currency: "Membership Rewards", partners: ["dl","ba_avios","flying_blue","aeroplan","singapore_kf","emirates_skywards","cathay_mp","virgin_fc","marriott","hilton"] },
+  amex_gold:        { currency: "Membership Rewards", partners: ["dl","ba_avios","flying_blue","aeroplan","singapore_kf","emirates_skywards","cathay_mp","virgin_fc","marriott","hilton"] },
+  amex_green:       { currency: "Membership Rewards", partners: ["dl","ba_avios","flying_blue","aeroplan","singapore_kf","emirates_skywards","cathay_mp","virgin_fc","marriott","hilton"] },
+  chase_sapphire:   { currency: "Ultimate Rewards", partners: ["ua","sw","ba_avios","flying_blue","aeroplan","singapore_kf","emirates_skywards","virgin_fc","marriott","hyatt","ihg"] },
+  chase_sapphire_pref: { currency: "Ultimate Rewards", partners: ["ua","sw","ba_avios","flying_blue","aeroplan","singapore_kf","emirates_skywards","virgin_fc","marriott","hyatt","ihg"] },
+  cap1_venturex:    { currency: "Capital One Miles", partners: ["aa","dl","ua","b6","ba_avios","flying_blue","aeroplan","singapore_kf","emirates_skywards","turkish_miles","qantas_ff","cathay_mp","virgin_fc"] },
+  cap1_venture:     { currency: "Capital One Miles", partners: ["aa","dl","ua","b6","ba_avios","flying_blue","aeroplan","singapore_kf","emirates_skywards","turkish_miles","qantas_ff","cathay_mp","virgin_fc"] },
+  citi_premier:     { currency: "ThankYou Points", partners: ["aa","b6","flying_blue","singapore_kf","turkish_miles","qantas_ff","cathay_mp","virgin_fc"] },
+  bilt:             { currency: "Bilt Points", partners: ["aa","ua","ba_avios","flying_blue","aeroplan","turkish_miles","cathay_mp","virgin_fc","marriott","hyatt","ihg"] },
+  // Co-brand cards earn directly into the program, no transfer
+  delta_reserve:    { currency: "SkyMiles", directProgram: "dl" },
+  delta_gold:       { currency: "SkyMiles", directProgram: "dl" },
+  united_club:      { currency: "MileagePlus Miles", directProgram: "ua" },
+  united_explorer:  { currency: "MileagePlus Miles", directProgram: "ua" },
+  aa_exec:          { currency: "AAdvantage Miles", directProgram: "aa" },
+  marriott_boundless: { currency: "Bonvoy Points", directProgram: "marriott" },
+  hilton_aspire:    { currency: "Hilton Points", directProgram: "hilton" },
+  hilton_surpass:   { currency: "Hilton Points", directProgram: "hilton" },
+  hyatt_card:       { currency: "Hyatt Points", directProgram: "hyatt" },
+  ihg_premier:      { currency: "IHG Points", directProgram: "ihg" },
+  sw_priority:      { currency: "Rapid Rewards Points", directProgram: "sw" },
+  atmos_summit:     { currency: "Atmos Points", directProgram: "atmos" },
+};
 // Expanded bonus categories — values are either a number (same direct & portal)
 // or { d: directRate, p: portalRate } when portal booking earns a higher multiplier.
 // Rates per each issuer's official benefits page as of early 2025.
+const CC_BONUS_EXPANDED = {
+  // Amex Platinum: 5x on flights booked directly with airlines OR via amextravel.com (no portal uplift for flights).
+  // Hotels: 1x direct, 5x prepaid via Amex Travel portal.
+  amex_plat:        { dining: 1, flights: 5, hotels: { d: 1, p: 5 }, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
+  // Amex Gold: 3x on flights booked directly with airlines OR via amextravel.com (same either way).
+  amex_gold:        { dining: 4, flights: 3, hotels: 1, groceries: 4, gas: 1, streaming: 1, rent: 0, other: 1 },
+  // Amex Green: 3x on travel & transit (flights, hotels, Uber, etc.) regardless of booking method.
+  amex_green:       { dining: 3, flights: 3, hotels: 3, groceries: 1, gas: 3, streaming: 1, rent: 0, other: 1 },
+  // Chase Sapphire Reserve: 3x direct travel & dining. Via Chase Travel portal: 8x flights, 10x hotels & cars.
+  chase_sapphire:   { dining: 3, flights: { d: 3, p: 8 }, hotels: { d: 3, p: 10 }, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
+  // Chase Sapphire Preferred: 2x direct travel. Via Chase Travel: 5x flights & hotels.
+  chase_sapphire_pref: { dining: 3, flights: { d: 2, p: 5 }, hotels: { d: 2, p: 5 }, groceries: 1, gas: 1, streaming: 3, rent: 0, other: 1 },
+  // Capital One Venture X: 2x base. Via Capital One Travel portal: 5x flights, 10x hotels & car rentals.
+  cap1_venturex:    { dining: 2, flights: { d: 2, p: 5 }, hotels: { d: 2, p: 10 }, groceries: 2, gas: 2, streaming: 2, rent: 2, other: 2 },
+  // Capital One Venture (regular): 2x base everywhere. Via Capital One Travel: 5x hotels & cars only — flights stay 2x.
+  cap1_venture:     { dining: 2, flights: 2, hotels: { d: 2, p: 5 }, groceries: 2, gas: 2, streaming: 2, rent: 2, other: 2 },
+  // Citi Premier: flat 3x on flights, hotels, dining, groceries, gas. No issuer travel portal bonus.
+  citi_premier:     { dining: 3, flights: 3, hotels: 3, groceries: 3, gas: 3, streaming: 1, rent: 0, other: 1 },
+  // Bilt: 3x dining, 2x travel (flights & hotels), 1x rent & other. On Rent Day first of month: 6x/4x/2x.
+  bilt:             { dining: 3, flights: 2, hotels: 2, groceries: 1, gas: 1, streaming: 1, rent: 1, other: 1 },
+  // Delta Reserve Amex: 3x Delta purchases, 2x dining & U.S. supermarkets, 1x other. No hotel portal bonus.
+  delta_reserve:    { dining: 2, flights: 3, hotels: 1, groceries: 2, gas: 1, streaming: 1, rent: 0, other: 1 },
+  // Delta Gold Amex: 2x Delta & restaurants & U.S. supermarkets, 1x other.
+  delta_gold:       { dining: 2, flights: 2, hotels: 1, groceries: 2, gas: 1, streaming: 1, rent: 0, other: 1 },
+  // United Club Infinite: 4x United, 2x all other travel & dining, 1x other.
+  united_club:      { dining: 2, flights: 4, hotels: 2, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
+  // United Explorer: 2x United, hotels & dining, 1x other.
+  united_explorer:  { dining: 2, flights: 2, hotels: 2, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
+  // Citi AAdvantage Executive: 10x AA (includes base miles), 4x hotel & car, 1x other.
+  aa_exec:          { dining: 1, flights: 4, hotels: 4, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
+  // Marriott Boundless: 6x Marriott hotels, 3x dining & gas, 2x everything else.
+  marriott_boundless: { dining: 3, flights: 2, hotels: 6, groceries: 1, gas: 3, streaming: 1, rent: 0, other: 2 },
+  // Hilton Aspire: 14x Hilton, 7x flights, dining & car rentals, 3x everything else.
+  hilton_aspire:    { dining: 7, flights: 7, hotels: 14, groceries: 3, gas: 3, streaming: 3, rent: 0, other: 3 },
+  // Hilton Surpass: 12x Hilton, 6x U.S. restaurants, groceries & gas, 3x everything else.
+  hilton_surpass:   { dining: 6, flights: 3, hotels: 12, groceries: 6, gas: 6, streaming: 3, rent: 0, other: 3 },
+  // World of Hyatt Card: 4x Hyatt, 2x dining, airline tickets & local transit, 1x other.
+  hyatt_card:       { dining: 2, flights: 2, hotels: 4, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
+  // IHG Premier: 10x at IHG hotels (direct co-brand rate, no separate portal uplift), 2x dining & travel, 1x other.
+  ihg_premier:      { dining: 2, flights: 2, hotels: 10, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
+  // Southwest Priority: 3x Southwest flights, 2x hotel & car rental partners & dining, 1x other.
+  sw_priority:      { dining: 2, flights: 3, hotels: 2, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
+  // Alaska/Atmos Summit Visa Infinite: 3x Alaska & Hawaiian flights, 2x dining & gas, 1x other.
+  atmos_summit:     { dining: 2, flights: 3, hotels: 1, groceries: 1, gas: 2, streaming: 1, rent: 0, other: 1 },
+};
 
 // ── Lounge Database ──
+const LOUNGE_DATABASE = {
+  DFW: [
+    { id: "dfw_cap1", name: "Capital One Lounge", terminal: "D", network: "capital_one", rating: 4.7, amenities: ["showers","hot_food","bar","wifi","spa","phone_rooms"], hours: "5:30 AM - 10:00 PM", location: "Near Gate D22", placeQuery: "Capital One Lounge DFW Airport" },
+    { id: "dfw_flagship", name: "American Airlines Flagship Lounge", terminal: "D", network: "flagship", alliance: "oneworld", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Near Gate D12", placeQuery: "American Airlines Flagship Lounge DFW" },
+    { id: "dfw_admirals_d", name: "Admirals Club", terminal: "D", network: "admirals_club", alliance: "oneworld", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 10:00 PM", location: "Gate D21", placeQuery: "Admirals Club DFW Terminal D" },
+    { id: "dfw_admirals_a", name: "Admirals Club", terminal: "A", network: "admirals_club", alliance: "oneworld", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:30 PM", location: "Gate A22", placeQuery: "Admirals Club DFW Terminal A" },
+    { id: "dfw_centurion", name: "Amex Centurion Lounge", terminal: "D", network: "centurion", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "6:00 AM - 10:00 PM", location: "Near Gate D12", placeQuery: "American Express Centurion Lounge DFW" },
+    { id: "dfw_pp_club", name: "The Club DFW", terminal: "D", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Terminal D", placeQuery: "The Club at DFW Airport" },
+    { id: "dfw_admirals_c", name: "Admirals Club", terminal: "C", network: "admirals_club", alliance: "oneworld", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:30 PM", location: "Gate C6", placeQuery: "Admirals Club DFW Terminal C" },
+    { id: "dfw_admirals_b", name: "Admirals Club", terminal: "B", network: "admirals_club", alliance: "oneworld", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 8:00 PM", location: "Gate B22", placeQuery: "Admirals Club DFW Terminal B" },
+    { id: "dfw_turkish", name: "Turkish Airlines Lounge", terminal: "D", network: "turkish_lounge", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 10:00 PM", location: "Terminal D near Gate D12", placeQuery: "Turkish Airlines Lounge DFW Airport" },
+  ],
+  JFK: [
+    { id: "jfk_centurion_t4", name: "Amex Centurion Lounge", terminal: "T4", network: "centurion", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","spa","phone_rooms"], hours: "6:00 AM - 11:00 PM", location: "Near Gate B20", placeQuery: "American Express Centurion Lounge JFK Terminal 4" },
+    { id: "jfk_sky_club_t4", name: "Delta Sky Club", terminal: "T4", network: "delta_sky_club", alliance: "skyteam", rating: 4.2, amenities: ["showers","hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Near Gate B37", placeQuery: "Delta Sky Club JFK Terminal 4" },
+    { id: "jfk_cap1", name: "Capital One Lounge", terminal: "T6/T7", network: "capital_one", rating: 4.6, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "5:30 AM - 11:00 PM", location: "Terminal 6", placeQuery: "Capital One Lounge JFK Airport" },
+    { id: "jfk_polaris", name: "United Polaris Lounge", terminal: "T7", network: "polaris", alliance: "star", rating: 4.4, amenities: ["showers","hot_food","bar","wifi","nap_pods","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Terminal 7", placeQuery: "United Polaris Lounge JFK" },
+    { id: "jfk_admirals_t8", name: "Admirals Club", terminal: "T8", network: "admirals_club", alliance: "oneworld", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 8", placeQuery: "Admirals Club JFK Terminal 8" },
+    { id: "jfk_flagship_t8", name: "AA Flagship First Dining", terminal: "T8", network: "flagship", alliance: "oneworld", rating: 4.4, amenities: ["showers","hot_food","bar","wifi","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Terminal 8 near Gate 1", placeQuery: "American Airlines Flagship First Dining JFK" },
+    { id: "jfk_greenwich", name: "Greenwich Lounge", terminal: "T8", network: "greenwich_lounge", alliance: "oneworld", rating: 4.5, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal 8", placeQuery: "Greenwich Lounge JFK Terminal 8" },
+    { id: "jfk_soho", name: "Soho Lounge", terminal: "T8", network: "soho_lounge", alliance: "oneworld", rating: 4.3, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 8", placeQuery: "Soho Lounge JFK Terminal 8" },
+    { id: "jfk_chelsea", name: "Chelsea Lounge", terminal: "T8", network: "chelsea_lounge", alliance: "oneworld", rating: 4.2, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 8", placeQuery: "Chelsea Lounge JFK Terminal 8" },
+    { id: "jfk_pp_kingsford", name: "KingsfordSmith Lounge", terminal: "T1", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Terminal 1", placeQuery: "KingsfordSmith Lounge JFK" },
+    { id: "jfk_ba_lounge", name: "British Airways Lounge", terminal: "T8", network: "generic_airline", alliance: "oneworld", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with BA flights", location: "Terminal 8", placeQuery: "British Airways Lounge JFK Terminal 8" },
+    { id: "jfk_turkish", name: "Turkish Airlines Lounge", terminal: "T1", network: "turkish_lounge", alliance: "star", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 11:00 PM", location: "Terminal 1", placeQuery: "Turkish Airlines Lounge JFK" },
+    { id: "jfk_korean_air", name: "Korean Air Lounge", terminal: "T1", network: "generic_airline", alliance: "skyteam", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with KE flights", location: "Terminal 1", placeQuery: "Korean Air Lounge JFK" },
+    { id: "jfk_air_france", name: "Air France Lounge", terminal: "T1", network: "generic_airline", alliance: "skyteam", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with AF flights", location: "Terminal 1", placeQuery: "Air France Lounge JFK Terminal 1" },
+    { id: "jfk_united_club", name: "United Club", terminal: "T7", network: "united_club", alliance: "star", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 7", placeQuery: "United Club JFK Terminal 7" },
+    { id: "jfk_sky_club_t2", name: "Delta Sky Club", terminal: "T2", network: "delta_sky_club", alliance: "skyteam", rating: 4.0, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 2", placeQuery: "Delta Sky Club JFK Terminal 2" },
+    { id: "jfk_chase_sapphire", name: "Chase Sapphire Lounge", terminal: "T5", network: "chase_sapphire_lounge", rating: 4.4, amenities: ["showers","hot_food","bar","wifi","phone_rooms"], hours: "5:30 AM - 11:00 PM", location: "Terminal 5", placeQuery: "Chase Sapphire Lounge JFK Terminal 5" },
+    { id: "jfk_qatar", name: "Qatar Airways Lounge", terminal: "T8", network: "generic_airline", alliance: "oneworld", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with QR flights", location: "Terminal 8", placeQuery: "Qatar Airways Lounge JFK" },
+    { id: "jfk_cathay", name: "Cathay Pacific Lounge", terminal: "T8", network: "cathay_lounge", alliance: "oneworld", rating: 4.0, amenities: ["hot_food","bar","wifi"], hours: "Varies with CX flights", location: "Terminal 8", placeQuery: "Cathay Pacific Lounge JFK" },
+  ],
+  LAX: [
+    { id: "lax_cap1", name: "Capital One Lounge", terminal: "T3", network: "capital_one", rating: 4.6, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "5:30 AM - 11:00 PM", location: "Terminal 3", placeQuery: "Capital One Lounge LAX" },
+    { id: "lax_centurion", name: "Amex Centurion Lounge", terminal: "TBIT", network: "centurion", rating: 4.4, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "6:00 AM - 11:00 PM", location: "Tom Bradley Int'l Terminal", placeQuery: "American Express Centurion Lounge LAX" },
+    { id: "lax_polaris", name: "United Polaris Lounge", terminal: "T7", network: "polaris", alliance: "star", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","nap_pods"], hours: "5:00 AM - Last Departure", location: "Terminal 7", placeQuery: "United Polaris Lounge LAX" },
+    { id: "lax_sky_club", name: "Delta Sky Club", terminal: "T3", network: "delta_sky_club", alliance: "skyteam", rating: 4.1, amenities: ["hot_food","bar","wifi","outdoor_terrace"], hours: "4:30 AM - Last Departure", location: "Terminal 3", placeQuery: "Delta Sky Club LAX" },
+    { id: "lax_flagship", name: "AA Flagship Lounge", terminal: "T4/5", network: "flagship", alliance: "oneworld", rating: 4.2, amenities: ["showers","hot_food","bar","wifi","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Terminal 4", placeQuery: "American Airlines Flagship Lounge LAX" },
+    { id: "lax_star_alliance", name: "Star Alliance Lounge", terminal: "TBIT", network: "generic_airline", alliance: "star", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 12:00 AM", location: "Tom Bradley Terminal", placeQuery: "Star Alliance Lounge LAX" },
+    { id: "lax_admirals_t4", name: "Admirals Club", terminal: "T4/5", network: "admirals_club", alliance: "oneworld", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 5 near Gate 52A", placeQuery: "Admirals Club LAX Terminal 5" },
+    { id: "lax_united_club", name: "United Club", terminal: "T7", network: "united_club", alliance: "star", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 7", placeQuery: "United Club LAX Terminal 7" },
+    { id: "lax_qantas_first", name: "Qantas First Lounge", terminal: "TBIT", network: "qantas_lounge", alliance: "oneworld", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","spa","a_la_carte"], hours: "6:00 AM - Last Departure", location: "Tom Bradley Int'l Terminal", placeQuery: "Qantas First Class Lounge LAX" },
+    { id: "lax_qantas_business", name: "Qantas Business Lounge", terminal: "TBIT", network: "qantas_lounge", alliance: "oneworld", rating: 4.1, amenities: ["showers","hot_food","bar","wifi"], hours: "6:00 AM - Last Departure", location: "Tom Bradley Int'l Terminal", placeQuery: "Qantas Business Lounge LAX" },
+    { id: "lax_korean_air", name: "Korean Air Lounge", terminal: "TBIT", network: "generic_airline", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with KE flights", location: "Tom Bradley Int'l Terminal", placeQuery: "Korean Air Lounge LAX" },
+    { id: "lax_oneworld", name: "oneworld Lounge", terminal: "TBIT", network: "generic_airline", alliance: "oneworld", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - Last Departure", location: "Tom Bradley Int'l Terminal", placeQuery: "oneworld Lounge LAX" },
+    { id: "lax_turkish", name: "Turkish Airlines Lounge", terminal: "TBIT", network: "turkish_lounge", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 11:00 PM", location: "Tom Bradley Int'l Terminal", placeQuery: "Turkish Airlines Lounge LAX" },
+    { id: "lax_air_france", name: "Air France / KLM Lounge", terminal: "TBIT", network: "generic_airline", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies with AF/KL flights", location: "Tom Bradley Int'l Terminal", placeQuery: "Air France Lounge LAX" },
+  ],
+  ORD: [
+    { id: "ord_cap1", name: "Capital One Lounge", terminal: "T3", network: "capital_one", rating: 4.6, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "5:30 AM - 10:00 PM", location: "Terminal 3", placeQuery: "Capital One Lounge ORD" },
+    { id: "ord_polaris", name: "United Polaris Lounge", terminal: "T1", network: "polaris", alliance: "star", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","nap_pods","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Terminal 1", placeQuery: "United Polaris Lounge ORD" },
+    { id: "ord_united_club", name: "United Club", terminal: "T1", network: "united_club", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 1 Gate B6", placeQuery: "United Club ORD Terminal 1" },
+    { id: "ord_centurion", name: "Amex Centurion Lounge", terminal: "T3", network: "centurion", rating: 4.3, amenities: ["showers","hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Terminal 3", placeQuery: "American Express Centurion Lounge ORD" },
+    { id: "ord_admirals_t3", name: "Admirals Club", terminal: "T3", network: "admirals_club", alliance: "oneworld", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Terminal 3 Gate H4", placeQuery: "Admirals Club ORD Terminal 3" },
+    { id: "ord_united_club_b18", name: "United Club", terminal: "T1", network: "united_club", alliance: "star", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 1 Gate B18", placeQuery: "United Club ORD Terminal 1 B18" },
+    { id: "ord_united_club_c", name: "United Club", terminal: "T2", network: "united_club", alliance: "star", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 2 Gate F4", placeQuery: "United Club ORD Terminal 2" },
+    { id: "ord_sky_club_t2", name: "Delta Sky Club", terminal: "T2", network: "delta_sky_club", alliance: "skyteam", rating: 3.9, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 2 Gate E6", placeQuery: "Delta Sky Club ORD" },
+    { id: "ord_turkish", name: "Turkish Airlines Lounge", terminal: "T5", network: "turkish_lounge", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 10:00 PM", location: "Terminal 5 Int'l", placeQuery: "Turkish Airlines Lounge ORD" },
+    { id: "ord_ba_lounge", name: "British Airways Lounge", terminal: "T5", network: "generic_airline", alliance: "oneworld", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies with BA flights", location: "Terminal 5 Int'l", placeQuery: "British Airways Lounge ORD" },
+    { id: "ord_swiss", name: "SWISS Lounge", terminal: "T5", network: "generic_airline", alliance: "star", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "Varies with LX flights", location: "Terminal 5 Int'l", placeQuery: "SWISS Lounge Chicago O'Hare" },
+    { id: "ord_flagship", name: "AA Flagship Lounge", terminal: "T3", network: "flagship", alliance: "oneworld", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Terminal 3 Gate K4", placeQuery: "American Airlines Flagship Lounge ORD" },
+  ],
+  SFO: [
+    { id: "sfo_centurion", name: "Amex Centurion Lounge", terminal: "T3", network: "centurion", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "6:00 AM - 10:00 PM", location: "Terminal 3", placeQuery: "American Express Centurion Lounge SFO" },
+    { id: "sfo_polaris", name: "United Polaris Lounge", terminal: "Int'l G", network: "polaris", alliance: "star", rating: 4.4, amenities: ["showers","hot_food","bar","wifi","nap_pods"], hours: "6:00 AM - Last Departure", location: "Int'l Terminal G", placeQuery: "United Polaris Lounge SFO" },
+    { id: "sfo_united_club", name: "United Club", terminal: "T3", network: "united_club", alliance: "star", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 3", placeQuery: "United Club SFO Terminal 3" },
+    { id: "sfo_sky_club", name: "Delta Sky Club", terminal: "T1", network: "delta_sky_club", alliance: "skyteam", rating: 4.0, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Terminal 1", placeQuery: "Delta Sky Club SFO" },
+    { id: "sfo_united_club_intl", name: "United Club", terminal: "Int'l G", network: "united_club", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Int'l Terminal G", placeQuery: "United Club SFO International Terminal" },
+    { id: "sfo_cathay", name: "Cathay Pacific Lounge", terminal: "Int'l A", network: "cathay_lounge", alliance: "oneworld", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with CX flights", location: "Int'l Terminal A", placeQuery: "Cathay Pacific Lounge SFO" },
+    { id: "sfo_korean_air", name: "Korean Air Lounge", terminal: "Int'l A", network: "generic_airline", alliance: "skyteam", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "Varies with KE flights", location: "Int'l Terminal A", placeQuery: "Korean Air Lounge SFO" },
+    { id: "sfo_singapore", name: "Singapore Airlines SilverKris Lounge", terminal: "Int'l G", network: "singapore_lounge", alliance: "star", rating: 4.2, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with SQ flights", location: "Int'l Terminal G", placeQuery: "SilverKris Lounge SFO" },
+    { id: "sfo_turkish", name: "Turkish Airlines Lounge", terminal: "Int'l A", network: "turkish_lounge", alliance: "star", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with TK flights", location: "Int'l Terminal A", placeQuery: "Turkish Airlines Lounge SFO" },
+    { id: "sfo_air_france", name: "Air France / KLM Lounge", terminal: "Int'l A", network: "generic_airline", alliance: "skyteam", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "Varies with AF/KL flights", location: "Int'l Terminal A", placeQuery: "Air France Lounge SFO" },
+    { id: "sfo_alaska", name: "Alaska Lounge", terminal: "T2", network: "alaska_lounge", alliance: "oneworld", rating: 3.9, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 2", placeQuery: "Alaska Lounge SFO" },
+  ],
+  MIA: [
+    { id: "mia_centurion", name: "Amex Centurion Lounge", terminal: "N", network: "centurion", rating: 4.6, amenities: ["showers","hot_food","bar","wifi","spa","outdoor_terrace"], hours: "6:00 AM - 10:00 PM", location: "Concourse D", placeQuery: "American Express Centurion Lounge MIA" },
+    { id: "mia_flagship", name: "AA Flagship Lounge", terminal: "N", network: "flagship", alliance: "oneworld", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Concourse D", placeQuery: "American Airlines Flagship Lounge MIA" },
+    { id: "mia_admirals_d", name: "Admirals Club", terminal: "N", network: "admirals_club", alliance: "oneworld", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 10:00 PM", location: "Concourse D", placeQuery: "Admirals Club MIA Concourse D" },
+    { id: "mia_turkish", name: "Turkish Airlines Lounge (Miami)", terminal: "N", network: "turkish_lounge", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 10:00 PM", location: "North Terminal Concourse D", placeQuery: "Turkish Airlines Lounge Miami Airport" },
+    { id: "mia_ba_lounge", name: "British Airways Lounge", terminal: "N", network: "generic_airline", alliance: "oneworld", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "Varies with BA flights", location: "North Terminal", placeQuery: "British Airways Lounge Miami Airport" },
+    { id: "mia_delta_sky", name: "Delta Sky Club", terminal: "J", network: "delta_sky_club", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal J", placeQuery: "Delta Sky Club Miami Airport" },
+    { id: "mia_united_club", name: "United Club", terminal: "J", network: "united_club", alliance: "star", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "Varies with UA flights", location: "Terminal J", placeQuery: "United Club Miami Airport" },
+    { id: "mia_pp_club", name: "The Club MIA", terminal: "J", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Terminal J", placeQuery: "The Club at Miami Airport" },
+  ],
+  ATL: [
+    { id: "atl_sky_club_b", name: "Delta Sky Club", terminal: "B", network: "delta_sky_club", alliance: "skyteam", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","outdoor_terrace"], hours: "5:00 AM - Last Departure", location: "Concourse B", placeQuery: "Delta Sky Club ATL Concourse B" },
+    { id: "atl_sky_club_f", name: "Delta Sky Club", terminal: "F", network: "delta_sky_club", alliance: "skyteam", rating: 4.1, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Concourse F Int'l", placeQuery: "Delta Sky Club ATL Concourse F" },
+    { id: "atl_centurion", name: "Amex Centurion Lounge", terminal: "F", network: "centurion", rating: 4.4, amenities: ["showers","hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Concourse F", placeQuery: "American Express Centurion Lounge ATL" },
+    { id: "atl_pp_club", name: "The Club ATL", terminal: "T", network: "priority_pass", rating: 3.2, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Domestic Terminal", placeQuery: "The Club at ATL Airport" },
+  ],
+  BOS: [
+    { id: "bos_cap1", name: "Capital One Lounge", terminal: "B", network: "capital_one", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "5:30 AM - 10:00 PM", location: "Terminal B", placeQuery: "Capital One Lounge BOS" },
+    { id: "bos_admirals", name: "Admirals Club", terminal: "B", network: "admirals_club", alliance: "oneworld", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 9:00 PM", location: "Terminal B", placeQuery: "Admirals Club BOS" },
+    { id: "bos_delta_sky", name: "Delta Sky Club", terminal: "A", network: "delta_sky_club", alliance: "skyteam", rating: 3.9, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Terminal A", placeQuery: "Delta Sky Club BOS" },
+  ],
+  SEA: [
+    { id: "sea_centurion", name: "Amex Centurion Lounge", terminal: "S", network: "centurion", rating: 4.3, amenities: ["showers","hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "South Satellite", placeQuery: "American Express Centurion Lounge SEA" },
+    { id: "sea_alaska", name: "Alaska Lounge", terminal: "N", network: "alaska_lounge", alliance: "oneworld", rating: 4.0, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "N Terminal", placeQuery: "Alaska Lounge SEA" },
+    { id: "sea_delta_sky", name: "Delta Sky Club", terminal: "S", network: "delta_sky_club", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "South Satellite", placeQuery: "Delta Sky Club SEA" },
+    { id: "sea_alaska_n2", name: "Alaska Lounge (North Satellite)", terminal: "N", network: "alaska_lounge", alliance: "oneworld", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "North Satellite", placeQuery: "Alaska Lounge SEA North Satellite" },
+    { id: "sea_alaska_concourse_d", name: "Alaska Lounge (Concourse D)", terminal: "D", network: "alaska_lounge", alliance: "oneworld", rating: 3.9, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Concourse D", placeQuery: "Alaska Lounge SEA Concourse D" },
+  ],
+  DEN: [
+    { id: "den_centurion", name: "Amex Centurion Lounge", terminal: "C", network: "centurion", rating: 4.4, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "6:00 AM - 10:00 PM", location: "Concourse C", placeQuery: "American Express Centurion Lounge DEN" },
+    { id: "den_united_club_b", name: "United Club", terminal: "B", network: "united_club", alliance: "star", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Concourse B", placeQuery: "United Club DEN Concourse B" },
+    { id: "den_united_club_a", name: "United Club", terminal: "A", network: "united_club", alliance: "star", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Concourse A", placeQuery: "United Club DEN Concourse A" },
+    { id: "den_delta_sky", name: "Delta Sky Club", terminal: "A", network: "delta_sky_club", alliance: "skyteam", rating: 3.9, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Concourse A", placeQuery: "Delta Sky Club DEN" },
+    { id: "den_admirals", name: "Admirals Club", terminal: "B", network: "admirals_club", alliance: "oneworld", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Concourse B", placeQuery: "Admirals Club DEN" },
+  ],
+  LHR: [
+    { id: "lhr_pp_plaza", name: "Plaza Premium Lounge", terminal: "T2", network: "priority_pass", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - 10:00 PM", location: "Terminal 2", placeQuery: "Plaza Premium Lounge Heathrow Terminal 2" },
+    { id: "lhr_cathay", name: "Cathay Pacific Lounge", terminal: "T3", network: "cathay_lounge", alliance: "oneworld", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","nap_pods"], hours: "6:00 AM - 10:30 PM", location: "Terminal 3", placeQuery: "Cathay Pacific Lounge Heathrow" },
+    { id: "lhr_singapore", name: "Singapore Airlines SilverKris Lounge", terminal: "T2", network: "singapore_lounge", alliance: "star", rating: 4.2, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal 2", placeQuery: "Singapore Airlines SilverKris Lounge Heathrow" },
+    { id: "lhr_ba_galleries", name: "British Airways Galleries Lounge", terminal: "T5", network: "generic_airline", alliance: "oneworld", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal 5", placeQuery: "British Airways Galleries Lounge Heathrow Terminal 5" },
+    { id: "lhr_ba_galleries_first", name: "British Airways Galleries First Lounge", terminal: "T5", network: "generic_airline", alliance: "oneworld", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Terminal 5 South", placeQuery: "British Airways Galleries First Lounge Heathrow Terminal 5" },
+    { id: "lhr_ba_concorde", name: "British Airways Concorde Room", terminal: "T5", network: "generic_airline", alliance: "oneworld", rating: 4.7, amenities: ["showers","hot_food","bar","wifi","a_la_carte","spa"], hours: "5:00 AM - Last Departure", location: "Terminal 5", placeQuery: "British Airways Concorde Room Heathrow" },
+    { id: "lhr_ba_galleries_t3", name: "British Airways Galleries Lounge", terminal: "T3", network: "generic_airline", alliance: "oneworld", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal 3", placeQuery: "British Airways Galleries Lounge Heathrow Terminal 3" },
+    { id: "lhr_qantas", name: "Qantas Lounge", terminal: "T3", network: "qantas_lounge", alliance: "oneworld", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with QF flights", location: "Terminal 3", placeQuery: "Qantas Lounge Heathrow Terminal 3" },
+    { id: "lhr_united_club", name: "United Club", terminal: "T2", network: "united_club", alliance: "star", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Terminal 2", placeQuery: "United Club Heathrow Terminal 2" },
+    { id: "lhr_lufthansa", name: "Lufthansa Business Lounge", terminal: "T2", network: "generic_airline", alliance: "star", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - Last Departure", location: "Terminal 2", placeQuery: "Lufthansa Business Lounge Heathrow" },
+    { id: "lhr_air_canada", name: "Air Canada Maple Leaf Lounge", terminal: "T2", network: "generic_airline", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies with AC flights", location: "Terminal 2", placeQuery: "Air Canada Maple Leaf Lounge Heathrow" },
+    { id: "lhr_virgin_upper", name: "Virgin Atlantic Clubhouse", terminal: "T3", network: "generic_airline", alliance: "none", rating: 4.4, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "5:00 AM - Last Departure", location: "Terminal 3", placeQuery: "Virgin Atlantic Clubhouse Heathrow Terminal 3" },
+    { id: "lhr_aa_admirals", name: "American Airlines Admirals Club / Arrivals Lounge", terminal: "T3", network: "admirals_club", alliance: "oneworld", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal 3", placeQuery: "American Airlines Lounge Heathrow Terminal 3" },
+    { id: "lhr_emirates", name: "Emirates Lounge", terminal: "T3", network: "generic_airline", alliance: "none", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with EK flights", location: "Terminal 3", placeQuery: "Emirates Lounge Heathrow Terminal 3" },
+    { id: "lhr_turkish", name: "Turkish Airlines Lounge", terminal: "T2", network: "turkish_lounge", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - Last Departure", location: "Terminal 2", placeQuery: "Turkish Airlines Lounge Heathrow" },
+  ],
+  NRT: [
+    { id: "nrt_ana_lounge", name: "ANA Lounge", terminal: "T1", network: "generic_airline", alliance: "star", rating: 4.4, amenities: ["hot_food","bar","wifi","showers"], hours: "6:30 AM - Last Departure", location: "Terminal 1", placeQuery: "ANA Lounge Narita Airport Terminal 1" },
+    { id: "nrt_jal_sakura", name: "JAL Sakura Lounge", terminal: "T2", network: "generic_airline", alliance: "oneworld", rating: 4.3, amenities: ["hot_food","bar","wifi","showers"], hours: "7:00 AM - Last Departure", location: "Terminal 2", placeQuery: "JAL Sakura Lounge Narita" },
+    { id: "nrt_pp_iass", name: "IASS Executive Lounge", terminal: "T1", network: "priority_pass", rating: 3.4, amenities: ["bar","wifi"], hours: "7:00 AM - 9:00 PM", location: "Terminal 1", placeQuery: "IASS Executive Lounge Narita" },
+    { id: "nrt_united_club", name: "United Club", terminal: "T1", network: "united_club", alliance: "star", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "7:00 AM - Last Departure", location: "Terminal 1 South Wing", placeQuery: "United Club Narita Airport" },
+    { id: "nrt_korean_air", name: "Korean Air Lounge", terminal: "T1", network: "generic_airline", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies with KE flights", location: "Terminal 1 South Wing", placeQuery: "Korean Air Lounge Narita" },
+    { id: "nrt_delta_sky", name: "Delta Sky Club", terminal: "T1", network: "delta_sky_club", alliance: "skyteam", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "Varies with DL flights", location: "Terminal 1 South Wing", placeQuery: "Delta Sky Club Narita" },
+    { id: "nrt_cathay", name: "Cathay Pacific Lounge", terminal: "T2", network: "cathay_lounge", alliance: "oneworld", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with CX flights", location: "Terminal 2", placeQuery: "Cathay Pacific Lounge Narita" },
+    { id: "nrt_qantas", name: "Qantas Lounge", terminal: "T2", network: "qantas_lounge", alliance: "oneworld", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies with QF flights", location: "Terminal 2", placeQuery: "Qantas Lounge Narita Airport" },
+    { id: "nrt_jal_first", name: "JAL First Class Lounge", terminal: "T2", network: "generic_airline", alliance: "oneworld", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","a_la_carte"], hours: "7:00 AM - Last Departure", location: "Terminal 2", placeQuery: "JAL First Class Lounge Narita" },
+    { id: "nrt_singapore", name: "Singapore Airlines SilverKris Lounge", terminal: "T1", network: "singapore_lounge", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with SQ flights", location: "Terminal 1 South Wing", placeQuery: "Singapore Airlines SilverKris Lounge Narita" },
+  ],
+  HKG: [
+    { id: "hkg_cathay_wing", name: "Cathay Pacific The Wing First Class Lounge", terminal: "T1", network: "cathay_lounge", alliance: "oneworld", rating: 4.7, amenities: ["showers","hot_food","bar","wifi","nap_pods","a_la_carte"], hours: "5:30 AM - Last Departure", location: "Level 7 near Gate 1", placeQuery: "Cathay Pacific The Wing First Class Lounge Hong Kong" },
+    { id: "hkg_cathay_wing_biz", name: "Cathay Pacific The Wing Business Class Lounge", terminal: "T1", network: "cathay_lounge", alliance: "oneworld", rating: 4.3, amenities: ["showers","hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Level 7 near Gate 1", placeQuery: "Cathay Pacific The Wing Business Class Lounge Hong Kong" },
+    { id: "hkg_cathay_pier_first", name: "Cathay Pacific The Pier First Class Lounge", terminal: "T1", network: "cathay_lounge", alliance: "oneworld", rating: 4.8, amenities: ["showers","hot_food","bar","wifi","nap_pods","a_la_carte","spa"], hours: "5:30 AM - Last Departure", location: "Near Gate 65", placeQuery: "Cathay Pacific The Pier First Class Lounge Hong Kong" },
+    { id: "hkg_cathay_pier_biz", name: "Cathay Pacific The Pier Business Class Lounge", terminal: "T1", network: "cathay_lounge", alliance: "oneworld", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","nap_pods"], hours: "5:30 AM - Last Departure", location: "Near Gate 65", placeQuery: "Cathay Pacific The Pier Business Class Lounge Hong Kong" },
+    { id: "hkg_cathay_bridge", name: "Cathay Pacific The Bridge", terminal: "T1", network: "cathay_lounge", alliance: "oneworld", rating: 4.2, amenities: ["showers","hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Near Gate 35", placeQuery: "Cathay Pacific The Bridge Lounge Hong Kong" },
+    { id: "hkg_cathay_deck", name: "Cathay Pacific The Deck", terminal: "T1", network: "cathay_lounge", alliance: "oneworld", rating: 4.0, amenities: ["hot_food","bar","wifi","outdoor_terrace"], hours: "5:30 AM - Last Departure", location: "Near Gate 16", placeQuery: "Cathay Pacific The Deck Lounge Hong Kong" },
+    { id: "hkg_centurion", name: "Amex Centurion Lounge", terminal: "T1", network: "centurion", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "6:00 AM - 12:00 AM", location: "Near Gate 60", placeQuery: "American Express Centurion Lounge Hong Kong Airport" },
+    { id: "hkg_pp_plaza_east", name: "Plaza Premium Lounge (East Hall)", terminal: "T1", network: "priority_pass", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 1 East Hall", placeQuery: "Plaza Premium Lounge Hong Kong Airport East Hall" },
+    { id: "hkg_pp_plaza_west", name: "Plaza Premium Lounge (West Hall)", terminal: "T1", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 1 West Hall", placeQuery: "Plaza Premium Lounge Hong Kong Airport West Hall" },
+    { id: "hkg_qantas", name: "Qantas Lounge", terminal: "T1", network: "qantas_lounge", alliance: "oneworld", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with QF flights", location: "Near Gate 16", placeQuery: "Qantas Lounge Hong Kong Airport" },
+    { id: "hkg_singapore", name: "Singapore Airlines SilverKris Lounge", terminal: "T1", network: "singapore_lounge", alliance: "star", rating: 4.2, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies", location: "Near Gate 15", placeQuery: "Singapore Airlines SilverKris Lounge Hong Kong" },
+    { id: "hkg_united_club", name: "United Club", terminal: "T1", network: "united_club", alliance: "star", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "Varies with UA flights", location: "Near Gate 4", placeQuery: "United Club Hong Kong Airport" },
+    { id: "hkg_ba_lounge", name: "British Airways Lounge", terminal: "T1", network: "generic_airline", alliance: "oneworld", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with BA flights", location: "Near Gate 4", placeQuery: "British Airways Lounge Hong Kong Airport" },
+    { id: "hkg_thai", name: "Thai Airways Royal Orchid Lounge", terminal: "T1", network: "generic_airline", alliance: "star", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "Varies with TG flights", location: "Near Gate 16", placeQuery: "Thai Airways Royal Orchid Lounge Hong Kong" },
+    { id: "hkg_korean_air", name: "Korean Air Lounge", terminal: "T1", network: "generic_airline", alliance: "skyteam", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "Varies with KE flights", location: "Near Gate 15", placeQuery: "Korean Air Lounge Hong Kong Airport" },
+    { id: "hkg_turkish", name: "Turkish Airlines Lounge", terminal: "T1", network: "turkish_lounge", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with TK flights", location: "Near Gate 1", placeQuery: "Turkish Airlines Lounge Hong Kong Airport" },
+    { id: "hkg_japan_airlines", name: "JAL Sakura Lounge", terminal: "T1", network: "generic_airline", alliance: "oneworld", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with JL flights", location: "Near Gate 65", placeQuery: "JAL Sakura Lounge Hong Kong Airport" },
+  ],
+  SIN: [
+    { id: "sin_silverkris_t2", name: "SilverKris Business Class Lounge", terminal: "T2", network: "singapore_lounge", alliance: "star", rating: 4.5, amenities: ["showers","hot_food","bar","wifi"], hours: "24 hours", location: "Terminal 2", placeQuery: "Singapore Airlines SilverKris Business Lounge Changi Terminal 2" },
+    { id: "sin_silverkris_t3", name: "SilverKris First Class Lounge", terminal: "T3", network: "singapore_lounge", alliance: "star", rating: 4.7, amenities: ["showers","hot_food","bar","wifi","nap_pods","a_la_carte"], hours: "24 hours", location: "Terminal 3", placeQuery: "Singapore Airlines SilverKris First Class Lounge Changi Terminal 3" },
+    { id: "sin_silverkris_t3_biz", name: "SilverKris Business Class Lounge", terminal: "T3", network: "singapore_lounge", alliance: "star", rating: 4.5, amenities: ["showers","hot_food","bar","wifi"], hours: "24 hours", location: "Terminal 3", placeQuery: "Singapore Airlines SilverKris Business Lounge Changi Terminal 3" },
+    { id: "sin_qantas", name: "Qantas Singapore Lounge", terminal: "T1", network: "qantas_lounge", alliance: "oneworld", rating: 4.2, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with QF flights", location: "Terminal 1", placeQuery: "Qantas Lounge Singapore Changi Airport" },
+    { id: "sin_ba_lounge", name: "British Airways Lounge", terminal: "T1", network: "generic_airline", alliance: "oneworld", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies with BA flights", location: "Terminal 1", placeQuery: "British Airways Lounge Singapore Changi" },
+    { id: "sin_cathay_lounge", name: "Cathay Pacific Lounge", terminal: "T4", network: "cathay_lounge", alliance: "oneworld", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with CX flights", location: "Terminal 4", placeQuery: "Cathay Pacific Lounge Singapore Changi" },
+    { id: "sin_qatar_lounge", name: "Qatar Airways Premium Lounge", terminal: "T1", network: "generic_airline", alliance: "oneworld", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with QR flights", location: "Terminal 1", placeQuery: "Qatar Airways Premium Lounge Singapore Changi" },
+    { id: "sin_pp_sats", name: "SATS Premier Lounge", terminal: "T1", network: "priority_pass", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 1", placeQuery: "SATS Premier Lounge Changi" },
+    { id: "sin_pp_sats_t3", name: "SATS Premier Lounge", terminal: "T3", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "24 hours", location: "Terminal 3", placeQuery: "SATS Premier Lounge Changi Terminal 3" },
+    { id: "sin_dnata", name: "Dnata Lounge", terminal: "T1", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "24 hours", location: "Terminal 1", placeQuery: "Dnata Lounge Changi Airport" },
+    { id: "sin_centurion", name: "Amex Centurion Lounge (opening soon)", terminal: "T1", network: "centurion", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "TBD", location: "Terminal 1", placeQuery: "American Express Centurion Lounge Singapore Changi" },
+    { id: "sin_turkish", name: "Turkish Airlines Lounge", terminal: "T1", network: "turkish_lounge", alliance: "star", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with TK flights", location: "Terminal 1", placeQuery: "Turkish Airlines Lounge Singapore Changi" },
+    { id: "sin_korean_air", name: "Korean Air Lounge", terminal: "T1", network: "generic_airline", alliance: "skyteam", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "Varies with KE flights", location: "Terminal 1", placeQuery: "Korean Air Lounge Singapore Changi" },
+    { id: "sin_malaysia", name: "Malaysia Airlines Golden Lounge", terminal: "T1", network: "generic_airline", alliance: "oneworld", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies with MH flights", location: "Terminal 1", placeQuery: "Malaysia Airlines Golden Lounge Singapore Changi" },
+    { id: "sin_jal", name: "JAL Sakura Lounge", terminal: "T1", network: "generic_airline", alliance: "oneworld", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies with JL flights", location: "Terminal 1", placeQuery: "JAL Sakura Lounge Singapore Changi" },
+    { id: "sin_plaza_t1", name: "Plaza Premium Lounge", terminal: "T1", network: "plaza_premium", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 1 Transit", placeQuery: "Plaza Premium Lounge Singapore Changi Terminal 1" },
+  ],
+  BDA: [
+    { id: "bda_pp_lounge", name: "BDA Airport Lounge", terminal: "Main", network: "priority_pass", rating: 3.2, amenities: ["bar","wifi"], hours: "Varies", location: "Main Terminal", placeQuery: "Bermuda Airport Lounge" },
+  ],
+  // Americas — expanded
+  EWR: [
+    { id: "ewr_polaris", name: "United Polaris Lounge", terminal: "C", network: "polaris", alliance: "star", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","nap_pods","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Terminal C", placeQuery: "United Polaris Lounge Newark" },
+    { id: "ewr_united_club_c", name: "United Club", terminal: "C", network: "united_club", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal C Gate C74", placeQuery: "United Club Newark Terminal C" },
+    { id: "ewr_pp_virgin", name: "Virgin Atlantic Clubhouse", terminal: "B", network: "priority_pass", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 10:00 PM", location: "Terminal B", placeQuery: "Virgin Atlantic Clubhouse Newark" },
+    { id: "ewr_united_club_c3", name: "United Club", terminal: "C", network: "united_club", alliance: "star", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal C Gate C120", placeQuery: "United Club Newark Terminal C Gate C120" },
+    { id: "ewr_centurion", name: "Amex Centurion Lounge", terminal: "C", network: "centurion", rating: 4.3, amenities: ["showers","hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Terminal C", placeQuery: "American Express Centurion Lounge Newark" },
+    { id: "ewr_chase_sapphire", name: "Chase Sapphire Lounge", terminal: "A", network: "chase_sapphire_lounge", rating: 4.4, amenities: ["showers","hot_food","bar","wifi","phone_rooms"], hours: "5:30 AM - 10:00 PM", location: "Terminal A", placeQuery: "Chase Sapphire Lounge Newark Airport" },
+  ],
+  IAH: [
+    { id: "iah_centurion", name: "Amex Centurion Lounge", terminal: "D", network: "centurion", rating: 4.4, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "6:00 AM - 10:00 PM", location: "Terminal D", placeQuery: "American Express Centurion Lounge IAH" },
+    { id: "iah_united_club_c", name: "United Club", terminal: "C", network: "united_club", alliance: "star", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal C North", placeQuery: "United Club IAH Terminal C" },
+    { id: "iah_united_club_e", name: "United Club", terminal: "E", network: "united_club", alliance: "star", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Terminal E", placeQuery: "United Club IAH Terminal E" },
+    { id: "iah_pp_club", name: "The Club at IAH", terminal: "A", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Terminal A", placeQuery: "The Club IAH Airport" },
+  ],
+  PHX: [
+    { id: "phx_centurion", name: "Amex Centurion Lounge", terminal: "T4", network: "centurion", rating: 4.3, amenities: ["showers","hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Terminal 4", placeQuery: "American Express Centurion Lounge PHX" },
+    { id: "phx_admirals", name: "Admirals Club", terminal: "T4", network: "admirals_club", alliance: "oneworld", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:30 PM", location: "Terminal 4 Gate B", placeQuery: "Admirals Club PHX" },
+    { id: "phx_pp_club", name: "The Club PHX", terminal: "T4", network: "priority_pass", rating: 3.2, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Terminal 4", placeQuery: "The Club PHX Airport" },
+  ],
+  MSP: [
+    { id: "msp_delta_sky_f", name: "Delta Sky Club", terminal: "1-F", network: "delta_sky_club", alliance: "skyteam", rating: 4.1, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 1 Concourse F", placeQuery: "Delta Sky Club MSP Concourse F" },
+    { id: "msp_delta_sky_g", name: "Delta Sky Club", terminal: "1-G", network: "delta_sky_club", alliance: "skyteam", rating: 4.2, amenities: ["hot_food","bar","wifi","outdoor_terrace"], hours: "5:00 AM - Last Departure", location: "Terminal 1 Concourse G", placeQuery: "Delta Sky Club MSP Concourse G" },
+    { id: "msp_pp_espace", name: "Espace Musees Lounge", terminal: "2", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Terminal 2", placeQuery: "Espace Musees Lounge MSP" },
+  ],
+  DTW: [
+    { id: "dtw_delta_sky_a", name: "Delta Sky Club", terminal: "EM-A", network: "delta_sky_club", alliance: "skyteam", rating: 4.2, amenities: ["showers","hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "McNamara Terminal Concourse A", placeQuery: "Delta Sky Club DTW McNamara" },
+    { id: "dtw_centurion", name: "Amex Centurion Lounge", terminal: "EM-A", network: "centurion", rating: 4.3, amenities: ["hot_food","bar","wifi","spa"], hours: "6:00 AM - 9:00 PM", location: "McNamara Terminal", placeQuery: "American Express Centurion Lounge DTW" },
+    { id: "dtw_pp_club", name: "The Club DTW", terminal: "NM", network: "priority_pass", rating: 3.1, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "North Terminal", placeQuery: "The Club DTW Airport" },
+  ],
+  CLT: [
+    { id: "clt_centurion", name: "Amex Centurion Lounge", terminal: "C", network: "centurion", rating: 4.3, amenities: ["showers","hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Concourse C", placeQuery: "American Express Centurion Lounge CLT" },
+    { id: "clt_admirals_c", name: "Admirals Club", terminal: "C", network: "admirals_club", alliance: "oneworld", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 9:30 PM", location: "Concourse C", placeQuery: "Admirals Club CLT" },
+    { id: "clt_pp_club", name: "The Club CLT", terminal: "B", network: "priority_pass", rating: 3.2, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Concourse B", placeQuery: "The Club CLT Airport" },
+  ],
+  MCO: [
+    { id: "mco_pp_club", name: "The Club MCO", terminal: "A", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Terminal A Airside", placeQuery: "The Club MCO Airport" },
+    { id: "mco_plaza", name: "Plaza Premium Lounge", terminal: "C", network: "plaza_premium", rating: 3.5, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 10:00 PM", location: "Terminal C", placeQuery: "Plaza Premium Lounge Orlando Airport" },
+  ],
+  FLL: [
+    { id: "fll_pp_club", name: "The Club FLL", terminal: "1", network: "priority_pass", rating: 3.2, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Terminal 1", placeQuery: "The Club FLL Airport" },
+    { id: "fll_admirals", name: "Admirals Club", terminal: "4", network: "admirals_club", alliance: "oneworld", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 8:30 PM", location: "Terminal 4", placeQuery: "Admirals Club FLL" },
+  ],
+  SAN: [
+    { id: "san_pp_club", name: "The Club SAN", terminal: "2W", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Terminal 2 West", placeQuery: "The Club SAN Airport" },
+    { id: "san_admirals", name: "Admirals Club", terminal: "2W", network: "admirals_club", alliance: "oneworld", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Terminal 2 West", placeQuery: "Admirals Club SAN" },
+    { id: "san_delta_sky", name: "Delta Sky Club", terminal: "2E", network: "delta_sky_club", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Terminal 2 East", placeQuery: "Delta Sky Club SAN" },
+  ],
+  PDX: [
+    { id: "pdx_alaska", name: "Alaska Lounge", terminal: "C", network: "alaska_lounge", alliance: "oneworld", rating: 4.0, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Concourse C", placeQuery: "Alaska Lounge PDX" },
+    { id: "pdx_pp_capers", name: "Capers Market", terminal: "E", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Concourse E", placeQuery: "Capers Market Lounge PDX" },
+  ],
+  HNL: [
+    { id: "hnl_pp_iass", name: "IASS Hawaii Lounge", terminal: "2", network: "priority_pass", rating: 3.4, amenities: ["bar","wifi"], hours: "7:00 AM - 8:00 PM", location: "Terminal 2", placeQuery: "IASS Hawaii Lounge Honolulu" },
+    { id: "hnl_delta_sky", name: "Delta Sky Club", terminal: "2", network: "delta_sky_club", alliance: "skyteam", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "Opening varies by flight", location: "Terminal 2", placeQuery: "Delta Sky Club HNL" },
+  ],
+  YYZ: [
+    { id: "yyz_pp_plaza_t1", name: "Plaza Premium Lounge", terminal: "T1", network: "plaza_premium", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - 11:00 PM", location: "Terminal 1 Domestic", placeQuery: "Plaza Premium Lounge Toronto Pearson Terminal 1" },
+    { id: "yyz_pp_plaza_t3", name: "Plaza Premium Lounge", terminal: "T3", network: "plaza_premium", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - 10:30 PM", location: "Terminal 3", placeQuery: "Plaza Premium Lounge Toronto Pearson Terminal 3" },
+    { id: "yyz_air_canada", name: "Air Canada Maple Leaf Lounge", terminal: "T1", network: "generic_airline", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal 1 Int'l", placeQuery: "Air Canada Maple Leaf Lounge Toronto" },
+  ],
+  YVR: [
+    { id: "yvr_pp_plaza", name: "Plaza Premium Lounge", terminal: "Int'l", network: "plaza_premium", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - 1:00 AM", location: "International Terminal", placeQuery: "Plaza Premium Lounge Vancouver Airport" },
+    { id: "yvr_air_canada", name: "Air Canada Maple Leaf Lounge", terminal: "Dom", network: "generic_airline", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Domestic Terminal", placeQuery: "Air Canada Maple Leaf Lounge Vancouver" },
+    { id: "yvr_cathay", name: "Cathay Pacific Lounge", terminal: "Int'l", network: "cathay_lounge", alliance: "oneworld", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "6:30 AM - 1:30 AM", location: "International Terminal", placeQuery: "Cathay Pacific Lounge Vancouver Airport" },
+  ],
+  MEX: [
+    { id: "mex_centurion", name: "Amex Centurion Lounge", terminal: "T1", network: "centurion", rating: 4.2, amenities: ["showers","hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Terminal 1 Int'l", placeQuery: "American Express Centurion Lounge Mexico City Airport" },
+    { id: "mex_pp_salon", name: "Salon Premier", terminal: "T2", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 10:00 PM", location: "Terminal 2", placeQuery: "Salon Premier Mexico City Airport Terminal 2" },
+    { id: "mex_admirals", name: "Admirals Club", terminal: "T1", network: "admirals_club", alliance: "oneworld", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Terminal 1", placeQuery: "Admirals Club Mexico City Airport" },
+  ],
+  GRU: [
+    { id: "gru_pp_plaza", name: "Plaza Premium Lounge", terminal: "T3", network: "plaza_premium", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 3 Int'l", placeQuery: "Plaza Premium Lounge Guarulhos Airport" },
+    { id: "gru_admirals", name: "Admirals Club", terminal: "T3", network: "admirals_club", alliance: "oneworld", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - Last Departure", location: "Terminal 3", placeQuery: "Admirals Club Guarulhos Airport" },
+    { id: "gru_latam", name: "LATAM VIP Lounge", terminal: "T3", network: "generic_airline", alliance: "none", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal 3", placeQuery: "LATAM VIP Lounge Guarulhos" },
+  ],
+  EZE: [
+    { id: "eze_pp_salon", name: "Salon Condor", terminal: "A", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "24 hours", location: "Terminal A", placeQuery: "Salon Condor Ezeiza Airport" },
+    { id: "eze_aerolineas", name: "Aerolineas Argentinas Salon VIP", terminal: "A", network: "generic_airline", alliance: "skyteam", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - Last Departure", location: "Terminal A", placeQuery: "Aerolineas Argentinas VIP Lounge Ezeiza" },
+  ],
+  BOG: [
+    { id: "bog_avianca", name: "Avianca Lounge", terminal: "Int'l", network: "generic_airline", alliance: "star", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "4:30 AM - 10:00 PM", location: "International Terminal", placeQuery: "Avianca Lounge El Dorado Bogota" },
+    { id: "bog_pp_sala", name: "Sala VIP El Dorado", terminal: "Int'l", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 10:00 PM", location: "International Terminal", placeQuery: "Sala VIP El Dorado Airport Bogota" },
+  ],
+  SCL: [
+    { id: "scl_latam", name: "LATAM VIP Lounge", terminal: "Int'l", network: "generic_airline", alliance: "none", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "International Terminal", placeQuery: "LATAM VIP Lounge Santiago Airport" },
+    { id: "scl_pp_salon", name: "Salon VIP Pacific Club", terminal: "Int'l", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "International Terminal", placeQuery: "Pacific Club Lounge Santiago Airport" },
+  ],
+  PTY: [
+    { id: "pty_copa", name: "Copa Club", terminal: "Main", network: "generic_airline", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - 10:00 PM", location: "Main Terminal", placeQuery: "Copa Club Tocumen Airport Panama" },
+    { id: "pty_pp_global", name: "Global Lounge", terminal: "T2", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "24 hours", location: "Terminal 2", placeQuery: "Global Lounge Tocumen Airport Panama" },
+  ],
+  LIM: [
+    { id: "lim_pp_sumaq", name: "Sumaq VIP Lounge", terminal: "Int'l", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "International Terminal", placeQuery: "Sumaq VIP Lounge Lima Airport" },
+    { id: "lim_latam", name: "LATAM VIP Lounge", terminal: "Int'l", network: "generic_airline", alliance: "none", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "International Terminal", placeQuery: "LATAM VIP Lounge Lima Airport" },
+  ],
+  SJU: [
+    { id: "sju_pp_club", name: "The Club SJU", terminal: "A", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Terminal A", placeQuery: "The Club SJU Airport" },
+    { id: "sju_jetblue", name: "JetBlue Mint Lounge", terminal: "A", network: "generic_airline", alliance: "none", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies by flight", location: "Terminal A", placeQuery: "JetBlue Lounge San Juan Airport" },
+  ],
+  CUN: [
+    { id: "cun_pp_viplounge", name: "Mera Business Lounge", terminal: "T3", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 10:00 PM", location: "Terminal 3 Int'l", placeQuery: "Mera Business Lounge Cancun Airport Terminal 3" },
+    { id: "cun_admirals", name: "Admirals Club", terminal: "T3", network: "admirals_club", alliance: "oneworld", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 8:00 PM", location: "Terminal 3", placeQuery: "Admirals Club Cancun Airport" },
+  ],
+  // Europe — expanded
+  CDG: [
+    { id: "cdg_af_salon", name: "Air France Business Lounge", terminal: "T2E", network: "generic_airline", alliance: "skyteam", rating: 4.2, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - Last Departure", location: "Terminal 2E Hall K", placeQuery: "Air France Business Lounge CDG Terminal 2E" },
+    { id: "cdg_pp_icare", name: "Icare Lounge", terminal: "T1", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Terminal 1", placeQuery: "Icare Lounge CDG Terminal 1" },
+    { id: "cdg_qatar", name: "Qatar Airways Premium Lounge", terminal: "T1", network: "generic_airline", alliance: "oneworld", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 11:00 PM", location: "Terminal 1", placeQuery: "Qatar Airways Lounge CDG" },
+    { id: "cdg_star_alliance", name: "Star Alliance Lounge", terminal: "T1", network: "generic_airline", alliance: "star", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 11:00 PM", location: "Terminal 1", placeQuery: "Star Alliance Lounge CDG" },
+    { id: "cdg_af_salon_first", name: "Air France La Premiere Lounge", terminal: "T2E", network: "generic_airline", alliance: "skyteam", rating: 4.6, amenities: ["showers","hot_food","bar","wifi","a_la_carte","spa"], hours: "5:30 AM - Last Departure", location: "Terminal 2E Hall L", placeQuery: "Air France La Premiere Lounge CDG" },
+    { id: "cdg_af_salon_2f", name: "Air France Business Lounge", terminal: "T2F", network: "generic_airline", alliance: "skyteam", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - Last Departure", location: "Terminal 2F", placeQuery: "Air France Business Lounge CDG Terminal 2F" },
+    { id: "cdg_korean_air", name: "Korean Air Lounge", terminal: "T1", network: "generic_airline", alliance: "skyteam", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "Varies with KE flights", location: "Terminal 1", placeQuery: "Korean Air Lounge CDG" },
+    { id: "cdg_cathay", name: "Cathay Pacific Lounge", terminal: "T1", network: "cathay_lounge", alliance: "oneworld", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with CX flights", location: "Terminal 1", placeQuery: "Cathay Pacific Lounge CDG" },
+    { id: "cdg_turkish", name: "Turkish Airlines Lounge", terminal: "T1", network: "turkish_lounge", alliance: "star", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 10:00 PM", location: "Terminal 1", placeQuery: "Turkish Airlines Lounge CDG" },
+    { id: "cdg_emirates", name: "Emirates Lounge", terminal: "T2C", network: "generic_airline", alliance: "none", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with EK flights", location: "Terminal 2C", placeQuery: "Emirates Lounge CDG Paris" },
+  ],
+  AMS: [
+    { id: "ams_klm_crown", name: "KLM Crown Lounge", terminal: "3", network: "generic_airline", alliance: "skyteam", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Schengen Area Lounge 3", placeQuery: "KLM Crown Lounge Schiphol" },
+    { id: "ams_pp_aspire", name: "Aspire Lounge", terminal: "2", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 10:00 PM", location: "Lounge 2", placeQuery: "Aspire Lounge Amsterdam Schiphol" },
+    { id: "ams_centurion", name: "Amex Centurion Lounge", terminal: "2", network: "centurion", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "6:00 AM - 10:00 PM", location: "Behind Passport Control", placeQuery: "American Express Centurion Lounge Amsterdam" },
+    { id: "ams_klm_crown_ns", name: "KLM Crown Lounge (Non-Schengen)", terminal: "3", network: "generic_airline", alliance: "skyteam", rating: 4.2, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Non-Schengen Lounge 3", placeQuery: "KLM Crown Lounge Schiphol Non-Schengen" },
+    { id: "ams_british_airways", name: "British Airways Lounge", terminal: "Non-Schengen", network: "generic_airline", alliance: "oneworld", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "Varies with BA flights", location: "Non-Schengen area", placeQuery: "British Airways Lounge Amsterdam Schiphol" },
+    { id: "ams_star_alliance", name: "Star Alliance Lounge", terminal: "Non-Schengen", network: "generic_airline", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - Last Departure", location: "Non-Schengen area", placeQuery: "Star Alliance Lounge Amsterdam Schiphol" },
+  ],
+  FRA: [
+    { id: "fra_luft_senator", name: "Lufthansa Senator Lounge", terminal: "T1", network: "generic_airline", alliance: "star", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","nap_pods"], hours: "5:30 AM - Last Departure", location: "Terminal 1 Concourse B", placeQuery: "Lufthansa Senator Lounge Frankfurt Terminal 1" },
+    { id: "fra_luft_business", name: "Lufthansa Business Lounge", terminal: "T1", network: "generic_airline", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - Last Departure", location: "Terminal 1 Concourse A", placeQuery: "Lufthansa Business Lounge Frankfurt" },
+    { id: "fra_pp_primeclass", name: "Primeclass Lounge", terminal: "T2", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Terminal 2", placeQuery: "Primeclass Lounge Frankfurt Airport" },
+    { id: "fra_luft_first", name: "Lufthansa First Class Terminal", terminal: "T1", network: "generic_airline", alliance: "star", rating: 4.8, amenities: ["showers","hot_food","bar","wifi","spa","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Separate First Class Terminal", placeQuery: "Lufthansa First Class Terminal Frankfurt" },
+    { id: "fra_singapore", name: "Singapore Airlines SilverKris Lounge", terminal: "T1", network: "singapore_lounge", alliance: "star", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with SQ flights", location: "Terminal 1 Concourse B", placeQuery: "SilverKris Lounge Frankfurt Airport" },
+    { id: "fra_cathay", name: "Cathay Pacific Lounge", terminal: "T1", network: "cathay_lounge", alliance: "oneworld", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with CX flights", location: "Terminal 1 Concourse B", placeQuery: "Cathay Pacific Lounge Frankfurt Airport" },
+    { id: "fra_emirates", name: "Emirates Lounge", terminal: "T2", network: "generic_airline", alliance: "none", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with EK flights", location: "Terminal 2 Concourse D", placeQuery: "Emirates Lounge Frankfurt Airport" },
+    { id: "fra_turkish", name: "Turkish Airlines Lounge", terminal: "T1", network: "turkish_lounge", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with TK flights", location: "Terminal 1", placeQuery: "Turkish Airlines Lounge Frankfurt Airport" },
+    { id: "fra_ba_lounge", name: "British Airways Lounge", terminal: "T1", network: "generic_airline", alliance: "oneworld", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "Varies with BA flights", location: "Terminal 1 Concourse B", placeQuery: "British Airways Lounge Frankfurt Airport" },
+  ],
+  MUC: [
+    { id: "muc_luft_senator", name: "Lufthansa Senator Lounge", terminal: "T2", network: "generic_airline", alliance: "star", rating: 4.4, amenities: ["showers","hot_food","bar","wifi","nap_pods"], hours: "5:30 AM - Last Departure", location: "Terminal 2 Satellite", placeQuery: "Lufthansa Senator Lounge Munich Airport" },
+    { id: "muc_luft_business", name: "Lufthansa Business Lounge", terminal: "T2", network: "generic_airline", alliance: "star", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - Last Departure", location: "Terminal 2", placeQuery: "Lufthansa Business Lounge Munich" },
+    { id: "muc_pp_airport", name: "Airport Lounge Europa", terminal: "T1", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:30 PM", location: "Terminal 1", placeQuery: "Airport Lounge Europa Munich" },
+  ],
+  ZRH: [
+    { id: "zrh_swiss_senator", name: "SWISS Senator Lounge", terminal: "E", network: "generic_airline", alliance: "star", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","nap_pods"], hours: "5:30 AM - Last Departure", location: "Airside E", placeQuery: "SWISS Senator Lounge Zurich Airport" },
+    { id: "zrh_swiss_business", name: "SWISS Business Lounge", terminal: "E", network: "generic_airline", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - Last Departure", location: "Airside E", placeQuery: "SWISS Business Lounge Zurich" },
+    { id: "zrh_pp_aspire", name: "Aspire Lounge", terminal: "E", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Airside E", placeQuery: "Aspire Lounge Zurich Airport" },
+  ],
+  FCO: [
+    { id: "fco_pp_plaza", name: "Plaza Premium Lounge", terminal: "T3", network: "plaza_premium", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 11:00 PM", location: "Terminal 3", placeQuery: "Plaza Premium Lounge Rome Fiumicino" },
+    { id: "fco_ita_lounge", name: "ITA Airways Lounge Dolce Vita", terminal: "T1", network: "generic_airline", alliance: "skyteam", rating: 3.9, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Terminal 1", placeQuery: "ITA Airways Lounge Rome Fiumicino" },
+    { id: "fco_pp_primeclass", name: "Primeclass Lounge", terminal: "T3", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Terminal 3", placeQuery: "Primeclass Lounge Rome Fiumicino Airport" },
+  ],
+  BCN: [
+    { id: "bcn_pp_sala", name: "Sala VIP Pau Casals", terminal: "T1", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Terminal 1", placeQuery: "Sala VIP Pau Casals Barcelona Airport" },
+    { id: "bcn_iberia", name: "Iberia Sala VIP Dali", terminal: "T1", network: "generic_airline", alliance: "oneworld", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - Last Departure", location: "Terminal 1", placeQuery: "Iberia Sala VIP Dali Barcelona" },
+  ],
+  MAD: [
+    { id: "mad_iberia_vela", name: "Iberia Premium Lounge Velazquez", terminal: "T4S", network: "generic_airline", alliance: "oneworld", rating: 4.2, amenities: ["showers","hot_food","bar","wifi","nap_pods"], hours: "5:00 AM - Last Departure", location: "Terminal 4 Satellite", placeQuery: "Iberia Premium Lounge Velazquez Madrid" },
+    { id: "mad_pp_sala", name: "Sala VIP Cibeles", terminal: "T4", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Terminal 4", placeQuery: "Sala VIP Cibeles Madrid Airport" },
+    { id: "mad_neptuno", name: "Sala VIP Neptuno", terminal: "T1", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Terminal 1", placeQuery: "Sala VIP Neptuno Madrid Airport" },
+  ],
+  LIS: [
+    { id: "lis_pp_ana", name: "ANA Lounge", terminal: "T1", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - 11:00 PM", location: "Terminal 1", placeQuery: "ANA Star Alliance Lounge Lisbon Airport" },
+    { id: "lis_tap", name: "TAP Premium Lounge", terminal: "T1", network: "generic_airline", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal 1", placeQuery: "TAP Premium Lounge Lisbon Airport" },
+  ],
+  DUB: [
+    { id: "dub_pp_51st", name: "51st & Green", terminal: "T2", network: "priority_pass", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - 10:00 PM", location: "Terminal 2 Departure Gates", placeQuery: "51st and Green Lounge Dublin Airport" },
+    { id: "dub_pp_t1", name: "The Lounge", terminal: "T1", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 9:00 PM", location: "Terminal 1", placeQuery: "The Lounge Dublin Airport Terminal 1" },
+  ],
+  CPH: [
+    { id: "cph_sas_gold", name: "SAS Gold Lounge", terminal: "T3", network: "generic_airline", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal 3", placeQuery: "SAS Gold Lounge Copenhagen Airport" },
+    { id: "cph_pp_eventyr", name: "Eventyr Lounge", terminal: "T3", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 10:00 PM", location: "Terminal 3", placeQuery: "Eventyr Lounge Copenhagen Airport" },
+  ],
+  ARN: [
+    { id: "arn_sas_gold", name: "SAS Gold Lounge", terminal: "T5", network: "generic_airline", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal 5", placeQuery: "SAS Gold Lounge Stockholm Arlanda" },
+    { id: "arn_pp_menzies", name: "Menzies Aviation Lounge", terminal: "T5", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:30 PM", location: "Terminal 5", placeQuery: "Menzies Aviation Lounge Arlanda" },
+  ],
+  HEL: [
+    { id: "hel_finnair_lounge", name: "Finnair Premium Lounge", terminal: "T2", network: "generic_airline", alliance: "oneworld", rating: 4.2, amenities: ["showers","hot_food","bar","wifi","nap_pods"], hours: "5:00 AM - Last Departure", location: "Terminal 2 Schengen", placeQuery: "Finnair Premium Lounge Helsinki Airport" },
+    { id: "hel_pp_plaza", name: "Plaza Premium Lounge", terminal: "T2", network: "plaza_premium", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 10:00 PM", location: "Terminal 2 Non-Schengen", placeQuery: "Plaza Premium Lounge Helsinki Airport" },
+  ],
+  IST: [
+    { id: "ist_turkish_miles", name: "Turkish Airlines Miles&Smiles Lounge", terminal: "Int'l", network: "turkish_lounge", alliance: "star", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","nap_pods","spa"], hours: "24 hours", location: "International Departures", placeQuery: "Turkish Airlines Miles Smiles Lounge Istanbul Airport" },
+    { id: "ist_turkish_business", name: "Turkish Airlines Business Lounge", terminal: "Int'l", network: "turkish_lounge", alliance: "star", rating: 4.6, amenities: ["showers","hot_food","bar","wifi","nap_pods","spa","a_la_carte"], hours: "24 hours", location: "International Departures", placeQuery: "Turkish Airlines Business Lounge Istanbul Airport" },
+    { id: "ist_pp_primeclass", name: "Primeclass CIP Lounge", terminal: "Dom", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "24 hours", location: "Domestic Terminal", placeQuery: "Primeclass Lounge Istanbul Airport" },
+  ],
+  VIE: [
+    { id: "vie_austrian", name: "Austrian Airlines Senator Lounge", terminal: "3", network: "generic_airline", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - Last Departure", location: "Terminal 3", placeQuery: "Austrian Airlines Senator Lounge Vienna Airport" },
+    { id: "vie_pp_lounge", name: "Air Lounge", terminal: "3", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Terminal 3", placeQuery: "Air Lounge Vienna Airport" },
+  ],
+  ATH: [
+    { id: "ath_pp_goldair", name: "Goldair Handling CIP Lounge", terminal: "Main", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 10:00 PM", location: "Main Terminal Non-Schengen", placeQuery: "Goldair Handling CIP Lounge Athens Airport" },
+    { id: "ath_aegean", name: "Aegean Business Lounge", terminal: "Main", network: "generic_airline", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - Last Departure", location: "Main Terminal Schengen", placeQuery: "Aegean Business Lounge Athens Airport" },
+  ],
+  // Middle East / Africa — expanded
+  DXB: [
+    { id: "dxb_emirates_bc", name: "Emirates Business Class Lounge", terminal: "T3", network: "emirates_lounge", alliance: "none", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","spa","nap_pods"], hours: "24 hours", location: "Terminal 3 Concourse B", placeQuery: "Emirates Business Class Lounge Dubai Concourse B" },
+    { id: "dxb_emirates_fc", name: "Emirates First Class Lounge", terminal: "T3", network: "emirates_lounge", alliance: "none", rating: 4.8, amenities: ["showers","hot_food","bar","wifi","spa","nap_pods","a_la_carte"], hours: "24 hours", location: "Terminal 3 Concourse A", placeQuery: "Emirates First Class Lounge Dubai Concourse A" },
+    { id: "dxb_pp_marhaba", name: "Marhaba Lounge", terminal: "T1", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 1", placeQuery: "Marhaba Lounge Dubai Airport Terminal 1" },
+    { id: "dxb_centurion", name: "Amex Centurion Lounge (coming)", terminal: "T3", network: "centurion", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "Opening 2025", location: "Terminal 3 Concourse B", placeQuery: "American Express Centurion Lounge Dubai" },
+    { id: "dxb_emirates_bc_c", name: "Emirates Business Class Lounge (Concourse C)", terminal: "T3", network: "emirates_lounge", alliance: "none", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","nap_pods"], hours: "24 hours", location: "Terminal 3 Concourse C", placeQuery: "Emirates Business Class Lounge Dubai Concourse C" },
+    { id: "dxb_qantas", name: "Qantas Lounge", terminal: "T1", network: "qantas_lounge", alliance: "oneworld", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with QF flights", location: "Terminal 1", placeQuery: "Qantas Lounge Dubai Airport" },
+    { id: "dxb_pp_ahlan", name: "Ahlan Lounge", terminal: "T1", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 1 Concourse D", placeQuery: "Ahlan Lounge Dubai Airport Terminal 1" },
+    { id: "dxb_ba_lounge", name: "British Airways Lounge", terminal: "T1", network: "generic_airline", alliance: "oneworld", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with BA flights", location: "Terminal 1", placeQuery: "British Airways Lounge Dubai Airport" },
+  ],
+  DOH: [
+    { id: "doh_qatar_alm", name: "Qatar Airways Al Mourjan Business Lounge", terminal: "Main", network: "generic_airline", alliance: "oneworld", rating: 4.7, amenities: ["showers","hot_food","bar","wifi","nap_pods","spa","a_la_carte"], hours: "24 hours", location: "Main Departures", placeQuery: "Al Mourjan Business Lounge Doha Hamad" },
+    { id: "doh_qatar_gold", name: "Qatar Airways Al Mourjan Garden", terminal: "Main", network: "generic_airline", alliance: "oneworld", rating: 4.8, amenities: ["showers","hot_food","bar","wifi","nap_pods","spa","a_la_carte","outdoor_terrace"], hours: "24 hours", location: "Main Departures", placeQuery: "Al Mourjan Garden Lounge Doha Hamad" },
+    { id: "doh_pp_oryx", name: "Oryx Lounge", terminal: "Main", network: "priority_pass", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "South Node", placeQuery: "Oryx Lounge Doha Hamad Airport" },
+    { id: "doh_qatar_first", name: "Qatar Airways Al Safwa First Class Lounge", terminal: "Main", network: "generic_airline", alliance: "oneworld", rating: 4.9, amenities: ["showers","hot_food","bar","wifi","spa","nap_pods","a_la_carte"], hours: "24 hours", location: "Near Gate A1", placeQuery: "Al Safwa First Class Lounge Doha Hamad" },
+    { id: "doh_pp_plaza", name: "Plaza Premium Lounge", terminal: "Main", network: "plaza_premium", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "South Node", placeQuery: "Plaza Premium Lounge Doha Hamad Airport" },
+  ],
+  AUH: [
+    { id: "auh_etihad_fc", name: "Etihad First Class Lounge & Spa", terminal: "T3", network: "generic_airline", alliance: "none", rating: 4.7, amenities: ["showers","hot_food","bar","wifi","spa","nap_pods","a_la_carte"], hours: "24 hours", location: "Terminal 3", placeQuery: "Etihad First Class Lounge Abu Dhabi" },
+    { id: "auh_etihad_bc", name: "Etihad Business Class Lounge", terminal: "T3", network: "generic_airline", alliance: "none", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","nap_pods"], hours: "24 hours", location: "Terminal 3", placeQuery: "Etihad Business Lounge Abu Dhabi" },
+    { id: "auh_pp_aldhabi", name: "Al Dhabi Lounge", terminal: "T1", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 1", placeQuery: "Al Dhabi Lounge Abu Dhabi Airport" },
+  ],
+  JNB: [
+    { id: "jnb_pp_bidvest", name: "Bidvest Premier Lounge", terminal: "Int'l", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - 10:00 PM", location: "International Terminal", placeQuery: "Bidvest Premier Lounge Johannesburg Airport" },
+    { id: "jnb_saa_lounge", name: "SAA Voyager Lounge", terminal: "Dom", network: "generic_airline", alliance: "star", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Domestic Terminal", placeQuery: "SAA Voyager Lounge Johannesburg" },
+  ],
+  CAI: [
+    { id: "cai_pp_premium", name: "Premium Lounge", terminal: "T3", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "24 hours", location: "Terminal 3", placeQuery: "Premium Lounge Cairo Airport Terminal 3" },
+    { id: "cai_egyptair", name: "EgyptAir Horus Lounge", terminal: "T3", network: "generic_airline", alliance: "star", rating: 3.5, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 3", placeQuery: "EgyptAir Horus Lounge Cairo Airport" },
+  ],
+  // Asia-Pacific — expanded
+  ICN: [
+    { id: "icn_ke_prestige", name: "Korean Air Prestige Class Lounge", terminal: "T2", network: "generic_airline", alliance: "skyteam", rating: 4.4, amenities: ["showers","hot_food","bar","wifi","nap_pods"], hours: "6:00 AM - Last Departure", location: "Terminal 2 Concourse", placeQuery: "Korean Air Prestige Lounge Incheon Terminal 2" },
+    { id: "icn_asiana_business", name: "Asiana Business Lounge", terminal: "T1", network: "generic_airline", alliance: "star", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - Last Departure", location: "Terminal 1", placeQuery: "Asiana Business Lounge Incheon" },
+    { id: "icn_pp_matina", name: "Matina Lounge", terminal: "T1", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "7:00 AM - 10:00 PM", location: "Terminal 1", placeQuery: "Matina Lounge Incheon Airport" },
+    { id: "icn_sky_hub", name: "Sky Hub Lounge", terminal: "T1", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "7:00 AM - 10:00 PM", location: "Terminal 1 East", placeQuery: "Sky Hub Lounge Incheon Airport" },
+    { id: "icn_ke_first", name: "Korean Air First Class Lounge", terminal: "T2", network: "generic_airline", alliance: "skyteam", rating: 4.6, amenities: ["showers","hot_food","bar","wifi","nap_pods","a_la_carte","spa"], hours: "6:00 AM - Last Departure", location: "Terminal 2", placeQuery: "Korean Air First Class Lounge Incheon" },
+    { id: "icn_asiana_first", name: "Asiana First Class Lounge", terminal: "T1", network: "generic_airline", alliance: "star", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","nap_pods"], hours: "6:00 AM - Last Departure", location: "Terminal 1", placeQuery: "Asiana First Class Lounge Incheon" },
+    { id: "icn_cathay", name: "Cathay Pacific Lounge", terminal: "T1", network: "cathay_lounge", alliance: "oneworld", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with CX flights", location: "Terminal 1", placeQuery: "Cathay Pacific Lounge Incheon" },
+    { id: "icn_singapore", name: "Singapore Airlines SilverKris Lounge", terminal: "T1", network: "singapore_lounge", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with SQ flights", location: "Terminal 1", placeQuery: "SilverKris Lounge Incheon" },
+    { id: "icn_delta_sky", name: "Delta Sky Club", terminal: "T2", network: "delta_sky_club", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies with DL flights", location: "Terminal 2", placeQuery: "Delta Sky Club Incheon" },
+    { id: "icn_jal_sakura", name: "JAL Sakura Lounge", terminal: "T1", network: "generic_airline", alliance: "oneworld", rating: 3.9, amenities: ["hot_food","bar","wifi"], hours: "Varies with JL flights", location: "Terminal 1", placeQuery: "JAL Sakura Lounge Incheon" },
+    { id: "icn_ana_lounge", name: "ANA Lounge", terminal: "T1", network: "generic_airline", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies with NH flights", location: "Terminal 1", placeQuery: "ANA Lounge Incheon Airport" },
+  ],
+  KIX: [
+    { id: "kix_ana_lounge", name: "ANA Lounge", terminal: "T1", network: "generic_airline", alliance: "star", rating: 4.1, amenities: ["hot_food","bar","wifi"], hours: "6:30 AM - Last Departure", location: "Terminal 1 Int'l", placeQuery: "ANA Lounge Kansai Airport" },
+    { id: "kix_jal_sakura", name: "JAL Sakura Lounge", terminal: "T1", network: "generic_airline", alliance: "oneworld", rating: 4.0, amenities: ["hot_food","bar","wifi"], hours: "7:00 AM - Last Departure", location: "Terminal 1 Int'l", placeQuery: "JAL Sakura Lounge Kansai" },
+    { id: "kix_pp_kanku", name: "KIX Airport Lounge", terminal: "T1", network: "priority_pass", rating: 3.3, amenities: ["bar","wifi"], hours: "7:00 AM - 9:00 PM", location: "Terminal 1", placeQuery: "KIX Airport Lounge Kansai" },
+  ],
+  BKK: [
+    { id: "bkk_thai_royal_silk", name: "Thai Airways Royal Silk Lounge", terminal: "Main", network: "generic_airline", alliance: "star", rating: 4.2, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "5:00 AM - Last Departure", location: "Concourse C", placeQuery: "Thai Airways Royal Silk Lounge Suvarnabhumi" },
+    { id: "bkk_singapore_sl", name: "Singapore Airlines SilverKris Lounge", terminal: "Main", network: "singapore_lounge", alliance: "star", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - Last Departure", location: "Concourse D", placeQuery: "SilverKris Lounge Bangkok Suvarnabhumi" },
+    { id: "bkk_cathay", name: "Cathay Pacific Lounge", terminal: "Main", network: "cathay_lounge", alliance: "oneworld", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 11:00 PM", location: "Concourse G", placeQuery: "Cathay Pacific Lounge Bangkok" },
+    { id: "bkk_pp_miracle", name: "Miracle First Class Lounge", terminal: "Main", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Concourse G", placeQuery: "Miracle First Class Lounge Bangkok" },
+    { id: "bkk_turkish", name: "Turkish Airlines Lounge", terminal: "Main", network: "turkish_lounge", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Concourse F", placeQuery: "Turkish Airlines Lounge Bangkok Suvarnabhumi" },
+    { id: "bkk_eva_lounge", name: "EVA Air Lounge", terminal: "Main", network: "generic_airline", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with BR flights", location: "Concourse D", placeQuery: "EVA Air Lounge Bangkok Suvarnabhumi" },
+    { id: "bkk_korean_air", name: "Korean Air Lounge", terminal: "Main", network: "generic_airline", alliance: "skyteam", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "Varies with KE flights", location: "Concourse F", placeQuery: "Korean Air Lounge Bangkok Suvarnabhumi" },
+    { id: "bkk_jal", name: "JAL Sakura Lounge", terminal: "Main", network: "generic_airline", alliance: "oneworld", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with JL flights", location: "Concourse C", placeQuery: "JAL Sakura Lounge Bangkok Suvarnabhumi" },
+    { id: "bkk_thai_royal_first", name: "Thai Airways Royal First Lounge", terminal: "Main", network: "generic_airline", alliance: "star", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","spa","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Concourse D", placeQuery: "Thai Airways Royal First Lounge Suvarnabhumi" },
+    { id: "bkk_oman_air", name: "Oman Air Lounge", terminal: "Main", network: "generic_airline", alliance: "oneworld", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Concourse E", placeQuery: "Oman Air Lounge Bangkok Suvarnabhumi" },
+  ],
+  TPE: [
+    { id: "tpe_plaza_t1", name: "Plaza Premium Lounge", terminal: "T1", network: "plaza_premium", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - Last Departure", location: "Terminal 1", placeQuery: "Plaza Premium Lounge Taiwan Taoyuan Terminal 1" },
+    { id: "tpe_china_dynasty", name: "China Airlines Dynasty Lounge", terminal: "T2", network: "generic_airline", alliance: "skyteam", rating: 4.0, amenities: ["hot_food","bar","wifi","showers","nap_pods"], hours: "5:30 AM - Last Departure", location: "Terminal 2", placeQuery: "China Airlines Dynasty Lounge Taoyuan" },
+    { id: "tpe_eva_infinity", name: "EVA Air Infinity Lounge", terminal: "T2", network: "generic_airline", alliance: "star", rating: 4.2, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - Last Departure", location: "Terminal 2", placeQuery: "EVA Air Infinity Lounge Taoyuan" },
+  ],
+  KUL: [
+    { id: "kul_pp_plaza", name: "Plaza Premium Lounge", terminal: "KLIA1", network: "plaza_premium", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "KLIA Main Terminal", placeQuery: "Plaza Premium Lounge KLIA" },
+    { id: "kul_malaysia_golden", name: "Malaysia Airlines Golden Lounge", terminal: "KLIA1", network: "generic_airline", alliance: "oneworld", rating: 4.1, amenities: ["hot_food","bar","wifi","showers","nap_pods"], hours: "24 hours", location: "KLIA Satellite", placeQuery: "Malaysia Airlines Golden Lounge KLIA" },
+    { id: "kul_cathay", name: "Cathay Pacific Lounge", terminal: "KLIA1", network: "cathay_lounge", alliance: "oneworld", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "7:00 AM - 11:00 PM", location: "KLIA Satellite", placeQuery: "Cathay Pacific Lounge KLIA" },
+  ],
+  MNL: [
+    { id: "mnl_pp_mabuhay", name: "Mabuhay Lounge", terminal: "T3", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "24 hours", location: "Terminal 3 Int'l", placeQuery: "Mabuhay Lounge Manila Terminal 3" },
+    { id: "mnl_cathay", name: "Cathay Pacific Lounge", terminal: "T3", network: "cathay_lounge", alliance: "oneworld", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - Last Departure", location: "Terminal 3", placeQuery: "Cathay Pacific Lounge Manila" },
+  ],
+  DEL: [
+    { id: "del_pp_plaza_t3", name: "Plaza Premium Lounge", terminal: "T3", network: "plaza_premium", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 3 Int'l", placeQuery: "Plaza Premium Lounge Delhi Airport Terminal 3" },
+    { id: "del_pp_encalm", name: "Encalm Privé Lounge", terminal: "T3", network: "priority_pass", rating: 4.0, amenities: ["hot_food","bar","wifi","showers","nap_pods"], hours: "24 hours", location: "Terminal 3 Domestic", placeQuery: "Encalm Prive Lounge Delhi Airport" },
+    { id: "del_air_india", name: "Air India Maharaja Lounge", terminal: "T3", network: "generic_airline", alliance: "star", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "24 hours", location: "Terminal 3 Int'l", placeQuery: "Air India Maharaja Lounge Delhi" },
+  ],
+  BOM: [
+    { id: "bom_pp_plaza_t2", name: "Plaza Premium Lounge", terminal: "T2", network: "plaza_premium", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 2 Int'l", placeQuery: "Plaza Premium Lounge Mumbai Airport Terminal 2" },
+    { id: "bom_pp_encalm", name: "Encalm Privé Lounge", terminal: "T2", network: "priority_pass", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 2 Domestic", placeQuery: "Encalm Prive Lounge Mumbai Airport" },
+  ],
+  SYD: [
+    { id: "syd_qantas_business", name: "Qantas Business Lounge", terminal: "T1", network: "qantas_lounge", alliance: "oneworld", rating: 4.2, amenities: ["showers","hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 1 Int'l", placeQuery: "Qantas Business Lounge Sydney Airport" },
+    { id: "syd_qantas_first", name: "Qantas First Lounge", terminal: "T1", network: "qantas_lounge", alliance: "oneworld", rating: 4.6, amenities: ["showers","hot_food","bar","wifi","spa","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Terminal 1 Int'l", placeQuery: "Qantas First Class Lounge Sydney" },
+    { id: "syd_singapore_sl", name: "SilverKris Lounge", terminal: "T1", network: "singapore_lounge", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - Last Departure", location: "Terminal 1", placeQuery: "SilverKris Lounge Sydney Airport" },
+    { id: "syd_pp_sky_team", name: "SkyTeam Lounge", terminal: "T1", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 11:00 PM", location: "Terminal 1", placeQuery: "SkyTeam Lounge Sydney Airport" },
+    { id: "syd_air_nz", name: "Air New Zealand Lounge", terminal: "T1", network: "generic_airline", alliance: "star", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with NZ flights", location: "Terminal 1 Int'l", placeQuery: "Air New Zealand Lounge Sydney Airport" },
+    { id: "syd_cathay", name: "Cathay Pacific Lounge", terminal: "T1", network: "cathay_lounge", alliance: "oneworld", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with CX flights", location: "Terminal 1 Int'l", placeQuery: "Cathay Pacific Lounge Sydney Airport" },
+    { id: "syd_emirates", name: "Emirates Lounge", terminal: "T1", network: "generic_airline", alliance: "none", rating: 4.2, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with EK flights", location: "Terminal 1 Int'l", placeQuery: "Emirates Lounge Sydney Airport" },
+    { id: "syd_american_lounge", name: "American Airlines Lounge", terminal: "T1", network: "admirals_club", alliance: "oneworld", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "Varies with AA flights", location: "Terminal 1 Int'l", placeQuery: "American Airlines Lounge Sydney Airport" },
+    { id: "syd_qantas_dom_biz", name: "Qantas Business Lounge (Domestic)", terminal: "T3", network: "qantas_lounge", alliance: "oneworld", rating: 4.1, amenities: ["showers","hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 3 Domestic", placeQuery: "Qantas Business Lounge Sydney Domestic Terminal" },
+  ],
+  MEL: [
+    { id: "mel_qantas_business", name: "Qantas Business Lounge", terminal: "T1", network: "qantas_lounge", alliance: "oneworld", rating: 4.1, amenities: ["showers","hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 1 Int'l", placeQuery: "Qantas Business Lounge Melbourne Airport" },
+    { id: "mel_qantas_first", name: "Qantas First Lounge", terminal: "T1", network: "qantas_lounge", alliance: "oneworld", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","spa","a_la_carte"], hours: "5:30 AM - Last Departure", location: "Terminal 1 Int'l", placeQuery: "Qantas First Lounge Melbourne" },
+    { id: "mel_pp_menzies", name: "Menzies Aviation Lounge", terminal: "T2", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 10:00 PM", location: "Terminal 2", placeQuery: "Menzies Aviation Lounge Melbourne Airport" },
+  ],
+  AKL: [
+    { id: "akl_airnz_koru", name: "Air New Zealand Koru Lounge", terminal: "Int'l", network: "generic_airline", alliance: "star", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "International Terminal", placeQuery: "Air New Zealand Koru Lounge Auckland Airport" },
+    { id: "akl_pp_strata", name: "Strata Lounge", terminal: "Int'l", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - Last Departure", location: "International Terminal", placeQuery: "Strata Lounge Auckland Airport" },
+  ],
+  PVG: [
+    { id: "pvg_china_eastern", name: "China Eastern V03 Lounge", terminal: "T1", network: "generic_airline", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - Last Departure", location: "Terminal 1", placeQuery: "China Eastern VIP Lounge Shanghai Pudong" },
+    { id: "pvg_pp_no77", name: "No. 77 China Eastern Plaza Premium", terminal: "T2", network: "plaza_premium", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 11:00 PM", location: "Terminal 2", placeQuery: "No 77 Lounge Shanghai Pudong Terminal 2" },
+    { id: "pvg_cathay", name: "Cathay Pacific Lounge", terminal: "T2", network: "cathay_lounge", alliance: "oneworld", rating: 3.9, amenities: ["hot_food","bar","wifi"], hours: "6:30 AM - Last Departure", location: "Terminal 2", placeQuery: "Cathay Pacific Lounge Shanghai Pudong" },
+  ],
+  PEK: [
+    { id: "pek_air_china", name: "Air China First Class Lounge", terminal: "T3E", network: "generic_airline", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers","nap_pods"], hours: "6:00 AM - Last Departure", location: "Terminal 3E Int'l", placeQuery: "Air China First Class Lounge Beijing Capital Terminal 3" },
+    { id: "pek_pp_bgs", name: "BGS Premier Lounge", terminal: "T3E", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Terminal 3E", placeQuery: "BGS Premier Lounge Beijing Capital Airport" },
+  ],
+  CAN: [
+    { id: "can_china_southern", name: "China Southern Sky Pearl Lounge", terminal: "T2", network: "generic_airline", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - Last Departure", location: "Terminal 2 Int'l", placeQuery: "China Southern Sky Pearl Lounge Guangzhou" },
+    { id: "can_pp_lounge", name: "V1 Lounge", terminal: "T2", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Terminal 2", placeQuery: "V1 Lounge Guangzhou Baiyun Airport" },
+  ],
+  LAS: [
+    { id: "las_chase_sapphire", name: "Chase Sapphire Lounge by The Club", terminal: "T1", network: "chase_sapphire_lounge", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","phone_rooms"], hours: "5:00 AM - 11:00 PM", location: "Terminal 1 D Gates near Gate D1", placeQuery: "Chase Sapphire Lounge Las Vegas Airport" },
+    { id: "las_centurion", name: "Amex Centurion Lounge", terminal: "T1", network: "centurion", rating: 4.6, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "6:00 AM - 10:00 PM", location: "Terminal 1 D Gates", placeQuery: "American Express Centurion Lounge Las Vegas" },
+    { id: "las_pp_club", name: "The Club LAS", terminal: "T1", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 11:00 PM", location: "Terminal 1 D Gates", placeQuery: "The Club at LAS Airport" },
+    { id: "las_delta_sky", name: "Delta Sky Club", terminal: "T1", network: "delta_sky_club", alliance: "skyteam", rating: 4.0, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Terminal 1", placeQuery: "Delta Sky Club Las Vegas" },
+    { id: "las_united_club", name: "United Club", terminal: "T3", network: "united_club", alliance: "star", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 3 D Gates", placeQuery: "United Club Las Vegas" },
+  ],
+  PHL: [
+    { id: "phl_centurion", name: "Amex Centurion Lounge", terminal: "A West", network: "centurion", rating: 4.3, amenities: ["showers","hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Terminal A West", placeQuery: "American Express Centurion Lounge Philadelphia" },
+    { id: "phl_admirals", name: "Admirals Club", terminal: "B/C", network: "admirals_club", alliance: "oneworld", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 9:30 PM", location: "Between B and C", placeQuery: "Admirals Club Philadelphia Airport" },
+    { id: "phl_pp_minute", name: "Minute Suites", terminal: "A East", network: "priority_pass", rating: 3.4, amenities: ["wifi","nap_pods"], hours: "24 hours", location: "Terminal A East", placeQuery: "Minute Suites Philadelphia Airport" },
+  ],
+  IAD: [
+    { id: "iad_united_club", name: "United Club", terminal: "C/D", network: "united_club", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Concourse C", placeQuery: "United Club Dulles Airport" },
+    { id: "iad_polaris", name: "United Polaris Lounge", terminal: "Int'l", network: "polaris", alliance: "star", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","nap_pods","a_la_carte"], hours: "6:00 AM - Last Departure", location: "International Departures", placeQuery: "United Polaris Lounge Dulles" },
+    { id: "iad_pp_turkish", name: "Turkish Airlines Lounge", terminal: "Int'l", network: "priority_pass", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 11:00 PM", location: "International", placeQuery: "Turkish Airlines Lounge Dulles" },
+  ],
+  DCA: [
+    { id: "dca_admirals", name: "Admirals Club", terminal: "B", network: "admirals_club", alliance: "oneworld", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Terminal B", placeQuery: "Admirals Club Reagan National Airport" },
+    { id: "dca_delta_sky", name: "Delta Sky Club", terminal: "B", network: "delta_sky_club", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Terminal B", placeQuery: "Delta Sky Club Reagan National" },
+    { id: "dca_cap1", name: "Capital One Lounge", terminal: "A", network: "capital_one", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "5:30 AM - 10:00 PM", location: "Terminal A", placeQuery: "Capital One Lounge DCA" },
+  ],
+  TPA: [
+    { id: "tpa_pp_club", name: "The Club TPA", terminal: "F", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Airside F", placeQuery: "The Club at Tampa Airport" },
+    { id: "tpa_delta_sky", name: "Delta Sky Club", terminal: "E", network: "delta_sky_club", alliance: "skyteam", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Airside E", placeQuery: "Delta Sky Club Tampa" },
+  ],
+  MSY: [
+    { id: "msy_pp_club", name: "The Club MSY", terminal: "C/D", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Concourse C", placeQuery: "The Club at New Orleans Airport" },
+  ],
+  RDU: [
+    { id: "rdu_pp_club", name: "The Club RDU", terminal: "2", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Terminal 2", placeQuery: "The Club at Raleigh Durham Airport" },
+  ],
+  BNA: [
+    { id: "bna_pp_club", name: "The Club BNA", terminal: "Main", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Concourse C", placeQuery: "The Club at Nashville Airport" },
+    { id: "bna_delta_sky", name: "Delta Sky Club", terminal: "B", network: "delta_sky_club", alliance: "skyteam", rating: 3.9, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Concourse B", placeQuery: "Delta Sky Club Nashville" },
+  ],
+  AUS: [
+    { id: "aus_centurion", name: "Amex Centurion Lounge", terminal: "Main", network: "centurion", rating: 4.4, amenities: ["showers","hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "East Wing", placeQuery: "American Express Centurion Lounge Austin" },
+    { id: "aus_pp_club", name: "The Club AUS", terminal: "Main", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Near Gate 18", placeQuery: "The Club at Austin Airport" },
+  ],
+  SLC: [
+    { id: "slc_delta_sky", name: "Delta Sky Club", terminal: "A", network: "delta_sky_club", alliance: "skyteam", rating: 4.2, amenities: ["hot_food","bar","wifi","showers"], hours: "4:30 AM - Last Departure", location: "Concourse A", placeQuery: "Delta Sky Club Salt Lake City" },
+    { id: "slc_pp_club", name: "The Club SLC", terminal: "B", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 9:00 PM", location: "Concourse B", placeQuery: "The Club at Salt Lake City Airport" },
+  ],
+  STL: [
+    { id: "stl_pp_club", name: "The Club STL", terminal: "1", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Terminal 1", placeQuery: "The Club at St Louis Airport" },
+  ],
+  PIT: [
+    { id: "pit_pp_club", name: "The Club PIT", terminal: "C", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Concourse C", placeQuery: "The Club at Pittsburgh Airport" },
+  ],
+  MKE: [
+    { id: "mke_pp_club", name: "The Club MKE", terminal: "C", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Concourse C", placeQuery: "The Club at Milwaukee Airport" },
+  ],
+  CLE: [
+    { id: "cle_pp_club", name: "The Club CLE", terminal: "C", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Concourse C", placeQuery: "The Club at Cleveland Airport" },
+  ],
+  IND: [
+    { id: "ind_pp_club", name: "The Club IND", terminal: "B", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Concourse B", placeQuery: "The Club at Indianapolis Airport" },
+  ],
+  CMH: [
+    { id: "cmh_pp_club", name: "The Club CMH", terminal: "B", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 8:00 PM", location: "Concourse B", placeQuery: "The Club at Columbus Airport" },
+  ],
+  OAK: [
+    { id: "oak_pp_club", name: "The Club OAK", terminal: "2", network: "priority_pass", rating: 3.2, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Terminal 2", placeQuery: "The Club at Oakland Airport" },
+  ],
+  SJC: [
+    { id: "sjc_pp_club", name: "The Club SJC", terminal: "B", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Terminal B", placeQuery: "The Club at San Jose Airport" },
+  ],
+  SMF: [
+    { id: "smf_pp_club", name: "The Club SMF", terminal: "B", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 8:30 PM", location: "Terminal B", placeQuery: "The Club at Sacramento Airport" },
+  ],
+  JAX: [
+    { id: "jax_pp_club", name: "The Club JAX", terminal: "C", network: "priority_pass", rating: 3.2, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 8:00 PM", location: "Concourse C", placeQuery: "The Club at Jacksonville Airport" },
+  ],
+  RSW: [
+    { id: "rsw_pp_club", name: "The Club RSW", terminal: "C", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 8:30 PM", location: "Concourse C", placeQuery: "The Club at Fort Myers Airport" },
+  ],
+  // International - additional
+  ADD: [
+    { id: "add_sheba", name: "Sheba Lounge", terminal: "T2", network: "generic_airline", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 2 Int'l", placeQuery: "Sheba Lounge Addis Ababa Airport" },
+  ],
+  NBO: [
+    { id: "nbo_pp_simba", name: "Simba Lounge", terminal: "1", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "24 hours", location: "Terminal 1 Int'l", placeQuery: "Simba Lounge Nairobi Jomo Kenyatta Airport" },
+  ],
+  CMB: [
+    { id: "cmb_pp_serendib", name: "Serendib Lounge", terminal: "Main", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Departures", placeQuery: "Serendib Lounge Colombo Bandaranaike Airport" },
+  ],
+  MLE: [
+    { id: "mle_pp_moonimaa", name: "Moonimaa Lounge", terminal: "Main", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "24 hours", location: "Int'l Departures", placeQuery: "Moonimaa Lounge Maldives Velana Airport" },
+  ],
+  HAN: [
+    { id: "han_pp_song_hong", name: "Song Hong Business Lounge", terminal: "T2", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - 12:00 AM", location: "Terminal 2 Int'l", placeQuery: "Song Hong Business Lounge Hanoi Noi Bai" },
+  ],
+  SGN: [
+    { id: "sgn_pp_lotus", name: "Lotus Lounge", terminal: "T2", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 12:00 AM", location: "Terminal 2 Int'l", placeQuery: "Lotus Lounge Ho Chi Minh City Airport" },
+  ],
+  DPS: [
+    { id: "dps_pp_premier", name: "Premier Lounge", terminal: "Int'l", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Int'l Departures", placeQuery: "Premier Lounge Bali Ngurah Rai Airport" },
+  ],
+  CGK: [
+    { id: "cgk_pp_saphire", name: "Saphire Lounge", terminal: "T3", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 3", placeQuery: "Saphire Lounge Jakarta Soekarno-Hatta" },
+    { id: "cgk_ga_lounge", name: "Garuda Indonesia Lounge", terminal: "T3", network: "generic_airline", alliance: "none", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal 3", placeQuery: "Garuda Indonesia Lounge Jakarta T3" },
+  ],
+  BKI: [
+    { id: "bki_pp_plaza", name: "Plaza Premium Lounge", terminal: "T1", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 12:00 AM", location: "Terminal 1", placeQuery: "Plaza Premium Lounge Kota Kinabalu Airport" },
+  ],
+  PNH: [
+    { id: "pnh_pp_plaza", name: "Plaza Premium Lounge", terminal: "Main", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 12:00 AM", location: "Int'l Departures", placeQuery: "Plaza Premium Lounge Phnom Penh Airport" },
+  ],
+  RGN: [
+    { id: "rgn_pp_mingalar", name: "Mingalar Sky Lounge", terminal: "Main", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 11:00 PM", location: "Int'l Departures", placeQuery: "Mingalar Sky Lounge Yangon Airport" },
+  ],
+  EDI: [
+    { id: "edi_pp_aspire", name: "Aspire Lounge", terminal: "Main", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "4:00 AM - 9:00 PM", location: "Airside after security", placeQuery: "Aspire Lounge Edinburgh Airport" },
+  ],
+  MAN: [
+    { id: "man_pp_escape", name: "Escape Lounge", terminal: "T1", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "4:00 AM - 9:00 PM", location: "Terminal 1", placeQuery: "Escape Lounge Manchester Airport Terminal 1" },
+    { id: "man_pp_1903", name: "1903 Lounge", terminal: "T3", network: "priority_pass", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "4:00 AM - 9:00 PM", location: "Terminal 3", placeQuery: "1903 Lounge Manchester Airport" },
+  ],
+  GVA: [
+    { id: "gva_pp_swiss", name: "Dnata Skyview Lounge", terminal: "1", network: "priority_pass", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 10:00 PM", location: "Terminal 1", placeQuery: "Dnata Skyview Lounge Geneva Airport" },
+  ],
+  BRU: [
+    { id: "bru_pp_diamond", name: "Diamond Lounge", terminal: "A", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:30 PM", location: "Pier A", placeQuery: "Diamond Lounge Brussels Airport" },
+  ],
+  OSL: [
+    { id: "osl_pp_osl", name: "OSL Lounge", terminal: "Main", network: "priority_pass", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - 10:00 PM", location: "Int'l Departures", placeQuery: "OSL Lounge Oslo Gardermoen Airport" },
+  ],
+  WAW: [
+    { id: "waw_pp_preludium", name: "Preludium Lounge", terminal: "A", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 10:00 PM", location: "Terminal A", placeQuery: "Preludium Lounge Warsaw Chopin Airport" },
+  ],
+  PRG: [
+    { id: "prg_pp_mastercard", name: "Mastercard Lounge", terminal: "2", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 10:00 PM", location: "Terminal 2", placeQuery: "Mastercard Lounge Prague Airport" },
+  ],
+  BUD: [
+    { id: "bud_pp_skycourt", name: "SkyCourt Lounge", terminal: "2B", network: "priority_pass", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - 10:00 PM", location: "Terminal 2B", placeQuery: "SkyCourt Lounge Budapest Airport" },
+  ],
+};
 
+const CARD_LOUNGE_ACCESS = {
+  // Source: americanexpress.com/platinum — updated 2026
+  amex_plat: [
+    { network: "centurion", guests: 0, guestNote: "Guests $50/adult, $30/child 2-17. Free 2 guests after $75K spend/yr" },
+    { network: "priority_pass", guests: 0, guestNote: "Cardholder only via digital Priority Pass" },
+    { network: "delta_sky_club", condition: "flying_delta", guests: 0, guestNote: "10 visits/yr flying Delta. Guests $50 each (max 2). Unlimited after $75K spend" },
+    { network: "plaza_premium", guests: 0, guestNote: "Select locations, cardholder only" },
+  ],
+  amex_gold: [],
+  // Source: chase.com/sapphire/reserve — updated 2026
+  chase_sapphire: [
+    { network: "chase_sapphire_lounge", guests: 2, guestNote: "2 free guests, $27/each additional" },
+    { network: "priority_pass", guests: 2, guestNote: "2 free guests, $27/each additional. Children under 2 free" },
+  ],
+  // Source: capitalone.com/venture-x — updated Feb 2026
+  cap1_venturex: [
+    { network: "capital_one", guests: 0, guestNote: "Guests $45/adult, $25/child under 18. Free 2 guests after $75K spend/yr" },
+    { network: "priority_pass", guests: 0, guestNote: "Guests $35 each at Priority Pass lounges" },
+  ],
+  cap1_venture: [
+    { network: "capital_one", guests: 0, guestNote: "Cardholder access $45/visit, no free guests" },
+  ],
+  // Source: delta.com/sky-club/access — updated 2026
+  delta_reserve: [
+    { network: "delta_sky_club", guests: 0, guestNote: "15 visit days/yr. Guests $50 each (max 2 or family). Unlimited after $75K spend. 4 one-time guest passes/yr" },
+  ],
+  // Source: chase.com/united — updated 2026
+  united_club_card: [
+    { network: "united_club", guests: 2, guestNote: "2 free guests per visit" },
+  ],
+  // Source: americanexpress.com — Priority Pass REMOVED from Aspire as of Feb 2024
+  hilton_aspire: [],
+  hilton_surpass: [],
+  // Source: chase.com/marriott — updated 2026
+  marriott_brilliant: [
+    { network: "priority_pass", guests: 0, guestNote: "Cardholder only (Priority Pass Select membership)" },
+  ],
+  // Source: chase.com/ritz-carlton — updated Jan 15, 2026
+  ritz_carlton: [
+    { network: "chase_sapphire_lounge", guests: 2, guestNote: "2 free guests, $27/each additional" },
+    { network: "priority_pass", guests: 2, guestNote: "2 free guests, $27/each additional (changed from unlimited Jan 2026)" },
+  ],
+  // Source: aa.com/citi-executive — updated 2026
+  aa_exec: [
+    { network: "admirals_club", guests: 2, guestNote: "Immediate family or 2 guests. Must have same-day AA/oneworld boarding pass" },
+  ],
+};
 
+const ELITE_LOUNGE_ACCESS = {
+  // Source: aa.com/admirals-club-access, exploreamerican.com — updated 2026
+  aa: {
+    name: "American Airlines AAdvantage",
+    tiers: {
+      "Gold": { lounges: [] },
+      "Platinum": { lounges: [
+        { network: "admirals_club", condition: "intl_only", guests: 0, guestNote: "Int'l AA/oneworld itinerary only. Member only, no guests" },
+        { network: "greenwich_lounge", condition: "intl_only", guests: 0, guestNote: "Greenwich Lounge at JFK on int'l itinerary" },
+      ]},
+      "Platinum Pro": { lounges: [
+        { network: "admirals_club", condition: "intl_only", guests: 0, guestNote: "Int'l AA/oneworld itinerary only. Member only, no guests" },
+        { network: "greenwich_lounge", condition: "intl_only", guests: 0, guestNote: "Greenwich Lounge at JFK on int'l itinerary" },
+        { network: "soho_lounge", condition: "intl_only", guests: 0, guestNote: "Soho Lounge at JFK on int'l itinerary" },
+        { network: "chelsea_lounge", condition: "intl_only", guests: 0, guestNote: "Chelsea Lounge at JFK on int'l itinerary" },
+      ]},
+      "Executive Platinum": { lounges: [
+        { network: "admirals_club", condition: "intl_only", guests: 1, guestNote: "Int'l AA/oneworld itinerary. 1 guest (children 2+ count)" },
+        { network: "greenwich_lounge", condition: "intl_only", guests: 1, guestNote: "Greenwich Lounge at JFK on int'l itinerary + 1 guest" },
+        { network: "soho_lounge", condition: "intl_only", guests: 1, guestNote: "Soho Lounge at JFK on int'l itinerary + 1 guest" },
+        { network: "chelsea_lounge", condition: "intl_only", guests: 1, guestNote: "Chelsea Lounge at JFK on int'l itinerary + 1 guest" },
+        { network: "flagship", condition: "intl_premium_cabin", guests: 0, guestNote: "Flagship First Dining on int'l/transcon premium cabin" },
+      ]},
+      "ConciergeKey": { lounges: [
+        { network: "admirals_club", guests: 2, guestNote: "2 guests or immediate family on same-day AA travel" },
+        { network: "greenwich_lounge", guests: 2, guestNote: "Greenwich Lounge + 2 guests" },
+        { network: "soho_lounge", guests: 2, guestNote: "Soho Lounge + 2 guests" },
+        { network: "chelsea_lounge", guests: 2, guestNote: "Chelsea Lounge + 2 guests" },
+        { network: "flagship", guests: 1, guestNote: "Flagship First Dining when ticketed in Flagship cabin" },
+      ]},
+    },
+  },
+  // Source: delta.com/sky-club/access — updated 2026
+  dl: {
+    name: "Delta SkyMiles",
+    tiers: {
+      "Silver Medallion": { lounges: [] },
+      "Gold Medallion": { lounges: [] },
+      "Platinum Medallion": { lounges: [] },
+      "Diamond Medallion": { lounges: [
+        { network: "delta_sky_club", condition: "same_day_delta", guests: 0, guestNote: "Member only on same-day Delta travel. No complimentary guests" },
+      ]},
+    },
+  },
+  // Source: united.com, onemileatatime.com/guides/united-club-access — updated 2026
+  ua: {
+    name: "United MileagePlus",
+    tiers: {
+      "Premier Silver": { lounges: [] },
+      "Premier Gold": { lounges: [] },
+      "Premier Platinum": { lounges: [] },
+      "Premier 1K": { lounges: [
+        { network: "united_club", condition: "intl_departure", guests: 0, guestNote: "Same-day international itinerary only. No guests" },
+      ]},
+      "Global Services": { lounges: [
+        { network: "united_club", condition: "same_day_ua", guests: 0, guestNote: "Same-day UA itinerary (any route). No complimentary guests" },
+        { network: "polaris", condition: "intl_premium_cabin", guests: 0, guestNote: "When ticketed in Polaris cabin" },
+      ]},
+    },
+  },
+  // Source: alaskaair.com/content/airport-lounge — updated 2026
+  as: {
+    name: "Alaska Mileage Plan",
+    tiers: {
+      "MVP": { lounges: [] },
+      "MVP Gold": { lounges: [] },
+      "MVP Gold 75K": { lounges: [
+        { network: "alaska_lounge", guests: 0, guestNote: "4 Alaska Lounge day passes per year (can share with others)" },
+      ]},
+    },
+  },
+  // Source: aircanada.com/maple-leaf-lounges, milesopedia.com — updated 2026
+  aeroplan: {
+    name: "Air Canada Aeroplan",
+    tiers: {
+      "25K": { lounges: [] },
+      "35K": { lounges: [] },
+      "50K": { lounges: [
+        { network: "generic_airline", condition: "same_day_ac", guests: 1, guestNote: "Maple Leaf Lounge on same-day AC/Star Alliance. Spouse/partner + children under 26, plus 1 additional guest. 3 guest passes/yr" },
+      ]},
+      "75K": { lounges: [
+        { network: "generic_airline", condition: "same_day_ac", guests: 1, guestNote: "Maple Leaf Lounge on same-day AC/Star Alliance. Spouse/partner + children under 26, plus 1 additional guest. 3 guest passes/yr" },
+      ]},
+      "Super Elite 100K": { lounges: [
+        { network: "generic_airline", guests: 1, guestNote: "Maple Leaf Lounge + Signature Suite (int'l). Spouse/partner + children under 26, plus 1 guest. 4 guest passes/yr" },
+      ]},
+    },
+  },
+};
 
 // Alliance status mapping — which elite tier gives which alliance level
+const ELITE_ALLIANCE_MAP = {
+  // American Airlines → oneworld
+  aa: { alliance: "oneworld", tiers: { "Gold": "Ruby", "Platinum": "Sapphire", "Platinum Pro": "Sapphire", "Executive Platinum": "Emerald", "ConciergeKey": "Emerald" } },
+  // British Airways → oneworld
+  ba_avios: { alliance: "oneworld", tiers: { "Bronze": "Ruby", "Silver": "Sapphire", "Gold": "Emerald" } },
+  // Cathay Pacific → oneworld
+  cathay_mp: { alliance: "oneworld", tiers: { "Green": "Ruby", "Silver": "Sapphire", "Gold": "Sapphire", "Diamond": "Emerald" } },
+  // Qantas → oneworld
+  qantas_ff: { alliance: "oneworld", tiers: { "Silver": "Ruby", "Gold": "Sapphire", "Platinum": "Emerald", "Platinum One": "Emerald" } },
+  // Alaska → oneworld
+  as: { alliance: "oneworld", tiers: { "MVP": "Ruby", "MVP Gold": "Sapphire", "MVP Gold 75K": "Emerald" } },
+  // United → Star Alliance
+  ua: { alliance: "star", tiers: { "Premier Silver": "Silver", "Premier Gold": "Gold", "Premier Platinum": "Gold", "Premier 1K": "Gold", "Global Services": "Gold" } },
+  // Air Canada → Star Alliance
+  aeroplan: { alliance: "star", tiers: { "25K": "Silver", "35K": "Silver", "50K": "Gold", "75K": "Gold", "Super Elite 100K": "Gold" } },
+  // ANA → Star Alliance
+  ana_mc: { alliance: "star", tiers: { "Bronze": "Silver", "Platinum": "Gold", "Diamond": "Gold", "Super Flyers": "Gold" } },
+  // Singapore → Star Alliance
+  singapore_kf: { alliance: "star", tiers: { "KrisFlyer Elite Silver": "Silver", "KrisFlyer Elite Gold": "Gold", "PPS Club": "Gold" } },
+  // Delta → SkyTeam
+  dl: { alliance: "skyteam", tiers: { "Silver Medallion": "Elite", "Gold Medallion": "Elite Plus", "Platinum Medallion": "Elite Plus", "Diamond Medallion": "Elite Plus" } },
+  // Korean Air → SkyTeam
+  korean_skypass: { alliance: "skyteam", tiers: { "Morning Calm": "Elite", "Morning Calm Premium": "Elite Plus", "Million Miler": "Elite Plus" } },
+  // Air France/KLM → SkyTeam
+  flying_blue: { alliance: "skyteam", tiers: { "Silver": "Elite", "Gold": "Elite Plus", "Platinum": "Elite Plus", "Ultimate": "Elite Plus" } },
+};
 
 // Airline → alliance membership (for flight context checking)
+const AIRLINE_ALLIANCE = {
+  // oneworld
+  aa: "oneworld", ba_avios: "oneworld", cathay_mp: "oneworld", qantas_ff: "oneworld", as: "oneworld",
+  ib: "oneworld", ay: "oneworld", jl: "oneworld", mh: "oneworld", qr: "oneworld", rj: "oneworld", s7: "oneworld", at: "oneworld", fj: "oneworld", oj: "oneworld",
+  // Star Alliance
+  ua: "star", aeroplan: "star", ana_mc: "star", singapore_kf: "star", lh: "star", os: "star", lx: "star", tk: "star",
+  et: "star", sk: "star", tp: "star", ca: "star", ai: "star", oz: "star", nh: "star", sq: "star", tg: "star", br: "star", cm: "star", av: "star", ms: "star", sa: "star",
+  // SkyTeam
+  dl: "skyteam", flying_blue: "skyteam", korean_skypass: "skyteam", am: "skyteam", ci: "skyteam", cz: "skyteam", ga: "skyteam",
+  ke: "skyteam", kl: "skyteam", me: "skyteam", mu: "skyteam", ro: "skyteam", su: "skyteam", sv: "skyteam", vn: "skyteam",
+};
 
 // Alliance level → lounge access rules
+const ALLIANCE_LOUNGE_ACCESS = {
+  oneworld: {
+    "Ruby": { lounges: [] },
+    "Sapphire": { lounges: [
+      { networkTypes: ["generic_airline","cathay_lounge","qantas_lounge","admirals_club","alaska_lounge","flagship"], guests: 1, guestNote: "oneworld Sapphire: business class lounges + 1 guest on same-day oneworld flight" },
+    ]},
+    "Emerald": { lounges: [
+      { networkTypes: ["generic_airline","cathay_lounge","qantas_lounge","admirals_club","alaska_lounge","flagship"], guests: 1, guestNote: "oneworld Emerald: first & business class lounges + 1 guest. Access regardless of cabin" },
+    ]},
+  },
+  star: {
+    "Silver": { lounges: [] },
+    "Gold": { lounges: [
+      { networkTypes: ["generic_airline","singapore_lounge","united_club","polaris"], guests: 1, guestNote: "Star Alliance Gold: business class lounges + 1 guest on same-day Star Alliance flight" },
+    ]},
+  },
+  skyteam: {
+    "Elite": { lounges: [] },
+    "Elite Plus": { lounges: [
+      { networkTypes: ["generic_airline","delta_sky_club"], guests: 1, guestNote: "SkyTeam Elite Plus: business class lounges + 1 guest on same-day SkyTeam flight" },
+    ]},
+  },
+};
 
+const AMENITY_ICONS = {
+  showers: "M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.49 8.49l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.49-8.49l2.83-2.83",
+  hot_food: "M3 2l1.5 15h15L21 2M3 17h18v2a2 2 0 01-2 2H5a2 2 0 01-2-2v-2z",
+  bar: "M8 22h8M12 11v11M5 2l7 9 7-9",
+  wifi: "M5 12.55a11 11 0 0114 0M8.53 16.11a6 6 0 016.95 0M12 20h.01",
+  spa: "M12 22c-4 0-8-2-8-6 0-3 2.5-5.5 4-7 1.5 1.5 4 4 4 7 0-3 2.5-5.5 4-7 1.5 1.5 4 4 4 7 0 4-4 6-8 6z",
+  phone_rooms: "M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z",
+  nap_pods: "M2 4v16M2 8h18a2 2 0 012 2v6H2M6 8v4",
+  a_la_carte: "M3 6h18M6 6v14h12V6M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2",
+  outdoor_terrace: "M3 21h18M5 21V7l7-4 7 4v14",
+  business_center: "M4 4h16v16H4zM9 9h6M9 13h6",
+};
+const AMENITY_LABELS = { showers: "Showers", hot_food: "Hot Food", bar: "Full Bar", wifi: "Wi-Fi", spa: "Spa", phone_rooms: "Phone Rooms", nap_pods: "Nap Pods", a_la_carte: "A la Carte Dining", outdoor_terrace: "Outdoor Terrace", business_center: "Business Center" };
 
+const LANDMARK_FALLBACK_PHOTOS = {
+  "Statue of Liberty": "https://images.unsplash.com/photo-1503174971373-b1f69850bded?w=400&q=80&auto=format&fit=crop",
+  "Central Park": "https://images.unsplash.com/photo-1534430480872-3498386e7856?w=400&q=80&auto=format&fit=crop",
+  "Times Square": "https://images.unsplash.com/photo-1560703650-ef3e0f254ae0?w=400&q=80&auto=format&fit=crop",
+  "Brooklyn Bridge": "https://images.unsplash.com/photo-1496588152823-86ff7695e68f?w=400&q=80&auto=format&fit=crop",
+  "Empire State Building": "https://images.unsplash.com/photo-1555109307-f7d9da25c244?w=400&q=80&auto=format&fit=crop",
+  "Shibuya Crossing": "https://images.unsplash.com/photo-1542051841857-5f90071e7989?w=400&q=80&auto=format&fit=crop",
+  "Senso-ji Temple": "https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=400&q=80&auto=format&fit=crop",
+  "Tokyo Tower": "https://images.unsplash.com/photo-1536098561742-ca998e48cbcc?w=400&q=80&auto=format&fit=crop",
+  "Osaka Castle": "https://images.unsplash.com/photo-1589452271712-64b8a66c3929?w=400&q=80&auto=format&fit=crop",
+  "Dotonbori": "https://images.unsplash.com/photo-1514222788835-3a1a1d76b903?w=400&q=80&auto=format&fit=crop",
+  "Victoria Peak": "https://images.unsplash.com/photo-1536599018102-9f803c140fc1?w=400&q=80&auto=format&fit=crop",
+  "Star Ferry": "https://images.unsplash.com/photo-1594973782943-3314fe063f68?w=400&q=80&auto=format&fit=crop",
+  "Taipei 101": "https://images.unsplash.com/photo-1508248467877-aec1e22e0e68?w=400&q=80&auto=format&fit=crop",
+  "Eiffel Tower": "https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?w=400&q=80&auto=format&fit=crop",
+  "Colosseum": "https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=400&q=80&auto=format&fit=crop",
+  "Big Ben": "https://images.unsplash.com/photo-1529655683826-aba9b3e77383?w=400&q=80&auto=format&fit=crop",
+  "Sagrada Familia": "https://images.unsplash.com/photo-1583779457094-ab6f77f7bf57?w=400&q=80&auto=format&fit=crop",
+  "Golden Gate Bridge": "https://images.unsplash.com/photo-1449034446853-66c86144b0ad?w=400&q=80&auto=format&fit=crop",
+  "Burj Khalifa": "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=400&q=80&auto=format&fit=crop",
+  "Opera House": "https://images.unsplash.com/photo-1523482580672-f109ba8cb9be?w=400&q=80&auto=format&fit=crop",
+  "Hagia Sophia": "https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?w=400&q=80&auto=format&fit=crop",
+  "Marina Bay Sands": "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=400&q=80&auto=format&fit=crop",
+  "Horseshoe Bay": "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=400&q=80&auto=format&fit=crop",
+  "Waikiki Beach": "https://images.unsplash.com/photo-1507876466758-bc54f384809c?w=400&q=80&auto=format&fit=crop",
+  "South Beach": "https://images.unsplash.com/photo-1535498730771-e735b998cd64?w=400&q=80&auto=format&fit=crop",
+  "Meiji Shrine": "https://images.unsplash.com/photo-1478436127897-769e1b3f0f36?w=400&q=80&auto=format&fit=crop",
+  "Tsukiji Market": "https://images.unsplash.com/photo-1555992336-03a23c7b20ee?w=400&q=80&auto=format&fit=crop",
+  "Universal Studios": "https://images.unsplash.com/photo-1581351721010-8cf859cb14a4?w=400&q=80&auto=format&fit=crop",
+  "Shinsekai": "https://images.unsplash.com/photo-1598887142487-3c854d51eabb?w=400&q=80&auto=format&fit=crop",
+  "Namba": "https://images.unsplash.com/photo-1590559899731-a382839e5549?w=400&q=80&auto=format&fit=crop",
+  "Temple Street": "https://images.unsplash.com/photo-1517144447511-aebb25bbc5fa?w=400&q=80&auto=format&fit=crop",
+  "Tian Tan Buddha": "https://images.unsplash.com/photo-1518509562904-e7ef99cdcc86?w=400&q=80&auto=format&fit=crop",
+  "Mong Kok": "https://images.unsplash.com/photo-1513326738677-b964603b136d?w=400&q=80&auto=format&fit=crop",
+  "Jiufen Old Street": "https://images.unsplash.com/photo-1558545838-83d3e4ae0f84?w=400&q=80&auto=format&fit=crop",
+};
 
 // Helper: resolve a bonus entry to a number given booking mode ("direct" or "portal")
 const _ccRate = (entry, mode) => {
@@ -288,20 +2053,574 @@ const _ccRate = (entry, mode) => {
 };
 const _ccHasPortalBonus = (entry) => typeof entry === "object" && entry.p > entry.d;
 
+// ============================================================
+// AIRLINE ALLIANCES DATA
+// ============================================================
+const ALLIANCE_MBR = {
+  ua:           { alliance:"star",     color:"#002244", tierMap:{ Silver:"sa_silver", Gold:"sa_gold", Platinum:"sa_gold", "1K":"sa_gold" }},
+  aeroplan:     { alliance:"star",     color:"#F01428", tierMap:{ "25K":"sa_silver","35K":"sa_gold","50K":"sa_gold","75K":"sa_gold","100K":"sa_gold" }},
+  singapore_kf: { alliance:"star",     color:"#003876", tierMap:{ "Elite Silver":"sa_silver","Elite Gold":"sa_gold" }},
+  turkish_miles:{ alliance:"star",     color:"#C8102E", tierMap:{ "Classic Plus":"sa_silver","Elite":"sa_gold","Elite Plus":"sa_gold" }},
+  aa:           { alliance:"oneworld", color:"#0078D2", tierMap:{ Gold:"ow_ruby",Platinum:"ow_sapphire","Platinum Pro":"ow_sapphire","Executive Platinum":"ow_emerald" }},
+  ba_avios:     { alliance:"oneworld", color:"#075AAA", tierMap:{ Bronze:"ow_ruby",Silver:"ow_sapphire",Gold:"ow_emerald" }},
+  qantas_ff:    { alliance:"oneworld", color:"#E0001B", tierMap:{ Silver:"ow_ruby",Gold:"ow_sapphire",Platinum:"ow_emerald" }},
+  cathay_mp:    { alliance:"oneworld", color:"#006564", tierMap:{ Silver:"ow_ruby",Gold:"ow_sapphire",Diamond:"ow_emerald" }},
+  dl:           { alliance:"skyteam",  color:"#003366", tierMap:{ "Silver Medallion":"st_elite","Gold Medallion":"st_elite_plus","Platinum Medallion":"st_elite_plus","Diamond Medallion":"st_elite_plus" }},
+  flying_blue:  { alliance:"skyteam",  color:"#002157", tierMap:{ Silver:"st_elite",Gold:"st_elite_plus",Platinum:"st_elite_plus",Ultimate:"st_elite_plus" }},
+};
+const ALLIANCE_LABELS = {
+  star:"Star Alliance", oneworld:"Oneworld", skyteam:"SkyTeam",
+};
+const ALLIANCE_TIER_LABELS = {
+  sa_silver:"Star Alliance Silver", sa_gold:"Star Alliance Gold",
+  ow_ruby:"Oneworld Ruby", ow_sapphire:"Oneworld Sapphire", ow_emerald:"Oneworld Emerald",
+  st_elite:"SkyTeam Elite", st_elite_plus:"SkyTeam Elite Plus",
+};
+const ALLIANCE_TIER_COLORS = {
+  sa_silver:"#C0C0C0", sa_gold:"#C9A84C",
+  ow_ruby:"#9B2335", ow_sapphire:"#0057A8", ow_emerald:"#006341",
+  st_elite:"#00B0F0", st_elite_plus:"#004A97",
+};
+
 // Benefit row definitions
+const BENEFIT_ROWS = [
+  { id:"free_bags",      cat:"Baggage",              label:"Free Checked Bags",          sub:"Number of free pieces in economy" },
+  { id:"bag_weight",     cat:"Baggage",              label:"Weight Per Bag",             sub:"kg / lbs max per piece" },
+  { id:"car_seat",       cat:"Baggage",              label:"Child Car Seat",             sub:"Is a child safety seat free & uncounted?" },
+  { id:"stroller",       cat:"Baggage",              label:"Stroller / Pram",            sub:"Collapsible stroller check-in policy" },
+  { id:"ski_bag",        cat:"Baggage",              label:"Ski / Snowboard Bag",        sub:"Is ski or snowboard bag free or at reduced fee?" },
+  { id:"golf_bag",       cat:"Baggage",              label:"Golf Bag",                   sub:"Golf equipment policy" },
+  { id:"sport_equip",    cat:"Baggage",              label:"Oversized Sports Equipment", sub:"Bicycles, surfboards, etc." },
+  { id:"overweight_fee", cat:"Baggage",              label:"Overweight Fee Waiver",      sub:"Is the overweight surcharge waived?" },
+  { id:"checkin",        cat:"Check-in & Boarding",  label:"Priority Check-in",          sub:"Dedicated counter or business class lane" },
+  { id:"security",       cat:"Check-in & Boarding",  label:"Priority Security",          sub:"Expedited security screening lane" },
+  { id:"boarding",       cat:"Check-in & Boarding",  label:"Boarding Group",             sub:"When in the boarding sequence" },
+  { id:"preboard",       cat:"Check-in & Boarding",  label:"Pre-Boarding",               sub:"Board before general boarding begins" },
+  { id:"seat_sel",       cat:"Seating",              label:"Free Seat Selection",        sub:"Choose seat at booking at no charge" },
+  { id:"exit_row",       cat:"Seating",              label:"Exit Row / Extra Legroom",   sub:"Complimentary access to exit row seats" },
+  { id:"lounge",         cat:"Lounge",               label:"Lounge Access",              sub:"Partner lounge when flying in economy" },
+  { id:"lounge_guest",   cat:"Lounge",               label:"Guest Lounge Pass",          sub:"Complimentary guest access" },
+  { id:"priority_bags",  cat:"In-flight & Other",    label:"Priority Baggage Delivery",  sub:"Bags arrive on belt before other passengers" },
+  { id:"upgrade",        cat:"In-flight & Other",    label:"Upgrade Eligibility",        sub:"Complimentary or discounted cabin upgrade" },
+  { id:"miles_bonus",    cat:"In-flight & Other",    label:"Miles / Points Bonus",       sub:"Earning bonus % on base miles" },
+  { id:"fee_waiver",     cat:"In-flight & Other",    label:"Change / Cancel Fee Waiver", sub:"Standard ticket modification fees waived" },
+];
 
 // b = {v: display, d: detail note, ok: true = positive highlight}
 const _b = (v, d, ok) => ({ v, d, ok: !!ok });
 
 // Home airline benefits: HOME_BENEFITS[programId][tierName][rowId]
+const HOME_BENEFITS = {
+  aa: {
+    Gold: {
+      free_bags:_b("1 free","1st bag free on domestic US flights"),
+      bag_weight:_b("23 kg / 50 lbs","Standard economy weight per piece"),
+      car_seat:_b("Free – uncounted","Car seat does not count toward allowance",true),
+      stroller:_b("Free","Gate-check or check-in, free of charge",true),
+      ski_bag:_b("Counts as bag","Uses 1 free piece if within 23 kg / 50 lbs"),
+      golf_bag:_b("Counts as bag","Uses 1 free piece if within weight"),
+      sport_equip:_b("Fees apply","Oversized items ~$150+ per leg"),
+      overweight_fee:_b("Not waived","Overweight/oversize fees still apply"),
+      checkin:_b("Priority counter","Dedicated priority check-in lane",true),
+      security:_b("Priority lane","Priority security at most AA hubs",true),
+      boarding:_b("Group 4","Boards in Group 4, after ExPlat, Plat Pro, and Platinum"),
+      preboard:_b("No","No pre-boarding; Group 4 is after general elite groups"),
+      seat_sel:_b("Yes","Free preferred seat selection at booking",true),
+      exit_row:_b("Yes – MCE","Free Main Cabin Extra seats incl. exit rows",true),
+      lounge:_b("No","No Admiral's Club in economy ticket"),
+      lounge_guest:_b("No","N/A"),
+      priority_bags:_b("Yes","Priority baggage tag, arrives first",true),
+      upgrade:_b("Comp. upgrades","Complimentary upgrades to F on AA metal",true),
+      miles_bonus:_b("40% bonus","40% bonus on Loyalty Points earned",true),
+      fee_waiver:_b("Yes","Same-day flight changes free",true),
+    },
+    Platinum: {
+      free_bags:_b("2 free","1st & 2nd bag free",true),
+      bag_weight:_b("23 kg / 50 lbs","Standard economy weight"),
+      car_seat:_b("Free – uncounted","Does not count toward allowance",true),
+      stroller:_b("Free","Gate or check-in, free",true),
+      ski_bag:_b("Counts as bag","Uses 1 of your 2 free pieces"),
+      golf_bag:_b("Counts as bag","Uses 1 of your 2 free pieces"),
+      sport_equip:_b("Fees apply","~$150+ per leg"),
+      overweight_fee:_b("Not waived","Oversize/overweight fees still apply"),
+      checkin:_b("Priority counter","Dedicated priority counter",true),
+      security:_b("Priority + Flagship","Flagship Access lanes at key hubs",true),
+      boarding:_b("Group 3","Boards in Group 3, after Executive Platinum and Platinum Pro",true),
+      preboard:_b("Yes","Boards before general cabin groups",true),
+      seat_sel:_b("Yes","Free preferred seat at booking",true),
+      exit_row:_b("Yes – MCE","Free Main Cabin Extra + exit rows",true),
+      lounge:_b("No","No Admiral's Club (must buy or use credit card benefit)"),
+      lounge_guest:_b("No","N/A"),
+      priority_bags:_b("Yes","Priority baggage, arrives first",true),
+      upgrade:_b("Comp. upgrades","Higher priority than Gold; system upgrades",true),
+      miles_bonus:_b("60% bonus","60% bonus on Loyalty Points earned",true),
+      fee_waiver:_b("Yes","Same-day standby free; standard fee waivers",true),
+    },
+    "Platinum Pro": {
+      free_bags:_b("2 free","1st & 2nd bag free",true),
+      bag_weight:_b("32 kg / 70 lbs","Upgraded weight allowance",true),
+      car_seat:_b("Free – uncounted","Does not count toward allowance",true),
+      stroller:_b("Free","Gate or check-in, free",true),
+      ski_bag:_b("Free","Within 32 kg / 70 lbs weight limit",true),
+      golf_bag:_b("Free","Within weight limit",true),
+      sport_equip:_b("Often waived","Most standard sports equipment fees waived",true),
+      overweight_fee:_b("Waived ≤70 lbs","Overweight fee waived up to 70 lbs",true),
+      checkin:_b("Flagship check-in","Flagship First check-in at hubs",true),
+      security:_b("Flagship Access","Dedicated Flagship Access lanes at hubs",true),
+      boarding:_b("Group 2","Boards in Group 2, after Executive Platinum only",true),
+      preboard:_b("Yes","Boards well ahead of general cabin groups",true),
+      seat_sel:_b("Yes – full","Full seat selection incl. MCE",true),
+      exit_row:_b("Yes – MCE","All MCE and exit row seats free",true),
+      lounge:_b("No","No Admiral's Club with economy ticket"),
+      lounge_guest:_b("No","N/A"),
+      priority_bags:_b("Yes","Priority baggage, first off belt",true),
+      upgrade:_b("Priority upgrades","Higher priority; instant upgrades on select fares",true),
+      miles_bonus:_b("80% bonus","80% bonus on Loyalty Points",true),
+      fee_waiver:_b("Full waiver","All standard change/cancel fees waived",true),
+    },
+    "Executive Platinum": {
+      free_bags:_b("3 free","1st, 2nd & 3rd bag free",true),
+      bag_weight:_b("32 kg / 70 lbs","Per bag",true),
+      car_seat:_b("Free – uncounted","Does not count toward allowance",true),
+      stroller:_b("Free","Gate or check-in, free",true),
+      ski_bag:_b("Free","Free within 32 kg / 70 lbs",true),
+      golf_bag:_b("Free","Free within weight limit",true),
+      sport_equip:_b("Waived","Standard sports equipment fees waived",true),
+      overweight_fee:_b("Waived ≤70 lbs","Overweight fee waived to 70 lbs",true),
+      checkin:_b("Flagship First","Flagship First check-in line at all AA hubs",true),
+      security:_b("Flagship Access","Dedicated lanes at all AA hubs",true),
+      boarding:_b("Group 1 (first)","First among Group 1 after F/J pre-board",true),
+      preboard:_b("Yes","Boards with First Class cabin",true),
+      seat_sel:_b("Yes – full","Any seat incl. premium on upgrade",true),
+      exit_row:_b("Yes – all MCE","All MCE & exit rows free at booking",true),
+      lounge:_b("Flagship Lounge (SWU)","Access via Systemwide Upgrade cert.",true),
+      lounge_guest:_b("With upgrade","Lounge access accompanies SWU upgrade"),
+      priority_bags:_b("Yes – first off","First class priority baggage delivery",true),
+      upgrade:_b("Systemwide upgrades","SWUs to Business/Flagship on most itineraries",true),
+      miles_bonus:_b("120% bonus","120% bonus on Loyalty Points",true),
+      fee_waiver:_b("Full waiver","All fees waived; last-seat award access",true),
+    },
+  },
+  dl: {
+    "Silver Medallion": {
+      free_bags:_b("1 free","1st bag free"),
+      bag_weight:_b("23 kg / 50 lbs","Standard economy weight"),
+      car_seat:_b("Free – uncounted","Does not count toward allowance",true),
+      stroller:_b("Free","Gate or check-in, free",true),
+      ski_bag:_b("Counts as bag","Uses 1 free piece if within weight"),
+      golf_bag:_b("Counts as bag","Uses 1 free piece"),
+      sport_equip:_b("Fees apply","~$150+ per leg"),
+      overweight_fee:_b("Not waived","Oversize/overweight fees apply"),
+      checkin:_b("Priority counter","Priority check-in access",true),
+      security:_b("Priority lane","Priority security at most hubs",true),
+      boarding:_b("Zone 1","Boards after First/Delta One",true),
+      preboard:_b("Yes","Pre-boards before general zones",true),
+      seat_sel:_b("Yes – Comfort+","Free Comfort+ seat selection",true),
+      exit_row:_b("Yes – Comfort+","Exit row Comfort+ seats included",true),
+      lounge:_b("No","No Sky Club access in economy"),
+      lounge_guest:_b("No","N/A"),
+      priority_bags:_b("Yes","Priority baggage tag",true),
+      upgrade:_b("Waitlist","Upgrade waitlist for Comfort+ / First",true),
+      miles_bonus:_b("40% bonus","40% bonus on base MQMs",true),
+      fee_waiver:_b("Yes","Same-day standby changes free",true),
+    },
+    "Gold Medallion": {
+      free_bags:_b("2 free","1st & 2nd bag free",true),
+      bag_weight:_b("23 kg / 50 lbs","Standard economy weight"),
+      car_seat:_b("Free – uncounted","Does not count toward allowance",true),
+      stroller:_b("Free","Gate or check-in, free",true),
+      ski_bag:_b("Counts as bag","Uses 1 of your free pieces"),
+      golf_bag:_b("Counts as bag","Uses 1 of your free pieces"),
+      sport_equip:_b("Fees apply","~$150+ per leg"),
+      overweight_fee:_b("Not waived","Oversize fees still apply"),
+      checkin:_b("Priority counter","Priority check-in with Delta",true),
+      security:_b("Priority lane","Priority security lane",true),
+      boarding:_b("Zone 1 (early)","First Zone 1 boarders with Medallion priority",true),
+      preboard:_b("Yes","Pre-boarding before Zone 1 opens",true),
+      seat_sel:_b("Yes – Comfort+","Free Comfort+ at booking",true),
+      exit_row:_b("Yes – Comfort+","Free Comfort+ exit rows",true),
+      lounge:_b("No","No Sky Club without card/upgrade benefit"),
+      lounge_guest:_b("No","N/A"),
+      priority_bags:_b("Yes","Priority tag, arrives first",true),
+      upgrade:_b("Comp. upgrades","Complimentary upgrades to First Class",true),
+      miles_bonus:_b("60% bonus","60% bonus MQMs",true),
+      fee_waiver:_b("Yes","Same-day confirmed changes free",true),
+    },
+    "Platinum Medallion": {
+      free_bags:_b("2 free","1st & 2nd bag free",true),
+      bag_weight:_b("32 kg / 70 lbs","Upgraded weight",true),
+      car_seat:_b("Free – uncounted","Does not count toward allowance",true),
+      stroller:_b("Free","Gate or check-in, free",true),
+      ski_bag:_b("Free","Free within 32 kg / 70 lbs",true),
+      golf_bag:_b("Free","Free within weight allowance",true),
+      sport_equip:_b("Often waived","Standard sports equipment fees reduced/waived",true),
+      overweight_fee:_b("Waived ≤70 lbs","Overweight waived up to 70 lbs",true),
+      checkin:_b("Priority counter","Priority check-in and kiosk",true),
+      security:_b("Priority lane","Delta Premium Select security lanes",true),
+      boarding:_b("Zone 1 (priority)","First Zone 1 boarding call",true),
+      preboard:_b("Yes","Boards with DL One at select airports"),
+      seat_sel:_b("Yes – Comfort+","Free Comfort+ & preferred seats",true),
+      exit_row:_b("Yes – Comfort+","Full Comfort+ incl. exit rows",true),
+      lounge:_b("Choice Benefit","Sky Club access selectable as Platinum Choice Benefit"),
+      lounge_guest:_b("With benefit","If Sky Club benefit is chosen"),
+      priority_bags:_b("Yes","Priority baggage, first off belt",true),
+      upgrade:_b("Comp. upgrades","Complimentary upgrades, higher priority",true),
+      miles_bonus:_b("80% bonus","80% bonus MQMs",true),
+      fee_waiver:_b("Yes","All standard fees waived",true),
+    },
+    "Diamond Medallion": {
+      free_bags:_b("3 free","1st, 2nd & 3rd bag free",true),
+      bag_weight:_b("32 kg / 70 lbs","Per bag",true),
+      car_seat:_b("Free – uncounted","Does not count toward allowance",true),
+      stroller:_b("Free","Gate or check-in, free",true),
+      ski_bag:_b("Free","Free within 32 kg / 70 lbs",true),
+      golf_bag:_b("Free","Free within weight allowance",true),
+      sport_equip:_b("Waived","Sports equipment fees waived",true),
+      overweight_fee:_b("Waived ≤70 lbs","Overweight waived to 70 lbs",true),
+      checkin:_b("Dedicated counter","Diamond counter at major hubs",true),
+      security:_b("Fastest lane","Dedicated fastest lanes at all Delta hubs",true),
+      boarding:_b("Zone 1 (first)","First Diamond boarding call",true),
+      preboard:_b("Yes","Boards with Delta One/First Class cabin",true),
+      seat_sel:_b("Yes – full","Any seat incl. Delta One on upgrade",true),
+      exit_row:_b("Yes – full","All premium seats access",true),
+      lounge:_b("Sky Club included","Complimentary Sky Club + Delta One Lounge",true),
+      lounge_guest:_b("3 guest passes/yr","Annual Sky Club guest passes",true),
+      priority_bags:_b("Yes – first off","Diamond priority tag, first off belt",true),
+      upgrade:_b("Global Upgrade Certs","Delta One GUCs included annually",true),
+      miles_bonus:_b("120% bonus","120% bonus MQMs",true),
+      fee_waiver:_b("Full waiver","All fees waived; confirmed same-day changes",true),
+    },
+  },
+  ua: {
+    Silver: {
+      free_bags:_b("1 free","1st bag free"),
+      bag_weight:_b("23 kg / 50 lbs","Standard economy weight"),
+      car_seat:_b("Free – uncounted","Does not count toward allowance",true),
+      stroller:_b("Free","Gate or check-in, free",true),
+      ski_bag:_b("Counts as bag","Uses 1 free piece"),
+      golf_bag:_b("Counts as bag","Uses 1 free piece"),
+      sport_equip:_b("Fees apply","Oversized/overweight fees apply"),
+      overweight_fee:_b("Not waived","Oversize fees still apply"),
+      checkin:_b("Priority counter","Priority check-in counter",true),
+      security:_b("Premier Access lane","At most United airports",true),
+      boarding:_b("Group 2","Boards after Group 1 Premier Access"),
+      preboard:_b("Yes","Before general boarding groups",true),
+      seat_sel:_b("At T−48h","Economy Plus at 48-hour check-in window",true),
+      exit_row:_b("At T−48h","Economy Plus exit rows at T-48h"),
+      lounge:_b("No","No United Club in economy"),
+      lounge_guest:_b("No","N/A"),
+      priority_bags:_b("Yes","Premier priority baggage",true),
+      upgrade:_b("Waitlist","Complimentary space-available upgrades waitlist"),
+      miles_bonus:_b("0%","No bonus miles for Silver"),
+      fee_waiver:_b("Partial","Award ticket change fee waived"),
+    },
+    Gold: {
+      free_bags:_b("2 free","1st & 2nd bag free",true),
+      bag_weight:_b("23 kg / 50 lbs","Standard economy weight"),
+      car_seat:_b("Free – uncounted","Does not count toward allowance",true),
+      stroller:_b("Free","Gate or check-in, free",true),
+      ski_bag:_b("Counts as bag","Uses 1 of your free pieces"),
+      golf_bag:_b("Counts as bag","Uses 1 of your free pieces"),
+      sport_equip:_b("Fees apply","Oversized/overweight fees apply"),
+      overweight_fee:_b("Not waived","Oversize fees apply"),
+      checkin:_b("Premier Access","Premier Access counter",true),
+      security:_b("Premier Access","Premier Access lane at all airports",true),
+      boarding:_b("Group 2","Premier Access boarding group"),
+      preboard:_b("Yes","Premier Access pre-boarding",true),
+      seat_sel:_b("Yes","Economy Plus free at booking",true),
+      exit_row:_b("Yes","Economy Plus exit rows at booking",true),
+      lounge:_b("No","No United Club without card benefit"),
+      lounge_guest:_b("No","N/A"),
+      priority_bags:_b("Yes","Premier priority baggage handling",true),
+      upgrade:_b("Comp. upgrades","Complimentary space-available upgrades on UA metal",true),
+      miles_bonus:_b("25% bonus","25% bonus PQPs",true),
+      fee_waiver:_b("Yes","Standard ticket change fees waived",true),
+    },
+    Platinum: {
+      free_bags:_b("2 free","1st & 2nd bag free",true),
+      bag_weight:_b("32 kg / 70 lbs","Upgraded weight",true),
+      car_seat:_b("Free – uncounted","Does not count toward allowance",true),
+      stroller:_b("Free","Gate or check-in, free",true),
+      ski_bag:_b("Free","Within 32 kg / 70 lbs",true),
+      golf_bag:_b("Free","Within weight limit",true),
+      sport_equip:_b("Often waived","Standard sports fees frequently waived",true),
+      overweight_fee:_b("Waived ≤70 lbs","Overweight waived to 70 lbs",true),
+      checkin:_b("Premier Access","Premier Access counter",true),
+      security:_b("Premier Access + Pre✓","Premier Access + TSA PreCheck lanes",true),
+      boarding:_b("Group 1","First Group 1 Premier boarding",true),
+      preboard:_b("Yes","Pre-board with Polaris at some airports"),
+      seat_sel:_b("Yes","Economy Plus at booking",true),
+      exit_row:_b("Yes","Economy Plus + UPP access when space avail"),
+      lounge:_b("2 passes/yr","2 United Club one-time passes per year"),
+      lounge_guest:_b("No","Passes are for member only"),
+      priority_bags:_b("Yes","Priority baggage, first off belt",true),
+      upgrade:_b("Comp. + 2 GPUs","Comp. upgrades + 2 Global Premier Upgrades/yr",true),
+      miles_bonus:_b("50% bonus","50% bonus PQPs",true),
+      fee_waiver:_b("Yes","All standard ticket fees waived",true),
+    },
+    "1K": {
+      free_bags:_b("3 free","1st, 2nd & 3rd bag free",true),
+      bag_weight:_b("32 kg / 70 lbs","Per bag",true),
+      car_seat:_b("Free – uncounted","Does not count toward allowance",true),
+      stroller:_b("Free","Gate or check-in, free",true),
+      ski_bag:_b("Free","Within weight allowance",true),
+      golf_bag:_b("Free","Within weight allowance",true),
+      sport_equip:_b("Waived","Standard sports equipment fees waived",true),
+      overweight_fee:_b("Waived ≤70 lbs","Overweight waived to 70 lbs",true),
+      checkin:_b("Dedicated 1K counter","Dedicated 1K counter at all United airports",true),
+      security:_b("Fastest lanes","Premier Access + dedicated 1K security lanes",true),
+      boarding:_b("Group 1 (first)","First 1K boarding, before other Premiers",true),
+      preboard:_b("Yes","Boards with Polaris cabin passengers",true),
+      seat_sel:_b("Yes – full","Economy Plus + Polaris on upgrade",true),
+      exit_row:_b("Yes","Full Economy Plus at booking",true),
+      lounge:_b("United Club member","Complimentary United Club membership",true),
+      lounge_guest:_b("2 guests/visit","2 comp. United Club guest passes per visit",true),
+      priority_bags:_b("Yes – first off","Premier 1K priority, first off belt",true),
+      upgrade:_b("PlusPoints + GPUs","PlusPoints for confirmed Polaris + GPUs",true),
+      miles_bonus:_b("100% bonus","100% bonus PQPs (double earn)",true),
+      fee_waiver:_b("Full waiver","All fees waived; last-seat partner award access",true),
+    },
+  },
+};
 
 // Reciprocal benefits received as a visiting elite at any partner airline
+const RECIP_BENEFITS = {
+  sa_silver: {
+    free_bags:_b("1 free bag","1 checked bag free; standard economy weight limit",true),
+    bag_weight:_b("23 kg / 50 lbs","Standard economy weight"),
+    car_seat:_b("Per carrier policy","Typically free; verify with operating carrier"),
+    stroller:_b("Free","Most SA carriers allow 1 stroller free",true),
+    ski_bag:_b("Counts as free bag","Uses your 1 free bag allowance"),
+    golf_bag:_b("Counts as free bag","Uses your 1 free bag allowance"),
+    sport_equip:_b("Fees apply","Alliance status does not waive sports equipment fees"),
+    overweight_fee:_b("Not waived","Standard oversize/overweight fees apply"),
+    checkin:_b("Priority counter","Priority check-in at all SA partner airports",true),
+    security:_b("Where available","Priority security where partner offers the lane"),
+    boarding:_b("Priority boarding","Board before general passengers",true),
+    preboard:_b("Yes","Priority boarding ahead of general zones",true),
+    seat_sel:_b("Partner policy","Varies by operating carrier"),
+    exit_row:_b("No guarantee","Exit row at partner's discretion"),
+    lounge:_b("No","Lounge access not included for SA Silver"),
+    lounge_guest:_b("No","N/A"),
+    priority_bags:_b("No","Priority baggage not included for SA Silver"),
+    upgrade:_b("No","Comp. upgrades not included"),
+    miles_bonus:_b("Per partner chart","Per partner's published elite earning rates"),
+    fee_waiver:_b("No","Fee waivers not part of SA Silver reciprocal benefits"),
+  },
+  sa_gold: {
+    free_bags:_b("1 free bag","1 checked bag at business-class weight limit",true),
+    bag_weight:_b("Up to 32 kg / 70 lbs","Business class weight allowance",true),
+    car_seat:_b("Per carrier policy","Typically free; verify with operating carrier"),
+    stroller:_b("Free","Most SA carriers allow stroller free",true),
+    ski_bag:_b("Varies by carrier","May count as your free bag; confirm with carrier"),
+    golf_bag:_b("Varies by carrier","May count as your free bag; confirm with carrier"),
+    sport_equip:_b("Fees usually apply","Not universally waived by alliance status"),
+    overweight_fee:_b("Waived ≤70 lbs","Overweight waived within business-class weight",true),
+    checkin:_b("Business class counter","Business class check-in at all SA partners",true),
+    security:_b("Priority lane","Priority security at most SA partner airports",true),
+    boarding:_b("Priority – first group","Typically first boarding group",true),
+    preboard:_b("Yes","Pre-boards ahead of general boarding",true),
+    seat_sel:_b("Many partners offer","Premium seat selection at many SA Gold partners"),
+    exit_row:_b("Varies by partner","Exit row at partner's discretion"),
+    lounge:_b("Business class lounge","Business class lounge access at partner airports",true),
+    lounge_guest:_b("No","Guest not typically included for visiting SA Gold"),
+    priority_bags:_b("Yes","Priority baggage delivery at most SA partners",true),
+    upgrade:_b("No","Complimentary upgrades not included for visiting SA Gold"),
+    miles_bonus:_b("Per partner chart","Per partner's published SA Gold earning rates"),
+    fee_waiver:_b("No","Fee waivers not part of SA Gold reciprocal benefits"),
+  },
+  ow_ruby: {
+    free_bags:_b("1 free bag","1 checked bag free; standard economy weight limit",true),
+    bag_weight:_b("23 kg / 50 lbs","Standard economy weight"),
+    car_seat:_b("Per carrier policy","Most oneworld carriers allow car seat free"),
+    stroller:_b("Free","Stroller/pram free at all oneworld carriers",true),
+    ski_bag:_b("Counts as free bag","Uses your 1 free bag allowance"),
+    golf_bag:_b("Counts as free bag","Uses your 1 free bag allowance"),
+    sport_equip:_b("Fees apply","Not waived as Ruby"),
+    overweight_fee:_b("Not waived","Standard fees apply"),
+    checkin:_b("Priority counter","Priority check-in at oneworld partner airports",true),
+    security:_b("Where available","Priority security where partner provides lane"),
+    boarding:_b("Priority boarding","Board before general passengers",true),
+    preboard:_b("Yes","Priority boarding ahead of general boarding",true),
+    seat_sel:_b("Partner policy","Varies by partner airline"),
+    exit_row:_b("No guarantee","At partner's discretion"),
+    lounge:_b("No","No lounge access as Ruby visiting elite"),
+    lounge_guest:_b("No","N/A"),
+    priority_bags:_b("No","Priority bags not included for Ruby"),
+    upgrade:_b("No","Not included"),
+    miles_bonus:_b("Per partner chart","Per partner's published Ruby earning rates"),
+    fee_waiver:_b("No","Not included"),
+  },
+  ow_sapphire: {
+    free_bags:_b("2 free bags","Business class baggage allowance: 2 bags at 32 kg each",true),
+    bag_weight:_b("32 kg / 70 lbs","Business class weight per bag",true),
+    car_seat:_b("Per carrier policy","Most oneworld carriers allow car seat free"),
+    stroller:_b("Free","Stroller free at all oneworld carriers",true),
+    ski_bag:_b("Varies by partner","May count as 1 of your 2 free bags; confirm with carrier"),
+    golf_bag:_b("Varies by partner","May count as 1 of your 2 free bags; confirm with carrier"),
+    sport_equip:_b("Varies by carrier","Some Sapphire carriers waive standard sports fees"),
+    overweight_fee:_b("Waived ≤70 lbs","Overweight waived within business-class weight",true),
+    checkin:_b("Business class counter","Business class check-in at all OW partners",true),
+    security:_b("Priority lane","Priority security at most oneworld airports",true),
+    boarding:_b("Early priority group","Early priority boarding group",true),
+    preboard:_b("Yes","Pre-boards ahead of general boarding",true),
+    seat_sel:_b("Many partners","Preferred seats at many OW partners at no charge"),
+    exit_row:_b("Many partners","Exit row / premium economy at some partners"),
+    lounge:_b("Business lounge + 1 guest","Business class lounge access + 1 guest",true),
+    lounge_guest:_b("1 guest","1 accompanying guest admitted to business lounge",true),
+    priority_bags:_b("Yes","Priority baggage delivery at most OW partners",true),
+    upgrade:_b("No","Not included for visiting Sapphire"),
+    miles_bonus:_b("Per partner chart","Per partner's published Sapphire earning rates"),
+    fee_waiver:_b("No","Not typically included for visiting Sapphire"),
+  },
+  ow_emerald: {
+    free_bags:_b("3 free bags","First/Business class allowance: 3 bags at 32 kg each",true),
+    bag_weight:_b("32 kg / 70 lbs","First/Business class weight per bag",true),
+    car_seat:_b("Free – uncounted","Car seat free, does not count against allowance",true),
+    stroller:_b("Free","Stroller free, does not count against allowance",true),
+    ski_bag:_b("Counts as 1 bag","Uses 1 of your 3 free bags (within weight limit)"),
+    golf_bag:_b("Counts as 1 bag","Uses 1 of your 3 free bags (within weight limit)"),
+    sport_equip:_b("Often waived","Standard sports fees frequently waived at Emerald level",true),
+    overweight_fee:_b("Waived ≤70 lbs","Overweight waived within First/Business weight",true),
+    checkin:_b("First class counter","First class check-in counter at all OW partners",true),
+    security:_b("Priority lane","Priority security at all OW partner airports",true),
+    boarding:_b("First to board","Boards immediately after special needs passengers",true),
+    preboard:_b("Yes – First class","Boards with First Class cabin passengers",true),
+    seat_sel:_b("Yes","Premium economy / preferred seats free; F/J on upgrade",true),
+    exit_row:_b("Yes","Complimentary preferred & exit row seats",true),
+    lounge:_b("First class lounges + 1 guest","Access to First & business lounges + 1 guest",true),
+    lounge_guest:_b("1 guest","1 accompanying guest to First class lounge",true),
+    priority_bags:_b("Yes – first off","Priority baggage at all OW partners",true),
+    upgrade:_b("Varies by partner","Some OW partners offer comp. upgrades to Emerald elites"),
+    miles_bonus:_b("Per partner chart","Top-tier earning rates at all OW partners"),
+    fee_waiver:_b("Many partners","Many OW partners waive standard fees for Emerald",true),
+  },
+  st_elite: {
+    free_bags:_b("1 free bag","1 checked bag free; standard economy weight limit",true),
+    bag_weight:_b("23 kg / 50 lbs","Standard economy weight"),
+    car_seat:_b("Per carrier policy","Typically free at most SkyTeam carriers"),
+    stroller:_b("Free","Stroller free at most SkyTeam carriers",true),
+    ski_bag:_b("Counts as free bag","Uses your 1 free bag allowance"),
+    golf_bag:_b("Counts as free bag","Uses your 1 free bag allowance"),
+    sport_equip:_b("Fees apply","Sports equipment fees not waived"),
+    overweight_fee:_b("Not waived","Standard oversize fees apply"),
+    checkin:_b("Priority counter","Priority check-in at SkyTeam partner airports",true),
+    security:_b("Where available","Where partner airline provides priority lane"),
+    boarding:_b("Priority boarding","Board before general passengers",true),
+    preboard:_b("Yes","Priority boarding",true),
+    seat_sel:_b("Partner policy","Varies by partner"),
+    exit_row:_b("No guarantee","At partner's discretion"),
+    lounge:_b("No","No lounge access as SkyTeam Elite"),
+    lounge_guest:_b("No","N/A"),
+    priority_bags:_b("No","Not included for SkyTeam Elite"),
+    upgrade:_b("No","Not included"),
+    miles_bonus:_b("Per partner chart","Per partner's published elite earning chart"),
+    fee_waiver:_b("No","Not included"),
+  },
+  st_elite_plus: {
+    free_bags:_b("2 free bags","Business class allowance: 2 bags at 32 kg each",true),
+    bag_weight:_b("32 kg / 70 lbs","Business class weight per bag",true),
+    car_seat:_b("Per carrier policy","Typically free; verify with carrier"),
+    stroller:_b("Free","Stroller free at all SkyTeam carriers",true),
+    ski_bag:_b("Varies by carrier","May count as 1 of your 2 free bags; confirm with carrier"),
+    golf_bag:_b("Varies by carrier","May count as 1 of your 2 free bags; confirm with carrier"),
+    sport_equip:_b("Varies by carrier","Some Elite Plus carriers waive sports fees"),
+    overweight_fee:_b("Waived ≤70 lbs","Overweight waived within business-class weight",true),
+    checkin:_b("Business class counter","Business class check-in at all ST partners",true),
+    security:_b("Priority lane","Priority security at most SkyTeam airports",true),
+    boarding:_b("Early priority group","Early priority boarding group",true),
+    preboard:_b("Yes","Pre-boards ahead of general boarding",true),
+    seat_sel:_b("Many partners","Preferred/extra legroom seats at many ST partners"),
+    exit_row:_b("Many partners","Exit row at some SkyTeam partners"),
+    lounge:_b("Business lounge + 1 guest","Business class lounge + 1 guest at ST partners",true),
+    lounge_guest:_b("1 guest","1 accompanying guest to business lounge",true),
+    priority_bags:_b("Yes","Priority baggage at SkyTeam partners",true),
+    upgrade:_b("No","Not universally included"),
+    miles_bonus:_b("Per partner chart","Per partner's published Elite Plus earning rates"),
+    fee_waiver:_b("Some partners","Fee waivers at select SkyTeam partners"),
+  },
+};
 
+const SAMPLE_USER = {
+  name: "Nicholas Li",
+  email: "alex@example.com",
+  avatar: "NL",
+  tier: "premium",
+  linkedAccounts: {
+    aa: { memberId: "****4829", currentPoints: 68500, tierCredits: 68500 },
+    dl: { memberId: "****7712", currentPoints: 32000, tierCredits: 32000 },
+    ua: { memberId: "****2201", currentPoints: 18, tierCredits: 4200 },
+    marriott: { memberId: "****5590", currentNights: 38, bonvoyPoints: 142000 },
+    hilton: { memberId: "****3301", currentNights: 22, hhPoints: 98000 },
+    ihg: { memberId: "****9102", currentNights: 8, ihgPoints: 41000 },
+    hertz: { memberId: "****6610", currentRentals: 6 },
+    national: { memberId: "****4455", currentRentals: 3 },
+    amex_plat: { last4: "1234", pointsBalance: 145000 },
+    chase_sapphire: { last4: "5678", pointsBalance: 88000 },
+  },
+  upcomingTrips: [
+    { id: 1, type: "flight", program: "aa", route: "JFK → LAX", date: "2026-03-15", class: "premium", estimatedPoints: 4200, status: "confirmed", tripName: "LA Business Trip" },
+    { id: 2, type: "hotel", program: "marriott", property: "JW Marriott LA Live", date: "2026-03-15", nights: 3, estimatedNights: 3, status: "confirmed", tripName: "LA Business Trip" },
+    { id: 3, type: "flight", program: "dl", route: "LAX → ATL", date: "2026-03-18", class: "domestic", estimatedPoints: 2800, status: "confirmed", tripName: "Atlanta Connecting" },
+    { id: 4, type: "flight", program: "aa", route: "DFW → LHR", date: "2026-04-10", class: "international", estimatedPoints: 9200, status: "planned", tripName: "London Spring Getaway" },
+    { id: 5, type: "hotel", program: "hilton", property: "Waldorf Astoria London", date: "2026-04-10", nights: 5, estimatedNights: 5, status: "planned", tripName: "London Spring Getaway" },
+    { id: 6, type: "rental", program: "hertz", location: "London Heathrow", date: "2026-04-10", days: 3, estimatedRentals: 1, status: "planned", tripName: "London Spring Getaway" },
+    { id: 7, type: "flight", program: "ua", route: "SFO → NRT", date: "2026-06-20", class: "premium", estimatedPoints: 8800, status: "planned", tripName: "Tokyo Anniversary" },
+    { id: 8, type: "hotel", program: "marriott", property: "Ritz-Carlton Tokyo", date: "2026-06-20", nights: 7, estimatedNights: 7, status: "planned", tripName: "Tokyo Anniversary" },
+    { id: 9, type: "flight", program: "dl", route: "JFK → CDG", date: "2026-08-05", class: "international", estimatedPoints: 7500, status: "wishlist", tripName: "Paris Summer Dream" },
+    { id: 10, type: "hotel", program: "ihg", property: "InterContinental Paris", date: "2026-08-05", nights: 4, estimatedNights: 4, status: "wishlist", tripName: "Paris Summer Dream" },
+  ],
+};
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-// ============================================================
+const CREDIT_CARD_OFFERS = [
+  { name: "Amex Platinum", bonus: "150,000 pts", spend: "$6k/6mo", fee: "$695/yr", color: "#B4B4B4", tags: ["Best for Lounges", "Hotel Status"] },
+  { name: "Chase Sapphire Reserve", bonus: "60,000 pts", spend: "$4k/3mo", fee: "$550/yr", color: "#004977", tags: ["Best for Dining", "Travel Credit"] },
+  { name: "Capital One Venture X", bonus: "75,000 mi", spend: "$4k/3mo", fee: "$395/yr", color: "#D03027", tags: ["Best Value", "Transfer Partners"] },
+  { name: "Citi AAdvantage Exec", bonus: "70,000 mi", spend: "$7k/4mo", fee: "$595/yr", color: "#003B70", tags: ["AA Loyalty", "Admirals Club"] },
+  { name: "Delta Reserve Amex", bonus: "90,000 mi", spend: "$6k/6mo", fee: "$650/yr", color: "#003366", tags: ["Delta Sky Club", "Companion Cert"] },
+];
 
+// ============================================================
+// INSIGHTS DATA
+// ============================================================
+const EXPIRATION_RULES = {
+  aa:               { months: 18, note: "Any earning or redemption activity resets the clock", neverExpire: false },
+  dl:               { months: 0,  note: "SkyMiles never expire", neverExpire: true },
+  ua:               { months: 18, note: "Account activity (earning or redeeming) resets clock", neverExpire: false },
+  sw:               { months: 24, note: "Any Rapid Rewards activity resets the clock", neverExpire: false },
+  b6:               { months: 12, note: "Any TrueBlue earning or redemption activity", neverExpire: false },
+  atmos:            { months: 24, note: "Any earning or redemption activity", neverExpire: false },
+  flying_blue:      { months: 24, note: "Any earning or redemption activity", neverExpire: false },
+  ba_avios:         { months: 36, note: "Any Avios activity in the account within 36 months", neverExpire: false },
+  aeroplan:         { months: 12, note: "Any earning or redemption activity", neverExpire: false },
+  singapore_kf:     { months: 36, note: "Miles expire 3 years from date earned", neverExpire: false },
+  emirates_skywards:{ months: 36, note: "Miles expire after 3 years of inactivity", neverExpire: false },
+  marriott:         { months: 24, note: "Any qualifying stay or points-earning activity", neverExpire: false },
+  hilton:           { months: 24, note: "Any qualifying earning or redemption activity", neverExpire: false },
+  ihg:              { months: 12, note: "Any points-earning or redemption activity", neverExpire: false },
+  hyatt:            { months: 24, note: "Any qualifying activity (stay, purchase, transfer)", neverExpire: false },
+  amex_plat:        { months: 0,  note: "Points never expire while card is open", neverExpire: true },
+  amex_gold:        { months: 0,  note: "Points never expire while card is open", neverExpire: true },
+  chase_sapphire:   { months: 0,  note: "Points never expire while card is open", neverExpire: true },
+  chase_sapphire_pref: { months: 0, note: "Points never expire while card is open", neverExpire: true },
+  cap1_venturex:    { months: 0,  note: "Miles never expire while card is open", neverExpire: true },
+  bilt:             { months: 0,  note: "Points never expire while card is open", neverExpire: true },
+};
+
+const REDEMPTION_VALUES = {
+  aa:             { cpp: 1.5, best: "Business/First class intl awards via partner airlines (Cathay, JAL)", avoid: "Short domestic economy (dynamic pricing)", partners: ["ba_avios","cathay_mp","aeroplan","singapore_kf"] },
+  dl:             { cpp: 1.2, best: "Delta One transcontinental, select partner awards", avoid: "Last-minute domestic (heavily inflated pricing)", partners: ["flying_blue","virgin_fc","korean_air"] },
+  ua:             { cpp: 1.5, best: "Star Alliance Saver awards (ANA, Singapore, Lufthansa)", avoid: "United revenue redemptions at face value", partners: ["singapore_kf","aeroplan","turkish_miles"] },
+  sw:             { cpp: 1.5, best: "Business Select fares, Companion Pass activation travel", avoid: "Wanna Get Away fares under $100 (low value)", partners: [] },
+  marriott:       { cpp: 0.7, best: "Peak award nights at Category 8 properties, Points+Cash", avoid: "Low-category properties (cash rates are often cheaper)", partners: ["ua","dl","aa","ba_avios"] },
+  hilton:         { cpp: 0.5, best: "Aspirational luxury properties, 5th night free on 5-night stays", avoid: "Mid-range properties (cash rates similar or better)", partners: [] },
+  ihg:            { cpp: 0.5, best: "Flagship InterContinental hotels, PointBreaks sales", avoid: "Budget Holiday Inn / Staybridge (poor redemption value)", partners: [] },
+  hyatt:          { cpp: 1.7, best: "Category 7–8 luxury (Park Hyatt, Alila), Points+Cash deals", avoid: "Low-category standard rooms at limited-service properties", partners: ["amex_plat","chase_sapphire","bilt"] },
+  amex_plat:      { cpp: 2.0, best: "Transfer to Aeroplan/Singapore for biz class, or Virgin for PE", avoid: "Statement credits (0.6¢/pt) or gift cards", partners: ["dl","ba_avios","flying_blue","aeroplan","singapore_kf","emirates_skywards","cathay_mp","virgin_fc","marriott","hilton"] },
+  chase_sapphire: { cpp: 2.0, best: "Transfer to Hyatt for luxury hotels, or Aeroplan for biz class", avoid: "Cash back via Pay Yourself Back (1–1.5¢/pt max)", partners: ["ua","sw","ba_avios","flying_blue","aeroplan","singapore_kf","emirates_skywards","virgin_fc","marriott","hyatt","ihg"] },
+};
 
 const CARD_BENEFITS_DATA = {
   amex_plat: {
@@ -640,272 +2959,26 @@ export default function EliteStatusTracker() {
   const [editingSegIdx, setEditingSegIdx] = useState(null); // index of segment being edited within a trip
   const [tempUnit, setTempUnit] = useState(() => localStorage.getItem("continuum_temp_unit") || "F");
   const [weatherCache, setWeatherCache] = useState({}); // { "cityKey": { high, low, code, date } }
-  const [flightStatusCache, setFlightStatusCache] = useState({}); // { "BA158_2026-05-31": { status, departureDelay, ... } }
-
-  // ── Packing list state ──
-  // ── Visa check state ──
-  const [visaCache, setVisaCache] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("continuum_visa_cache") || "{}"); } catch { return {}; }
-  });
-  const [visaLoading, setVisaLoading] = useState({});
-  const checkVisa = async (passportCode, destCountry, destCity) => {
-    const key = `${passportCode}_${destCountry}`;
-    if (visaCache[key]) return;
-    setVisaLoading(prev => ({ ...prev, [key]: true }));
-    try {
-      const resp = await fetch("/api/visa-check", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ passportCountry: passportCode, destinationCountry: destCountry, destinationCity: destCity }),
-      });
-      if (resp.ok) {
-        const data = await resp.json();
-        if (!data.error) {
-          setVisaCache(prev => {
-            const next = { ...prev, [key]: data };
-            try { localStorage.setItem("continuum_visa_cache", JSON.stringify(next)); } catch {}
-            return next;
-          });
-        }
-      }
-    } catch {}
-    setVisaLoading(prev => ({ ...prev, [key]: false }));
-  };
-
-  const [packingLists, setPackingLists] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("continuum_packing_lists") || "{}"); } catch { return {}; }
-  });
-  const [packExpanded, setPackExpanded] = useState(null); // which packing category is open
-  const [customPackItems, setCustomPackItems] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("continuum_custom_pack_items") || "{}"); } catch { return {}; }
-  });
-  const savePackingLists = (next) => {
-    setPackingLists(next);
-    try { localStorage.setItem("continuum_packing_lists", JSON.stringify(next)); } catch {}
-  };
-  const togglePackItem = (tripId, itemId) => {
-    savePackingLists({ ...packingLists, [tripId]: { ...(packingLists[tripId] || {}), [itemId]: !packingLists[tripId]?.[itemId] } });
-  };
-  const PACKING_TEMPLATES = {
-    documents: {
-      label: "Documents",
-      icon: "M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z",
-      items: [
-        { id: "passport", label: "Passport", always: true },
-        { id: "visa", label: "Visa / Entry permit", intl: true },
-        { id: "boarding_pass", label: "Boarding passes", flight: true },
-        { id: "hotel_conf", label: "Hotel confirmations", hotel: true },
-        { id: "travel_insurance", label: "Travel insurance docs", intl: true },
-        { id: "global_entry", label: "Global Entry / NEXUS card" },
-        { id: "drivers_license", label: "Driver's license" },
-        { id: "credit_cards", label: "Credit cards + backup" },
-        { id: "cash_currency", label: "Local currency / cash", intl: true },
-        { id: "covid_docs", label: "Health / vaccination records", intl: true },
-        { id: "itinerary_print", label: "Printed itinerary backup" },
-      ],
-    },
-    electronics: {
-      label: "Electronics",
-      icon: "M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z",
-      items: [
-        { id: "phone_charger", label: "Phone + charger", always: true },
-        { id: "power_adapter", label: "Power adapter / converter", intl: true },
-        { id: "laptop", label: "Laptop + charger", business: true },
-        { id: "headphones", label: "Headphones / earbuds", always: true },
-        { id: "power_bank", label: "Portable power bank" },
-        { id: "camera", label: "Camera + SD cards" },
-        { id: "kindle", label: "E-reader / Kindle" },
-      ],
-    },
-    clothing: {
-      label: "Clothing",
-      icon: "M20.38 3.46L16 2 12 5 8 2 3.62 3.46a1 1 0 00-.76.95V22h18V4.41a1 1 0 00-.48-.95z",
-      items: [
-        { id: "underwear", label: "Underwear", always: true, perDay: true },
-        { id: "socks", label: "Socks", always: true, perDay: true },
-        { id: "tshirts", label: "T-shirts / tops", always: true, perDay: true },
-        { id: "pants", label: "Pants / shorts", always: true },
-        { id: "jacket", label: "Jacket / coat", cold: true },
-        { id: "rain_jacket", label: "Rain jacket / umbrella", rain: true },
-        { id: "sleepwear", label: "Sleepwear", always: true },
-        { id: "swimwear", label: "Swimwear", beach: true },
-        { id: "formal", label: "Formal wear / suit", business: true },
-        { id: "dress_shoes", label: "Dress shoes", business: true },
-        { id: "walking_shoes", label: "Walking shoes / sneakers", always: true },
-        { id: "sandals", label: "Sandals / flip-flops", beach: true },
-        { id: "hat_sunglasses", label: "Hat + sunglasses", warm: true },
-        { id: "scarf_gloves", label: "Scarf + gloves", cold: true },
-      ],
-    },
-    toiletries: {
-      label: "Toiletries",
-      icon: "M12 2v20M2 12h20",
-      items: [
-        { id: "toothbrush", label: "Toothbrush + toothpaste", always: true },
-        { id: "deodorant", label: "Deodorant", always: true },
-        { id: "shampoo", label: "Shampoo + conditioner" },
-        { id: "sunscreen", label: "Sunscreen", warm: true },
-        { id: "medications", label: "Medications / prescriptions" },
-        { id: "first_aid", label: "First aid basics" },
-        { id: "skincare", label: "Skincare / moisturizer" },
-        { id: "razor", label: "Razor + shaving kit" },
-        { id: "contacts", label: "Contact lenses + solution" },
-      ],
-    },
-    misc: {
-      label: "Miscellaneous",
-      icon: "M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z",
-      items: [
-        { id: "luggage_lock", label: "Luggage lock + tags", always: true },
-        { id: "travel_pillow", label: "Travel pillow + eye mask", flight: true },
-        { id: "water_bottle", label: "Reusable water bottle" },
-        { id: "snacks", label: "Snacks for travel" },
-        { id: "laundry_bag", label: "Laundry bag" },
-        { id: "packing_cubes", label: "Packing cubes" },
-        { id: "guidebook", label: "Guidebook / phrasebook", intl: true },
-        { id: "gifts", label: "Gifts / souvenirs space" },
-      ],
-    },
-  };
-  const getPackingItems = (trip) => {
-    const segs = (trip.segments || []).filter(s => !s._isMeta);
-    const hasFlight = segs.some(s => s.type === "flight");
-    const hasHotel = segs.some(s => s.type === "hotel" || s.type === "accommodation");
-    const isBusiness = (trip.tripName || "").toLowerCase().includes("business");
-    const locations = (trip.location || "").toLowerCase();
-    const isIntl = segs.some(s => s.type === "flight" && s.fareClass && s.fareClass !== "domestic") || !/usa|united states|domestic/i.test(locations);
-    // Estimate weather from destination
-    const beachKeywords = /bermuda|hawaii|cancun|bahamas|caribbean|maldives|bali|phuket|fiji|tahiti|beach/i;
-    const coldKeywords = /iceland|norway|finland|sweden|alaska|hokkaido|switzerland|aspen|whistler|ski/i;
-    const isBeach = beachKeywords.test(locations) || beachKeywords.test(trip.tripName || "");
-    const isCold = coldKeywords.test(locations) || coldKeywords.test(trip.tripName || "");
-    const isWarm = isBeach || /dubai|singapore|bangkok|miami|mexico|brazil|india|thailand|vietnam/i.test(locations);
-    const tripDays = (() => {
-      const dates = segs.map(s => s.date).filter(Boolean).sort();
-      if (dates.length < 2) return 5;
-      return Math.max(1, Math.ceil((new Date(dates[dates.length - 1]) - new Date(dates[0])) / 86400000)) + 1;
-    })();
-
-    const result = {};
-    Object.entries(PACKING_TEMPLATES).forEach(([catKey, cat]) => {
-      const filtered = cat.items.filter(item => {
-        if (item.intl && !isIntl) return false;
-        if (item.flight && !hasFlight) return false;
-        if (item.hotel && !hasHotel) return false;
-        if (item.business && !isBusiness) return false;
-        if (item.beach && !isBeach) return false;
-        if (item.cold && !isCold) return false;
-        if (item.warm && !isWarm) return false;
-        if (item.rain && isCold) return true;
-        if (item.rain && !isWarm) return true;
-        return item.always || !item.intl;
-      });
-      if (filtered.length > 0) {
-        result[catKey] = {
-          label: cat.label,
-          icon: cat.icon,
-          items: filtered.map(item => ({
-            ...item,
-            label: item.perDay ? `${item.label} (${tripDays} days)` : item.label,
-          })),
-        };
-      }
-    });
-    return result;
-  };
-  const flightStatusFetchedRef = useRef(new Set());
-  const pushSubRef = useRef(null); // current push subscription
-  const prevFlightStatusRef = useRef({}); // previous status for change detection
   const weatherLoading = useRef({}); // track in-flight fetches without re-render
   const [hotelSectionOpen, setHotelSectionOpen] = useState(false);
   const [expandedItinId, setExpandedItinId] = useState(null); // expanded booking inbox item
   const [viewExpenseId, setViewExpenseId] = useState(null); // expense detail view modal
   const [cropExpenseId, setCropExpenseId] = useState(null); // expense id being cropped
-  const [cropRect, setCropRect] = useState(null); // {left, top, width, height} for display
-  const cropDragRef = useRef(false);
-  const cropStartRef = useRef(null);
-  const cropEndRef = useRef(null);
+  const [cropStart, setCropStart] = useState(null); // {x,y} start of drag
+  const [cropEnd, setCropEnd] = useState(null); // {x,y} end of drag
+  const [cropDragging, setCropDragging] = useState(false);
   const cropImgRef = useRef(null);
   const cropContainerRef = useRef(null);
-  const cropScrollVel = useRef({ x: 0, y: 0 });
-  const cropScrollRaf = useRef(null);
-  const cropLastClient = useRef({ x: 0, y: 0 });
   const [sharedTrips, setSharedTrips] = useState([]); // trips shared with me
-  const [confirmModal, setConfirmModal] = useState(null); // { message, onConfirm }
-  const showConfirm = (message, onConfirm) => {
-    // Use custom in-app modal (reliable across PWA/mobile/desktop)
-    setConfirmModal({ message, onConfirm });
-  };
   const [showShareModal, setShowShareModal] = useState(null); // trip ID to share
   const [shareEmail, setShareEmail] = useState("");
-  const [sharePermission, setSharePermission] = useState("read"); // "read" | "edit"
   const [shareStatus, setShareStatus] = useState(""); // "sent" | "error" | "already" | ""
   const [dashSubTab, setDashSubTab] = useState("overview"); // overview | timeline | reports | activity
   const [landmarkPhotos, setLandmarkPhotos] = useState({}); // cache: "Landmark, City" -> photoUrl
   const landmarkFetchedRef = useRef(new Set()); // track which landmarks we've already tried to fetch
 
-  // ── Receipt QR + Snap Receipt state ──
+  // ── Receipt QR state ──
   const [showReceiptQR, setShowReceiptQR] = useState(false);
-  const [snapReceiptProcessing, setSnapReceiptProcessing] = useState(false);
-  const snapReceiptInputRef = useRef(null);
-
-  const handleSnapReceipt = async (file) => {
-    if (!file || !userForwardingAddress) return;
-    if (file.size > 5 * 1024 * 1024) { alert("Photo must be under 5MB"); return; }
-    setSnapReceiptProcessing(true);
-    try {
-      const dataUrl = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-      const resp = await fetch(`/api/receipt?t=${userForwardingAddress}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "ocr", imageData: dataUrl, mediaType: file.type || "image/jpeg" }),
-      });
-      const result = await resp.json();
-      if (result.parsed) {
-        const p = result.parsed;
-        const receiptImage = { name: file.name, size: file.size, type: file.type, data: dataUrl };
-        const noteLines = [];
-        if (p.items?.length > 0) { noteLines.push("Items:"); p.items.forEach(i => noteLines.push(`  ${i.desc} — ${(p.currency || "USD")} ${Number(i.amount).toFixed(2)}`)); }
-        if (p.subtotal) noteLines.push(`Subtotal: ${Number(p.subtotal).toFixed(2)}`);
-        if (p.tax) noteLines.push(`Tax: ${Number(p.tax).toFixed(2)}`);
-        if (p.tip) noteLines.push(`Tip: ${Number(p.tip).toFixed(2)}`);
-        if (p.paymentMethod) noteLines.push(`Payment: ${p.paymentMethod}`);
-        noteLines.push("Auto-read via Snap Receipt");
-        setNewExpense({
-          ...BLANK_EXPENSE,
-          category: "biz_meals",
-          description: p.restaurantName || "Receipt",
-          amount: String(p.total || ""),
-          currency: (p.currency || "USD").toUpperCase(),
-          date: p.date || new Date().toISOString().slice(0, 10),
-          receipt: true,
-          receiptImage,
-          notes: noteLines.join("\n"),
-        });
-        setShowAddExpense("_inbox");
-        setEditExpenseId(null);
-      } else {
-        // OCR failed — open manual form with photo attached
-        setNewExpense({
-          ...BLANK_EXPENSE,
-          category: "biz_meals",
-          receipt: true,
-          receiptImage: { name: file.name, size: file.size, type: file.type, data: dataUrl },
-          date: new Date().toISOString().slice(0, 10),
-        });
-        setShowAddExpense("_inbox");
-        setEditExpenseId(null);
-      }
-    } catch (err) {
-      console.error("Snap receipt error:", err);
-    }
-    setSnapReceiptProcessing(false);
-    if (snapReceiptInputRef.current) snapReceiptInputRef.current.value = "";
-  };
   const [receiptQRDataUrl, setReceiptQRDataUrl] = useState("");
 
   // ── Programs tab state ──
@@ -1110,72 +3183,6 @@ export default function EliteStatusTracker() {
   };
   const [trips, setTrips] = useState([]);
   const [linkedAccounts, setLinkedAccounts] = useState({});
-  const [cardBenefitValues, setCardBenefitValues] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("continuum_card_benefit_values") || "{}"); } catch { return {}; }
-  });
-  const [cardCustomBenefits, setCardCustomBenefits] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("continuum_card_custom_benefits") || "{}"); } catch { return {}; }
-  });
-  const [expandedCardId, setExpandedCardId] = useState(null);
-
-  // Sync benefit data to Supabase via linked_accounts.member_id (credit cards don't use member IDs)
-  const benefitSyncTimers = useRef({});
-  const syncCardBenefitsToSupabase = (cardId, benefitVals, customBens) => {
-    if (!user) return;
-    clearTimeout(benefitSyncTimers.current[cardId]);
-    benefitSyncTimers.current[cardId] = setTimeout(() => {
-      const payload = JSON.stringify({ _cb: true, b: benefitVals || {}, c: customBens || [] });
-      supabase.from("linked_accounts").update({ member_id: payload, updated_at: new Date().toISOString() })
-        .eq("user_id", user.id).eq("program_id", cardId).then();
-    }, 800);
-  };
-
-  const setCardBenefitValue = (cardId, benefitId, value) => {
-    setCardBenefitValues(prev => {
-      const next = { ...prev, [cardId]: { ...(prev[cardId] || {}), [benefitId]: value } };
-      try { localStorage.setItem("continuum_card_benefit_values", JSON.stringify(next)); } catch {}
-      syncCardBenefitsToSupabase(cardId, next[cardId], cardCustomBenefits[cardId] || []);
-      return next;
-    });
-  };
-  const persistCustomBenefits = (cardId, next) => {
-    try { localStorage.setItem("continuum_card_custom_benefits", JSON.stringify(next)); } catch {}
-    syncCardBenefitsToSupabase(cardId, cardBenefitValues[cardId] || {}, next[cardId] || []);
-  };
-  const addCustomBenefit = (cardId) => {
-    setCardCustomBenefits(prev => {
-      const list = prev[cardId] || [];
-      const next = { ...prev, [cardId]: [...list, { id: `custom_${Date.now()}`, label: "", value: "" }] };
-      persistCustomBenefits(cardId, next);
-      return next;
-    });
-  };
-  const updateCustomBenefit = (cardId, benefitId, patch) => {
-    setCardCustomBenefits(prev => {
-      const list = (prev[cardId] || []).map(b => b.id === benefitId ? { ...b, ...patch } : b);
-      const next = { ...prev, [cardId]: list };
-      persistCustomBenefits(cardId, next);
-      return next;
-    });
-  };
-  const removeCustomBenefit = (cardId, benefitId) => {
-    setCardCustomBenefits(prev => {
-      const list = (prev[cardId] || []).filter(b => b.id !== benefitId);
-      const next = { ...prev, [cardId]: list };
-      persistCustomBenefits(cardId, next);
-      return next;
-    });
-  };
-  const getCardNetValue = (cardId) => {
-    const card = LOYALTY_PROGRAMS.creditCards.find(c => c.id === cardId);
-    if (!card) return { total: 0, fee: 0, net: 0 };
-    const values = cardBenefitValues[cardId] || {};
-    const standard = (card.benefits || []).reduce((s, b) => s + (Number(values[b.id]) || 0), 0);
-    const custom = (cardCustomBenefits[cardId] || []).reduce((s, b) => s + (Number(b.value) || 0), 0);
-    const total = standard + custom;
-    const fee = card.annualFee || 0;
-    return { total, fee, net: total - fee };
-  };
   const [showLinkModal, setShowLinkModal] = useState(null);
   const [linkForm, setLinkForm] = useState({ memberId: "", pointsBalance: "", tierCredits: "", currentNights: "", currentRentals: "", currentTier: "" });
   const [linkLoading, setLinkLoading] = useState(false);
@@ -1263,7 +3270,7 @@ export default function EliteStatusTracker() {
   // ── Settings state ──
   const [showSettings, setShowSettings] = useState(false);
   const [settingsTab, setSettingsTab] = useState("profile");
-  const [settingsForm, setSettingsForm] = useState({ firstName: "", lastName: "", email: "", currentPassword: "", newPassword: "", confirmPassword: "", homeAirport: "", passportCountry: "", defaultCurrency: "USD", notifications: { statusMilestones: true, expiringMiles: true, newPrograms: false } });
+  const [settingsForm, setSettingsForm] = useState({ firstName: "", lastName: "", email: "", currentPassword: "", newPassword: "", confirmPassword: "", homeAirport: "", defaultCurrency: "USD", notifications: { statusMilestones: true, expiringMiles: true, newPrograms: false } });
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [settingsMsg, setSettingsMsg] = useState({ type: "", text: "" }); // {type: "success"|"error", text}
 
@@ -1538,36 +3545,6 @@ export default function EliteStatusTracker() {
         };
       });
       setLinkedAccounts(map);
-      // Restore card benefit values from Supabase (stored as JSON in member_id for credit cards)
-      const benefitVals = {};
-      const customBens = {};
-      const creditCardIds = new Set(LOYALTY_PROGRAMS.creditCards.map(c => c.id));
-      data.forEach(row => {
-        if (!creditCardIds.has(row.program_id)) return;
-        const mid = row.member_id || "";
-        if (mid.startsWith("{")) {
-          try {
-            const parsed = JSON.parse(mid);
-            if (parsed._cb) {
-              if (parsed.b) benefitVals[row.program_id] = parsed.b;
-              if (parsed.c) customBens[row.program_id] = parsed.c;
-            }
-          } catch {}
-        }
-      });
-      // Merge: Supabase data overrides localStorage (newer wins)
-      if (Object.keys(benefitVals).length > 0 || Object.keys(customBens).length > 0) {
-        setCardBenefitValues(prev => {
-          const merged = { ...prev, ...benefitVals };
-          try { localStorage.setItem("continuum_card_benefit_values", JSON.stringify(merged)); } catch {}
-          return merged;
-        });
-        setCardCustomBenefits(prev => {
-          const merged = { ...prev, ...customBens };
-          try { localStorage.setItem("continuum_card_custom_benefits", JSON.stringify(merged)); } catch {}
-          return merged;
-        });
-      }
     }
   };
 
@@ -1696,32 +3673,22 @@ export default function EliteStatusTracker() {
   };
 
   // Load or create user forwarding address
-  // Note: a user may have multiple rows (primary + additional emails), all sharing the
-  // same forwarding_address token. Don't use .single() — it errors when rows > 1.
   const loadForwardingAddress = async (userId, userEmail) => {
-    const { data } = await supabase
-      .from("user_forwarding_addresses")
-      .select("*")
-      .eq("user_id", userId);
-    const rows = data || [];
-    // Prefer the row matching the primary email; otherwise the first row with a token
-    const primary = rows.find(r => (r.email || "").toLowerCase() === (userEmail || "").toLowerCase())
-      || rows.find(r => r.forwarding_address)
-      || null;
-    if (primary) {
-      setUserForwardingAddress(primary.forwarding_address || "");
-      return;
+    const { data } = await supabase.from("user_forwarding_addresses").select("*").eq("user_id", userId).single();
+    if (data) {
+      setUserForwardingAddress(data.forwarding_address || "");
+    } else {
+      // Generate a unique forwarding token: firstname.randomhex
+      const firstName = (user?.user_metadata?.first_name || user?.user_metadata?.name?.split(" ")[0] || "user").toLowerCase().replace(/[^a-z]/g, "");
+      const token = `${firstName}.${crypto.randomUUID().slice(0, 6)}`;
+      const { data: newData } = await supabase.from("user_forwarding_addresses").insert({
+        user_id: userId,
+        email: userEmail || "",
+        forwarding_address: token,
+        verified: true,
+      }).select().single();
+      if (newData) setUserForwardingAddress(newData.forwarding_address);
     }
-    // No row yet — create the primary row
-    const firstName = (user?.user_metadata?.first_name || user?.user_metadata?.name?.split(" ")[0] || "user").toLowerCase().replace(/[^a-z]/g, "");
-    const token = `${firstName}.${crypto.randomUUID().slice(0, 6)}`;
-    const { data: newData } = await supabase.from("user_forwarding_addresses").insert({
-      user_id: userId,
-      email: (userEmail || "").toLowerCase(),
-      forwarding_address: token,
-      verified: true,
-    }).select();
-    if (newData && newData[0]) setUserForwardingAddress(newData[0].forwarding_address);
   };
 
   // Trigger PA on first click/touch anywhere while on the landing page
@@ -2045,7 +4012,6 @@ Start by introducing yourself briefly in-character with personality, and give an
       lastName: user?.user_metadata?.last_name || "",
       email: user?.email || "",
       homeAirport: user?.user_metadata?.home_airport || "",
-      passportCountry: user?.user_metadata?.passport_country || "",
       defaultCurrency: user?.user_metadata?.default_currency || "USD",
       notifications: user?.user_metadata?.notifications || { statusMilestones: true, expiringMiles: true, newPrograms: false },
       additionalEmails,
@@ -2085,7 +4051,7 @@ Start by introducing yourself briefly in-character with personality, and give an
 
   const savePreferences = async () => {
     setSettingsSaving(true); setSettingsMsg({ type: "", text: "" });
-    const { data, error } = await supabase.auth.updateUser({ data: { home_airport: settingsForm.homeAirport.toUpperCase().trim(), passport_country: settingsForm.passportCountry.trim(), default_currency: settingsForm.defaultCurrency, notifications: settingsForm.notifications } });
+    const { data, error } = await supabase.auth.updateUser({ data: { home_airport: settingsForm.homeAirport.toUpperCase().trim(), default_currency: settingsForm.defaultCurrency, notifications: settingsForm.notifications } });
     setSettingsSaving(false);
     if (error) { setSettingsMsg({ type: "error", text: error.message }); return; }
     if (data?.user) setUser(data.user);
@@ -2795,20 +4761,14 @@ Start by introducing yourself briefly in-character with personality, and give an
 
   // Delete a segment from a trip
   const deleteSegment = async (tripId, segIdx) => {
-    const trip = [...trips, ...sharedTrips].find(t => t.id === tripId);
+    const trip = trips.find(t => t.id === tripId);
     if (!trip) return;
     const realSegs = (trip.segments || []).filter(s => !s._isMeta);
     const metaSegs = (trip.segments || []).filter(s => s._isMeta);
     const updated = [...metaSegs, ...realSegs.filter((_, i) => i !== segIdx)];
-    if (trip._shared) {
-      setSharedTrips(prev => prev.map(t => t.id === tripId ? { ...t, segments: updated } : t));
-      if (user) fetch("/api/shared-trips", {
-        method: "PUT", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tripId, userId: user.id, userEmail: user.email, payload: { segments: updated } }),
-      }).then();
-    } else if (user) {
+    if (user) {
+      await supabase.from("trips").update({ segments: updated }).eq("id", tripId).eq("user_id", user.id);
       setTrips(prev => prev.map(t => t.id === tripId ? { ...t, segments: updated } : t));
-      supabase.from("trips").update({ segments: updated }).eq("id", tripId).eq("user_id", user.id).then();
     }
   };
 
@@ -2853,21 +4813,11 @@ Start by introducing yourself briefly in-character with personality, and give an
       segments: segments,
     };
     if (editingTripId) {
-      // Check if this is a shared trip being edited
-      const editingTrip = [...trips, ...sharedTrips].find(t => t.id === editingTripId);
-      const isSharedEdit = editingTrip?._shared;
-      if (isSharedEdit) {
-        // Optimistic: update sharedTrips state
-        setSharedTrips(prev => prev.map(t => t.id === editingTripId ? { ...t, ...newTrip, segments, estimatedPoints: totalPoints, estimatedNights: totalNights, tripName: newTrip.tripName, status: newTrip.status, date: firstDate } : t));
-        // Persist via service-role API (RLS blocks direct writes for non-owners)
-        if (user) fetch("/api/shared-trips", {
-          method: "PUT", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tripId: editingTripId, userId: user.id, userEmail: user.email, payload }),
-        }).then();
-      } else {
-        setTrips(prev => prev.map(t => t.id === editingTripId ? { ...t, ...newTrip, segments, estimatedPoints: totalPoints, estimatedNights: totalNights, tripName: newTrip.tripName, status: newTrip.status, date: firstDate, id: editingTripId } : t));
-        if (user) supabase.from("trips").update(payload).eq("id", editingTripId).eq("user_id", user.id).then();
+      if (user) {
+        const { error } = await supabase.from("trips").update(payload).eq("id", editingTripId).eq("user_id", user.id);
+        if (error) { setAddTripError(error.message || "Failed to update trip."); return; }
       }
+      setTrips(prev => prev.map(t => t.id === editingTripId ? { ...t, ...newTrip, segments, estimatedPoints: totalPoints, estimatedNights: totalNights, tripName: newTrip.tripName, status: newTrip.status, date: firstDate, id: editingTripId } : t));
     } else {
       if (user) {
         const { data, error } = await supabase.from("trips").insert({ user_id: user.id, ...payload }).select().single();
@@ -2880,11 +4830,9 @@ Start by introducing yourself briefly in-character with personality, and give an
     resetTripModal();
   };
 
-  const removeTrip = (id) => {
-    showConfirm("Are you sure you want to delete this trip? This cannot be undone.", async () => {
-      setTrips(prev => prev.filter(t => t.id !== id));
-      if (user) await supabase.from("trips").delete().eq("id", id).eq("user_id", user.id);
-    });
+  const removeTrip = async (id) => {
+    setTrips(prev => prev.filter(t => t.id !== id));
+    if (user) await supabase.from("trips").delete().eq("id", id).eq("user_id", user.id);
   };
 
   // ── Itinerary parser ──
@@ -3357,26 +5305,19 @@ Start by introducing yourself briefly in-character with personality, and give an
       ...defaultSegment(),
       type: s.type || "flight",
       program: s.program || "aa",
-      route: s.route || (s.departureAirport && s.arrivalAirport ? `${s.departureAirport} → ${s.arrivalAirport}` : ""),
+      route: s.route || "",
       date: s.date || "",
       // Flight
       flightNumber: s.flightNumber || "",
       departureTime: s.departureTime || "",
       arrivalTime: s.arrivalTime || "",
-      departureAirport: s.departureAirport || "",
-      arrivalAirport: s.arrivalAirport || "",
       departureTerminal: s.departureTerminal || "",
       arrivalTerminal: s.arrivalTerminal || "",
-      arrivalDate: s.arrivalDate || "",
       fareClass: s.fareClass || "economy",
       bookingClass: s.bookingClass || "",
-      confirmationCode: s.confirmationCode || "",
       seat: s.seat || "",
-      airline: s.airline || "",
       aircraft: s.aircraft || "",
-      class: s.class || "international",
-      stopoverAirport: s.stopoverAirport || "",
-      stopoverDuration: s.stopoverDuration || "",
+      class: s.class || "domestic",
       // Hotel
       property: s.property || "",
       location: s.location || "",
@@ -3396,13 +5337,11 @@ Start by introducing yourself briefly in-character with personality, and give an
   };
 
   // Dismiss an itinerary
-  const dismissItinerary = (id) => {
-    showConfirm("Dismiss this booking from your inbox?", async () => {
-      if (user) {
-        await supabase.from("itineraries").update({ status: "dismissed" }).eq("id", id);
-        setSavedItineraries(prev => prev.filter(i => i.id !== id));
-      }
-    });
+  const dismissItinerary = async (id) => {
+    if (user) {
+      await supabase.from("itineraries").update({ status: "dismissed" }).eq("id", id);
+      setSavedItineraries(prev => prev.filter(i => i.id !== id));
+    }
   };
 
   const handleImportItinerary = () => {
@@ -3417,7 +5356,7 @@ Start by introducing yourself briefly in-character with personality, and give an
 
   const BLANK_EXPENSE = { category: "flight", description: "", amount: "", currency: "USD", usdReimbursement: "", individuals: "Self", date: "", paymentMethod: "", receipt: false, receiptImage: null, notes: "" };
 
-  const handleAddExpense = () => {
+  const handleAddExpense = async () => {
     const parsed = {
       ...newExpense,
       amount: parseFloat(newExpense.amount) || 0,
@@ -3425,39 +5364,44 @@ Start by introducing yourself briefly in-character with personality, and give an
       usdReimbursement: newExpense.currency === "USD" ? parseFloat(newExpense.amount) || 0 : (parseFloat(newExpense.usdReimbursement) || 0),
     };
     const tripId = showAddExpense === "_inbox" ? null : showAddExpense;
-    const payload = {
-      category: parsed.category, description: parsed.description, amount: parsed.amount,
-      currency: parsed.currency, fx_rate: parsed.fxRate, date: parsed.date || null,
-      payment_method: parsed.paymentMethod, receipt: parsed.receipt,
-      receipt_image: parsed.receiptImage || null, notes: parsed.notes,
-      individuals: parsed.individuals || "Self",
-      usd_reimbursement: parsed.usdReimbursement || null,
-    };
-
-    // Optimistic: update UI immediately, persist in background
     if (editExpenseId) {
+      if (user) {
+        await supabase.from("expenses").update({
+          category: parsed.category, description: parsed.description, amount: parsed.amount,
+          currency: parsed.currency, fx_rate: parsed.fxRate, date: parsed.date || null,
+          payment_method: parsed.paymentMethod, receipt: parsed.receipt,
+          receipt_image: parsed.receiptImage || null, notes: parsed.notes,
+          individuals: parsed.individuals || "Self",
+          usd_reimbursement: parsed.usdReimbursement || null,
+        }).eq("id", editExpenseId).eq("user_id", user.id);
+      }
       setExpenses(prev => prev.map(e => e.id === editExpenseId ? { ...parsed, id: editExpenseId, tripId: e.tripId } : e));
       setEditExpenseId(null);
-      if (user) supabase.from("expenses").update(payload).eq("id", editExpenseId).eq("user_id", user.id).then();
     } else {
-      const tempId = `temp_${Date.now()}`;
-      setExpenses(prev => [...prev, { ...parsed, id: tempId, tripId }]);
       if (user) {
-        supabase.from("expenses").insert({ ...payload, user_id: user.id, trip_id: tripId })
-          .select().single().then(({ data }) => {
-            if (data) setExpenses(prev => prev.map(e => e.id === tempId ? { ...e, id: data.id } : e));
-          });
+        const { data, error } = await supabase.from("expenses").insert({
+          user_id: user.id, trip_id: tripId,
+          category: parsed.category, description: parsed.description, amount: parsed.amount,
+          currency: parsed.currency, fx_rate: parsed.fxRate, date: parsed.date || null,
+          payment_method: parsed.paymentMethod, receipt: parsed.receipt,
+          receipt_image: parsed.receiptImage || null, notes: parsed.notes,
+          individuals: parsed.individuals || "Self",
+          usd_reimbursement: parsed.usdReimbursement || null,
+        }).select().single();
+        if (!error && data) {
+          setExpenses(prev => [...prev, { ...parsed, id: data.id, tripId }]);
+        }
+      } else {
+        setExpenses(prev => [...prev, { ...parsed, id: Date.now(), tripId }]);
       }
     }
     setShowAddExpense(null);
     setNewExpense(BLANK_EXPENSE);
   };
 
-  const removeExpense = (id) => {
-    showConfirm("Are you sure you want to delete this expense?", async () => {
-      setExpenses(prev => prev.filter(e => e.id !== id));
-      if (user) await supabase.from("expenses").delete().eq("id", id).eq("user_id", user.id);
-    });
+  const removeExpense = async (id) => {
+    setExpenses(prev => prev.filter(e => e.id !== id));
+    if (user) await supabase.from("expenses").delete().eq("id", id).eq("user_id", user.id);
   };
 
   const getTripExpenses = (tripId) => expenses.filter(e => e.tripId === tripId);
@@ -3472,7 +5416,7 @@ Start by introducing yourself briefly in-character with personality, and give an
       owner_id: user.id,
       shared_with_email: shareEmail.trim().toLowerCase(),
       owner_name: ownerName,
-      permission: sharePermission,
+      permission: "read",
     });
     if (error) {
       setShareStatus(error.code === "23505" ? "already" : "error");
@@ -3750,16 +5694,15 @@ Start by introducing yourself briefly in-character with personality, and give an
     setLinkForm({ memberId: "", pointsBalance: "", tierCredits: "", currentNights: "", currentRentals: "", currentTier: "" });
   };
 
-  const handleUnlinkAccount = (programId) => {
-    showConfirm("Unlink this program? Your saved stats will be removed.", async () => {
-      if (user) {
-        await supabase.from("linked_accounts").delete().eq("user_id", user.id).eq("program_id", programId);
-      }
-      setLinkedAccounts(prev => {
-        const next = { ...prev };
-        delete next[programId];
-        return next;
-      });
+  const handleUnlinkAccount = async (programId) => {
+    if (!window.confirm(`Unlink this program? Your saved stats will be removed.`)) return;
+    if (user) {
+      await supabase.from("linked_accounts").delete().eq("user_id", user.id).eq("program_id", programId);
+    }
+    setLinkedAccounts(prev => {
+      const next = { ...prev };
+      delete next[programId];
+      return next;
     });
   };
 
@@ -3791,134 +5734,6 @@ Start by introducing yourself briefly in-character with personality, and give an
   const segProgName = (seg) => {
     if (seg.program === "other") return seg.customProgramName || "Other";
     return allPrograms.find(p => p.id === seg.program)?.name || seg.customProgramName || seg.program || "—";
-  };
-
-  // ── Push notification subscription ──
-  const [pushEnabled, setPushEnabled] = useState(false);
-  const [pushSupported, setPushSupported] = useState(false);
-
-  useEffect(() => {
-    if (!isLoggedIn) return;
-    const checkPush = async () => {
-      if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) return;
-      setPushSupported(true);
-      if (Notification.permission === "granted") {
-        try {
-          const reg = await navigator.serviceWorker.ready;
-          const sub = await reg.pushManager.getSubscription();
-          if (sub) { pushSubRef.current = sub.toJSON(); setPushEnabled(true); }
-        } catch {}
-      }
-    };
-    checkPush();
-  }, [isLoggedIn]);
-
-  const enablePushNotifications = async () => {
-    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
-    try {
-      const perm = await Notification.requestPermission();
-      if (perm !== "granted") return;
-      const reg = await navigator.serviceWorker.ready;
-      const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
-      if (!vapidKey) return;
-      let sub = await reg.pushManager.getSubscription();
-      if (!sub) {
-        sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: vapidKey });
-      }
-      pushSubRef.current = sub.toJSON();
-      setPushEnabled(true);
-      if (user) {
-        fetch("/api/push-subscribe", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: user.id, subscription: sub.toJSON() }),
-        }).catch(() => {});
-      }
-    } catch (e) {
-      console.log("Push subscribe error:", e.message);
-    }
-  };
-
-  // ── Live flight status polling for upcoming flights ──
-  useEffect(() => {
-    if (!isLoggedIn || trips.length === 0) return;
-    const checkFlightStatus = async () => {
-      const now = new Date();
-      const cutoff = new Date(now.getTime() + 48 * 60 * 60 * 1000);
-      const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-      const flightsToCheck = [];
-      trips.forEach(trip => {
-        (trip.segments || []).filter(s => !s._isMeta && s.type === "flight" && s.flightNumber && s.date).forEach(seg => {
-          const segDate = new Date(seg.date + "T12:00:00");
-          if (segDate >= yesterday && segDate <= cutoff) {
-            flightsToCheck.push({
-              flightNumber: seg.flightNumber,
-              date: seg.date,
-              departureAirport: seg.departureAirport || "",
-              arrivalAirport: seg.arrivalAirport || "",
-            });
-          }
-        });
-      });
-      if (flightsToCheck.length === 0) return;
-      try {
-        const resp = await fetch("/api/flight-status", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ flights: flightsToCheck }),
-        });
-        if (resp.ok) {
-          const { results } = await resp.json();
-          if (results) {
-            // Detect changes and send push notifications
-            const prev = prevFlightStatusRef.current;
-            const sub = pushSubRef.current;
-            Object.entries(results).forEach(([key, status]) => {
-              if (!status || status.error) return;
-              const old = prev[key];
-              if (!old) { prev[key] = status; return; }
-              const fn = key.split("_")[0];
-              // Gate change
-              if (status.departureGate && status.departureGate !== old.departureGate && sub) {
-                fetch("/api/push-notify", { method: "POST", headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ subscription: sub, title: `Gate Assigned: ${fn}`, body: `Gate ${status.departureGate}${status.departureTerminal ? ` · Terminal ${status.departureTerminal}` : ""}`, data: { flightNumber: fn } }),
-                }).catch(() => {});
-              }
-              // Delay
-              if (status.departureDelay > 15 && (!old.departureDelay || old.departureDelay <= 15) && sub) {
-                fetch("/api/push-notify", { method: "POST", headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ subscription: sub, title: `Flight Delayed: ${fn}`, body: `Delayed ${status.departureDelay} minutes${status.departureRevised ? ". New departure: " + status.departureRevised.split(" ").pop()?.replace(/[+-]\d{2}:\d{2}$/, "") : ""}`, data: { flightNumber: fn } }),
-                }).catch(() => {});
-              }
-              // Cancellation
-              if (status.status === "Canceled" && old.status !== "Canceled" && sub) {
-                fetch("/api/push-notify", { method: "POST", headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ subscription: sub, title: `CANCELLED: ${fn}`, body: `Flight ${fn} has been cancelled. Contact your airline.`, data: { flightNumber: fn } }),
-                }).catch(() => {});
-              }
-              // Landed
-              if (status.status === "Landed" && old.status !== "Landed" && sub) {
-                fetch("/api/push-notify", { method: "POST", headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ subscription: sub, title: `Landed: ${fn}`, body: `${status.arrivalAirport || ""}${status.baggageBelt ? " · Baggage belt " + status.baggageBelt : ""}`, data: { flightNumber: fn } }),
-                }).catch(() => {});
-              }
-              prev[key] = status;
-            });
-            prevFlightStatusRef.current = prev;
-            setFlightStatusCache(p => ({ ...p, ...results }));
-          }
-        }
-      } catch {}
-    };
-    const initialTimer = setTimeout(checkFlightStatus, 3000);
-    const interval = setInterval(checkFlightStatus, 5 * 60 * 1000);
-    return () => { clearTimeout(initialTimer); clearInterval(interval); };
-  }, [isLoggedIn, trips.length]);
-
-  // Helper: get live status for a flight segment
-  const getFlightLiveStatus = (seg) => {
-    if (!seg?.flightNumber || !seg?.date) return null;
-    const key = `${seg.flightNumber.replace(/\s+/g, "").toUpperCase()}_${seg.date}`;
-    return flightStatusCache[key] || null;
   };
 
   // Fetch Google Places photos for all trip landmarks (delayed, batched, once)
@@ -3975,14 +5790,17 @@ Start by introducing yourself briefly in-character with personality, and give an
       });
       if (trip.location) trip.location.split(/[,\/]/).map(s => s.trim()).filter(Boolean).forEach(l => allCities.add(l));
     });
-    // Fire Places fetches immediately in parallel — cards already show fallback photos
-    // so these are progressive upgrades, not blocking loads.
+    // Fetch only first 2 landmarks per city, max 4 cities — keeps re-renders manageable
+    let delay = 3000;
     let cityCount = 0;
     allCities.forEach(city => {
-      if (cityCount >= 6) return;
+      if (cityCount >= 4) return;
       cityCount++;
-      const lms = (CITY_LANDMARKS_ALL[city] || [`Visit ${city}`]).slice(0, 4);
-      lms.forEach(lm => { fetchLandmarkPhoto(lm, city); });
+      const lms = (CITY_LANDMARKS_ALL[city] || [`Visit ${city}`]).slice(0, 2);
+      lms.forEach((lm, i) => {
+        setTimeout(() => fetchLandmarkPhoto(lm, city), delay + i * 500);
+      });
+      delay += lms.length * 500 + 1000;
     });
   }, [isLoggedIn, trips.length, activeView]);
 
@@ -4029,29 +5847,17 @@ Start by introducing yourself briefly in-character with personality, and give an
 
     // 2. Direct airline elite status access (e.g. AA EP → Admirals Club)
     const isIntl = loungeAccessRoute === "international";
-    const flyingAaOrBa = loungeFlightAirline === "aa" || loungeFlightAirline === "ba_avios";
-    const flyingPremium = flyingClass === "business" || flyingClass === "first";
     Object.entries(linkedAccounts).forEach(([progId, acct]) => {
       if (!acct.currentTier) return;
       const airline = ELITE_LOUNGE_ACCESS[progId];
       if (airline?.tiers?.[acct.currentTier]) {
         airline.tiers[acct.currentTier].lounges.forEach(rule => {
           if (rule.network !== network) return;
-          // Route/cabin/airline condition checks
-          const c = rule.condition;
-          if (c === "intl_only" && !isIntl) return;
-          if (c === "intl_oneworld" && (!isIntl || flyingAlliance !== "oneworld")) return;
-          if (c === "intl_aa_oneworld" && (!isIntl || flyingAlliance !== "oneworld")) return;
-          if (c === "intl_aa_or_ba" && (!isIntl || !flyingAaOrBa)) return;
-          if (c === "intl_aa_first_cabin" && (!isIntl || loungeFlightAirline !== "aa" || flyingClass !== "first")) return;
-          if (c === "intl_ua_or_star" && (!isIntl || (loungeFlightAirline !== "ua" && flyingAlliance !== "star"))) return;
-          if (c === "intl_ua_polaris_cabin" && (!isIntl || loungeFlightAirline !== "ua" || !flyingPremium)) return;
-          if (c === "same_day_ua" && loungeFlightAirline !== "ua") return;
-          if (c === "same_day_dl" && loungeFlightAirline !== "dl") return;
-          if (c === "same_day_ac_or_star" && flyingAlliance !== "star") return;
-          if (c === "intl_premium_cabin" && (!isIntl || !flyingPremium)) return;
-          if (c === "intl_first_cabin" && (!isIntl || flyingClass !== "first")) return;
-          if (c === "intl_or_transcon" && !isIntl && !flyingPremium) return;
+          // Check route conditions
+          if (rule.condition === "intl_only" && !isIntl) return;
+          if (rule.condition === "intl_aa_oneworld" && !isIntl) return;
+          if (rule.condition === "intl_premium_cabin" && (!isIntl || (flyingClass !== "business" && flyingClass !== "first"))) return;
+          if (rule.condition === "intl_or_transcon" && !isIntl && flyingClass !== "business" && flyingClass !== "first") return;
           results.push({ source: "elite", airlineName: airline.name, tier: acct.currentTier, guests: rule.guests, guestNote: rule.guestNote, condition: rule.condition });
         });
       }
@@ -4088,11 +5894,8 @@ Start by introducing yourself briefly in-character with personality, and give an
       });
     }
 
-    // 4. Cabin-class based access — flying business/first on the operating airline
+    // 4. Cabin-class based access — flying business/first on any airline often grants their own lounges
     if ((flyingClass === "business" || flyingClass === "first") && loungeFlightAirline) {
-      const airlineMeta = LOYALTY_PROGRAMS.airlines.find(a => a.id === loungeFlightAirline);
-      const airlineName = airlineMeta?.name || loungeFlightAirline;
-
       // Flying business/first on the operating airline grants access to that airline's lounges
       const airlineNetworks = {
         cathay_mp: "cathay_lounge", qantas_ff: "qantas_lounge", singapore_kf: "singapore_lounge",
@@ -4102,53 +5905,10 @@ Start by introducing yourself briefly in-character with personality, and give an
       if (operatingNetwork === network) {
         const alreadyHasAccess = results.length > 0;
         if (!alreadyHasAccess) {
-          results.push({ source: "cabin", airlineName, tier: flyingClass === "first" ? "First Class ticket" : "Business Class ticket", guests: 0, guestNote: "Ticketed cabin access only" });
+          const airlineMeta = LOYALTY_PROGRAMS.airlines.find(a => a.id === loungeFlightAirline);
+          results.push({ source: "cabin", airlineName: airlineMeta?.name || loungeFlightAirline, tier: flyingClass === "first" ? "First Class ticket" : "Business Class ticket", guests: 0, guestNote: "Ticketed cabin access only" });
         }
       }
-
-      const cabinLabel = flyingClass === "first" ? "First Class ticket" : "Business Class ticket";
-
-      // oneworld: Flagship First Dining & Chelsea Lounge — AA/BA int'l First only
-      if (isIntl && flyingClass === "first" && flyingAaOrBa) {
-        if (network === "flagship" || network === "chelsea_lounge") {
-          results.push({ source: "cabin", airlineName, tier: "First Class ticket", guests: 0, guestNote: `${network === "flagship" ? "Flagship First Dining" : "Chelsea Lounge"}: ticketed in int'l First Class on ${airlineName}` });
-        }
-      }
-
-      // oneworld: Greenwich / Soho Lounge — AA/BA int'l premium cabin
-      if (isIntl && flyingPremium && flyingAaOrBa) {
-        if (network === "greenwich_lounge" || network === "soho_lounge") {
-          const lName = network === "greenwich_lounge" ? "Greenwich Lounge" : "Soho Lounge";
-          results.push({ source: "cabin", airlineName, tier: cabinLabel, guests: 0, guestNote: `${lName}: ticketed in int'l premium cabin on ${airlineName}` });
-        }
-      }
-
-      // Star Alliance: United Polaris Lounge — UA int'l Polaris (business) only
-      if (isIntl && flyingPremium && loungeFlightAirline === "ua" && network === "polaris") {
-        results.push({ source: "cabin", airlineName, tier: "Polaris ticket", guests: 0, guestNote: `United Polaris Lounge: ticketed in int'l Polaris cabin on ${airlineName}` });
-      }
-
-      // Star Alliance: Lufthansa First Class Terminal / Lounge — LH/LX/OS int'l First only
-      if (isIntl && flyingClass === "first" && (loungeFlightAirline === "lh" || loungeFlightAirline === "lx" || loungeFlightAirline === "os") && network === "lh_first") {
-        results.push({ source: "cabin", airlineName, tier: "First Class ticket", guests: 0, guestNote: `Lufthansa First Class Terminal: ticketed in int'l First Class on ${airlineName}` });
-      }
-
-      // Star Alliance: ANA Suite Lounge — NH int'l First only
-      if (isIntl && flyingClass === "first" && loungeFlightAirline === "ana_mc" && network === "ana_suite") {
-        results.push({ source: "cabin", airlineName, tier: "First Class ticket", guests: 0, guestNote: `ANA Suite Lounge: ticketed in int'l First Class on ANA` });
-      }
-
-      // SkyTeam: Air France La Premiere — AF La Premiere (first) only
-      if (isIntl && flyingClass === "first" && loungeFlightAirline === "flying_blue" && network === "af_la_premiere") {
-        results.push({ source: "cabin", airlineName, tier: "La Premiere ticket", guests: 0, guestNote: `La Premiere: ticketed La Premiere on Air France int'l` });
-      }
-    }
-
-    // 5. Final guard: premium cabin-gated lounges must never be granted by status alone.
-    // Strip any results for these networks that didn't come from a card, ConciergeKey, or cabin source.
-    const cabinGatedNetworks = new Set(["flagship", "chelsea_lounge", "polaris", "lh_first", "af_la_premiere", "ana_suite"]);
-    if (cabinGatedNetworks.has(network)) {
-      return results.filter(r => r.source === "card" || r.source === "cabin" || r.tier === "ConciergeKey" || r.tier === "Global Services");
     }
 
     return results;
@@ -4624,7 +6384,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                 {socialBtn(
                   <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>,
                   "Continue with Google",
-                  () => supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: "https://gocontinuum.app" } })
+                  () => supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: import.meta.env.VITE_APP_URL || window.location.origin } })
                 )}
                 {socialBtn(
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="rgba(255,255,255,0.25)"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>,
@@ -4795,8 +6555,6 @@ Start by introducing yourself briefly in-character with personality, and give an
   };
 
   const allTripsWithShared = [...trips, ...sharedTrips];
-  const todayStr2 = new Date().toISOString().slice(0, 10);
-  const nextTrip = trips.filter(t => (t.date || "") >= todayStr2).sort((a, b) => (a.date || "").localeCompare(b.date || ""))[0] || null;
   const filteredTrips = allTripsWithShared.filter(t => {
     if (filterStatus !== "all" && t.status !== filterStatus) return false;
     if (searchQuery && !JSON.stringify(t).toLowerCase().includes(searchQuery.toLowerCase())) return false;
@@ -4806,85 +6564,5504 @@ Start by introducing yourself briefly in-character with personality, and give an
 
   const pastTripsFiltered = filteredTrips.filter(t => { const end = getTripEndDate(t); return end && end < todayStr; }).sort((a, b) => (b.date || "").localeCompare(a.date || ""));
 
-  const SectionLabel = ({ children, action, actionLabel }) => (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-      <h3 style={{ fontSize: 14, fontWeight: 700, color: css.text, margin: 0 }}>{children}</h3>
-      {action && <button onClick={action} style={{ background: "none", border: "none", color: css.text3, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>{actionLabel || "View all"} →</button>}
+  const renderDashboard = () => {
+    // Dashboard uses shared css palette
+    const lp = {
+      ...css,
+      bg: css.bg, surface: css.surface, surface2: css.surface2,
+      border: css.border, border2: D ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.12)",
+      text: css.text, text2: css.text2, dim: css.text3,
+      teal: css.accent, tealDim: css.accentBg, tealBord: css.accentBorder,
+      red: D ? "#ef4444" : "#dc2626", green: css.success,
+      mono: "'Geist Mono', 'JetBrains Mono', ui-monospace, monospace",
+      sans: "inherit",
+    };
+
+    const airlineStatuses = LOYALTY_PROGRAMS.airlines.map(p => ({ ...p, status: getProjectedStatus(p.id) })).filter(p => p.status);
+    const hotelStatuses = LOYALTY_PROGRAMS.hotels.map(p => ({ ...p, status: getProjectedStatus(p.id) })).filter(p => p.status);
+    const totalTrips = trips.length;
+    const confirmedTrips = trips.filter(t => t.status === "confirmed").length;
+    const willAdvanceCount = [...airlineStatuses, ...hotelStatuses].filter(p => p.status?.willAdvance).length;
+    const today = new Date().toISOString().slice(0, 10);
+    const nextTrip = trips.filter(t => t.date >= today).sort((a, b) => a.date.localeCompare(b.date))[0];
+    const daysToNext = nextTrip ? Math.max(0, Math.ceil((new Date(nextTrip.date + "T12:00:00") - new Date()) / (1000 * 60 * 60 * 24))) : null;
+    const totalPointsValue = Object.entries(linkedAccounts).reduce((sum, [, acc]) => sum + (acc.pointsBalance || acc.currentPoints || acc.bonvoyPoints || acc.hhPoints || acc.ihgPoints || 0), 0);
+    const hour = new Date().getHours();
+    const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+
+    // Shared styles
+    const box = { background: css.surface, borderRadius: css.radius, boxShadow: css.shadow };
+    const SectionLabel = ({ children, action, actionLabel }) => (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+        <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: "-0.01em", color: css.text }}>{children}</span>
+        {action && (
+          <button onClick={action} style={{ background: "none", border: "none", color: css.text3, fontSize: 13, fontWeight: 500, cursor: "pointer", padding: 0, transition: "color 0.15s" }}
+            onMouseEnter={e => e.currentTarget.style.color = css.accent} onMouseLeave={e => e.currentTarget.style.color = css.text3}>
+            {actionLabel} →
+          </button>
+        )}
+      </div>
+    );
+
+    return (
+      <div style={{ fontFamily: lp.sans, color: lp.text }}>
+
+        {/* ── Header: greeting ── */}
+        <div style={{ marginBottom: 20 }}>
+          <h1 style={{ fontSize: isMobile ? 22 : 32, fontWeight: 700, color: css.text, margin: 0, letterSpacing: "-0.02em", lineHeight: 1.2 }}>
+            {greeting}, {user?.user_metadata?.first_name || user?.user_metadata?.name?.split(" ")[0] || "Traveler"}
+          </h1>
+          <div style={{ fontSize: isMobile ? 12 : 13, color: css.text3, fontWeight: 500, marginTop: 4 }}>
+            {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+          </div>
+        </div>
+
+        {/* ── Tab bar + Add Trip (sticks to top on scroll, flush with header) ── */}
+        <div className="c-a1" style={{ position: "sticky", top: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "8px 0", marginBottom: 16, background: D ? "rgba(15,15,15,0.95)" : "rgba(255,255,255,0.95)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderBottom: `1px solid ${css.border}`, marginLeft: isMobile ? -16 : -48, marginRight: isMobile ? -16 : -48, paddingLeft: isMobile ? 8 : 48, paddingRight: isMobile ? 8 : 48 }}>
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: isMobile ? 0 : 4,
+            background: "transparent",
+            padding: 0, overflowX: isMobile ? "auto" : "visible", flex: 1, justifyContent: "center",
+          }}>
+            {[
+              { id: "overview", label: "Overview" },
+              { id: "inbox", label: "Inbox" },
+              { id: "timeline", label: "Timeline" },
+              { id: "reports", label: "Reports" },
+              { id: "activity", label: "Activity" },
+            ].map(tab => {
+              const isActive = dashSubTab === tab.id;
+              return (
+                <button key={tab.id} onClick={() => setDashSubTab(tab.id)} style={{
+                  padding: isMobile ? "6px 10px" : "8px 18px", border: "none", cursor: "pointer",
+                  background: "transparent",
+                  borderBottom: isActive ? `2px solid ${css.accent}` : "2px solid transparent",
+                  borderRadius: 0, color: isActive ? css.accent : css.text3,
+                  fontSize: isMobile ? 11 : 13, fontWeight: isActive ? 600 : 400, transition: "all 0.15s",
+                  whiteSpace: "nowrap", fontFamily: "inherit",
+                }}>
+                  {tab.label}
+                  {tab.id === "inbox" && (savedItineraries.length + expenses.filter(e => !e.tripId).length) > 0 && (
+                    <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, color: "#fff", background: css.accent, borderRadius: 10, padding: "1px 6px", minWidth: 16, display: "inline-block", textAlign: "center" }}>
+                      {savedItineraries.length + expenses.filter(e => !e.tripId).length}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          <button onClick={() => setShowCreateTrip(true)} style={{
+            padding: isMobile ? "7px 14px" : "8px 20px", border: "none", background: css.accent, color: "#fff",
+            fontSize: isMobile ? 12 : 13, fontWeight: 600, cursor: "pointer", borderRadius: 24,
+            transition: "all 0.15s ease", whiteSpace: "nowrap", marginLeft: 12, flexShrink: 0,
+          }}>
+            + Add Trip
+          </button>
+        </div>
+
+        {/* ── Hero banner image ── */}
+        {dashSubTab === "overview" && (
+          <div style={{ margin: isMobile ? "0 -16px 0" : "0 -48px 0", position: "relative", height: isMobile ? 160 : 240, overflow: "hidden" }}>
+            <img src="/hero-travel.jpg" alt="Travel" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 40%", display: "block" }} />
+            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: isMobile ? 60 : 80, background: D ? "linear-gradient(transparent, #0f0f0f)" : "linear-gradient(transparent, #ffffff)" }} />
+          </div>
+        )}
+
+        {/* ── Dashboard content (on solid background) ── */}
+        {dashSubTab === "overview" && <>
+
+                {/* Next trip countdown */}
+                {nextTrip && (
+                  <div className="c-a1" style={{ padding: "8px 0 8px" }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: css.accent, marginBottom: 4 }}>
+                      {daysToNext === 0 ? "Departing Today" : daysToNext === 1 ? "Departing Tomorrow" : `${daysToNext} Days Away`}
+                    </div>
+                    <div style={{ fontSize: isMobile ? 20 : 26, fontWeight: 700, color: css.text, letterSpacing: "-0.02em", lineHeight: 1.2 }}>
+                      {nextTrip.tripName || nextTrip.trip_name || nextTrip.location || "Upcoming Trip"}
+                    </div>
+                    {nextTrip.location && <div style={{ fontSize: 13, color: css.text3, marginTop: 4 }}>{nextTrip.location}</div>}
+                  </div>
+                )}
+
+        {/* ── Upcoming Trips ── */}
+        <div className="c-a1" style={{ marginTop: 20 }}>
+          <SectionLabel action={() => setActiveView("trips")} actionLabel="View all">Upcoming Trips</SectionLabel>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {upcomingTripsFiltered.slice(0, 6).map((trip, tIdx) => {
+              const tripStart = trip.date || (trip.segments && trip.segments.map(s => s.date).filter(Boolean).sort()[0]) || "";
+              const daysAway = tripStart ? Math.max(0, Math.ceil((new Date(tripStart + "T12:00:00") - new Date()) / 86400000)) : null;
+              const confCode = trip.confirmationCode || trip.confirmation_code
+                || (trip.segments && trip.segments.map(s => s.confirmationCode).filter(Boolean)[0])
+                || (trip.bookingSource?.confirmation) || "";
+              const realSegs = (trip.segments || []).filter(s => !s._isMeta);
+              const hasFlights = realSegs.some(s => s.type === "flight");
+              const hasHotels = realSegs.some(s => s.type === "hotel" || s.type === "accommodation");
+              const hasActivities = realSegs.some(s => s.type === "activity" || s.type === "restaurant");
+              const segIconType = realSegs.length === 0 ? "pin" : hasFlights ? "flight" : hasHotels ? "hotel" : hasActivities ? "activity" : "pin";
+              const sColor = trip.status === "confirmed" ? lp.green : trip.status === "planned" ? "#F59E0B" : lp.teal;
+              const sBg = trip.status === "confirmed" ? "rgba(34,197,94,0.10)" : trip.status === "planned" ? "rgba(245,158,11,0.10)" : "rgba(14,165,160,0.10)";
+              return (
+                <div key={trip.id} onClick={() => { setTripDetailId(trip.id); setTripDetailSegIdx(0); setActiveView("trips"); }}
+                  style={{ padding: "16px 20px", borderRadius: css.radius, background: css.surface, border: `1px solid ${css.border}`, boxShadow: css.shadow, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, transition: "all 0.15s ease" }}
+                  onMouseEnter={e => { e.currentTarget.style.boxShadow = css.shadowHover; e.currentTarget.style.borderColor = css.accent; }}
+                  onMouseLeave={e => { e.currentTarget.style.boxShadow = css.shadow; e.currentTarget.style.borderColor = css.border; }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 10, background: `${lp.teal}15`, border: `1px solid ${lp.teal}30`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <SegIcon type={segIconType} size={18} color={lp.teal} />
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: css.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{trip.tripName || trip.trip_name || trip.route || trip.property || trip.location}</div>
+                      <div style={{ fontSize: 11, color: css.text3, marginTop: 2, display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+                        <span>{formatTripDates(trip)}</span>
+                        {trip.location && <span>· {trip.location}</span>}
+                        {confCode && <span style={{ fontFamily: lp.mono, fontWeight: 600, color: lp.text2, fontSize: 10 }}>· {confCode}</span>}
+                        {trip._shared && <span style={{ fontSize: 10, fontWeight: 600, color: "#3b82f6" }}>· Shared by {trip._sharedBy}</span>}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                    {daysAway !== null && (
+                      <span style={{ fontSize: 12, fontWeight: 700, color: daysAway <= 7 ? lp.teal : lp.text2, fontFamily: lp.mono }}>
+                        {daysAway === 0 ? "Today" : daysAway === 1 ? "Tomorrow" : `${daysAway}d`}
+                      </span>
+                    )}
+                    {trip._shared && <span style={{ fontSize: 9, fontWeight: 600, color: "#3b82f6", background: "rgba(59,130,246,0.1)", padding: "3px 8px", borderRadius: 4, border: "1px solid rgba(59,130,246,0.2)" }}>Shared</span>}
+                    <span style={{ fontSize: 9, fontWeight: 700, color: sColor, background: sBg, padding: "4px 10px", borderRadius: 6, textTransform: "uppercase", letterSpacing: "0.06em", border: `1px solid ${sColor}30` }}>{trip.status}</span>
+                  </div>
+                </div>
+              );
+            })}
+            {upcomingTripsFiltered.length === 0 && (
+              <div style={{ padding: "40px 20px", textAlign: "center", borderRadius: 14, background: lp.surface, border: `1px solid ${lp.border}` }}>
+                <p style={{ fontSize: 13, color: lp.dim, marginBottom: 12 }}>No upcoming trips</p>
+                <button onClick={() => setShowCreateTrip(true)} style={{ background: lp.teal, border: "none", color: "#fff", cursor: "pointer", fontWeight: 600, fontSize: 13, fontFamily: lp.sans, padding: "10px 22px", borderRadius: 10 }}>+ Add your first trip</button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── Trip Highlights — vertical list with horizontal landmark scroll ── */}
+        {upcomingTripsFiltered.length > 0 && (() => {
+          // Extract unique destination cities from flight segments
+          const IATA_CITY = { JFK: "New York", LAX: "Los Angeles", SFO: "San Francisco", ORD: "Chicago", MIA: "Miami", LHR: "London", CDG: "Paris", NRT: "Tokyo", HND: "Tokyo", KIX: "Osaka", ICN: "Seoul", SIN: "Singapore", HKG: "Hong Kong", DXB: "Dubai", FCO: "Rome", BCN: "Barcelona", AMS: "Amsterdam", FRA: "Frankfurt", IST: "Istanbul", BKK: "Bangkok", SYD: "Sydney", YYZ: "Toronto", MEX: "Mexico City", GRU: "Sao Paulo", DEL: "Delhi", BOM: "Mumbai", PEK: "Beijing", PVG: "Shanghai", TPE: "Taipei", CAN: "Guangzhou", KUL: "Kuala Lumpur", MNL: "Manila", CGK: "Jakarta", DOH: "Doha", AUH: "Abu Dhabi", JNB: "Johannesburg", CAI: "Cairo", ATH: "Athens", LIS: "Lisbon", MAD: "Madrid", MUC: "Munich", ZRH: "Zurich", VIE: "Vienna", CPH: "Copenhagen", OSL: "Oslo", ARN: "Stockholm", HEL: "Helsinki", WAW: "Warsaw", PRG: "Prague", BUD: "Budapest", DUB: "Dublin", EDI: "Edinburgh", BER: "Berlin", MXP: "Milan", VCE: "Venice", NAP: "Naples", ATL: "Atlanta", DFW: "Dallas", DEN: "Denver", SEA: "Seattle", BOS: "Boston", IAD: "Washington DC", PHL: "Philadelphia", MSP: "Minneapolis", DTW: "Detroit", CLT: "Charlotte", PHX: "Phoenix", TPA: "Tampa", MCO: "Orlando", FLL: "Fort Lauderdale", SAN: "San Diego", PDX: "Portland", HNL: "Honolulu", ANC: "Anchorage", BDA: "Bermuda", NAS: "Nassau", MBJ: "Montego Bay", CUN: "Cancun", LIM: "Lima", SCL: "Santiago", EZE: "Buenos Aires", BOG: "Bogota", PTY: "Panama City", SJU: "San Juan", STT: "St Thomas", SXM: "St Maarten" };
+          const CITY_LANDMARKS = {
+            "New York": ["Statue of Liberty", "Central Park", "Times Square", "Brooklyn Bridge", "Empire State Building"],
+            "London": ["Big Ben", "Tower Bridge", "Buckingham Palace", "British Museum", "Hyde Park"],
+            "Paris": ["Eiffel Tower", "Louvre Museum", "Arc de Triomphe", "Notre-Dame", "Montmartre"],
+            "Tokyo": ["Shibuya Crossing", "Senso-ji Temple", "Tokyo Tower", "Meiji Shrine", "Tsukiji Market"],
+            "Osaka": ["Osaka Castle", "Dotonbori", "Universal Studios", "Shinsekai", "Namba"],
+            "Seoul": ["Gyeongbokgung Palace", "Bukchon Hanok Village", "Myeongdong", "N Seoul Tower", "Hongdae"],
+            "Singapore": ["Marina Bay Sands", "Gardens by the Bay", "Sentosa Island", "Chinatown", "Orchard Road"],
+            "Hong Kong": ["Victoria Peak", "Star Ferry", "Temple Street", "Tian Tan Buddha", "Mong Kok"],
+            "Dubai": ["Burj Khalifa", "Palm Jumeirah", "Dubai Mall", "Gold Souk", "Dubai Marina"],
+            "Rome": ["Colosseum", "Vatican City", "Trevi Fountain", "Pantheon", "Spanish Steps"],
+            "Barcelona": ["Sagrada Familia", "Park Guell", "La Rambla", "Casa Batllo", "Gothic Quarter"],
+            "Amsterdam": ["Anne Frank House", "Rijksmuseum", "Canal Cruise", "Vondelpark", "Dam Square"],
+            "Istanbul": ["Hagia Sophia", "Blue Mosque", "Grand Bazaar", "Topkapi Palace", "Bosphorus Cruise"],
+            "Bangkok": ["Grand Palace", "Wat Pho", "Chatuchak Market", "Khao San Road", "Jim Thompson House"],
+            "Sydney": ["Opera House", "Harbour Bridge", "Bondi Beach", "Taronga Zoo", "The Rocks"],
+            "Bermuda": ["Horseshoe Bay", "Crystal Caves", "Royal Naval Dockyard", "St George", "Gibbs Hill Lighthouse"],
+            "Miami": ["South Beach", "Wynwood Walls", "Art Deco District", "Brickell", "Little Havana"],
+            "Los Angeles": ["Hollywood Sign", "Santa Monica Pier", "Griffith Observatory", "Venice Beach", "Getty Center"],
+            "San Francisco": ["Golden Gate Bridge", "Alcatraz Island", "Fishermans Wharf", "Chinatown", "Cable Cars"],
+            "Chicago": ["Millennium Park", "Willis Tower", "Navy Pier", "Art Institute", "Magnificent Mile"],
+            "Honolulu": ["Waikiki Beach", "Diamond Head", "Pearl Harbor", "North Shore", "Ala Moana"],
+            "Cancun": ["Chichen Itza", "Isla Mujeres", "Xcaret Park", "Tulum Ruins", "Cenotes"],
+            "Nassau": ["Atlantis Resort", "Cable Beach", "Fort Charlotte", "Blue Lagoon", "Junkanoo Beach"],
+            "Taipei": ["Taipei 101", "Jiufen Old Street", "Shilin Night Market", "National Palace Museum", "Elephant Mountain"],
+            "Washington DC": ["Lincoln Memorial", "Capitol Building", "Smithsonian", "Georgetown", "National Mall"],
+            "Boston": ["Freedom Trail", "Fenway Park", "Harvard Yard", "Boston Common", "Faneuil Hall"],
+            "Seattle": ["Space Needle", "Pike Place Market", "Chihuly Garden", "Museum of Pop Culture", "Kerry Park"],
+            "Toronto": ["CN Tower", "Royal Ontario Museum", "Distillery District", "Kensington Market", "Toronto Islands"],
+          };
+          // Normalize city name lookups (handle "New York City" -> "New York" etc.)
+          const normalizeCity = (name) => {
+            const map = { "New York City": "New York", "NYC": "New York", "LA": "Los Angeles", "SF": "San Francisco", "DC": "Washington DC", "Washington": "Washington DC" };
+            return map[name] || name;
+          };
+          // Photos come from Google Places API — fetched dynamically
+          return (
+            <div className="c-a2" style={{ marginTop: 32 }}>
+              <SectionLabel>Trip Highlights</SectionLabel>
+              <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+                {upcomingTripsFiltered.slice(0, 6).map((trip, tIdx) => {
+                  const realSegs = (trip.segments || []).filter(s => !s._isMeta);
+                  const flights = realSegs.filter(s => s.type === "flight");
+                  // Collect unique destination cities from flight segments
+                  // Find origin city (first departure) and final return (last arrival) to exclude
+                  const sortedFlights = [...flights].sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+                  const homeCode = sortedFlights.length > 0 ? (sortedFlights[0].departureAirport?.toUpperCase() || sortedFlights[0].route?.split(/[→\-–>\/]/)[0]?.trim()?.toUpperCase()) : null;
+                  const returnCode = sortedFlights.length > 0 ? (sortedFlights[sortedFlights.length - 1].arrivalAirport?.toUpperCase() || sortedFlights[sortedFlights.length - 1].route?.split(/[→\-–>\/]/).pop()?.trim()?.toUpperCase()) : null;
+                  const homeCodes = new Set([homeCode, returnCode].filter(Boolean));
+
+                  // Collect all airport codes from flights
+                  const allCodes = new Set();
+                  flights.forEach(f => {
+                    if (f.arrivalAirport) allCodes.add(f.arrivalAirport.toUpperCase());
+                    if (f.departureAirport) allCodes.add(f.departureAirport.toUpperCase());
+                    if (f.route) {
+                      f.route.split(/[→\-–>\/]/).map(s => s.trim().toUpperCase()).filter(s => s.length === 3 && /^[A-Z]{3}$/.test(s)).forEach(code => allCodes.add(code));
+                    }
+                  });
+
+                  // Remove home/origin airports — keep only destination cities
+                  homeCodes.forEach(code => allCodes.delete(code));
+
+                  const cities = [...allCodes].map(code => IATA_CITY[code]).filter(Boolean);
+
+                  // Also check non-flight segments for location-based cities
+                  realSegs.filter(s => s.type !== "flight").forEach(s => {
+                    if (s.location) {
+                      s.location.split(/[,\/]/).map(p => p.trim()).filter(Boolean).forEach(loc => {
+                        const n = normalizeCity(loc);
+                        if (CITY_LANDMARKS[n] && !cities.includes(n)) cities.push(n);
+                      });
+                    }
+                  });
+
+                  // Also parse trip.location for additional cities
+                  if (trip.location) {
+                    trip.location.split(/[,\/]/).map(s => s.trim()).filter(Boolean).forEach(loc => {
+                      const normalized = normalizeCity(loc);
+                      // Skip if it matches the home city
+                      const homeCity = homeCode ? IATA_CITY[homeCode] : null;
+                      if (normalized !== homeCity && !cities.includes(normalized)) cities.push(normalized);
+                    });
+                  }
+                  const uniqueCities = [...new Set(cities)];
+                  // Build landmark cards
+                  const landmarks = [];
+                  const CITY_PHOTOS = {
+                      "New York": "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=400&q=80&auto=format&fit=crop",
+                      "London": "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=400&q=80&auto=format&fit=crop",
+                      "Paris": "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400&q=80&auto=format&fit=crop",
+                      "Tokyo": "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&q=80&auto=format&fit=crop",
+                      "Osaka": "https://images.unsplash.com/photo-1590559899731-a382839e5549?w=400&q=80&auto=format&fit=crop",
+                      "Seoul": "https://images.unsplash.com/photo-1546874177-9e664107314e?w=400&q=80&auto=format&fit=crop",
+                      "Singapore": "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=400&q=80&auto=format&fit=crop",
+                      "Hong Kong": "https://images.unsplash.com/photo-1536599018102-9f803c140fc1?w=400&q=80&auto=format&fit=crop",
+                      "Dubai": "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=400&q=80&auto=format&fit=crop",
+                      "Rome": "https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=400&q=80&auto=format&fit=crop",
+                      "Barcelona": "https://images.unsplash.com/photo-1583779457094-ab6f77f7bf57?w=400&q=80&auto=format&fit=crop",
+                      "Amsterdam": "https://images.unsplash.com/photo-1534351590666-13e3e96b5017?w=400&q=80&auto=format&fit=crop",
+                      "Istanbul": "https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?w=400&q=80&auto=format&fit=crop",
+                      "Bangkok": "https://images.unsplash.com/photo-1563492065599-3520f775eeed?w=400&q=80&auto=format&fit=crop",
+                      "Sydney": "https://images.unsplash.com/photo-1523482580672-f109ba8cb9be?w=400&q=80&auto=format&fit=crop",
+                      "Bermuda": "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=400&q=80&auto=format&fit=crop",
+                      "Miami": "https://images.unsplash.com/photo-1535498730771-e735b998cd64?w=400&q=80&auto=format&fit=crop",
+                      "Los Angeles": "https://images.unsplash.com/photo-1534190760961-74e8c1c5c3da?w=400&q=80&auto=format&fit=crop",
+                      "San Francisco": "https://images.unsplash.com/photo-1449034446853-66c86144b0ad?w=400&q=80&auto=format&fit=crop",
+                      "Chicago": "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=400&q=80&auto=format&fit=crop",
+                      "Honolulu": "https://images.unsplash.com/photo-1507876466758-bc54f384809c?w=400&q=80&auto=format&fit=crop",
+                      "Taipei": "https://images.unsplash.com/photo-1508248467877-aec1e22e0e68?w=400&q=80&auto=format&fit=crop",
+                      "Cancun": "https://images.unsplash.com/photo-1518638150340-f706e86654de?w=400&q=80&auto=format&fit=crop",
+                      "Vancouver": "https://images.unsplash.com/photo-1559511260-66a68e7e9b97?w=400&q=80&auto=format&fit=crop",
+                      "Montreal": "https://images.unsplash.com/photo-1519178614-68673b201f36?w=400&q=80&auto=format&fit=crop",
+                      "Nashville": "https://images.unsplash.com/photo-1545419913-775cae67e15f?w=400&q=80&auto=format&fit=crop",
+                      "Fort Lauderdale": "https://images.unsplash.com/photo-1591792111137-5b8219d5fad6?w=400&q=80&auto=format&fit=crop",
+                      "Washington DC": "https://images.unsplash.com/photo-1501466044931-62695aada8e9?w=400&q=80&auto=format&fit=crop",
+                      "Jersey City": "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=400&q=80&auto=format&fit=crop",
+                  };
+                  uniqueCities.forEach(city => {
+                    const normalCity = normalizeCity(city);
+                    const cityLandmarks = CITY_LANDMARKS[normalCity] || [`Visit ${city}`];
+                    const defaultCityPhoto = CITY_PHOTOS[normalCity] || "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=400&q=80&auto=format&fit=crop";
+                    cityLandmarks.forEach(lm => {
+                      const photoKey = `${lm}, ${normalCity}`;
+                      landmarks.push({ city: normalCity, name: lm, photo: landmarkPhotos[photoKey] || null, _fetchKey: photoKey, _lm: lm, _city: normalCity });
+                    });
+                  });
+                  if (landmarks.length === 0 && trip.location) {
+                    const loc = normalizeCity(trip.location.split(",")[0].trim());
+                    landmarks.push({ city: loc, name: `Visit ${loc}`, photo: landmarkPhotos[`${loc}, `] || CITY_PHOTOS[loc] || "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=400&q=80&auto=format&fit=crop", _fetchKey: `${loc}, `, _lm: loc, _city: "" });
+                  }
+                  return (
+                    <div key={trip.id}>
+                      {/* Trip header */}
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: css.text }}>{trip.tripName || trip.trip_name || trip.location || "Trip"}</div>
+                        <span style={{ fontSize: 11, color: css.text3 }}>{formatTripDates(trip)}</span>
+                        {uniqueCities.length > 0 && <span style={{ fontSize: 11, color: css.accent, fontWeight: 600, textShadow: "0 0 8px rgba(255,255,255,0.9)" }}>{uniqueCities.join(" · ")}</span>}
+                      </div>
+                      {/* Horizontal scrolling landmark cards */}
+                      <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 8, scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch", marginLeft: isMobile ? -16 : 0, marginRight: isMobile ? -16 : 0, paddingLeft: isMobile ? 16 : 0, paddingRight: isMobile ? 16 : 0 }}>
+                        {landmarks.slice(0, 10).map((lm, li) => (
+                          <div key={li} style={{ minWidth: isMobile ? 200 : 220, maxWidth: isMobile ? 200 : 220, borderRadius: 12, overflow: "hidden", background: css.surface, border: `1px solid ${css.border}`, flexShrink: 0, scrollSnapAlign: "start", transition: "transform 0.15s" }}>
+                            <div style={{ height: 140, position: "relative", overflow: "hidden", background: D ? "#222" : "#f0f0f0" }}>
+                              {lm.photo ? (
+                                <img src={lm.photo} alt={lm.name} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                              ) : (
+                                <div style={{ width: "100%", height: "100%", background: `linear-gradient(135deg, ${D ? "#1a1a1a" : "#e8e8e8"} 25%, ${D ? "#222" : "#f2f2f2"} 50%, ${D ? "#1a1a1a" : "#e8e8e8"} 75%)`, backgroundSize: "200% 100%", animation: "c-shimmer 1.5s ease-in-out infinite", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                  <span style={{ fontSize: 10, color: css.text3, opacity: 0.5 }}>Loading...</span>
+                                </div>
+                              )}
+                              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "24px 10px 8px", background: "linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.6) 100%)" }}>
+                                <div style={{ fontSize: 12, fontWeight: 600, color: "#fff" }}>{lm.name}</div>
+                              </div>
+                            </div>
+                            <div style={{ padding: "8px 10px" }}>
+                              <div style={{ fontSize: 10, color: css.text3, fontWeight: 500 }}>{lm.city}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
+
+        </>}
+
+        {/* ── Inbox Tab — Booking + Expense Inboxes ── */}
+        {dashSubTab === "inbox" && (
+          <div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: css.text, margin: 0, letterSpacing: "-0.01em" }}>Booking Inbox</h3>
+              {savedItineraries.length > 0 && (
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#fff", background: lp.teal, borderRadius: 10, padding: "2px 8px", minWidth: 18, textAlign: "center" }}>{savedItineraries.length}</span>
+              )}
+            </div>
+            <button onClick={() => setShowPasteItinerary(true)} style={{
+              padding: "8px 16px", border: `1px solid ${lp.teal}`, background: "transparent", color: lp.teal,
+              fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: lp.sans, borderRadius: 0,
+              transition: "all 0.12s ease", textTransform: "uppercase", letterSpacing: "0.04em",
+            }} onMouseEnter={e => { e.currentTarget.style.background = lp.teal; e.currentTarget.style.color = "#fff"; }} onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = lp.teal; }}>
+              + Add Booking
+            </button>
+          </div>
+          {/* Forwarding address */}
+          {userForwardingAddress && (
+            <div style={{ marginBottom: 14, padding: "10px 14px", borderRadius: 10, background: lp.surface, border: `1px solid ${lp.border}`, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={lp.dim} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              <span style={{ fontSize: 11, color: lp.dim }}>Forward bookings to:</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: lp.teal, fontFamily: lp.mono, cursor: "pointer", wordBreak: "break-all" }}
+                onClick={() => { navigator.clipboard?.writeText(`${userForwardingAddress}@trips.gocontinuum.app`); }}
+                title="Click to copy">
+                {userForwardingAddress}@trips.gocontinuum.app
+              </span>
+              <span style={{ fontSize: 10, color: lp.dim }}>tap to copy</span>
+            </div>
+          )}
+
+          {savedItineraries.length > 0 ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {savedItineraries.map(itin => {
+                const segs = itin.parsed_segments || [];
+                const flights = segs.filter(s => s.type === "flight");
+                const hotels = segs.filter(s => s.type === "hotel");
+                const isHotel = hotels.length > 0 && flights.length === 0;
+                const firstDate = segs.map(s => s.date).filter(Boolean).sort()[0];
+                const isExpanded = expandedItinId === itin.id;
+                const updateItinSeg = (segIdx, updates) => {
+                  setSavedItineraries(prev => prev.map(it => it.id !== itin.id ? it : {
+                    ...it, parsed_segments: it.parsed_segments.map((s, i) => i === segIdx ? { ...s, ...updates } : s),
+                  }));
+                };
+                return (
+                  <div key={itin.id} style={{ borderRadius: 12, background: lp.surface, border: `1px solid ${lp.border}`, overflow: "hidden", transition: "all 0.2s ease" }}>
+                    {/* Header row */}
+                    <div style={{ padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, cursor: "pointer" }}
+                      onClick={() => setExpandedItinId(isExpanded ? null : itin.id)}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                          <SegIcon type={isHotel ? "hotel" : "flight"} size={16} color={lp.teal} />
+                          <span style={{ fontSize: 13, fontWeight: 600, color: lp.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {isHotel ? (hotels[0]?.property || itin.subject || "Hotel") : (itin.subject || "Booking")}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: 11, color: lp.dim, display: "flex", gap: 10, flexWrap: "wrap" }}>
+                          {itin.confirmation_code && <span style={{ fontFamily: lp.mono, fontWeight: 600, color: lp.text2 }}>{itin.confirmation_code}</span>}
+                          {isHotel && hotels[0]?.date && <span>{new Date(hotels[0].date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })} – {hotels[0].checkoutDate ? new Date(hotels[0].checkoutDate + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}</span>}
+                          {isHotel && hotels[0]?.nights && <span>{hotels[0].nights} night{hotels[0].nights > 1 ? "s" : ""}</span>}
+                          {flights.length > 0 && <span>{flights.length} flight{flights.length > 1 ? "s" : ""}</span>}
+                          {firstDate && !isHotel && <span>{new Date(firstDate + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>}
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", gap: 6, flexShrink: 0, alignItems: "center" }}>
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ transform: isExpanded ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
+                          <path d="M4 6l4 4 4-4" stroke={lp.dim} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </div>
+                    </div>
+                    {/* Expanded detail + edit */}
+                    {isExpanded && (
+                      <div style={{ padding: "0 18px 16px", borderTop: `1px solid ${lp.border}` }}>
+                        {segs.map((seg, segIdx) => (
+                          <div key={segIdx} style={{ padding: "12px 0", borderBottom: segIdx < segs.length - 1 ? `1px solid ${lp.border}` : "none" }}>
+                            <div style={{ fontSize: 10, fontWeight: 700, color: lp.teal, textTransform: "uppercase", marginBottom: 8 }}>{seg.type === "hotel" ? "Hotel" : "Flight"}</div>
+                            {seg.type === "hotel" ? (
+                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                                {[
+                                  { key: "property", label: "Property" },
+                                  { key: "location", label: "Address" },
+                                  { key: "date", label: "Check-in", type: "date" },
+                                  { key: "checkoutDate", label: "Check-out", type: "date" },
+                                  { key: "roomType", label: "Room Type" },
+                                  { key: "nights", label: "Nights", type: "number" },
+                                  { key: "confirmationCode", label: "Confirmation" },
+                                  { key: "totalCost", label: "Total Cost" },
+                                ].map(f => (
+                                  <div key={f.key}>
+                                    <label style={{ fontSize: 9, fontWeight: 700, color: lp.dim, textTransform: "uppercase", letterSpacing: "0.06em" }}>{f.label}</label>
+                                    <input type={f.type || "text"} value={seg[f.key] || ""} onChange={e => updateItinSeg(segIdx, { [f.key]: e.target.value })}
+                                      style={{ display: "block", width: "100%", padding: "6px 8px", background: D ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)", border: `1px solid ${lp.border}`, borderRadius: 6, color: lp.text, fontSize: 12, fontFamily: f.key === "confirmationCode" ? lp.mono : "inherit", outline: "none", boxSizing: "border-box", marginTop: 2 }} />
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                                {[
+                                  { key: "flightNumber", label: "Flight #" },
+                                  { key: "route", label: "Route" },
+                                  { key: "date", label: "Date", type: "date" },
+                                  { key: "confirmationCode", label: "Confirmation" },
+                                  { key: "departureTime", label: "Departs", type: "time" },
+                                  { key: "arrivalTime", label: "Arrives", type: "time" },
+                                ].map(f => (
+                                  <div key={f.key}>
+                                    <label style={{ fontSize: 9, fontWeight: 700, color: lp.dim, textTransform: "uppercase", letterSpacing: "0.06em" }}>{f.label}</label>
+                                    <input type={f.type || "text"} value={seg[f.key] || ""} onChange={e => updateItinSeg(segIdx, { [f.key]: e.target.value })}
+                                      style={{ display: "block", width: "100%", padding: "6px 8px", background: D ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)", border: `1px solid ${lp.border}`, borderRadius: 6, color: lp.text, fontSize: 12, fontFamily: f.key === "confirmationCode" || f.key === "flightNumber" ? lp.mono : "inherit", outline: "none", boxSizing: "border-box", marginTop: 2 }} />
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                        {/* Action buttons */}
+                        <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+                          <button onClick={() => addTripFromItinerary(itin)} style={{
+                            padding: "8px 16px", borderRadius: 8, border: "none",
+                            background: lp.teal, color: "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer",
+                          }}>Create New Trip</button>
+                          {trips.length > 0 && (
+                            <select onChange={async e => {
+                              const tripId = e.target.value;
+                              if (!tripId) return;
+                              const trip = trips.find(t => t.id === tripId);
+                              if (!trip) return;
+                              const newSegs = (itin.parsed_segments || []).map(s => ({
+                                ...defaultSegment(), _id: crypto.randomUUID(),
+                                type: s.type || "flight",
+                                property: s.property || "", location: s.location || "",
+                                date: s.date || "", checkoutDate: s.checkoutDate || "",
+                                nights: s.nights || 1, roomType: s.roomType || "",
+                                totalCost: s.totalCost || "", confirmationCode: s.confirmationCode || "",
+                                route: s.route || "", flightNumber: s.flightNumber || "",
+                                departureTime: s.departureTime || "", arrivalTime: s.arrivalTime || "",
+                                fareClass: s.fareClass || "", bookingClass: s.bookingClass || "",
+                                seat: s.seat || "", class: s.class || "",
+                              }));
+                              const existingSegs = trip.segments && trip.segments.length > 0 ? trip.segments : [];
+                              const mergedSegs = [...existingSegs, ...newSegs].sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999"));
+                              if (user) {
+                                await supabase.from("trips").update({ segments: mergedSegs }).eq("id", tripId).eq("user_id", user.id);
+                                await supabase.from("itineraries").update({ status: "added", trip_id: tripId }).eq("id", itin.id);
+                                loadTrips(user.id);
+                                setSavedItineraries(prev => prev.filter(i => i.id !== itin.id));
+                                setExpandedItinId(null);
+                              }
+                              e.target.value = "";
+                            }} style={{ padding: "8px 12px", borderRadius: 8, border: `1px solid ${lp.border2}`, background: "transparent", color: lp.dim, fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>
+                              <option value="">Add to existing trip...</option>
+                              {trips.slice(0, 20).map(t => <option key={t.id} value={t.id}>{t.tripName || t.trip_name || t.route || t.property || "Trip"}</option>)}
+                            </select>
+                          )}
+                          <button onClick={() => dismissItinerary(itin.id)} style={{
+                            padding: "8px 12px", borderRadius: 8, border: `1px solid ${lp.border2}`,
+                            background: "transparent", color: lp.dim, fontSize: 11, fontWeight: 500, cursor: "pointer",
+                          }}>Dismiss</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div style={{ padding: "32px 20px", textAlign: "center", borderRadius: css.radius, background: css.surface, boxShadow: css.shadow }}>
+              <p style={{ fontSize: 13, color: css.text3, margin: "0 0 4px" }}>No bookings in inbox</p>
+              <p style={{ fontSize: 12, color: css.text3, margin: 0 }}>Forward a confirmation email to trips@gocontinuum.app</p>
+            </div>
+          )}
+
+        {/* ── Expense Inbox — unassigned expenses ── */}
+        {(() => {
+          const inboxExpenses = expenses.filter(e => !e.tripId);
+          return (
+            <div className="c-a2" style={{ marginTop: 32 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <h3 style={{ fontSize: 14, fontWeight: 700, color: css.text, margin: 0, letterSpacing: "-0.01em" }}>Expense Inbox</h3>
+                  {inboxExpenses.length > 0 && <span style={{ fontSize: 10, fontWeight: 700, color: lp.teal, background: lp.tealDim, padding: "2px 8px", borderRadius: 10 }}>{inboxExpenses.length}</span>}
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => setShowReceiptQR(true)} style={{
+                    padding: "8px 14px", border: `1px solid ${css.border}`, background: css.surface, color: css.text2,
+                    fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: lp.sans, borderRadius: 8,
+                    transition: "all 0.12s ease", display: "flex", alignItems: "center", gap: 6,
+                  }} onMouseEnter={e => { e.currentTarget.style.borderColor = css.accent; e.currentTarget.style.color = css.accent; }} onMouseLeave={e => { e.currentTarget.style.borderColor = css.border; e.currentTarget.style.color = css.text2; }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                    Receipt QR
+                  </button>
+                  <button onClick={() => { setShowAddExpense("_inbox"); setNewExpense(BLANK_EXPENSE); setEditExpenseId(null); }} style={{
+                    padding: "8px 16px", border: `1px solid ${lp.teal}`, background: "transparent", color: lp.teal,
+                    fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: lp.sans, borderRadius: 0,
+                    transition: "all 0.12s ease", textTransform: "uppercase", letterSpacing: "0.04em",
+                  }} onMouseEnter={e => { e.currentTarget.style.background = lp.teal; e.currentTarget.style.color = "#fff"; }} onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = lp.teal; }}>
+                    + Add Expense
+                  </button>
+                </div>
+              </div>
+              {userForwardingAddress && (
+                <div style={{ marginBottom: 14, padding: "10px 14px", borderRadius: 10, background: lp.surface, border: `1px solid ${lp.border}`, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={lp.dim} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                  <span style={{ fontSize: 11, color: lp.dim }}>Forward receipts to:</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: lp.teal, fontFamily: lp.mono, cursor: "pointer", wordBreak: "break-all" }}
+                    onClick={() => { navigator.clipboard?.writeText("expenses@gocontinuum.app"); }}
+                    title="Click to copy">
+                    expenses@gocontinuum.app
+                  </span>
+                  <span style={{ fontSize: 10, color: lp.dim }}>tap to copy</span>
+                </div>
+              )}
+              {inboxExpenses.length > 0 ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {inboxExpenses.map(exp => {
+                    const cat = EXPENSE_CATEGORIES.find(c => c.id === exp.category);
+                    return (
+                      <div key={exp.id} style={{ background: lp.surface, border: `1px solid ${lp.border}`, borderRadius: 12, padding: isMobile ? "12px" : "12px 16px" }} onClick={() => setViewExpenseId(exp.id)}>
+                        {/* Top row: description + amount */}
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3, flexWrap: "wrap" }}>
+                              {cat && <span style={{ fontSize: 9, fontWeight: 700, color: cat.color, background: `${cat.color}15`, padding: "2px 6px", borderRadius: 4 }}>{cat.label}</span>}
+                              <span style={{ fontSize: isMobile ? 12 : 13, fontWeight: 600, color: lp.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.description || "Expense"}</span>
+                            </div>
+                            <div style={{ fontSize: 11, color: lp.dim, display: "flex", gap: 6, flexWrap: "wrap" }}>
+                              {exp.date && <span>{new Date(exp.date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>}
+                              {exp.receipt && <span style={{ color: "#22c55e" }}>Receipt</span>}
+                            </div>
+                          </div>
+                          <div style={{ textAlign: "right", flexShrink: 0 }}>
+                            <div style={{ fontSize: isMobile ? 13 : 14, fontWeight: 700, color: lp.text, fontFamily: lp.mono }}>{exp.amount?.toLocaleString(undefined, { minimumFractionDigits: 2 })} {exp.currency || "USD"}</div>
+                          </div>
+                        </div>
+                        {/* Bottom row: actions */}
+                        <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }} onClick={e => e.stopPropagation()}>
+                          {trips.length > 0 && (
+                            <select onChange={async e => {
+                              const tripId = e.target.value; if (!tripId) return;
+                              if (user) await supabase.from("expenses").update({ trip_id: tripId }).eq("id", exp.id).eq("user_id", user.id);
+                              setExpenses(prev => prev.map(ex => ex.id === exp.id ? { ...ex, tripId } : ex));
+                              e.target.value = "";
+                            }} style={{ padding: "6px 10px", borderRadius: 6, border: `1px solid ${lp.border}`, background: "transparent", color: lp.dim, fontSize: 11, cursor: "pointer", flex: isMobile ? "1 1 auto" : "0 0 auto" }}>
+                              <option value="">Assign to trip...</option>
+                              {trips.map(t => <option key={t.id} value={t.id}>{t.tripName || t.location || "Trip"}</option>)}
+                            </select>
+                          )}
+                          <button onClick={() => setViewExpenseId(exp.id)} style={{ padding: "6px 10px", borderRadius: 6, border: `1px solid ${css.accent}30`, background: "transparent", color: css.accent, fontSize: 11, fontWeight: 600, cursor: "pointer" }}>View</button>
+                          <button onClick={() => { setEditExpenseId(exp.id); setShowAddExpense("_inbox"); setNewExpense({ ...exp, fxRate: exp.fxRate || 1 }); }} style={{ padding: "6px 10px", borderRadius: 6, border: `1px solid ${lp.border}`, background: "transparent", color: lp.dim, fontSize: 11, cursor: "pointer" }}>Edit</button>
+                          <button onClick={() => removeExpense(exp.id)} style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid rgba(239,68,68,0.2)", background: "transparent", color: "#ef4444", fontSize: 11, cursor: "pointer" }}>x</button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div style={{ padding: "24px 20px", textAlign: "center", borderRadius: 14, background: lp.surface, border: `1px solid ${lp.border}` }}>
+                  <p style={{ fontSize: 13, color: lp.dim, margin: "0 0 4px" }}>No unassigned expenses</p>
+                  <p style={{ fontSize: 11, color: lp.dim, margin: 0 }}>Add receipts here and assign them to trips later</p>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
+          </div>
+        )}
+
+        {/* ── Timeline Tab — vertical chronological view ── */}
+        {dashSubTab === "timeline" && (() => {
+          const allSorted = [...upcomingTripsFiltered, ...pastTripsFiltered].sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999"));
+          const yearGroups = {};
+          allSorted.forEach(trip => {
+            const yr = (trip.date || "").slice(0, 4) || "Unknown";
+            if (!yearGroups[yr]) yearGroups[yr] = [];
+            yearGroups[yr].push(trip);
+          });
+          return (
+            <div>
+              {Object.entries(yearGroups).sort(([a], [b]) => a.localeCompare(b)).map(([year, yTrips]) => (
+                <div key={year} style={{ marginBottom: 32 }}>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: css.text, marginBottom: 16, letterSpacing: "-0.02em" }}>{year}</div>
+                  <div style={{ position: "relative", paddingLeft: 28 }}>
+                    {/* Vertical line */}
+                    <div style={{ position: "absolute", left: 7, top: 8, bottom: 8, width: 2, background: css.border, borderRadius: 1 }} />
+                    {yTrips.map((trip, idx) => {
+                      const realSegs = (trip.segments || []).filter(s => !s._isMeta);
+                      const end = getTripEndDate(trip);
+                      const isPast = end && end < todayStr;
+                      return (
+                        <div key={trip.id} style={{ position: "relative", marginBottom: idx < yTrips.length - 1 ? 20 : 0 }}>
+                          {/* Dot */}
+                          <div style={{ position: "absolute", left: -22, top: 6, width: 12, height: 12, borderRadius: "50%", background: isPast ? css.text3 : css.accent, border: `2px solid ${css.bg}` }} />
+                          <div onClick={() => { setTripDetailId(trip.id); setTripDetailSegIdx(0); setActiveView("trips"); }}
+                            style={{ padding: "14px 18px", borderRadius: 12, background: css.surface, border: `1px solid ${css.border}`, cursor: "pointer", transition: "all 0.15s" }}
+                            onMouseEnter={e => { e.currentTarget.style.borderColor = css.accent; e.currentTarget.style.boxShadow = css.shadowHover; }}
+                            onMouseLeave={e => { e.currentTarget.style.borderColor = css.border; e.currentTarget.style.boxShadow = "none"; }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: 14, fontWeight: 600, color: isPast ? css.text2 : css.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                  {trip.tripName || trip.trip_name || trip.location || "Trip"}
+                                </div>
+                                <div style={{ fontSize: 11, color: css.text3, marginTop: 3, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                                  <span>{formatTripDates(trip)}</span>
+                                  {trip.location && <span>· {trip.location}</span>}
+                                  {realSegs.length > 0 && <span>· {realSegs.length} segment{realSegs.length > 1 ? "s" : ""}</span>}
+                                </div>
+                              </div>
+                              <span style={{ fontSize: 9, fontWeight: 700, color: isPast ? css.text3 : (trip.status === "confirmed" ? lp.green : "#F59E0B"), textTransform: "uppercase", letterSpacing: "0.06em", flexShrink: 0 }}>
+                                {isPast ? "Past" : trip.status}
+                              </span>
+                            </div>
+                            {/* Segment type pills */}
+                            {realSegs.length > 0 && (
+                              <div style={{ display: "flex", gap: 4, marginTop: 8, flexWrap: "wrap" }}>
+                                {[...new Set(realSegs.map(s => s.type))].map(type => (
+                                  <span key={type} style={{ fontSize: 10, color: css.text2, background: css.surface2, padding: "2px 8px", borderRadius: 4, textTransform: "capitalize" }}>{type}</span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+              {allSorted.length === 0 && (
+                <div style={{ padding: "40px 20px", textAlign: "center", borderRadius: 14, background: css.surface, border: `1px solid ${css.border}` }}>
+                  <p style={{ fontSize: 13, color: css.text3 }}>No trips to show on timeline</p>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
+        {/* ── Reports Tab — expense summaries ── */}
+        {dashSubTab === "reports" && (() => {
+          const totalSpent = expenses.reduce((sum, e) => sum + (e.usdReimbursement ? parseFloat(e.usdReimbursement) : (e.amount || 0)), 0);
+          const catBreakdown = EXPENSE_CATEGORIES.map(cat => ({
+            ...cat,
+            total: expenses.filter(e => e.category === cat.id).reduce((sum, e) => sum + (e.usdReimbursement ? parseFloat(e.usdReimbursement) : (e.amount || 0)), 0),
+            count: expenses.filter(e => e.category === cat.id).length,
+          })).filter(c => c.count > 0).sort((a, b) => b.total - a.total);
+          const tripCosts = trips.map(trip => {
+            const tripExpenses = expenses.filter(e => e.tripId === trip.id || e.trip_id === trip.id);
+            return { ...trip, total: tripExpenses.reduce((sum, e) => sum + (e.usdReimbursement ? parseFloat(e.usdReimbursement) : (e.amount || 0)), 0), count: tripExpenses.length };
+          }).filter(t => t.count > 0).sort((a, b) => b.total - a.total);
+          const maxCatTotal = catBreakdown.length > 0 ? catBreakdown[0].total : 1;
+          return (
+            <div>
+              {/* Summary cards */}
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(3, 1fr)", gap: 12, marginBottom: 28 }}>
+                <div style={{ padding: "18px 20px", borderRadius: 12, background: css.surface, border: `1px solid ${css.border}` }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Total Spent</div>
+                  <div style={{ fontSize: 24, fontWeight: 700, color: css.text, fontFamily: lp.mono }}>${totalSpent.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                </div>
+                <div style={{ padding: "18px 20px", borderRadius: 12, background: css.surface, border: `1px solid ${css.border}` }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Expenses</div>
+                  <div style={{ fontSize: 24, fontWeight: 700, color: css.text }}>{expenses.length}</div>
+                </div>
+                <div style={{ padding: "18px 20px", borderRadius: 12, background: css.surface, border: `1px solid ${css.border}` }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Categories</div>
+                  <div style={{ fontSize: 24, fontWeight: 700, color: css.text }}>{catBreakdown.length}</div>
+                </div>
+              </div>
+
+              {/* Spending by category */}
+              {catBreakdown.length > 0 && (
+                <div style={{ marginBottom: 28 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: css.text, marginBottom: 14 }}>Spending by Category</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {catBreakdown.map(cat => (
+                      <div key={cat.id} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <div style={{ width: 80, fontSize: 11, fontWeight: 600, color: css.text2, flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{cat.label}</div>
+                        <div style={{ flex: 1, height: 8, borderRadius: 4, background: css.surface2, overflow: "hidden" }}>
+                          <div style={{ width: `${(cat.total / maxCatTotal) * 100}%`, height: "100%", borderRadius: 4, background: cat.color, transition: "width 0.6s ease" }} />
+                        </div>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: css.text, fontFamily: lp.mono, flexShrink: 0, minWidth: 70, textAlign: "right" }}>${cat.total.toLocaleString(undefined, { minimumFractionDigits: 0 })}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Cost by trip */}
+              {tripCosts.length > 0 && (
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: css.text, marginBottom: 14 }}>Cost by Trip</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {tripCosts.slice(0, 10).map(trip => (
+                      <div key={trip.id} onClick={() => { setTripDetailId(trip.id); setTripDetailSegIdx(0); setActiveView("trips"); }}
+                        style={{ padding: "12px 16px", borderRadius: 12, background: css.surface, border: `1px solid ${css.border}`, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", transition: "all 0.15s" }}
+                        onMouseEnter={e => e.currentTarget.style.borderColor = css.accent}
+                        onMouseLeave={e => e.currentTarget.style.borderColor = css.border}>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: css.text }}>{trip.tripName || trip.trip_name || trip.location || "Trip"}</div>
+                          <div style={{ fontSize: 11, color: css.text3, marginTop: 2 }}>{trip.count} expense{trip.count > 1 ? "s" : ""} · {formatTripDates(trip)}</div>
+                        </div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: css.text, fontFamily: lp.mono }}>${trip.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {expenses.length === 0 && (
+                <div style={{ padding: "40px 20px", textAlign: "center", borderRadius: 14, background: css.surface, border: `1px solid ${css.border}` }}>
+                  <p style={{ fontSize: 13, color: css.text3 }}>No expenses recorded yet</p>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
+        {/* ── Activity Tab — recent actions feed ── */}
+        {dashSubTab === "activity" && (() => {
+          // Build activity feed from trips, expenses, and itineraries
+          const activityItems = [];
+          trips.forEach(trip => {
+            activityItems.push({
+              type: "trip_created",
+              label: `Trip created: ${trip.tripName || trip.trip_name || trip.location || "Trip"}`,
+              date: trip.created_at || trip.date || "",
+              icon: "trip",
+              trip,
+            });
+          });
+          expenses.forEach(exp => {
+            activityItems.push({
+              type: "expense_added",
+              label: `Expense: ${exp.description || "Expense"} — $${(exp.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} ${exp.currency || "USD"}`,
+              date: exp.created_at || exp.date || "",
+              icon: "expense",
+            });
+          });
+          savedItineraries.forEach(itin => {
+            activityItems.push({
+              type: "email_received",
+              label: `Booking received: ${itin.subject || "Email"}`,
+              date: itin.created_at || "",
+              icon: "email",
+            });
+          });
+          activityItems.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+
+          const iconColor = { trip: css.accent, expense: "#3b82f6", email: "#0EA5A0", share: "#8b5cf6" };
+          const iconPaths = {
+            trip: <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>,
+            expense: <><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></>,
+            email: <><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></>,
+          };
+
+          return (
+            <div>
+              {activityItems.length > 0 ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                  {activityItems.slice(0, 30).map((item, idx) => {
+                    const dateStr = item.date ? new Date(item.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
+                    const timeStr = item.date && item.date.includes("T") ? new Date(item.date).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) : "";
+                    return (
+                      <div key={idx} style={{
+                        display: "flex", gap: 14, padding: "14px 0",
+                        borderBottom: idx < activityItems.length - 1 ? `1px solid ${css.border}` : "none",
+                      }}>
+                        <div style={{
+                          width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
+                          background: `${iconColor[item.icon] || css.text3}15`,
+                          border: `1px solid ${iconColor[item.icon] || css.text3}30`,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                        }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={iconColor[item.icon] || css.text3} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                            {iconPaths[item.icon] || iconPaths.trip}
+                          </svg>
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, color: css.text, lineHeight: 1.4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.label}</div>
+                          <div style={{ fontSize: 11, color: css.text3, marginTop: 2 }}>
+                            {dateStr}{timeStr && ` at ${timeStr}`}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div style={{ padding: "40px 20px", textAlign: "center", borderRadius: 14, background: css.surface, border: `1px solid ${css.border}` }}>
+                  <p style={{ fontSize: 13, color: css.text3 }}>No activity yet</p>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
+      </div>
+    );
+  };
+
+  const renderPrograms = (_previewSub = null) => {
+    // Simple single-page program manager
+    const allAirlines = LOYALTY_PROGRAMS.airlines;
+    const allHotels = LOYALTY_PROGRAMS.hotels;
+    const allCards = LOYALTY_PROGRAMS.creditCards;
+    const linkedCount = Object.keys(linkedAccounts).length;
+
+    // Add program — saves to Supabase for cross-device sync
+    const addProgram = async (type, programId, tier) => {
+      if (!programId) return;
+      const now = new Date().toISOString();
+      setLinkedAccounts(prev => ({
+        ...prev,
+        [programId]: { ...(prev[programId] || {}), memberId: prev[programId]?.memberId || "", currentTier: tier || "", updatedAt: now },
+      }));
+      if (user) {
+        await supabase.from("linked_accounts").upsert({
+          user_id: user.id, program_id: programId, member_id: linkedAccounts[programId]?.memberId || "",
+          current_tier: tier || "", tier_credits: 0, points_balance: 0, current_nights: 0, current_rentals: 0, updated_at: now,
+        }, { onConflict: "user_id,program_id" });
+      }
+    };
+    const removeProgram = async (programId) => {
+      setLinkedAccounts(prev => { const n = { ...prev }; delete n[programId]; return n; });
+      if (user) {
+        await supabase.from("linked_accounts").delete().eq("user_id", user.id).eq("program_id", programId);
+      }
+    };
+
+    const addType = progAddType;
+    const setAddType = (v) => { setProgAddType(v); setProgAddId(""); setProgAddTier(""); };
+    const addProgramId = progAddId;
+    const setAddProgramId = (v) => { setProgAddId(v); setProgAddTier(""); };
+    const addTier = progAddTier;
+    const setAddTier = setProgAddTier;
+
+    const programOptions = addType === "airline" ? allAirlines : addType === "hotel" ? allHotels : allCards;
+    const selectedProg = programOptions.find(p => p.id === addProgramId);
+    const tierOptions = selectedProg?.tiers || [];
+
+    const handleAdd = () => {
+      if (!addProgramId) return;
+      addProgram(addType, addProgramId, addType === "card" ? "" : addTier);
+      setProgAddId(""); setProgAddTier("");
+    };
+
+    // Group linked programs by type
+    const linkedAirlines = allAirlines.filter(p => linkedAccounts[p.id]);
+    const linkedHotels = allHotels.filter(p => linkedAccounts[p.id]);
+    const linkedCards = allCards.filter(p => linkedAccounts[p.id]);
+
+    return (
+      <div>
+        {/* Page header */}
+        <div className="c-a1" style={{ marginBottom: 28 }}>
+          <h2 style={{ fontSize: isMobile ? 24 : 32, fontWeight: 700, color: css.text, margin: 0, letterSpacing: "-0.02em" }}>My Programs</h2>
+          <p style={{ color: css.text3, fontSize: 13, margin: "6px 0 0" }}>{linkedCount} program{linkedCount !== 1 ? "s" : ""} added</p>
+        </div>
+
+        {/* ── Add Program Form ── */}
+        <div className="c-a2" style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: isMobile ? "20px 16px" : "24px 28px", marginBottom: 32, boxShadow: css.shadow }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: css.text, marginBottom: 16 }}>Add a Program</div>
+          <div style={{ display: "flex", gap: isMobile ? 8 : 12, flexWrap: "wrap", alignItems: "flex-end" }}>
+            {/* Box 1: Type */}
+            <div style={{ flex: isMobile ? "1 1 100%" : "1 1 140px", minWidth: isMobile ? 0 : 140 }}>
+              <label style={{ fontSize: 10, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>Type</label>
+              <select value={addType} onChange={e => { setAddType(e.target.value); setAddProgramId(""); setAddTier(""); }} style={{ width: "100%", padding: "10px 12px", background: css.surface2, border: `1px solid ${css.border}`, borderRadius: 8, color: css.text, fontSize: 14, fontFamily: "inherit", cursor: "pointer" }}>
+                <option value="airline">Airline</option>
+                <option value="hotel">Hotel</option>
+                <option value="card">Credit Card</option>
+              </select>
+            </div>
+            {/* Box 2: Program */}
+            <div style={{ flex: isMobile ? "1 1 100%" : "2 1 200px", minWidth: isMobile ? 0 : 200 }}>
+              <label style={{ fontSize: 10, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>Program</label>
+              <select value={addProgramId} onChange={e => { setAddProgramId(e.target.value); setAddTier(""); }} style={{ width: "100%", padding: "10px 12px", background: css.surface2, border: `1px solid ${css.border}`, borderRadius: 8, color: css.text, fontSize: 14, fontFamily: "inherit", cursor: "pointer" }}>
+                <option value="">Select {addType === "card" ? "credit card" : addType}...</option>
+                {programOptions.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </div>
+            {/* Box 3: Tier (not for credit cards) */}
+            {addType !== "card" && (
+              <div style={{ flex: isMobile ? "1 1 100%" : "1 1 180px", minWidth: isMobile ? 0 : 180 }}>
+                <label style={{ fontSize: 10, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>Status Level</label>
+                <select value={addTier} onChange={e => setAddTier(e.target.value)} disabled={!addProgramId || tierOptions.length === 0} style={{ width: "100%", padding: "10px 12px", background: css.surface2, border: `1px solid ${css.border}`, borderRadius: 8, color: css.text, fontSize: 14, fontFamily: "inherit", cursor: "pointer", opacity: (!addProgramId || tierOptions.length === 0) ? 0.5 : 1 }}>
+                  <option value="">Member (base)</option>
+                  {tierOptions.map(t => <option key={t.name} value={t.name}>{t.name}</option>)}
+                </select>
+              </div>
+            )}
+            {/* Add button */}
+            <button onClick={handleAdd} disabled={!addProgramId} style={{ padding: "10px 24px", border: "none", borderRadius: 8, background: addProgramId ? css.accent : css.surface2, color: addProgramId ? "#fff" : css.text3, fontSize: 14, fontWeight: 600, cursor: addProgramId ? "pointer" : "default", transition: "all 0.15s", flexShrink: 0, fontFamily: "inherit" }}>Add</button>
+          </div>
+        </div>
+
+        {/* ── Linked Programs List ── */}
+        {linkedAirlines.length > 0 && (
+          <div style={{ marginBottom: 28 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>Airlines</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {linkedAirlines.map(prog => (
+                <div key={prog.id} style={{ display: "flex", alignItems: "center", gap: isMobile ? 8 : 14, padding: isMobile ? "10px 12px" : "14px 18px", borderRadius: 12, background: css.surface, border: `1px solid ${css.border}`, boxShadow: css.shadow, flexWrap: isMobile ? "wrap" : "nowrap" }}>
+                  <ProgramLogo prog={prog} size={28} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: css.text }}>{prog.name}</div>
+                    <div style={{ fontSize: 11, color: css.text3, marginTop: 2 }}>{linkedAccounts[prog.id]?.currentTier || "Member"}</div>
+                  </div>
+                  <select value={linkedAccounts[prog.id]?.currentTier || ""} onChange={e => { const tier = e.target.value; setLinkedAccounts(prev => ({ ...prev, [prog.id]: { ...prev[prog.id], currentTier: tier } })); if (user) supabase.from("linked_accounts").upsert({ user_id: user.id, program_id: prog.id, current_tier: tier, member_id: linkedAccounts[prog.id]?.memberId || "", updated_at: new Date().toISOString() }, { onConflict: "user_id,program_id" }); }} style={{ padding: "6px 10px", borderRadius: 6, border: `1px solid ${css.border}`, background: css.surface2, color: css.text, fontSize: 12, fontFamily: "inherit", cursor: "pointer" }}>
+                    <option value="">Member</option>
+                    {(prog.tiers || []).map(t => <option key={t.name} value={t.name}>{t.name}</option>)}
+                  </select>
+                  <button onClick={() => removeProgram(prog.id)} style={{ padding: "6px 10px", borderRadius: 6, border: `1px solid ${D ? "rgba(239,68,68,0.3)" : "rgba(239,68,68,0.2)"}`, background: "transparent", color: "#ef4444", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>Remove</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {linkedHotels.length > 0 && (
+          <div style={{ marginBottom: 28 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>Hotels</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {linkedHotels.map(prog => (
+                <div key={prog.id} style={{ display: "flex", alignItems: "center", gap: isMobile ? 8 : 14, padding: isMobile ? "10px 12px" : "14px 18px", borderRadius: 12, background: css.surface, border: `1px solid ${css.border}`, boxShadow: css.shadow, flexWrap: isMobile ? "wrap" : "nowrap" }}>
+                  <ProgramLogo prog={prog} size={28} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: css.text }}>{prog.name}</div>
+                    <div style={{ fontSize: 11, color: css.text3, marginTop: 2 }}>{linkedAccounts[prog.id]?.currentTier || "Member"}</div>
+                  </div>
+                  <select value={linkedAccounts[prog.id]?.currentTier || ""} onChange={e => { const tier = e.target.value; setLinkedAccounts(prev => ({ ...prev, [prog.id]: { ...prev[prog.id], currentTier: tier } })); if (user) supabase.from("linked_accounts").upsert({ user_id: user.id, program_id: prog.id, current_tier: tier, member_id: linkedAccounts[prog.id]?.memberId || "", updated_at: new Date().toISOString() }, { onConflict: "user_id,program_id" }); }} style={{ padding: "6px 10px", borderRadius: 6, border: `1px solid ${css.border}`, background: css.surface2, color: css.text, fontSize: 12, fontFamily: "inherit", cursor: "pointer" }}>
+                    <option value="">Member</option>
+                    {(prog.tiers || []).map(t => <option key={t.name} value={t.name}>{t.name}</option>)}
+                  </select>
+                  <button onClick={() => removeProgram(prog.id)} style={{ padding: "6px 10px", borderRadius: 6, border: `1px solid ${D ? "rgba(239,68,68,0.3)" : "rgba(239,68,68,0.2)"}`, background: "transparent", color: "#ef4444", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>Remove</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {linkedCards.length > 0 && (
+          <div style={{ marginBottom: 28 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>Credit Cards</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {linkedCards.map(prog => (
+                <div key={prog.id} style={{ display: "flex", alignItems: "center", gap: isMobile ? 8 : 14, padding: isMobile ? "10px 12px" : "14px 18px", borderRadius: 12, background: css.surface, border: `1px solid ${css.border}`, boxShadow: css.shadow, flexWrap: isMobile ? "wrap" : "nowrap" }}>
+                  <ProgramLogo prog={prog} size={28} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: css.text }}>{prog.name}</div>
+                    {prog.annualFee && <div style={{ fontSize: 11, color: css.text3, marginTop: 2 }}>${prog.annualFee}/yr</div>}
+                  </div>
+                  <button onClick={() => removeProgram(prog.id)} style={{ padding: "6px 10px", borderRadius: 6, border: `1px solid ${D ? "rgba(239,68,68,0.3)" : "rgba(239,68,68,0.2)"}`, background: "transparent", color: "#ef4444", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>Remove</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {linkedCount === 0 && (
+          <div style={{ padding: "48px 20px", textAlign: "center", borderRadius: 14, background: css.surface, border: `1px solid ${css.border}` }}>
+            <div style={{ fontSize: 15, fontWeight: 600, color: css.text, marginBottom: 8 }}>No programs added yet</div>
+            <p style={{ fontSize: 13, color: css.text3, margin: 0 }}>Use the form above to add your airline, hotel, and credit card programs</p>
+          </div>
+        )}
+
+      </div>
+    );
+  };
+
+  const renderTrips = () => {
+    const grandTotal = expenses.reduce((s, e) => s + e.amount, 0);
+
+    // ── Trip Detail View — Full-screen timeline layout ──
+    if (tripDetailId) {
+      const trip = [...trips, ...sharedTrips].find(t => t.id === tripDetailId);
+      if (!trip) return null;
+      const prog = allPrograms.find(p => p.id === trip.program);
+      const sColor = trip.status === "confirmed" ? css.success : trip.status === "planned" ? css.warning : css.accent;
+      const sBg = trip.status === "confirmed" ? css.successBg : trip.status === "planned" ? css.warningBg : css.accentBg;
+      const tripExps = expenses.filter(e => e.tripId === trip.id);
+      const tripTotal = tripExps.reduce((s, e) => s + e.amount, 0);
+      const csInfo = trip.bookingSource || trip.airlineCS || (AIRLINE_CS[trip.program] ? { ...AIRLINE_CS[trip.program], type: "airline" } : null);
+      const manageUrl = trip.bookingSource?.manage || trip.airlineCS?.manage || AIRLINE_CS[trip.program]?.manage || null;
+
+      // Group segments by date for day-by-day timeline
+      const realSegs = (trip.segments || []).filter(s => !s._isMeta);
+      const segsByDate = {};
+      realSegs.forEach(seg => {
+        const d = seg.date || "undated";
+        if (!segsByDate[d]) segsByDate[d] = [];
+        segsByDate[d].push(seg);
+      });
+      // Sort each day's segments by time
+      Object.values(segsByDate).forEach(segs => segs.sort((a, b) => (a.departureTime || a.startTime || a.time || a.checkinTime || a.pickupTime || "99:99").localeCompare(b.departureTime || b.startTime || b.time || b.checkinTime || b.pickupTime || "99:99")));
+      const sortedDates = Object.keys(segsByDate).sort();
+      const tripStartDate = trip.date || sortedDates[0] || "";
+
+      // Segment type styling
+      const segTypeInfo = (type) => {
+        const map = { flight: { color: "#3b82f6", label: "Flight" }, hotel: { color: "#8b5cf6", label: "Hotel" }, accommodation: { color: "#8b5cf6", label: "Accommodation" }, activity: { color: "#22c55e", label: "Activity" }, train: { color: "#f59e0b", label: "Train" }, rental: { color: "#ef4444", label: "Rental Car" }, cruise: { color: "#06b6d4", label: "Cruise" }, ferry: { color: "#0ea5e9", label: "Ferry" }, restaurant: { color: "#f97316", label: "Restaurant" }, transfer: { color: "#a855f7", label: "Transfer" }, lounge: { color: "#c9a84c", label: "Lounge" } };
+        return map[type] || { color: css.accent, label: type || "Item" };
+      };
+
+      // Get the main display info for a segment
+      const segTitle = (s) => s.property || s.activityName || s.restaurantName || s.loungeName || s.flightNumber || s.trainNumber || s.cruiseLine || s.operator || s.company || s.provider || s.route || s.location || segTypeInfo(s.type).label;
+      const segSubtitle = (s) => {
+        if (s.type === "flight") return [s.route, s.fareClass === "business_first" ? "Business" : s.fareClass === "premium_economy" ? "Premium" : s.fareClass === "economy" ? "Economy" : "", s.seat ? `Seat ${s.seat}` : ""].filter(Boolean).join(" · ");
+        if (s.type === "hotel" || s.type === "accommodation") return [s.location, s.roomType, s.nights ? `${s.nights} night${s.nights > 1 ? "s" : ""}` : ""].filter(Boolean).join(" · ");
+        if (s.type === "restaurant") return [s.location, s.cuisine, s.partySize ? `Party of ${s.partySize}` : ""].filter(Boolean).join(" · ");
+        if (s.type === "train") return [s.departureStation && s.arrivalStation ? `${s.departureStation} → ${s.arrivalStation}` : "", s.fareClass].filter(Boolean).join(" · ");
+        if (s.type === "rental") return [s.pickupLocation, s.vehicleType].filter(Boolean).join(" · ");
+        if (s.type === "transfer") return [s.pickupLocation, s.dropoffLocation].filter(Boolean).join(" → ");
+        if (s.type === "lounge") return [s.airport, s.terminal, s.accessMethod].filter(Boolean).join(" · ");
+        if (s.type === "cruise") return [s.shipName, s.cabinType].filter(Boolean).join(" · ");
+        if (s.type === "ferry") return [s.departurePort, s.arrivalPort].filter(Boolean).join(" → ");
+        return s.location || s.notes || "";
+      };
+      const segTime = (s) => s.departureTime || s.startTime || s.time || s.checkinTime || s.pickupTime || "";
+      // Get the location string from a segment for Google Maps linking
+      const segLocation = (s) => s.location || s.pickupLocation || s.airport || s.departureStation || s.departurePort || "";
+      const mapsUrl = (loc) => loc ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}` : null;
+      const LocationLink = ({ location, children }) => {
+        if (!location) return children || null;
+        return <a href={mapsUrl(location)} target="_blank" rel="noopener noreferrer" style={{ color: css.accent, textDecoration: "none", borderBottom: `1px dashed ${css.accent}40`, transition: "border-color 0.12s" }} onMouseEnter={e => e.currentTarget.style.borderColor = css.accent} onMouseLeave={e => e.currentTarget.style.borderColor = `${css.accent}40`}>{children || location}</a>;
+      };
+
+      const DetailRow = ({ label, value, mono, accent, link }) => {
+        if (!value) return null;
+        return (
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: `1px solid ${css.border}` }}>
+            <span style={{ fontSize: 12, color: css.text3, fontWeight: 500 }}>{label}</span>
+            {link ? (
+              <a href={link} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, fontWeight: 600, color: css.accent, textDecoration: "none", fontFamily: mono ? "'Geist Mono', monospace" : "inherit" }}>{value} ↗</a>
+            ) : (
+              <span style={{ fontSize: 13, fontWeight: 600, color: accent ? css.accent : css.text, fontFamily: mono ? "'Geist Mono', monospace" : "inherit" }}>{value}</span>
+            )}
+          </div>
+        );
+      };
+
+      return (
+        <div style={{ maxWidth: 720, margin: "0 auto" }}>
+          {/* Back button */}
+          <button onClick={() => setTripDetailId(null)} style={{
+            display: "flex", alignItems: "center", gap: 6, padding: "8px 0", marginBottom: 16,
+            background: "none", border: "none", color: css.accent, cursor: "pointer", fontSize: 13, fontWeight: 700,
+          }}>
+            <span style={{ fontSize: 16 }}>←</span> Back to Trips
+          </button>
+
+          {/* Trip header card */}
+          <div style={{
+            background: css.surface, border: `1px solid ${css.border}`, borderRadius: 0, padding: "24px 28px", marginBottom: 20,
+            borderLeft: `3px solid ${css.accent}`,
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16 }}>
+              <div>
+                {trip.tripName && <div style={{ fontSize: 12, fontWeight: 700, color: css.accent, marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.06em" }}>{trip.tripName}</div>}
+                <div style={{ fontSize: 22, fontWeight: 800, color: css.text, fontFamily: "'Instrument Sans', sans-serif", letterSpacing: "-0.02em" }}>{trip.location || trip.route || "Trip"}</div>
+                <div style={{ fontSize: 12, color: css.text3, marginTop: 6, fontFamily: "'Geist Mono', monospace" }}>
+                  {formatTripDates(trip)}{trip.location && trip.route ? ` · ${trip.route}` : ""}
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                {trip.estimatedPoints > 0 && (
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: css.gold, fontFamily: "'Geist Mono', monospace" }}>+{trip.estimatedPoints.toLocaleString()}</div>
+                    <div style={{ fontSize: 10, color: css.text3 }}>est. points</div>
+                  </div>
+                )}
+                <span style={{ fontSize: 9, fontWeight: 700, color: sColor, background: sBg, border: `1px solid ${sColor}30`, padding: "4px 10px", textTransform: "uppercase", letterSpacing: "0.06em" }}>{trip.status}</span>
+                {!trip._shared && <button onClick={() => openEditTrip(trip)} style={{
+                  padding: "6px 14px", border: `1px solid ${css.border}`, background: "transparent",
+                  color: css.text3, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                  textTransform: "uppercase", letterSpacing: "0.04em", transition: "all 0.12s",
+                }} onMouseEnter={e => { e.currentTarget.style.borderColor = css.accent; e.currentTarget.style.color = css.accent; }}
+                   onMouseLeave={e => { e.currentTarget.style.borderColor = css.border; e.currentTarget.style.color = css.text3; }}>
+                  Edit
+                </button>}
+                {!trip._shared && <button onClick={() => { setShowShareModal(trip.id); setShareEmail(""); setShareStatus(""); }} style={{
+                  padding: "6px 14px", border: `1px solid ${css.border}`, background: "transparent",
+                  color: css.text3, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                  textTransform: "uppercase", letterSpacing: "0.04em", transition: "all 0.12s",
+                }} onMouseEnter={e => { e.currentTarget.style.borderColor = "#3b82f6"; e.currentTarget.style.color = "#3b82f6"; }}
+                   onMouseLeave={e => { e.currentTarget.style.borderColor = css.border; e.currentTarget.style.color = css.text3; }}>
+                  Share
+                </button>}
+                {trip._shared && <span style={{ fontSize: 10, fontWeight: 600, color: "#3b82f6", background: "rgba(59,130,246,0.1)", padding: "4px 10px", border: "1px solid rgba(59,130,246,0.2)" }}>Shared by {trip._sharedBy}</span>}
+              </div>
+            </div>
+          </div>
+
+          {/* Add to Trip button — hidden for shared trips */}
+          {!trip._shared && <button onClick={() => { if (trip.date) lastDateRef.current = trip.date; setShowAddSegment(trip.id); }} style={{
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%",
+            padding: "12px 0", border: `1px dashed ${css.border}`, background: "transparent",
+            color: css.accent, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+            textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 24,
+            transition: "all 0.12s",
+          }} onMouseEnter={e => { e.currentTarget.style.borderColor = css.accent; e.currentTarget.style.background = css.accentBg; }}
+             onMouseLeave={e => { e.currentTarget.style.borderColor = css.border; e.currentTarget.style.background = "transparent"; }}>
+            + Add Flight, Hotel, Activity...
+          </button>}
+
+          {/* ── Day-by-day Timeline ── */}
+          {realSegs.length > 0 && (
+            <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+              <div style={{ display: "inline-flex", border: `1px solid ${css.border}`, overflow: "hidden" }}>
+                {["F", "C"].map(u => (
+                  <button key={u} onClick={() => setTempUnit(u)} style={{
+                    padding: "4px 12px", border: "none", fontSize: 11, fontWeight: 700, cursor: "pointer",
+                    fontFamily: "'Geist Mono', monospace", transition: "all 0.12s",
+                    background: tempUnit === u ? css.accent : "transparent",
+                    color: tempUnit === u ? "#fff" : css.text3,
+                  }}>°{u}</button>
+                ))}
+              </div>
+            </div>
+          )}
+          {realSegs.length === 0 ? (
+            <div style={{ padding: "48px 20px", textAlign: "center", background: css.surface, border: `1px solid ${css.border}` }}>
+              <p style={{ fontSize: 15, color: css.text3, margin: "0 0 8px" }}>No itinerary items yet</p>
+              <p style={{ fontSize: 12, color: css.text3, margin: 0 }}>Add flights, hotels, restaurants and more to build your day-by-day plan</p>
+            </div>
+          ) : (
+            <div>
+              {/* Collapsible Hotel Bookings section */}
+              {(() => {
+                const hotelSegs = realSegs.filter(s => s.type === "hotel" || s.type === "accommodation");
+                if (hotelSegs.length === 0) return null;
+                const info = segTypeInfo("hotel");
+                return (
+                  <div style={{ marginBottom: 20, border: `1px solid ${css.border}`, background: css.surface }}>
+                    <button onClick={() => setHotelSectionOpen(!hotelSectionOpen)} style={{
+                      display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%",
+                      padding: "14px 20px", border: "none", background: "transparent", cursor: "pointer", color: css.text,
+                    }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", background: `${info.color}12`, border: `1px solid ${info.color}25` }}><SegIcon type="hotel" size={15} color={info.color} /></div>
+                        <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.02em" }}>Hotel Bookings</span>
+                        <span style={{ fontSize: 11, color: css.text3, fontFamily: "'Geist Mono', monospace" }}>{hotelSegs.length}</span>
+                      </div>
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ transform: hotelSectionOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>
+                        <path d="M4 6l4 4 4-4" stroke={css.text3} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </button>
+                    {hotelSectionOpen && (
+                      <div style={{ padding: "0 20px 16px", borderTop: `1px solid ${css.border}` }}>
+                        {hotelSegs.map((seg, i) => {
+                          const checkin = seg.date ? new Date(seg.date + "T12:00:00") : null;
+                          const checkout = seg.checkoutDate ? new Date(seg.checkoutDate + "T12:00:00") : (checkin && seg.nights ? new Date(checkin.getTime() + (parseInt(seg.nights) || 1) * 86400000) : null);
+                          const nights = (checkin && checkout) ? Math.round((checkout - checkin) / 86400000) : (parseInt(seg.nights) || 0);
+                          const fmt = d => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                          return (
+                            <div key={`hotel-${i}`} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 0", borderBottom: i < hotelSegs.length - 1 ? `1px solid ${css.border}` : "none" }}>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: 14, fontWeight: 700, color: css.text }}>{seg.property || "Accommodation"}</div>
+                                <div style={{ fontSize: 11, color: css.text3, marginTop: 3, display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+                                  {checkin && checkout && <span>{fmt(checkin)} – {fmt(checkout)}</span>}
+                                  {nights > 0 && <span style={{ fontFamily: "'Geist Mono', monospace", fontWeight: 600 }}>· {nights} night{nights > 1 ? "s" : ""}</span>}
+                                  {seg.roomType && <span>· {seg.roomType}</span>}
+                                </div>
+                                {seg.location && <div style={{ fontSize: 11, color: css.text3, marginTop: 2 }}><LocationLink location={`${seg.property || ""} ${seg.location}`}>{seg.location}</LocationLink></div>}
+                              </div>
+                              {seg.confirmationCode && (
+                                <div style={{ textAlign: "right", flexShrink: 0 }}>
+                                  <div style={{ fontSize: 9, color: css.text3, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>Conf</div>
+                                  <div style={{ fontSize: 11, fontWeight: 700, color: css.accent, fontFamily: "'Geist Mono', monospace" }}>{seg.confirmationCode}</div>
+                                </div>
+                              )}
+                              <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+                                <button onClick={(e) => { e.stopPropagation(); editSegment(trip.id, realSegs.indexOf(seg)); }} style={{ padding: "3px 8px", border: `1px solid ${css.border}`, background: "transparent", color: css.text3, fontSize: 10, fontWeight: 600, cursor: "pointer" }}>Edit</button>
+                                <button onClick={(e) => { e.stopPropagation(); if (confirm("Delete?")) deleteSegment(trip.id, realSegs.indexOf(seg)); }} style={{ padding: "3px 8px", border: "1px solid rgba(239,68,68,0.2)", background: "transparent", color: "#ef4444", fontSize: 10, fontWeight: 600, cursor: "pointer", opacity: 0.6 }}>Delete</button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Day-by-day timeline with layover connectors */}
+              {(() => {
+                // Build flat sorted list of all non-hotel segments with layover info
+                const allTimeline = realSegs.filter(s => s.type !== "hotel" && s.type !== "accommodation");
+                // Group by date for day headers
+                const byDate = {};
+                allTimeline.forEach(seg => { const d = seg.date || "undated"; if (!byDate[d]) byDate[d] = []; byDate[d].push(seg); });
+                Object.values(byDate).forEach(segs => segs.sort((a, b) => (a.departureTime || a.startTime || a.time || "99:99").localeCompare(b.departureTime || b.startTime || b.time || "99:99")));
+                const dates = Object.keys(byDate).sort();
+
+                // Pre-calculate layovers — ONLY between legs of the same multi-city booking
+                // Legs are linked by sharing the same _bookingGroup ID (set during multi-city creation)
+                const flatFlights = allTimeline.filter(s => s.type === "flight").sort((a, b) => (a.date || "").localeCompare(b.date || "") || (a.departureTime || "").localeCompare(b.departureTime || ""));
+                const layoverMap = new Map();
+                for (let i = 0; i < flatFlights.length - 1; i++) {
+                  const curr = flatFlights[i];
+                  const next = flatFlights[i + 1];
+                  // Only show layover if both legs share the same booking group (multi-city)
+                  if (!curr._bookingGroup || !next._bookingGroup || curr._bookingGroup !== next._bookingGroup) continue;
+                  const resolvedArrDate = resolveArrivalDate(curr);
+                  if (curr.date && next.date && curr.arrivalTime && resolvedArrDate) {
+                    // Use resolved arrival date (explicit, or inferred from time comparison)
+                    const arrDate = new Date(`${resolvedArrDate}T${curr.arrivalTime}:00`);
+                    const depDate = new Date(`${next.date}T${next.departureTime || "00:00"}:00`);
+                    const diffMs = depDate - arrDate;
+                    if (diffMs > 0) {
+                      const totalMins = Math.round(diffMs / 60000);
+                      const days = Math.floor(totalMins / 1440);
+                      const hrs = Math.floor((totalMins % 1440) / 60);
+                      const mins = totalMins % 60;
+                      let durText = "";
+                      if (days > 0) durText += `${days}d `;
+                      if (hrs > 0) durText += `${hrs}h `;
+                      if (mins > 0 && days === 0) durText += `${mins}m`;
+                      const airports = (curr.route || "").split("→").map(s => s.trim());
+                      const layoverAirport = airports[airports.length - 1] || "?";
+                      layoverMap.set(curr, { duration: durText.trim(), airport: layoverAirport, arrivalTime: curr.arrivalTime });
+                    }
+                  }
+                }
+
+                return dates.map((dateStr, dayIdx) => {
+                const daySegs = byDate[dateStr];
+                if (!daySegs || daySegs.length === 0) return null;
+                const dayDate = dateStr !== "undated" ? new Date(dateStr + "T12:00:00") : null;
+                const dayNum = dayDate && tripStartDate ? Math.floor((dayDate - new Date(tripStartDate + "T12:00:00")) / 86400000) + 1 : dayIdx + 1;
+                const dayLabel = dayDate ? dayDate.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" }).toUpperCase() : "UNDATED";
+                // Resolve hotel for this night, then fall back to city/airport
+                const dayHotel = dateStr !== "undated" ? resolveHotelForDate(realSegs, dateStr) : null;
+                const dayCity = dateStr !== "undated" ? resolveCityForDate(realSegs, dateStr) : { city: "", airportCode: "" };
+                // Weather key: prefer airport code (always geocodes) → city → trip location
+                const weatherCity = dayCity.airportCode || dayCity.city || (dayHotel?.location ? dayHotel.location.split(",")[0].trim() : "") || trip.location?.split(",")[0]?.trim() || "";
+                const wxKey = `${weatherCity}_${dateStr}`;
+                const wx = weatherCache[wxKey] || null;
+                const toF = (c) => Math.round(c * 9 / 5 + 32);
+                const fmtTemp = (c) => tempUnit === "F" ? `${toF(c)}°` : `${Math.round(c)}°`;
+                // Display label: hotel name if staying somewhere, otherwise city/airport
+                const dayLocationLabel = dayHotel?.name || "";
+
+                return (
+                  <div key={dateStr} style={{ marginBottom: 32 }}>
+                    {/* Day header: Day X — Date — Hotel Name ... weather on far right */}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 16, paddingBottom: 10, borderBottom: `2px solid ${css.border}` }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, flex: 1 }}>
+                        <span style={{ fontSize: 13, fontWeight: 800, color: css.text, letterSpacing: "-0.01em", flexShrink: 0 }}>DAY {dayNum}</span>
+                        <span style={{ fontSize: 12, color: css.text3, fontWeight: 600, letterSpacing: "0.02em", flexShrink: 0 }}>— {dayLabel}</span>
+                        {dayLocationLabel && <span style={{ fontSize: 11, fontWeight: 600, color: css.text2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>· {dayLocationLabel}</span>}
+                      </div>
+                      {wx ? (
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontFamily: "'Geist Mono', monospace", color: css.text2, flexShrink: 0 }} title={wx.isHistorical ? `Expected weather (based on ${wx.cityName || "location"} last year)` : `Weather forecast for ${wx.cityName || "location"}`}>
+                          <span style={{ fontSize: 15 }}>{weatherIcon(wx.code).icon}</span>
+                          <span style={{ fontWeight: 700 }}>{fmtTemp(wx.high)}</span>
+                          <span style={{ color: css.text3, fontWeight: 500 }}>{fmtTemp(wx.low)}</span>
+                          <span style={{ fontSize: 9, color: wx.isHistorical ? css.warning : css.success, fontWeight: 600 }}>{wx.isHistorical ? "Expected" : "Forecast"}</span>
+                        </div>
+                      ) : weatherCity ? (
+                        <span style={{ fontSize: 10, color: css.text3, fontStyle: "italic", flexShrink: 0 }}>Loading weather for {weatherCity}...</span>
+                      ) : null}
+                    </div>
+
+                    {/* Timeline items */}
+                    {daySegs.map((seg, segIdx) => {
+                      const info = segTypeInfo(seg.type);
+                      const time = segTime(seg);
+                      const title = segTitle(seg);
+                      const subtitle = segSubtitle(seg);
+                      const isLast = segIdx === daySegs.length - 1;
+
+                      return (
+                        <React.Fragment key={segIdx}>
+                        <div style={{ display: "flex", gap: 16, marginLeft: 8 }}>
+                          {/* Timeline column */}
+                          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 52, flexShrink: 0 }}>
+                            {time && <div style={{ fontSize: 12, fontWeight: 600, color: css.text2, fontFamily: "'Geist Mono', monospace", marginBottom: 4, width: "100%", textAlign: "right", paddingRight: 12 }}>{time}</div>}
+                            {!time && <div style={{ height: 18 }} />}
+                            <div style={{ width: 10, height: 10, borderRadius: "50%", background: info.color, flexShrink: 0 }} />
+                            {!isLast && <div style={{ width: 2, flex: 1, background: css.border, minHeight: 40 }} />}
+                          </div>
+
+                          {/* Content */}
+                          <div style={{ flex: 1, paddingBottom: isLast && !layoverMap.has(seg) ? 0 : 16, minWidth: 0 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                              <div style={{ fontSize: 16, fontWeight: 700, color: css.text, marginBottom: 4, lineHeight: 1.3 }}>{title}</div>
+                              <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+                                <button onClick={() => editSegment(trip.id, realSegs.indexOf(seg))} style={{ padding: "3px 8px", border: `1px solid ${css.border}`, background: "transparent", color: css.text3, fontSize: 10, fontWeight: 600, cursor: "pointer", transition: "all 0.12s" }}
+                                  onMouseEnter={e => { e.currentTarget.style.borderColor = css.accent; e.currentTarget.style.color = css.accent; }}
+                                  onMouseLeave={e => { e.currentTarget.style.borderColor = css.border; e.currentTarget.style.color = css.text3; }}>Edit</button>
+                                <button onClick={() => { if (confirm("Delete this item?")) deleteSegment(trip.id, realSegs.indexOf(seg)); }} style={{ padding: "3px 8px", border: "1px solid rgba(239,68,68,0.2)", background: "transparent", color: "#ef4444", fontSize: 10, fontWeight: 600, cursor: "pointer", opacity: 0.6, transition: "opacity 0.12s" }}
+                                  onMouseEnter={e => e.currentTarget.style.opacity = "1"} onMouseLeave={e => e.currentTarget.style.opacity = "0.6"}>Delete</button>
+                              </div>
+                            </div>
+                            {subtitle && <div style={{ fontSize: 13, color: css.text3, marginBottom: 4, lineHeight: 1.5 }}>
+                              {segLocation(seg) ? (
+                                <>{subtitle.split(segLocation(seg)).map((part, pi, arr) => (
+                                  <React.Fragment key={pi}>
+                                    {part}
+                                    {pi < arr.length - 1 && <LocationLink location={`${seg.property || seg.activityName || seg.restaurantName || ""} ${segLocation(seg)}`}>{segLocation(seg)}</LocationLink>}
+                                  </React.Fragment>
+                                ))}</>
+                              ) : subtitle}
+                            </div>}
+                            {/* Arrival time for flights */}
+                            {seg.type === "flight" && seg.arrivalTime && (
+                              <div style={{ fontSize: 12, color: css.text2, fontFamily: "'Geist Mono', monospace", marginBottom: 6 }}>
+                                Arrives {seg.arrivalTime}{seg.arrivalTerminal ? ` · Terminal ${seg.arrivalTerminal}` : ""}
+                              </div>
+                            )}
+                            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+                              <span style={{ fontSize: 10, fontWeight: 600, color: info.color, background: `${info.color}12`, border: `1px solid ${info.color}25`, padding: "2px 8px" }}>{info.label}</span>
+                              {seg.confirmationCode && <span style={{ fontSize: 10, fontWeight: 600, color: css.text2, background: css.surface2, padding: "2px 8px", fontFamily: "'Geist Mono', monospace" }}>{seg.confirmationCode}</span>}
+                              {(seg.cost || seg.totalCost || seg.ticketPrice) && <span style={{ fontSize: 10, fontWeight: 600, color: css.text3, padding: "2px 8px" }}>{parseFloat(seg.cost || seg.totalCost || seg.ticketPrice || 0).toLocaleString()} {seg.currency || "USD"}</span>}
+                            </div>
+                          </div>
+                        </div>
+                        {/* Layover connector between flights */}
+                        {layoverMap.has(seg) && (() => {
+                          const lo = layoverMap.get(seg);
+                          return (
+                            <div style={{ display: "flex", gap: 16, marginLeft: 8, marginBottom: 8 }}>
+                              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 52, flexShrink: 0 }}>
+                                <div style={{ width: 0, borderLeft: `2px dashed ${css.warning}40`, flex: 1, minHeight: 32 }} />
+                              </div>
+                              <div style={{ flex: 1, padding: "8px 14px", background: `${css.warning}08`, border: `1px dashed ${css.warning}30`, display: "flex", alignItems: "center", gap: 10 }}>
+                                <div style={{ width: 6, height: 6, background: css.warning, borderRadius: "50%", flexShrink: 0 }} />
+                                <div style={{ fontSize: 12, fontWeight: 600, color: css.warning }}>
+                                  {lo.duration} layover at <span style={{ fontFamily: "'Geist Mono', monospace", fontWeight: 800 }}>{lo.airport}</span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })()}
+                        </React.Fragment>
+                      );
+                    })}
+                  </div>
+                );
+              });
+              })()}
+            </div>
+          )}
+
+
+          {/* Booking Management — built from segments */}
+          {realSegs.length > 0 && (() => {
+            // Collect unique bookings from segments
+            const bookings = [];
+            const seenConf = new Set();
+            // Airlines — match by airline name or flight number prefix
+            // Build airline lookup — match by full name or flight number prefix (e.g. BA → British Airways)
+            const airlineByName = {};
+            const airlineByCode = {};
+            Object.entries(AIRLINE_CS).forEach(([k, v]) => { airlineByName[v.name.toLowerCase()] = { ...v, key: k }; });
+            // Map 2-letter IATA codes to AIRLINE_CS entries
+            const codeMap = { AA: "aa", DL: "dl", UA: "ua", WN: "sw", B6: "b6", AS: "atmos", F9: "frontier", NK: "spirit", AF: "flying_blue", KL: "flying_blue", BA: "ba_avios", AC: "aeroplan", EK: "emirates_skywards", TK: "turkish_miles", QF: "qantas_ff", SQ: "singapore_kf", CX: "cathay_mp" };
+            realSegs.forEach(seg => {
+              if (seg.type === "flight") {
+                const airlineName = seg.airline || "";
+                // Try exact name match first, then flight number prefix
+                const exactMatch = Object.entries(airlineByName).find(([name]) => airlineName.toLowerCase() === name);
+                const fnCode = (seg.flightNumber || "").slice(0, 2).toUpperCase();
+                const codeKey = codeMap[fnCode];
+                const cs = exactMatch ? exactMatch[1] : (codeKey && AIRLINE_CS[codeKey] ? { ...AIRLINE_CS[codeKey], key: codeKey } : null);
+                const conf = seg.confirmationCode || "";
+                const label = cs?.name || airlineName || seg.flightNumber || "Flight";
+                // Dedup by airline name — merge confirmation codes
+                const existing = bookings.find(b => b.type === "flight" && b.label === label);
+                if (existing) {
+                  if (conf && !existing.conf) existing.conf = conf;
+                  return;
+                }
+                if (conf && seenConf.has(conf)) return;
+                if (conf) seenConf.add(conf);
+                if (airlineName || conf || seg.flightNumber) bookings.push({ type: "flight", label, conf, phone: cs?.phone || "", manage: cs?.manage || "", color: "#3b82f6" });
+              } else if (seg.type === "hotel" || seg.type === "accommodation") {
+                const conf = seg.confirmationCode || "";
+                if (conf && seenConf.has(conf)) return;
+                if (conf) seenConf.add(conf);
+                if (seg.property || conf) bookings.push({ type: "hotel", label: seg.property || "Hotel", conf, phone: "", manage: "", color: "#8b5cf6" });
+              } else if (seg.confirmationCode) {
+                if (seenConf.has(seg.confirmationCode)) return;
+                seenConf.add(seg.confirmationCode);
+                const segInfo = segTypeInfo(seg.type);
+                bookings.push({ type: seg.type, label: seg.activityName || seg.restaurantName || seg.operator || seg.company || seg.loungeName || segInfo.label, conf: seg.confirmationCode, phone: "", manage: "", color: segInfo.color });
+              }
+            });
+            if (bookings.length === 0) return null;
+            return (
+              <div style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 0, padding: "20px 24px", marginBottom: 20, borderLeft: `3px solid ${css.accent}` }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: css.text, marginBottom: 14 }}>Booking Management</div>
+                {bookings.map((b, i) => (
+                  <div key={i} style={{ padding: "10px 0", borderBottom: i < bookings.length - 1 ? `1px solid ${css.border}` : "none" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
+                        <span style={{ fontSize: 9, fontWeight: 700, color: b.color, background: `${b.color}15`, padding: "2px 6px" }}>{b.type === "flight" ? "Flight" : b.type === "hotel" ? "Hotel" : b.type}</span>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: css.text }}>{b.label}</span>
+                      </div>
+                      {b.conf && <span style={{ fontSize: 12, fontWeight: 700, color: css.accent, fontFamily: "'Geist Mono', monospace", flexShrink: 0 }}>{b.conf}</span>}
+                    </div>
+                    {(b.phone || b.manage) && (
+                      <div style={{ display: "flex", gap: 12, marginTop: 6, paddingLeft: 2 }}>
+                        {b.phone && <span style={{ fontSize: 11, color: css.text2 }}>{b.phone}</span>}
+                        {b.manage && <a href={b.manage} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: css.accent, textDecoration: "none" }}>Manage Booking ↗</a>}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+
+          {/* Expenses for this trip */}
+          {tripExps.length > 0 && (
+            <div style={{
+              background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: "20px 24px",
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: css.text, marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 15 }}>—</span> Expenses · <span style={{ fontFamily: "'Geist Mono', monospace", color: css.accent }}>${tripTotal.toLocaleString()}</span>
+              </div>
+              {tripExps.map(exp => {
+                const cat = EXPENSE_CATEGORIES.find(c => c.id === exp.category);
+                return (
+                  <div key={exp.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderBottom: `1px solid ${css.border}` }}>
+                    {exp.receiptImage?.data && exp.receiptImage.type?.startsWith("image/") && (
+                      <div style={{ flexShrink: 0, position: "relative" }}>
+                        <img src={exp.receiptImage.data} alt="" style={{ width: 36, height: 36, objectFit: "cover", borderRadius: 4, border: `1px solid ${css.border}`, cursor: "pointer" }} onClick={() => setViewExpenseId(exp.id)} />
+                        <button onClick={(e) => { e.stopPropagation(); setCropExpenseId(exp.id); setCropStart(null); setCropEnd(null); }} style={{ position: "absolute", bottom: -3, right: -3, width: 16, height: 16, borderRadius: 3, border: `1px solid ${css.border}`, background: css.surface, color: css.text3, fontSize: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }} title="Crop">
+                          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2v14a2 2 0 002 2h14"/><path d="M18 22V8a2 2 0 00-2-2H2"/></svg>
+                        </button>
+                      </div>
+                    )}
+                    {cat && <span style={{ fontSize: 9, fontWeight: 700, color: cat.color, background: `${cat.color}15`, padding: "2px 6px", flexShrink: 0 }}>{cat.label}</span>}
+                    <span style={{ fontSize: 12, color: css.text2, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.description || exp.category}</span>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: css.text, fontFamily: "'Geist Mono', monospace", flexShrink: 0 }}>{exp.amount?.toLocaleString()} {exp.currency || "USD"}</span>
+                    <button onClick={() => setViewExpenseId(exp.id)} style={{ padding: "3px 8px", border: `1px solid ${css.accent}30`, background: "transparent", color: css.accent, fontSize: 10, fontWeight: 600, cursor: "pointer", flexShrink: 0 }}>View</button>
+                    <button onClick={() => { setEditExpenseId(exp.id); setShowAddExpense(trip.id); setNewExpense({ ...exp, fxRate: exp.fxRate || 1 }); }} style={{ padding: "3px 8px", border: `1px solid ${css.border}`, background: "transparent", color: css.text3, fontSize: 10, fontWeight: 600, cursor: "pointer", flexShrink: 0 }}>Edit</button>
+                    <select onChange={async e => {
+                      const newTripId = e.target.value; if (!newTripId) return;
+                      if (newTripId === "_unassign") {
+                        if (user) await supabase.from("expenses").update({ trip_id: null }).eq("id", exp.id).eq("user_id", user.id);
+                        setExpenses(prev => prev.map(ex => ex.id === exp.id ? { ...ex, tripId: null } : ex));
+                      } else {
+                        if (user) await supabase.from("expenses").update({ trip_id: newTripId }).eq("id", exp.id).eq("user_id", user.id);
+                        setExpenses(prev => prev.map(ex => ex.id === exp.id ? { ...ex, tripId: newTripId } : ex));
+                      }
+                      e.target.value = "";
+                    }} style={{ padding: "3px 6px", borderRadius: 4, border: `1px solid ${css.border}`, background: "transparent", color: css.text3, fontSize: 10, cursor: "pointer", flexShrink: 0 }}>
+                      <option value="">Transfer...</option>
+                      <option value="_unassign">Unassign (back to inbox)</option>
+                      {trips.filter(t => t.id !== trip.id).map(t => <option key={t.id} value={t.id}>{t.tripName || t.trip_name || t.location || "Trip"}</option>)}
+                    </select>
+                    <button onClick={() => removeExpense(exp.id)} style={{ padding: "3px 8px", border: "1px solid rgba(239,68,68,0.2)", background: "transparent", color: "#ef4444", fontSize: 10, fontWeight: 600, cursor: "pointer", flexShrink: 0, opacity: 0.6 }}>Delete</button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return (
+    <div>
+      {/* ── Hero banner image ── */}
+      <div style={{ margin: isMobile ? "0 -16px 0" : "0 -48px 0", position: "relative", height: isMobile ? 160 : 240, overflow: "hidden" }}>
+        <img src="/hero-trips.jpg" alt="Trips" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 40%", display: "block" }} />
+        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: isMobile ? 60 : 80, background: D ? "linear-gradient(transparent, #0f0f0f)" : "linear-gradient(transparent, #ffffff)" }} />
+      </div>
+
+      {/* Page header */}
+      <div className="c-a1" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 20, gap: 16, flexWrap: "wrap" }}>
+        <div>
+          <h2 style={{ fontSize: isMobile ? 22 : 32, fontWeight: 700, color: css.text, margin: 0, letterSpacing: "-0.02em" }}>Your Trips</h2>
+          <p style={{ color: css.text3, fontSize: 13, margin: "6px 0 0" }}>
+            {trips.length} trip{trips.length !== 1 ? "s" : ""} · {trips.filter(t => t.status === "confirmed").length} confirmed
+            {grandTotal > 0 && <span style={{ marginLeft: 10, color: css.accent, fontFamily: "'Geist Mono', monospace" }}>${grandTotal.toLocaleString()} total spend</span>}
+          </p>
+        </div>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          {/* Export Month PDF button */}
+          <div style={{ position: "relative" }}>
+            <button onClick={() => document.getElementById("cal-month-picker").showPicker?.()} style={{
+              display: "flex", alignItems: "center", gap: 7, padding: "10px 16px", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 600,
+              background: css.surface2, border: `1px solid ${css.border}`, color: css.text2, transition: "all 0.15s",
+            }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+              </svg>
+              Export PDF
+            </button>
+            <input id="cal-month-picker" type="month" defaultValue={new Date().toISOString().slice(0, 7)}
+              onChange={e => { if (e.target.value) exportMonthPDF(e.target.value); }}
+              style={{ position: "absolute", top: 0, left: 0, opacity: 0, pointerEvents: "none", width: "100%", height: "100%" }}
+            />
+          </div>
+          {/* View toggle */}
+          <div style={{ display: "flex", background: css.surface2, border: `1px solid ${css.border}`, borderRadius: 8, padding: 3, gap: 2 }}>
+            {[{ v: "list", icon: "≡" }, { v: "calendar", icon: "▦" }].map(({ v, icon }) => (
+              <button key={v} onClick={() => setTripsView(v)} style={{
+                padding: "5px 10px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600,
+                background: tripsView === v ? css.surface : "transparent",
+                color: tripsView === v ? css.text : css.text3,
+                boxShadow: tripsView === v ? "0 1px 3px rgba(0,0,0,0.2)" : "none",
+                transition: "all 0.15s",
+              }}>{icon}</button>
+            ))}
+          </div>
+          <button onClick={() => setShowImportItinerary(true)} style={{
+            display: "flex", alignItems: "center", gap: 7, padding: "10px 16px", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 600,
+            background: css.surface2, border: `1px solid ${css.border}`, color: css.text2, transition: "all 0.15s",
+          }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+            </svg>
+            Import Itinerary
+          </button>
+          <button onClick={() => setShowCreateTrip(true)} className="c-btn-primary" style={{
+            padding: "10px 20px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600,
+            background: css.accent, color: "#fff",
+          }}>+ Add Trip</button>
+        </div>
+      </div>
+
+      {/* Flighty instructions banner */}
+
+      {/* Calendar view */}
+      {tripsView === "calendar" && (() => {
+        const pad = (n) => String(n).padStart(2, "0");
+        const { year, month } = calViewMonth;
+        const monthLabel = new Date(year, month, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const cells = [];
+        for (let i = 0; i < firstDay; i++) cells.push(null);
+        for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+        while (cells.length % 7 !== 0) cells.push(null);
+        const today = new Date();
+        const isToday = (d) => d && year === today.getFullYear() && month === today.getMonth() && d === today.getDate();
+        const getTripsForDay = (d) => {
+          if (!d) return [];
+          const dateStr = `${year}-${pad(month + 1)}-${pad(d)}`;
+          return trips.filter(t => {
+            const segs = (t.segments && t.segments.length > 0) ? t.segments : (t.date ? [{ type: t.type, date: t.date, checkoutDate: t.checkoutDate, dropoffDate: t.dropoffDate, nights: t.nights }] : []);
+            return segs.some(seg => {
+              if (!seg.date) return false;
+              if (seg.date === dateStr) return true;
+              // Hotels span check-in through checkout
+              if (seg.type === "hotel") {
+                const checkout = seg.checkoutDate || (seg.nights > 1 ? (() => { const e = new Date(seg.date + "T12:00:00"); e.setDate(e.getDate() + seg.nights); return e.toISOString().slice(0,10); })() : null);
+                if (checkout && dateStr > seg.date && dateStr < checkout) return true;
+              }
+              // Car rentals span pickup through dropoff
+              if (seg.type === "car" && seg.dropoffDate && dateStr > seg.date && dateStr <= seg.dropoffDate) return true;
+              return false;
+            });
+          });
+        };
+        const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        return (
+          <div>
+            {/* Month navigator */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+              <button onClick={() => setCalViewMonth(p => { const d = new Date(p.year, p.month - 1, 1); return { year: d.getFullYear(), month: d.getMonth() }; })} style={{ width: 36, height: 36, borderRadius: 8, border: `1px solid ${css.border}`, background: css.surface, color: css.text, fontSize: 16, cursor: "pointer" }}>‹</button>
+              <span style={{ fontSize: 16, fontWeight: 700, color: css.text, fontFamily: "'Cormorant Garamond', serif", letterSpacing: "0.02em" }}>{monthLabel}</span>
+              <button onClick={() => setCalViewMonth(p => { const d = new Date(p.year, p.month + 1, 1); return { year: d.getFullYear(), month: d.getMonth() }; })} style={{ width: 36, height: 36, borderRadius: 8, border: `1px solid ${css.border}`, background: css.surface, color: css.text, fontSize: 16, cursor: "pointer" }}>›</button>
+            </div>
+            {/* Day headers */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", marginBottom: 2 }}>
+              {DAY_LABELS.map(d => (
+                <div key={d} style={{ textAlign: "center", padding: "6px 0", fontSize: 10, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.1em" }}>{d}</div>
+              ))}
+            </div>
+            {/* Day grid */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: isMobile ? 1 : 2 }}>
+              {cells.map((d, i) => {
+                const dayTrips = getTripsForDay(d);
+                const dateStr = d ? `${year}-${pad(month + 1)}-${pad(d)}` : "";
+                if (isMobile) {
+                  // Compact single-page mobile view: date number + colored dots only
+                  return (
+                    <div key={i} onClick={() => {
+                      if (d && dayTrips.length > 0) { setTripDetailId(dayTrips[0].id); setTripDetailSegIdx(0); }
+                    }} style={{
+                      background: d ? css.surface : "transparent",
+                      border: `1px solid ${d ? (dayTrips.length > 0 ? css.accentBorder : css.border) : "transparent"}`,
+                      borderRadius: 6, padding: "5px 2px 6px", textAlign: "center",
+                      cursor: d && dayTrips.length > 0 ? "pointer" : "default",
+                      minHeight: 44,
+                    }}>
+                      {d && <>
+                        <div style={{ width: 20, height: 20, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: isToday(d) ? 700 : 400, background: isToday(d) ? css.accent : "transparent", color: isToday(d) ? "#fff" : css.text2, margin: "0 auto 4px" }}>{d}</div>
+                        <div style={{ display: "flex", gap: 2, flexWrap: "wrap", justifyContent: "center" }}>
+                          {dayTrips.slice(0, 3).map((trip, ti) => {
+                            const prog = allPrograms.find(p => p.id === trip.program);
+                            const color = prog?.color || css.accent;
+                            const allSegs = (trip.segments && trip.segments.length > 0) ? trip.segments : [{ type: trip.type, date: trip.date }];
+                            const seg = allSegs.find(s => s.date === dateStr) || allSegs[0];
+                            const segType = seg?.type || trip.type;
+                            const dotIcon = "●";
+                            return <div key={ti} style={{ width: 14, height: 14, borderRadius: "50%", background: color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 7, color: "#fff" }}>{dotIcon}</div>;
+                          })}
+                          {dayTrips.length > 3 && <div style={{ fontSize: 7, color: css.text3, lineHeight: "14px" }}>+{dayTrips.length - 3}</div>}
+                        </div>
+                      </>}
+                    </div>
+                  );
+                }
+                return (
+                  <div key={i} style={{ background: d ? css.surface : "transparent", border: `1px solid ${d ? css.border : "transparent"}`, borderRadius: 8, minHeight: 120, padding: "6px 6px 5px" }}>
+                    {d && (
+                      <>
+                        <div style={{ width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: isToday(d) ? 700 : 400, background: isToday(d) ? css.accent : "transparent", color: isToday(d) ? "#fff" : css.text2, marginBottom: 4 }}>{d}</div>
+                        {dayTrips.slice(0, 3).map((trip, ti) => {
+                          const prog = allPrograms.find(p => p.id === trip.program);
+                          const color = prog?.color || css.accent;
+                          const allSegs = (trip.segments && trip.segments.length > 0) ? trip.segments : [{ type: trip.type, date: trip.date, route: trip.route, flightNumber: trip.flightNumber, departureTime: trip.departureTime, arrivalTime: trip.arrivalTime, property: trip.property, location: trip.location, nights: trip.nights, checkoutDate: trip.checkoutDate, dropoffDate: trip.dropoffDate }];
+                          const daySegs = allSegs.filter(seg => {
+                            if (!seg.date) return false;
+                            if (seg.date === dateStr) return true;
+                            if (seg.type === "hotel") { const co = seg.checkoutDate || null; if (co && dateStr > seg.date && dateStr < co) return true; }
+                            if (seg.type === "car" && seg.dropoffDate && dateStr > seg.date && dateStr <= seg.dropoffDate) return true;
+                            return false;
+                          });
+                          const seg = daySegs[0] || allSegs[0];
+                          const segType = seg?.type || trip.type;
+                          const icon = "";
+                          const routeDisplay = segType === "flight"
+                            ? (seg?.route ? seg.route.replace(/\s*[→>]\s*/g, " - ").replace(/\s*[–—]+\s*/g, " - ") : seg?.flightNumber || trip.route || "Flight")
+                            : segType === "hotel" ? (seg?.property || seg?.location || trip.property || "Hotel")
+                            : (seg?.pickupLocation || trip.location || "Car");
+                          const flightNum = (() => { const fn = seg?.flightNumber || ""; const m = fn.match(/^([A-Z]{1,3})\s*(\d+)$/); return m ? `${m[1]} ${m[2]}` : fn; })();
+                          const timeRange = [seg?.departureTime, seg?.arrivalTime].filter(Boolean).join(" - ");
+                          const hotelNights = (() => { const co = seg?.checkoutDate; return (co && seg?.date) ? Math.round((new Date(co) - new Date(seg.date)) / 86400000) : (seg?.nights || 0); })();
+                          const subtext = segType === "flight" ? [flightNum, timeRange].filter(Boolean).join(" · ") : segType === "hotel" && hotelNights ? `${hotelNights} nights` : "";
+                          const segIdx = daySegs[0] ? allSegs.indexOf(daySegs[0]) : 0;
+                          return (
+                            <div key={ti} onClick={() => { setTripDetailId(trip.id); setTripDetailSegIdx(Math.max(0, segIdx)); }}
+                              title={[seg?.route || seg?.property, seg?.flightNumber, seg?.departureTime, seg?.arrivalTime].filter(Boolean).join(" · ")}
+                              style={{ background: `${color}18`, borderLeft: `2px solid ${color}`, borderRadius: 3, padding: "3px 6px", marginBottom: 3, cursor: "pointer" }}>
+                              <div style={{ fontSize: 9, fontWeight: 600, color: css.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{icon} {routeDisplay}</div>
+                              {subtext && <div style={{ fontSize: 8, color: css.text2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 1 }}>{subtext}</div>}
+                            </div>
+                          );
+                        })}
+                        {dayTrips.length > 3 && <div style={{ fontSize: 9, color: css.text3, paddingLeft: 3 }}>+{dayTrips.length - 3} more</div>}
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Filters + List (only in list view) */}
+      {tripsView === "list" && <>
+      <div className="c-a2" style={{ display: "flex", gap: 8, marginBottom: 24, flexWrap: "wrap" }}>
+        <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search trips..."
+          style={{
+            padding: "8px 14px", background: css.surface, border: `1px solid ${css.border}`,
+            borderRadius: 8, color: css.text, fontSize: 12, outline: "none", flex: 1, minWidth: 160,
+            fontFamily: "'Instrument Sans', 'Outfit', sans-serif",
+          }} />
+        {["all", "confirmed", "planned", "wishlist"].map(s => (
+          <button key={s} onClick={() => setFilterStatus(s)} style={{
+            padding: "8px 14px", borderRadius: 8, border: `1px solid ${filterStatus === s ? css.accentBorder : css.border}`,
+            cursor: "pointer", fontSize: 11, fontWeight: 600,
+            background: filterStatus === s ? css.accentBg : css.surface,
+            color: filterStatus === s ? css.accent : css.text2, textTransform: "capitalize",
+          }}>{s}</button>
+        ))}
+      </div>
+
+      {/* Trip Cards — Upcoming */}
+      {upcomingTripsFiltered.length > 0 && (
+        <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "0.12em", fontFamily: "'Geist Mono', monospace", marginBottom: 8, textShadow: "0 1px 4px rgba(0,0,0,0.3)" }}>
+          Upcoming · {upcomingTripsFiltered.length}
+        </div>
+      )}
+      <div className="c-a3" style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: pastTripsFiltered.length > 0 ? 28 : 0 }}>
+        {upcomingTripsFiltered.map(trip => {
+          const prog = allPrograms.find(p => p.id === trip.program);
+          const sColor = trip.status === "confirmed" ? css.success : trip.status === "planned" ? css.warning : css.accent;
+          const sBg = trip.status === "confirmed" ? css.successBg : trip.status === "planned" ? css.warningBg : css.accentBg;
+          const tripExps = getTripExpenses(trip.id);
+          const tripTotal = getTripTotal(trip.id);
+          const isExpanded = expenseViewTrip === trip.id;
+          const catBreakdown = EXPENSE_CATEGORIES.map(cat => ({
+            ...cat, total: tripExps.filter(e => e.category === cat.id).reduce((s, e) => s + e.amount, 0),
+          })).filter(c => c.total > 0);
+
+          return (
+            <div key={trip.id} style={{
+              background: css.surface,
+              border: `1px solid ${isExpanded ? css.accentBorder : css.border}`,
+              borderRadius: 14, overflow: "hidden",
+              boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+              transition: "border-color 0.2s, box-shadow 0.2s",
+            }}>
+              {/* Trip header row */}
+              <div style={{
+                display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap",
+                gap: 12, padding: "16px 20px", cursor: "pointer",
+              }} onClick={() => setExpenseViewTrip(isExpanded ? null : trip.id)}>
+                <div style={{ display: "flex", alignItems: "center", gap: 14, cursor: "pointer", flex: 1, minWidth: 0 }} onClick={e => { e.stopPropagation(); setTripDetailId(trip.id); setTripDetailSegIdx(0); }}>
+                  <div style={{
+                    width: 44, height: 44, borderRadius: 0, display: "flex", alignItems: "center", justifyContent: "center",
+                    background: `${css.accent}15`, border: `1px solid ${css.accent}25`,
+                    flexShrink: 0,
+                  }}>
+                    <SegIcon type={(() => { const segs = (trip.segments || []).filter(s => !s._isMeta); if (segs.length === 0) return "pin"; if (segs.some(s => s.type === "flight")) return "flight"; if (segs.some(s => s.type === "hotel" || s.type === "accommodation")) return "hotel"; return "pin"; })()} size={20} color={css.accent} />
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    {trip.tripName && <div style={{ fontSize: 11, fontWeight: 600, color: css.accent, marginBottom: 3, textTransform: "uppercase", letterSpacing: "0.05em" }}>{trip.tripName}</div>}
+                    <div style={{ fontSize: 14, fontWeight: 600, color: css.text }}>{trip.location || trip.tripName || trip.trip_name || "Trip"}</div>
+                    <div style={{ fontSize: 11, color: css.text3, marginTop: 2, fontFamily: "'Geist Mono', monospace" }}>
+                      {formatTripDates(trip)}
+                    </div>
+                    {trip._shared && <div style={{ fontSize: 10, fontWeight: 600, color: "#3b82f6", marginTop: 3 }}>Shared by {trip._sharedBy}</div>}
+                  </div>
+                  <span style={{ fontSize: 10, color: css.accent, fontWeight: 600, opacity: 0.6, flexShrink: 0 }}>View →</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 8 : 10, flexShrink: 0 }}>
+                  {/* Expense total — desktop only */}
+                  {!isMobile && tripTotal > 0 && (
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: css.text, fontFamily: "'Geist Mono', monospace" }}>${tripTotal.toLocaleString()}</div>
+                      <div style={{ fontSize: 9, color: css.text3 }}>{tripExps.length} exp.</div>
+                    </div>
+                  )}
+                  {/* Points — desktop only */}
+                  {!isMobile && trip.estimatedPoints > 0 && (
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: css.gold, fontFamily: "'Geist Mono', monospace" }}>+{trip.estimatedPoints.toLocaleString()}</div>
+                      <div style={{ fontSize: 9, color: css.text3 }}>pts</div>
+                    </div>
+                  )}
+                  <span style={{ fontSize: 10, fontWeight: 600, color: sColor, background: sBg, border: `1px solid ${sColor}30`, borderRadius: 20, padding: "3px 10px", textTransform: "capitalize" }}>{trip.status}</span>
+                  {/* Add Expense */}
+                  <button onClick={e => { e.stopPropagation(); setShowAddExpense(trip.id); }} style={{
+                    padding: "5px 11px", borderRadius: 8, border: `1px solid ${css.accentBorder}`,
+                    background: css.accentBg, color: css.accent, fontSize: 11, fontWeight: 600, cursor: "pointer",
+                  }}>+ Exp</button>
+                  {/* Chevron expand */}
+                  <span style={{ color: css.text3, fontSize: 12, transform: isExpanded ? "rotate(180deg)" : "none", transition: "transform 0.2s", display: "inline-block" }}>▾</span>
+                  {/* Desktop-only: Calendar, Edit, Delete */}
+                  {!isMobile && <>
+                    <button onClick={e => { e.stopPropagation(); const r = e.currentTarget.getBoundingClientRect(); setCalendarPopover(calendarPopover?.id === trip.id ? null : { id: trip.id, top: r.bottom + 6, right: window.innerWidth - r.right }); }} style={{
+                      padding: "5px 10px", borderRadius: 8, border: `1px solid ${css.border}`,
+                      background: calendarPopover?.id === trip.id ? css.surface2 : "transparent",
+                      color: css.text2, fontSize: 11, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5,
+                    }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                      </svg>
+                      Calendar
+                    </button>
+                    <button onClick={e => { e.stopPropagation(); openEditTrip(trip); }} style={{
+                      width: 28, height: 28, borderRadius: 8, border: `1px solid ${css.border}`,
+                      background: css.surface2, color: css.text2,
+                      fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                    }} title="Edit trip">✎</button>
+                    <button onClick={e => { e.stopPropagation(); removeTrip(trip.id); }} style={{
+                      width: 28, height: 28, borderRadius: 8, border: `1px solid ${D ? "rgba(239,68,68,0.2)" : "rgba(239,68,68,0.15)"}`,
+                      background: "rgba(239,68,68,0.06)", color: "#ef4444",
+                      fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                    }} title="Delete trip">×</button>
+                  </>}
+                </div>
+              </div>
+
+              {/* Expense drawer — expands inline */}
+              {isExpanded && (
+                <div style={{ borderTop: `1px solid ${css.border}`, background: css.surface2 }}>
+                  {/* Drawer header */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 20px", gap: 10, flexWrap: "wrap" }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: css.text2 }}>
+                      {tripExps.length > 0
+                        ? <><span style={{ color: css.text, fontFamily: "'Geist Mono', monospace" }}>${tripTotal.toLocaleString()}</span> · {tripExps.length} expense{tripExps.length !== 1 ? "s" : ""}</>
+                        : "No expenses yet"}
+                      {isMobile && trip.estimatedPoints > 0 && <span style={{ marginLeft: 8, color: css.gold, fontFamily: "'Geist Mono', monospace" }}>· +{trip.estimatedPoints.toLocaleString()} pts</span>}
+                    </div>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <button onClick={e => { e.stopPropagation(); setShowExpenseReport(trip.id); }} style={{
+                        padding: "5px 12px", borderRadius: 7, border: `1px solid ${css.border}`,
+                        background: "transparent", color: css.text2, fontSize: 11, fontWeight: 600, cursor: "pointer",
+                      }}>Export Report ↗</button>
+                      {isMobile && <>
+                        <button onClick={e => { e.stopPropagation(); const r = e.currentTarget.getBoundingClientRect(); setCalendarPopover(calendarPopover?.id === trip.id ? null : { id: trip.id, top: r.bottom + 6, right: window.innerWidth - r.right }); }} style={{
+                          width: 30, height: 30, borderRadius: 8, border: `1px solid ${css.border}`, background: "transparent", color: css.text2, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                        }} title="Add to calendar">📅</button>
+                        <button onClick={e => { e.stopPropagation(); openEditTrip(trip); }} style={{
+                          width: 30, height: 30, borderRadius: 8, border: `1px solid ${css.border}`, background: css.surface2, color: css.text2, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                        }} title="Edit trip">✎</button>
+                        <button onClick={e => { e.stopPropagation(); removeTrip(trip.id); }} style={{
+                          width: 30, height: 30, borderRadius: 8, border: `1px solid ${D ? "rgba(239,68,68,0.2)" : "rgba(239,68,68,0.15)"}`, background: "rgba(239,68,68,0.06)", color: "#ef4444", fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                        }} title="Delete trip">×</button>
+                      </>}
+                    </div>
+                  </div>
+
+                  {/* Category breakdown bar */}
+                  {tripTotal > 0 && (
+                    <div style={{ padding: "0 20px 10px" }}>
+                      <div style={{ display: "flex", height: 5, borderRadius: 4, overflow: "hidden", marginBottom: 8 }}>
+                        {catBreakdown.map((cat, i) => (
+                          <div key={i} style={{ width: `${(cat.total / tripTotal) * 100}%`, background: cat.color }} title={`${cat.label}: $${cat.total}`} />
+                        ))}
+                      </div>
+                      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                        {catBreakdown.map((cat, i) => (
+                          <span key={i} style={{ fontSize: 10, color: css.text3, display: "flex", alignItems: "center", gap: 4 }}>
+                            <span style={{ width: 6, height: 6, borderRadius: "50%", background: cat.color, flexShrink: 0, display: "inline-block" }} />
+                            {cat.label} <span style={{ fontFamily: "'Geist Mono', monospace", color: css.text2 }}>${cat.total.toLocaleString()}</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Expense rows */}
+                  <div style={{ padding: "0 20px 16px", display: "flex", flexDirection: "column", gap: 6 }}>
+                    {tripExps.sort((a, b) => new Date(a.date) - new Date(b.date)).map(exp => {
+                      const cat = EXPENSE_CATEGORIES.find(c => c.id === exp.category);
+                      const usdAmt = exp.amount * (exp.fxRate || 1);
+                      const isForeign = exp.currency && exp.currency !== "USD";
+                      return (
+                        <div key={exp.id} style={{
+                          display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10,
+                          background: css.surface, borderRadius: 8, padding: "9px 12px", border: `1px solid ${css.border}`,
+                        }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
+                            <span style={{ fontSize: 15, flexShrink: 0 }}>{cat?.icon || "•"}</span>
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ fontSize: 12, fontWeight: 500, color: css.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.description}</div>
+                              <div style={{ fontSize: 10, color: css.text3, fontFamily: "'Geist Mono', monospace" }}>
+                                {exp.date}{exp.paymentMethod ? ` · ${exp.paymentMethod}` : ""}{exp.receipt ? " · 🧾" : ""}
+                                {isForeign ? ` · ${exp.currency} @ ${exp.fxRate}` : ""}
+                              </div>
+                            </div>
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                            <div style={{ textAlign: "right" }}>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: usdAmt === 0 ? css.success : css.text, fontFamily: "'Geist Mono', monospace" }}>
+                                {usdAmt === 0 ? "Free" : `$${usdAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                              </div>
+                              {isForeign && (
+                                <div style={{ fontSize: 9, color: css.text3, fontFamily: "'Geist Mono', monospace" }}>
+                                  {exp.amount.toLocaleString()} {exp.currency}
+                                </div>
+                              )}
+                            </div>
+                            <button onClick={() => {
+                              setNewExpense({ ...exp, amount: String(exp.amount), fxRate: exp.fxRate || 1 });
+                              setEditExpenseId(exp.id);
+                              setShowAddExpense(exp.tripId);
+                            }} style={{
+                              width: 22, height: 22, borderRadius: 6, border: "none",
+                              background: css.accentBg, color: css.accent,
+                              fontSize: 11, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                            }}>✎</button>
+                            <button onClick={() => removeExpense(exp.id)} style={{
+                              width: 22, height: 22, borderRadius: 6, border: "none",
+                              background: "rgba(239,68,68,0.08)", color: "#ef4444",
+                              fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                            }}>×</button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {/* Add expense CTA in drawer */}
+                    <button onClick={e => { e.stopPropagation(); setShowAddExpense(trip.id); }} style={{
+                      width: "100%", padding: "8px 0", borderRadius: 8, border: `1px dashed ${css.border}`,
+                      background: "transparent", color: css.text3, fontSize: 12, cursor: "pointer", marginTop: 4,
+                    }}>+ Add expense</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+        {upcomingTripsFiltered.length === 0 && pastTripsFiltered.length === 0 && (
+          <div style={{ textAlign: "center", padding: "56px 20px", color: css.text3, fontSize: 13 }}>
+            <div style={{ fontSize: 32, marginBottom: 12, opacity: 0.4 }}>—</div>
+            {trips.length === 0 ? (
+              <><div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 20, color: css.text2, marginBottom: 8 }}>No trips yet</div>
+              <button onClick={() => setShowCreateTrip(true)} style={{ background: "none", border: "none", color: css.accent, cursor: "pointer", fontWeight: 600, fontSize: 13 }}>Add your first trip →</button></>
+            ) : "No trips match your filters"}
+          </div>
+        )}
+      </div>
+
+      {/* Past Trips Section */}
+      {pastTripsFiltered.length > 0 && (
+        <div>
+          <button onClick={() => setPastTripsExpanded(p => !p)} style={{
+            display: "flex", alignItems: "center", gap: 8, width: "100%",
+            background: "none", border: "none", cursor: "pointer", padding: "4px 0", marginBottom: 12, textAlign: "left",
+          }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.12em", fontFamily: "'Geist Mono', monospace" }}>
+              Past Trips · {pastTripsFiltered.length}
+            </span>
+            <span style={{ fontSize: 12, color: css.text3, transform: pastTripsExpanded ? "rotate(180deg)" : "none", transition: "transform 0.2s", display: "inline-block", marginLeft: "auto" }}>▾</span>
+          </button>
+          {pastTripsExpanded && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {pastTripsFiltered.map(trip => {
+                const prog = allPrograms.find(p => p.id === trip.program);
+                const sColor = trip.status === "confirmed" ? css.success : trip.status === "planned" ? css.warning : css.accent;
+                const sBg = trip.status === "confirmed" ? css.successBg : trip.status === "planned" ? css.warningBg : css.accentBg;
+                const tripExps = getTripExpenses(trip.id);
+                const tripTotal = getTripTotal(trip.id);
+                const isExpanded = expenseViewTrip === trip.id;
+                const catBreakdown = EXPENSE_CATEGORIES.map(cat => ({
+                  ...cat, total: tripExps.filter(e => e.category === cat.id).reduce((s, e) => s + e.amount, 0),
+                })).filter(c => c.total > 0);
+                return (
+                  <div key={trip.id} style={{
+                    background: css.surface, border: `1px solid ${isExpanded ? css.accentBorder : css.border}`,
+                    borderRadius: 14, overflow: "hidden", opacity: 0.85,
+                    transition: "border-color 0.2s, box-shadow 0.2s",
+                  }}>
+                    <div style={{
+                      display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap",
+                      gap: 12, padding: "16px 20px", cursor: "pointer",
+                    }} onClick={() => setExpenseViewTrip(isExpanded ? null : trip.id)}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 14, cursor: "pointer", flex: 1, minWidth: 0 }} onClick={e => { e.stopPropagation(); setTripDetailId(trip.id); setTripDetailSegIdx(0); }}>
+                        <div style={{
+                          width: 44, height: 44, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20,
+                          background: prog ? `${prog.color}15` : css.surface2, border: `1px solid ${prog ? prog.color + "25" : css.border}`,
+                          flexShrink: 0,
+                        }}>
+                          {(() => { const segs = trip.segments; if (segs && segs.length > 1) return ""; const t = (segs && segs[0]?.type) || trip.type; return ""; })()}
+                        </div>
+                        <div style={{ minWidth: 0 }}>
+                          {trip.tripName && <div style={{ fontSize: 11, fontWeight: 600, color: css.accent, marginBottom: 3, textTransform: "uppercase", letterSpacing: "0.05em" }}>{trip.tripName}</div>}
+                          <div style={{ fontSize: 14, fontWeight: 600, color: css.text }}>{trip.location || trip.route || trip.property || trip.tripName || trip.trip_name || "Trip"}</div>
+                          <div style={{ fontSize: 11, color: css.text3, marginTop: 2, fontFamily: "'Geist Mono', monospace" }}>
+                            {formatTripDates(trip)}
+                          </div>
+                        </div>
+                        <span style={{ fontSize: 10, color: css.accent, fontWeight: 600, opacity: 0.6, flexShrink: 0 }}>View →</span>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 8 : 10, flexShrink: 0 }}>
+                        {!isMobile && tripTotal > 0 && (
+                          <div style={{ textAlign: "right" }}>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: css.text, fontFamily: "'Geist Mono', monospace" }}>${tripTotal.toLocaleString()}</div>
+                            <div style={{ fontSize: 9, color: css.text3 }}>{tripExps.length} exp.</div>
+                          </div>
+                        )}
+                        {!isMobile && trip.estimatedPoints > 0 && (
+                          <div style={{ textAlign: "right" }}>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: css.gold, fontFamily: "'Geist Mono', monospace" }}>+{trip.estimatedPoints.toLocaleString()}</div>
+                            <div style={{ fontSize: 9, color: css.text3 }}>pts</div>
+                          </div>
+                        )}
+                        <span style={{ fontSize: 10, fontWeight: 600, color: sColor, background: sBg, border: `1px solid ${sColor}30`, borderRadius: 20, padding: "3px 10px", textTransform: "capitalize" }}>{trip.status}</span>
+                        <button onClick={e => { e.stopPropagation(); setShowAddExpense(trip.id); }} style={{
+                          padding: "5px 11px", borderRadius: 8, border: `1px solid ${css.accentBorder}`,
+                          background: css.accentBg, color: css.accent, fontSize: 11, fontWeight: 600, cursor: "pointer",
+                        }}>+ Exp</button>
+                        <span style={{ color: css.text3, fontSize: 12, transform: isExpanded ? "rotate(180deg)" : "none", transition: "transform 0.2s", display: "inline-block" }}>▾</span>
+                        {!isMobile && <>
+                          <button onClick={e => { e.stopPropagation(); openEditTrip(trip); }} style={{
+                            width: 28, height: 28, borderRadius: 8, border: `1px solid ${css.border}`,
+                            background: css.surface2, color: css.text2,
+                            fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                          }} title="Edit trip">✎</button>
+                          <button onClick={e => { e.stopPropagation(); removeTrip(trip.id); }} style={{
+                            width: 28, height: 28, borderRadius: 8, border: `1px solid ${D ? "rgba(239,68,68,0.2)" : "rgba(239,68,68,0.15)"}`,
+                            background: "rgba(239,68,68,0.06)", color: "#ef4444",
+                            fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                          }} title="Delete trip">×</button>
+                        </>}
+                      </div>
+                    </div>
+                    {isExpanded && (
+                      <div style={{ borderTop: `1px solid ${css.border}`, background: css.surface2 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 20px", gap: 10, flexWrap: "wrap" }}>
+                          <div style={{ fontSize: 12, fontWeight: 600, color: css.text2 }}>
+                            {tripExps.length > 0
+                              ? <><span style={{ color: css.text, fontFamily: "'Geist Mono', monospace" }}>${tripTotal.toLocaleString()}</span> · {tripExps.length} expense{tripExps.length !== 1 ? "s" : ""}</>
+                              : "No expenses yet"}
+                            {isMobile && trip.estimatedPoints > 0 && <span style={{ marginLeft: 8, color: css.gold, fontFamily: "'Geist Mono', monospace" }}>· +{trip.estimatedPoints.toLocaleString()} pts</span>}
+                          </div>
+                          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                            <button onClick={e => { e.stopPropagation(); setShowExpenseReport(trip.id); }} style={{
+                              padding: "5px 12px", borderRadius: 7, border: `1px solid ${css.border}`,
+                              background: "transparent", color: css.text2, fontSize: 11, fontWeight: 600, cursor: "pointer",
+                            }}>Export Report ↗</button>
+                            {isMobile && <>
+                              <button onClick={e => { e.stopPropagation(); openEditTrip(trip); }} style={{
+                                width: 30, height: 30, borderRadius: 8, border: `1px solid ${css.border}`, background: css.surface2, color: css.text2, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                              }} title="Edit trip">✎</button>
+                              <button onClick={e => { e.stopPropagation(); removeTrip(trip.id); }} style={{
+                                width: 30, height: 30, borderRadius: 8, border: `1px solid ${D ? "rgba(239,68,68,0.2)" : "rgba(239,68,68,0.15)"}`, background: "rgba(239,68,68,0.06)", color: "#ef4444", fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                              }} title="Delete trip">×</button>
+                            </>}
+                          </div>
+                        </div>
+                        {tripTotal > 0 && (
+                          <div style={{ padding: "0 20px 10px" }}>
+                            <div style={{ display: "flex", height: 5, borderRadius: 4, overflow: "hidden", marginBottom: 8 }}>
+                              {catBreakdown.map((cat, i) => (
+                                <div key={i} style={{ width: `${(cat.total / tripTotal) * 100}%`, background: cat.color }} title={`${cat.label}: $${cat.total}`} />
+                              ))}
+                            </div>
+                            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                              {catBreakdown.map((cat, i) => (
+                                <span key={i} style={{ fontSize: 10, color: css.text3, display: "flex", alignItems: "center", gap: 4 }}>
+                                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: cat.color, flexShrink: 0, display: "inline-block" }} />
+                                  {cat.label} <span style={{ fontFamily: "'Geist Mono', monospace", color: css.text2 }}>${cat.total.toLocaleString()}</span>
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        <div style={{ padding: "0 20px 16px", display: "flex", flexDirection: "column", gap: 6 }}>
+                          {tripExps.sort((a, b) => new Date(a.date) - new Date(b.date)).map(exp => {
+                            const cat = EXPENSE_CATEGORIES.find(c => c.id === exp.category);
+                            const usdAmt = exp.amount * (exp.fxRate || 1);
+                            const isForeign = exp.currency && exp.currency !== "USD";
+                            return (
+                              <div key={exp.id} style={{
+                                display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10,
+                                background: css.surface, borderRadius: 8, padding: "9px 12px", border: `1px solid ${css.border}`,
+                              }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
+                                  <span style={{ fontSize: 15, flexShrink: 0 }}>{cat?.icon || "•"}</span>
+                                  <div style={{ minWidth: 0 }}>
+                                    <div style={{ fontSize: 12, fontWeight: 600, color: css.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.description}</div>
+                                    <div style={{ fontSize: 10, color: css.text3, fontFamily: "'Geist Mono', monospace" }}>
+                                      {exp.date}{exp.paymentMethod ? ` · ${exp.paymentMethod}` : ""}{exp.receipt ? " · 🧾" : ""}
+                                      {isForeign ? ` · ${exp.currency} @ ${exp.fxRate}` : ""}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                                  <div style={{ textAlign: "right" }}>
+                                    <div style={{ fontSize: 13, fontWeight: 700, color: usdAmt === 0 ? css.success : css.text, fontFamily: "'Geist Mono', monospace" }}>
+                                      {usdAmt === 0 ? "Free" : `$${usdAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                                    </div>
+                                    {isForeign && <div style={{ fontSize: 9, color: css.text3, fontFamily: "'Geist Mono', monospace" }}>{exp.amount.toLocaleString()} {exp.currency}</div>}
+                                  </div>
+                                  <button onClick={() => { setNewExpense({ ...exp, amount: String(exp.amount), fxRate: exp.fxRate || 1 }); setEditExpenseId(exp.id); setShowAddExpense(exp.tripId); }} style={{
+                                    width: 22, height: 22, borderRadius: 6, border: "none",
+                                    background: css.accentBg, color: css.accent,
+                                    fontSize: 11, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                                  }}>✎</button>
+                                  <button onClick={() => removeExpense(exp.id)} style={{
+                                    width: 22, height: 22, borderRadius: 6, border: "none",
+                                    background: "rgba(239,68,68,0.08)", color: "#ef4444",
+                                    fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                                  }}>×</button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+      </>}
+
+      {/* Global calendar popover — fixed position so it escapes overflow:hidden cards */}
+      {calendarPopover && (() => {
+        const trip = trips.find(t => t.id === calendarPopover.id);
+        if (!trip) return null;
+        return (
+          <>
+            <div style={{ position: "fixed", inset: 0, zIndex: 199 }} />
+            <div style={{ position: "fixed", top: calendarPopover.top, right: calendarPopover.right, zIndex: 200, background: css.surface, border: `1px solid ${css.border}`, borderRadius: 10, padding: 6, minWidth: 175, boxShadow: "0 8px 28px rgba(0,0,0,0.35)" }}>
+              <a href={getTripGoogleCalUrl(trip)} target="_blank" rel="noopener noreferrer" onClick={() => setCalendarPopover(null)}
+                style={{ display: "flex", alignItems: "center", gap: 9, padding: "8px 10px", borderRadius: 7, fontSize: 12, fontWeight: 500, color: css.text, textDecoration: "none" }}
+                onMouseEnter={e => e.currentTarget.style.background = css.surface2}
+                onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+              >
+                <svg width="14" height="14" viewBox="0 0 48 48" style={{ flexShrink: 0 }}>
+                  <path fill="#4285F4" d="M43.6 20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11 0 20-9 20-20 0-1.3-.1-2.7-.4-4z"/>
+                  <path fill="#34A853" d="M6.3 14.7l6.6 4.8C14.5 16 19 12 24 12c3 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4c-7.7 0-14.3 4.4-17.7 10.7z"/>
+                  <path fill="#FBBC05" d="M24 44c5.2 0 9.9-1.8 13.6-4.7l-6.3-5.2C29.4 35.7 26.8 36 24 36c-5.3 0-9.7-3.3-11.3-8l-6.6 5.1C9.7 39.6 16.4 44 24 44z"/>
+                  <path fill="#EA4335" d="M43.6 20H24v8h11.3c-.7 2.1-2 3.9-3.7 5.1l6.3 5.2C41.4 34.9 44 29.8 44 24c0-1.3-.1-2.7-.4-4z"/>
+                </svg>
+                Google Calendar
+              </a>
+              <a href={getTripOutlookUrl(trip)} target="_blank" rel="noopener noreferrer" onClick={() => setCalendarPopover(null)}
+                style={{ display: "flex", alignItems: "center", gap: 9, padding: "8px 10px", borderRadius: 7, fontSize: 12, fontWeight: 500, color: css.text, textDecoration: "none" }}
+                onMouseEnter={e => e.currentTarget.style.background = css.surface2}
+                onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+              >
+                <svg width="14" height="14" viewBox="0 0 48 48" style={{ flexShrink: 0 }}>
+                  <rect width="48" height="48" rx="4" fill="#0078D4"/>
+                  <rect x="6" y="10" width="22" height="28" rx="2" fill="white" opacity="0.95"/>
+                  <rect x="28" y="18" width="14" height="20" rx="1" fill="white" opacity="0.7"/>
+                  <line x1="10" y1="18" x2="24" y2="18" stroke="#0078D4" strokeWidth="2"/>
+                  <line x1="10" y1="23" x2="24" y2="23" stroke="#0078D4" strokeWidth="2"/>
+                  <line x1="10" y1="28" x2="24" y2="28" stroke="#0078D4" strokeWidth="2"/>
+                </svg>
+                Outlook
+              </a>
+              <div style={{ height: 1, background: css.border, margin: "4px 6px" }} />
+              <button onClick={() => { downloadTripICS(trip); setCalendarPopover(null); }}
+                style={{ display: "flex", alignItems: "center", gap: 9, padding: "8px 10px", borderRadius: 7, fontSize: 12, fontWeight: 500, color: css.text, width: "100%", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}
+                onMouseEnter={e => e.currentTarget.style.background = css.surface2}
+                onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Download .ics
+              </button>
+            </div>
+          </>
+        );
+      })()}
     </div>
   );
+  };
 
-  const renderDashboard = () => renderDashboardPage({
-    css, isMobile, user, trips, expenses, sharedTrips, darkMode,
-    dashSubTab, setDashSubTab, savedItineraries, setSavedItineraries,
-    setActiveView, setTripDetailId, setTripDetailSegIdx,
-    setShowCreateTrip, setShowAddExpense, setNewExpense, setEditExpenseId,
-    setShowReceiptQR, setShowPasteItinerary, setViewExpenseId,
-    setExpandedItinId, expandedItinId,
-    landmarkPhotos, userForwardingAddress,
-    formatTripDates, getTripExpenses, getTripTotal, getTripName,
-    getFlightLiveStatus, getPackingItems, packingLists, customPackItems,
-    EXPENSE_CATEGORIES, SegIcon, SectionLabel, ProgramLogo,
-    nextTrip, upcomingTripsFiltered, allTripsWithShared,
-    pushSupported, pushEnabled, enablePushNotifications,
-    addTripFromItinerary, dismissItinerary, updateItinSeg: (itinId, segIdx, updates) => {
-      setSavedItineraries(prev => prev.map(it => it.id !== itinId ? it : { ...it, parsed_segments: it.parsed_segments.map((s, i) => i === segIdx ? { ...s, ...updates } : s) }));
-    },
-    snapReceiptProcessing, handleSnapReceipt, snapReceiptInputRef,
-    BLANK_EXPENSE, AIRPORT_CITY,
-    lp: { ...css, bg: css.bg, surface: css.surface, surface2: css.surface2, border: css.border, border2: darkMode ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.12)", text: css.text, text2: css.text2, dim: css.text3, teal: css.accent, tealDim: css.accentBg, tealBord: css.accentBorder, red: darkMode ? "#ef4444" : "#dc2626", green: css.success, mono: "'Geist Mono', 'JetBrains Mono', ui-monospace, monospace", sans: "'Instrument Sans', 'Outfit', sans-serif" },
-  });
-
-  const renderTrips = () => renderTripsPage({
-    css, isMobile, user, trips, expenses, sharedTrips, linkedAccounts, allPrograms,
-    darkMode, tripDetailId, setTripDetailId, setTripDetailSegIdx,
-    expenseViewTrip, setExpenseViewTrip, expandedCardId, setExpandedCardId,
-    calendarPopover, setCalendarPopover,
-    setShowAddExpense, setNewExpense, setEditExpenseId, setShowAddSegment, setShowCreateTrip,
-    setShowExpenseReport, setShowShareModal, setShareEmail, setShareStatus, setSharePermission,
-    openEditTrip, removeTrip, removeExpense, editSegment, deleteSegment, showConfirm,
-    getTripExpenses, getTripTotal, getTripName, formatTripDates, ProgramLogo, EXPENSE_CATEGORIES,
-    getTripGoogleCalUrl, getTripOutlookUrl, downloadTripICS,
-    EXPENSE_CATEGORIES, SegIcon, segTypeInfo, segTime, segTitle, segSubtitle, segLocation,
-    getFlightLiveStatus, weatherCache, tempUnit, setTempUnit,
-    checkVisa, visaCache, visaLoading, packingLists, savePackingLists,
-    packExpanded, setPackExpanded, customPackItems, setCustomPackItems, getPackingItems,
-    lastDateRef, settingsForm, BLANK_EXPENSE,
-    searchQuery, setSearchQuery, filterStatus, setFilterStatus, tripsView, setTripsView,
-    pastTripsExpanded, setPastTripsExpanded, hotelSectionOpen, setHotelSectionOpen,
-    tripSummaryId, setTripSummaryId, showImportItinerary, setShowImportItinerary,
-    cropExpenseId, setCropExpenseId, cropRect, setCropRect, cropStartRef, cropEndRef,
-    setViewExpenseId, setActiveView,
-    AIRPORT_CITY, AIRLINE_CS, HOTEL_CS, OTA_CS,
-    calViewMonth, setCalViewMonth,
-    layoverMap: new Map(), flightType, setFlightType,
-    generateFlightyICS, togglePackItem,
-  });
-
-  const renderPrograms = (_previewSub = null) => renderProgramsPage({ css, isMobile, darkMode, user, linkedAccounts, setLinkedAccounts, supabase, progAddType, setProgAddType, progAddId, setProgAddId, progAddTier, setProgAddTier, ProgramLogo, expandedCardId, setExpandedCardId, cardBenefitValues, setCardBenefitValue, cardCustomBenefits, addCustomBenefit, updateCustomBenefit, removeCustomBenefit, getCardNetValue, showConfirm, getTripExpenses, getTripTotal, getTripName, formatTripDates, EXPENSE_CATEGORIES, SegIcon, AIRPORT_CITY, AIRLINE_CS, HOTEL_CS, OTA_CS }, _previewSub);
   const renderExpenses = () => {
     // Redirect handled by navItem click
     return null;
   };
 
 
-  const renderOptimizer = (_previewTab = null) => renderOptimizerPage({
-    css, isMobile, user, trips, linkedAccounts, allPrograms,
-    calcSegmentCredits, calcTripEarnings, getBookingClassCabin, greatCircleMiles, segProgName,
-    itinSegments, setItinSegments, itinCreditAirline, setItinCreditAirline, itinCurrentTier, setItinCurrentTier,
-    itinFare, setItinFare, itinHistory, setItinHistory, showItinHistory, setShowItinHistory,
-    optimizerTab, setOptimizerTab, optimizerTripId, setOptimizerTripId,
-    ccOptTarget, setCcOptTarget, ccOptAmount, setCcOptAmount, ccBookingMode, setCcBookingMode,
-    allianceGoal, setAllianceGoal, setActiveView, AIRPORT_COORDS, AIRPORT_CITY,
-    formatTripDates, ProgramLogo, EXPENSE_CATEGORIES,
-  }, _previewTab);
+  const renderOptimizer = (_previewTab = null) => {
+    const _tab = _previewTab || optimizerTab;
+    const flightTrips = trips.filter(t => t.type === "flight");
+    const airlines = LOYALTY_PROGRAMS.airlines;
 
-  const renderExpenseReports = () => renderExpenseReportsPage({ css, isMobile, darkMode, user, trips, expenses, allPrograms, supabase, standaloneReports, setStandaloneReports, showReportBuilder, setShowReportBuilder, reportBuilder, setReportBuilder, editingReportId, setEditingReportId, reportBuilderCustom, setReportBuilderCustom, forwardReportId, setForwardReportId, forwardEmail, setForwardEmail, forwardStatus, setForwardStatus, EXPENSE_CATEGORIES, showConfirm, getTripExpenses, getTripTotal, getTripName, formatTripDates, getReportExpenses, buildPrintReport, openReportWindow });
-  const renderReports = () => renderReportsPage({ css, isMobile, darkMode, user, trips, expenses, linkedAccounts, allPrograms, EXPENSE_CATEGORIES, AIRPORT_COORDS, AIRPORT_CITY, getTripExpenses, getTripTotal, getTripName, formatTripDates, haversineDistance, parseRoute, greatCircleMiles, ProgramLogo });
-  const renderAlliances = () => renderAlliancesPage({ css, isMobile, darkMode, user, linkedAccounts, allPrograms, ProgramLogo });
-  const renderInsights = (_previewTab = null) => renderInsightsPage({ css, isMobile, darkMode, user, trips, expenses, linkedAccounts, allPrograms, insightsTab, setInsightsTab, EXPENSE_CATEGORIES, formatTripDates, getTripExpenses, getTripTotal, getTripName, AIRPORT_CITY, setActiveView, ProgramLogo }, _previewTab);
-  const renderPremium = () => renderPremiumPage({ css, isMobile, darkMode });
-  const renderNews = () => renderNewsPage({ css, isMobile, darkMode, newsItems, newsLoading, newsError, fetchNews, NEWS_SOURCES });
-  const renderLounges = () => renderLoungesPage({ css, isMobile, darkMode, user, linkedAccounts, loungeAirport, setLoungeAirport, loungeSearchCode, setLoungeSearchCode, loungeDropdownOpen, setLoungeDropdownOpen, loungeExpandedId, setLoungeExpandedId, loungeFlightAirline, setLoungeFlightAirline, loungeFlightClass, setLoungeFlightClass, loungeAccessRoute, setLoungeAccessRoute, loungePhotos, loungeVisits, setLoungeVisits, getLoungeAccess, saveLoungeVisit, removeLoungeVisit, fetchLoungePhoto, AIRPORT_CITY, showConfirm });
+    // Helper: estimate points a trip would earn if credited to a given airline
+    const estimatePts = (trip, airline) => {
+      const rate = airline.earnRate || {};
+      const cls = trip.class || "domestic";
+      const perMile = rate[cls] || rate.domestic || 5;
+      // Use estimatedPoints as base proxy for "miles flown × base rate" of original airline
+      const origAirline = airlines.find(a => a.id === trip.program);
+      const origRate = origAirline?.earnRate?.[cls] || origAirline?.earnRate?.domestic || 5;
+      const baseMiles = origRate > 0 ? (trip.estimatedPoints || 0) / origRate : 0;
+      return Math.round(baseMiles * perMile);
+    };
+
+    // Helper: given a program and total points, find current tier, next tier, % to next
+    const tierProgress = (airline, totalPts) => {
+      let currentTier = null, nextTier = null;
+      for (const tier of airline.tiers) {
+        if (totalPts >= tier.threshold) currentTier = tier;
+      }
+      nextTier = airline.tiers.find(t => t.threshold > totalPts) || null;
+      const topTier = airline.tiers[airline.tiers.length - 1];
+      const pctToNext = nextTier ? Math.min(100, Math.round((totalPts / nextTier.threshold) * 100)) : 100;
+      return { currentTier, nextTier, topTier, pctToNext, totalPts };
+    };
+
+    // ── SECTION 1: Global optimizer — credit ALL trips to one program ──
+    const globalResults = airlines.map(airline => {
+      const account = linkedAccounts[airline.id];
+      const existingPts = account?.currentPoints || account?.tierCredits || 0;
+      const totalFromTrips = flightTrips.reduce((sum, t) => sum + estimatePts(t, airline), 0);
+      const total = existingPts + totalFromTrips;
+      const prog = tierProgress(airline, total);
+      return { airline, existingPts, totalFromTrips, total, ...prog };
+    }).sort((a, b) => {
+      // Sort by: reached highest tier first, then by % to next tier
+      const aTierIdx = a.airline.tiers.indexOf(a.currentTier);
+      const bTierIdx = b.airline.tiers.indexOf(b.currentTier);
+      if (aTierIdx !== bTierIdx) return bTierIdx - aTierIdx;
+      return b.pctToNext - a.pctToNext;
+    });
+    const bestGlobal = globalResults[0];
+
+    // ── SECTION 2: Trip-by-trip comparison ──
+    const selectedTrip = flightTrips.find(t => t.id === optimizerTripId) || flightTrips[0];
+    const tripResults = selectedTrip ? airlines.map(airline => {
+      const account = linkedAccounts[airline.id];
+      const existingPts = account?.currentPoints || account?.tierCredits || 0;
+      const ptsFromTrip = estimatePts(selectedTrip, airline);
+      const beforeProg = tierProgress(airline, existingPts);
+      const afterProg = tierProgress(airline, existingPts + ptsFromTrip);
+      return { airline, ptsFromTrip, existingPts, before: beforeProg, after: afterProg };
+    }).filter(r => r.ptsFromTrip > 0).sort((a, b) => {
+      // Sort by biggest % jump
+      const aJump = a.after.pctToNext - a.before.pctToNext;
+      const bJump = b.after.pctToNext - b.before.pctToNext;
+      return bJump - aJump;
+    }) : [];
+
+    // ── SECTION 3: Alliance goal optimizer ──
+    // Map alliance tier keys to the airline programs that can reach them
+    const GOAL_OPTIONS = [
+      { key: "sa_silver", label: "Star Alliance Silver" },
+      { key: "sa_gold", label: "Star Alliance Gold" },
+      { key: "ow_ruby", label: "Oneworld Ruby" },
+      { key: "ow_sapphire", label: "Oneworld Sapphire" },
+      { key: "ow_emerald", label: "Oneworld Emerald" },
+      { key: "st_elite", label: "SkyTeam Elite" },
+      { key: "st_elite_plus", label: "SkyTeam Elite Plus" },
+    ];
+    const goalResults = (() => {
+      const goal = allianceGoal;
+      // Find all airline programs that map to this alliance tier
+      const candidates = Object.entries(ALLIANCE_MBR).map(([progId, meta]) => {
+        const airline = airlines.find(a => a.id === progId);
+        if (!airline) return null;
+        // Find the tier name in this program that maps to the goal alliance tier
+        const tierName = Object.entries(meta.tierMap).find(([, v]) => v === goal)?.[0];
+        if (!tierName) return null;
+        const tier = airline.tiers.find(t => t.name === tierName);
+        if (!tier) return null;
+        const account = linkedAccounts[progId];
+        const existingPts = account?.currentPoints || account?.tierCredits || 0;
+        const totalFromTrips = flightTrips.reduce((sum, t) => sum + estimatePts(t, airline), 0);
+        const total = existingPts + totalFromTrips;
+        const remaining = Math.max(0, tier.threshold - total);
+        const pct = Math.min(100, Math.round((total / tier.threshold) * 100));
+        const reached = total >= tier.threshold;
+        return { airline, tierName, threshold: tier.threshold, existingPts, totalFromTrips, total, remaining, pct, reached, color: meta.color };
+      }).filter(Boolean);
+      return candidates.sort((a, b) => a.remaining - b.remaining);
+    })();
+
+    const OPT_TAB_LABELS = { itinerary: "Elite Status Calculator", global: "Global Status Optimizer", trip: "Trip-by-Trip Comparison", alliance: "Alliance Goal Optimizer", cards: "Credit Card Optimizer" };
+
+    const BarFill = ({ pct, color }) => (
+      <div style={{ width: "100%", height: 6, borderRadius: 3, background: css.surface2, overflow: "hidden" }}>
+        <div style={{ width: `${pct}%`, height: "100%", borderRadius: 3, background: color, transition: "width 0.6s ease" }} />
+      </div>
+    );
+
+    // ── Itinerary Calculator helpers ──
+    const updateItinSeg = (id, field, value) => {
+      setItinSegments(segs => segs.map(s => s.id === id ? { ...s, [field]: value } : s));
+    };
+    const addItinSeg = () => {
+      const last = itinSegments[itinSegments.length - 1];
+      setItinSegments(segs => [...segs, { id: crypto.randomUUID(), origin: last?.destination || "", destination: "", operatingAirline: last?.operatingAirline || "", marketingAirline: last?.marketingAirline || "", bookingClass: "", distance: "" }]);
+    };
+    const removeItinSeg = (id) => {
+      if (itinSegments.length <= 1) return;
+      setItinSegments(segs => segs.filter(s => s.id !== id));
+    };
+
+    // Calculate results for all airlines
+    const calcItinResults = () => {
+      // Eligible fare for LP/status earning = base fare + airline surcharges (YQ/YR) only.
+      // Government taxes and other fees do NOT count toward revenue-based earning.
+      const eligibleFare = (parseFloat(itinFare.baseFare) || 0) + (parseFloat(itinFare.airlineFees) || 0);
+      const totalFare = eligibleFare; // used for earning calculation
+      const segments = itinSegments.map(seg => {
+        const dist = parseInt(seg.distance) || greatCircleMiles(seg.origin.toUpperCase().trim(), seg.destination.toUpperCase().trim());
+        const opAirline = seg.operatingAirline;
+        const cabin = getBookingClassCabin(opAirline, seg.bookingClass) || "economy";
+        return { ...seg, distanceMiles: dist, cabin };
+      });
+      const totalDistance = segments.reduce((s, seg) => s + seg.distanceMiles, 0);
+      const perSegFare = segments.length > 0 ? totalFare / segments.length : 0;
+
+      // Calculate for each airline program, applying elite bonus if it's the selected crediting airline
+      const results = airlines.filter(a => a.tiers && a.tiers.length > 0).map(airline => {
+        // Look up elite bonus: only apply if this is the selected credit airline AND user has a current tier set
+        const bonusMap = ELITE_BONUS_PCT[airline.id] || {};
+        const eliteBonus = (airline.id === itinCreditAirline && itinCurrentTier) ? (bonusMap[itinCurrentTier] || 0) : 0;
+        let totalCredits = 0;
+        const segDetails = segments.map(seg => {
+          const credits = calcSegmentCredits(airline.id, seg.operatingAirline, seg.cabin, seg.distanceMiles, perSegFare, eliteBonus, seg.bookingClass || "");
+          totalCredits += credits;
+          return { ...seg, credits };
+        });
+        const account = linkedAccounts[airline.id];
+        const existingPts = account?.currentPoints || account?.tierCredits || 0;
+        const projTotal = existingPts + totalCredits;
+        const prog = tierProgress(airline, projTotal);
+        return { airline, totalCredits, segDetails, existingPts, projTotal, totalDistance, totalFare, eliteBonus, ...prog };
+      }).filter(r => r.totalCredits > 0).sort((a, b) => {
+        const aIdx = a.airline.tiers.indexOf(a.currentTier);
+        const bIdx = b.airline.tiers.indexOf(b.currentTier);
+        if (aIdx !== bIdx) return bIdx - aIdx;
+        return b.pctToNext - a.pctToNext;
+      });
+      return results;
+    };
+
+    const itinCalcResults = (_tab === "itinerary" && itinSegments.some(s => s.origin && s.destination)) ? calcItinResults() : [];
+
+    // Tier journey bar component
+    const TierJourneyBar = ({ airline, totalPts, color }) => {
+      if (!airline.tiers || airline.tiers.length === 0) return null;
+      const maxThreshold = airline.tiers[airline.tiers.length - 1].threshold;
+      return (
+        <div style={{ position: "relative", marginTop: 8 }}>
+          <div style={{ display: "flex", height: 10, borderRadius: 5, overflow: "hidden", background: css.surface2, border: `1px solid ${css.border}` }}>
+            {airline.tiers.map((tier, i) => {
+              const prevThreshold = i > 0 ? airline.tiers[i - 1].threshold : 0;
+              const width = ((tier.threshold - prevThreshold) / maxThreshold) * 100;
+              const filled = Math.min(100, Math.max(0, ((totalPts - prevThreshold) / (tier.threshold - prevThreshold)) * 100));
+              return (
+                <div key={tier.name} style={{ width: `${width}%`, position: "relative", borderRight: i < airline.tiers.length - 1 ? `1px solid ${css.border}` : "none" }}>
+                  <div style={{ width: `${filled}%`, height: "100%", background: color, transition: "width 0.8s ease" }} />
+                </div>
+              );
+            })}
+          </div>
+          {/* Tier labels below */}
+          <div style={{ display: "flex", position: "relative", marginTop: 4 }}>
+            {airline.tiers.map((tier, i) => {
+              const pos = (tier.threshold / maxThreshold) * 100;
+              const reached = totalPts >= tier.threshold;
+              return (
+                <div key={tier.name} style={{ position: "absolute", left: `${pos}%`, transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap" }}>
+                  <div style={{ fontSize: 8, fontWeight: reached ? 700 : 500, color: reached ? color : css.text3, fontFamily: "'Geist Mono', monospace" }}>
+                    {tier.name}
+                  </div>
+                  <div style={{ fontSize: 7, color: css.text3, fontFamily: "'Geist Mono', monospace" }}>
+                    {tier.threshold >= 1000 ? `${Math.round(tier.threshold / 1000)}K` : tier.threshold}
+                  </div>
+                </div>
+              );
+            })}
+            {/* Current position marker */}
+            {totalPts > 0 && (
+              <div style={{ position: "absolute", left: `${Math.min(100, (totalPts / maxThreshold) * 100)}%`, top: -14, transform: "translateX(-50%)" }}>
+                <div style={{ width: 0, height: 0, borderLeft: "4px solid transparent", borderRight: "4px solid transparent", borderTop: `5px solid ${color}` }} />
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    };
+
+    const fieldStyle = { display: "block", width: "100%", padding: "8px 10px", background: css.surface2, border: `1px solid ${css.border}`, borderRadius: 7, color: css.text, fontSize: 12, fontFamily: "'Instrument Sans', 'Outfit', sans-serif", outline: "none", boxSizing: "border-box" };
+    const labelStyle = { fontSize: 9, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4, display: "block" };
+
+    return (
+      <div>
+        {/* Header */}
+        <div className="c-a1" style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: css.text3, marginBottom: 8 }}>Strategy Engine</div>
+          <h2 style={{ fontFamily: "'Instrument Sans', 'Outfit', sans-serif", fontSize: isMobile ? 28 : 36, fontWeight: 600, color: css.text, margin: 0, lineHeight: 1.1 }}>{OPT_TAB_LABELS[_tab] || "Trip Optimizer"}</h2>
+          <p style={{ color: css.text2, fontSize: 13, margin: "8px 0 0" }}>
+            {_tab === "itinerary" ? "Enter your itinerary to see exactly where each flight puts you on every airline's elite status ladder" : `Credit flights strategically to accelerate elite status across ${airlines.length} airline programs`}
+          </p>
+        </div>
+
+        {/* ── Itinerary Calculator Tab ── */}
+        {_tab === "itinerary" && (
+          <div>
+            {/* Segment builder */}
+            <div style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: isMobile ? "16px" : "24px", marginBottom: 20 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: css.text, marginBottom: 16 }}>Flight Segments</div>
+              {itinSegments.map((seg, idx) => (
+                <div key={seg.id} style={{ marginBottom: 16, padding: 16, background: css.surface2, border: `1px solid ${css.border}`, borderRadius: 10 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: css.accent }}>Segment {idx + 1}</div>
+                    {itinSegments.length > 1 && (
+                      <button onClick={() => removeItinSeg(seg.id)} style={{ width: 24, height: 24, borderRadius: 6, border: `1px solid rgba(239,68,68,0.2)`, background: "rgba(239,68,68,0.06)", color: "#ef4444", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+                    )}
+                  </div>
+                  {/* Route */}
+                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr 1fr", gap: 10, marginBottom: 10 }}>
+                    <div>
+                      <label style={labelStyle}>Origin (IATA)</label>
+                      <input value={seg.origin} onChange={e => updateItinSeg(seg.id, "origin", e.target.value.toUpperCase().slice(0, 3))} placeholder="YYZ" maxLength={3} style={{ ...fieldStyle, textTransform: "uppercase", fontFamily: "'Geist Mono', monospace" }} />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Destination</label>
+                      <input value={seg.destination} onChange={e => updateItinSeg(seg.id, "destination", e.target.value.toUpperCase().slice(0, 3))} placeholder="HKG" maxLength={3} style={{ ...fieldStyle, textTransform: "uppercase", fontFamily: "'Geist Mono', monospace" }} />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Distance (mi)</label>
+                      <input type="number" value={seg.distance || ""} onChange={e => updateItinSeg(seg.id, "distance", e.target.value)}
+                        placeholder={greatCircleMiles(seg.origin.toUpperCase().trim(), seg.destination.toUpperCase().trim()) || "auto"}
+                        style={{ ...fieldStyle, fontFamily: "'Geist Mono', monospace" }} />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Booking Class</label>
+                      <input value={seg.bookingClass} onChange={e => updateItinSeg(seg.id, "bookingClass", e.target.value.toUpperCase().slice(0, 1))} placeholder="J" maxLength={1} style={{ ...fieldStyle, textTransform: "uppercase", fontFamily: "'Geist Mono', monospace", textAlign: "center" }} />
+                    </div>
+                  </div>
+                  {/* Airlines */}
+                  <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 10 }}>
+                    <div>
+                      <label style={labelStyle}>Operating Airline</label>
+                      <select value={seg.operatingAirline} onChange={e => updateItinSeg(seg.id, "operatingAirline", e.target.value)} style={fieldStyle}>
+                        <option value="">— Select —</option>
+                        {airlines.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Marketing / Ticketing Airline</label>
+                      <select value={seg.marketingAirline} onChange={e => updateItinSeg(seg.id, "marketingAirline", e.target.value)} style={fieldStyle}>
+                        <option value="">— Same as operating —</option>
+                        {airlines.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  {/* Auto distance + cabin display */}
+                  {seg.origin && seg.destination && (
+                    <div style={{ marginTop: 8, display: "flex", gap: 12, flexWrap: "wrap" }}>
+                      {(() => {
+                        const dist = parseInt(seg.distance) || greatCircleMiles(seg.origin.toUpperCase().trim(), seg.destination.toUpperCase().trim());
+                        const cabin = seg.bookingClass ? (getBookingClassCabin(seg.operatingAirline, seg.bookingClass) || "economy") : null;
+                        return (<>
+                          {dist > 0 && <span style={{ fontSize: 10, color: css.text3, fontFamily: "'Geist Mono', monospace", background: css.surface, padding: "3px 8px", borderRadius: 4 }}>📏 {dist.toLocaleString()} mi</span>}
+                          {cabin && <span style={{ fontSize: 10, color: css.accent, fontFamily: "'Geist Mono', monospace", background: css.accentBg, padding: "3px 8px", borderRadius: 4 }}>{cabin.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</span>}
+                        </>);
+                      })()}
+                    </div>
+                  )}
+                </div>
+              ))}
+              <button onClick={addItinSeg} style={{ padding: "8px 18px", borderRadius: 8, border: `1px solid ${css.accentBorder}`, background: css.accentBg, color: css.accent, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>+ Add Segment</button>
+            </div>
+
+            {/* Fare breakdown */}
+            <div style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: isMobile ? "16px" : "24px", marginBottom: 20 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: css.text, marginBottom: 16 }}>Fare Breakdown</div>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr 1fr", gap: 10 }}>
+                <div>
+                  <label style={labelStyle}>Base Fare ✓</label>
+                  <input type="number" value={itinFare.baseFare} onChange={e => setItinFare(f => ({ ...f, baseFare: e.target.value }))} placeholder="0.00" style={{ ...fieldStyle, fontFamily: "'Geist Mono', monospace", borderColor: itinFare.baseFare ? "rgba(14,165,160,0.3)" : undefined }} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Gov. Taxes</label>
+                  <input type="number" value={itinFare.taxes} onChange={e => setItinFare(f => ({ ...f, taxes: e.target.value }))} placeholder="0.00" style={{ ...fieldStyle, fontFamily: "'Geist Mono', monospace", opacity: 0.7 }} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Carrier Surcharges (YQ/YR) ✓</label>
+                  <input type="number" value={itinFare.airlineFees} onChange={e => setItinFare(f => ({ ...f, airlineFees: e.target.value }))} placeholder="0.00" style={{ ...fieldStyle, fontFamily: "'Geist Mono', monospace", borderColor: itinFare.airlineFees ? "rgba(14,165,160,0.3)" : undefined }} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Other Fees</label>
+                  <input type="number" value={itinFare.otherFees} onChange={e => setItinFare(f => ({ ...f, otherFees: e.target.value }))} placeholder="0.00" style={{ ...fieldStyle, fontFamily: "'Geist Mono', monospace", opacity: 0.7 }} />
+                </div>
+              </div>
+              <div style={{ marginTop: 10, display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 8 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: css.text, fontFamily: "'Geist Mono', monospace" }}>
+                  Total: ${((parseFloat(itinFare.baseFare) || 0) + (parseFloat(itinFare.taxes) || 0) + (parseFloat(itinFare.airlineFees) || 0) + (parseFloat(itinFare.otherFees) || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })} {itinFare.currency}
+                </div>
+                <div style={{ fontSize: 10, color: css.accent, fontFamily: "'Geist Mono', monospace" }}>
+                  Eligible for earning: ${((parseFloat(itinFare.baseFare) || 0) + (parseFloat(itinFare.airlineFees) || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })} (base + airline fees)
+                </div>
+              </div>
+            </div>
+
+            {/* Itinerary summary */}
+            {itinSegments.some(s => s.origin && s.destination) && (
+              <div style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: "12px 20px", marginBottom: 20 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: css.text3, fontFamily: "'Geist Mono', monospace" }}>ROUTE:</span>
+                  {itinSegments.filter(s => s.origin && s.destination).map((s, i) => (
+                    <span key={s.id} style={{ fontSize: 12, fontWeight: 600, color: css.text, fontFamily: "'Geist Mono', monospace" }}>
+                      {i > 0 && <span style={{ color: css.text3, margin: "0 4px" }}>→</span>}
+                      {s.origin} → {s.destination}
+                    </span>
+                  ))}
+                  <span style={{ fontSize: 10, color: css.text3, fontFamily: "'Geist Mono', monospace", marginLeft: 8 }}>
+                    {itinSegments.reduce((s, seg) => s + (parseInt(seg.distance) || greatCircleMiles(seg.origin.toUpperCase().trim(), seg.destination.toUpperCase().trim())), 0).toLocaleString()} total miles
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Credit to which program? */}
+            <div style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: isMobile ? "16px" : "24px", marginBottom: 20 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: css.text, marginBottom: 16 }}>Credit To Program</div>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
+                <div>
+                  <label style={labelStyle}>Elite Status Program</label>
+                  <select value={itinCreditAirline} onChange={e => setItinCreditAirline(e.target.value)} style={fieldStyle}>
+                    <option value="">— Select Program —</option>
+                    {airlines.filter(a => a.tiers && a.tiers.length > 0).map(a => <option key={a.id} value={a.id}>{a.name} ({a.unit})</option>)}
+                  </select>
+                </div>
+                {itinCreditAirline && (() => {
+                  const prog = airlines.find(a => a.id === itinCreditAirline);
+                  if (!prog) return null;
+                  const bonusMap = ELITE_BONUS_PCT[itinCreditAirline] || {};
+                  const bonusPct = bonusMap[itinCurrentTier] || 0;
+                  return (
+                    <div>
+                      <label style={labelStyle}>Current Elite Tier (prior year status — determines earning bonus)</label>
+                      <select value={itinCurrentTier} onChange={e => setItinCurrentTier(e.target.value)} style={fieldStyle}>
+                        <option value="">Base Member (no bonus)</option>
+                        {prog.tiers.map(t => {
+                          const b = bonusMap[t.name];
+                          return <option key={t.name} value={t.name}>{t.name}{b ? ` (+${b}% bonus)` : ""}</option>;
+                        })}
+                      </select>
+                      {bonusPct > 0 && (
+                        <div style={{ fontSize: 10, color: css.accent, marginTop: 4, fontWeight: 600, fontFamily: "'Geist Mono', monospace" }}>
+                          {itinCurrentTier}: +{bonusPct}% earning bonus applied to all segments
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+              {itinCreditAirline && (() => {
+                const prog = airlines.find(a => a.id === itinCreditAirline);
+                if (!prog) return null;
+                const account = linkedAccounts[itinCreditAirline];
+                const existingPts = account?.currentPoints || account?.tierCredits || 0;
+                return (
+                  <div style={{ marginTop: 12, padding: "12px 16px", background: css.surface2, borderRadius: 8 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 11, color: css.text3 }}>Current year {prog.unit} (from Programs tab)</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: css.text, fontFamily: "'Geist Mono', monospace" }}>{existingPts.toLocaleString()}</span>
+                    </div>
+                    {existingPts === 0 && (
+                      <div style={{ fontSize: 10, color: css.text3, marginTop: 6, lineHeight: 1.4 }}>
+                        Enter your current year's {prog.unit} balance in the <button onClick={() => { setActiveView("programs"); }} style={{ background: "none", border: "none", color: css.accent, cursor: "pointer", fontSize: 10, fontWeight: 600, padding: 0, fontFamily: "inherit" }}>Programs tab →</button> and it will be reflected here.
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Results: Single selected program detail */}
+            {(() => {
+              const r = itinCreditAirline ? itinCalcResults.find(r => r.airline.id === itinCreditAirline) : null;
+              if (!r) {
+                if (itinCreditAirline && itinSegments.some(s => s.origin && s.destination)) {
+                  return (
+                    <div style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: "28px 24px", textAlign: "center" }}>
+                      <div style={{ fontSize: 13, color: css.text2 }}>Add an operating airline and booking class to each segment to see earning projections.</div>
+                    </div>
+                  );
+                }
+                if (!itinCreditAirline && itinSegments.some(s => s.origin && s.destination)) {
+                  return (
+                    <div style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: "28px 24px", textAlign: "center" }}>
+                      <div style={{ fontSize: 13, color: css.text2 }}>Select a crediting program above to see your elite status earning projection.</div>
+                    </div>
+                  );
+                }
+                return null;
+              }
+              return (
+                <div style={{ background: css.surface, border: `1px solid ${r.airline.color}40`, borderLeft: `4px solid ${r.airline.color}`, borderRadius: 14, padding: isMobile ? "16px" : "24px" }}>
+                  {/* Header */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <ProgramLogo prog={r.airline} size={28} />
+                      <div>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: css.text }}>{r.airline.name}</div>
+                        <div style={{ fontSize: 11, color: css.text3 }}>
+                          {r.airline.unit}
+                          {r.eliteBonus > 0 && <span style={{ color: css.accent, fontWeight: 600 }}> (+{r.eliteBonus}% elite bonus)</span>}
+                          {" · "}
+                          {(() => {
+                            const rates = PARTNER_EARN_RATES[r.airline.id];
+                            const isOwn = r.airline.id === (r.segDetails[0]?.operatingAirline || "");
+                            const pEntry = rates?.[r.segDetails[0]?.operatingAirline] || {};
+                            if (isOwn && (rates?._type === "fare_own" || rates?._type === "revenue")) return "Revenue-based (per $ spent)";
+                            if (pEntry._fare) return "Revenue-based (per $ spent)";
+                            if (rates?._type === "segment" || rates?._type === "fare_own") return "Distance-based (approx)";
+                            return "Distance-based (% of miles flown)";
+                          })()}
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: 22, fontWeight: 800, color: r.airline.color, fontFamily: "'Geist Mono', monospace" }}>+{r.totalCredits.toLocaleString()}</div>
+                      <div style={{ fontSize: 10, color: css.text3 }}>{r.airline.unit} from this itinerary</div>
+                    </div>
+                  </div>
+
+                  {/* Tier journey bar — large */}
+                  <div style={{ marginBottom: 20 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Elite Status Journey</div>
+                    <TierJourneyBar airline={r.airline} totalPts={r.projTotal} color={r.airline.color} />
+                  </div>
+
+                  {/* Summary stats */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginTop: 24, marginBottom: 16 }}>
+                    <div style={{ background: css.surface2, borderRadius: 8, padding: "12px 14px", textAlign: "center" }}>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: css.text, fontFamily: "'Geist Mono', monospace" }}>{r.existingPts.toLocaleString()}</div>
+                      <div style={{ fontSize: 9, color: css.text3, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Existing</div>
+                    </div>
+                    <div style={{ background: `${r.airline.color}12`, border: `1px solid ${r.airline.color}25`, borderRadius: 8, padding: "12px 14px", textAlign: "center" }}>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: r.airline.color, fontFamily: "'Geist Mono', monospace" }}>+{r.totalCredits.toLocaleString()}</div>
+                      <div style={{ fontSize: 9, color: css.text3, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>This Trip</div>
+                    </div>
+                    <div style={{ background: css.surface2, borderRadius: 8, padding: "12px 14px", textAlign: "center" }}>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: css.text, fontFamily: "'Geist Mono', monospace" }}>{r.projTotal.toLocaleString()}</div>
+                      <div style={{ fontSize: 9, color: css.text3, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Projected</div>
+                    </div>
+                  </div>
+
+                  {/* Current / Next tier */}
+                  <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 16 }}>
+                    <div style={{ flex: 1, minWidth: 120 }}>
+                      <div style={{ fontSize: 9, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Projected Tier</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: r.currentTier ? r.airline.color : css.text3 }}>{r.currentTier?.name || "Base Member"}</div>
+                      {r.currentTier?.perks && <div style={{ fontSize: 10, color: css.text2, marginTop: 2, lineHeight: 1.4 }}>{r.currentTier.perks}</div>}
+                    </div>
+                    {r.nextTier && (
+                      <div style={{ flex: 1, minWidth: 120 }}>
+                        <div style={{ fontSize: 9, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Next Tier</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: css.text2 }}>{r.nextTier.name}</div>
+                        <div style={{ fontSize: 11, color: css.accent, fontWeight: 600, fontFamily: "'Geist Mono', monospace", marginTop: 2 }}>{(r.nextTier.threshold - r.projTotal).toLocaleString()} {r.airline.unit} remaining ({r.pctToNext}%)</div>
+                      </div>
+                    )}
+                    {!r.nextTier && r.currentTier && (
+                      <div style={{ flex: 1, minWidth: 120 }}>
+                        <div style={{ fontSize: 9, fontWeight: 700, color: css.success, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Top Tier Reached</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: css.success }}>Maximum Status</div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Per-segment breakdown */}
+                  <div style={{ borderTop: `1px solid ${css.border}`, paddingTop: 12 }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Segment Breakdown</div>
+                    {r.segDetails.map((sd, si) => {
+                      const rates = PARTNER_EARN_RATES[r.airline.id];
+                      const segIsOwn = r.airline.id === sd.operatingAirline;
+                      const partnerEntry = rates?.[sd.operatingAirline] || rates?._default || {};
+                      const useFare = (segIsOwn && (rates?._type === "fare_own" || rates?._type === "revenue")) || partnerEntry._fare;
+                      // Resolve actual rate used (per-class if available, else cabin fallback)
+                      const bc = (sd.bookingClass || "").toUpperCase();
+                      let segRate = 0;
+                      let rateLabel = "";
+                      if (!segIsOwn && bc && PARTNER_CLASS_RATES[r.airline.id]?.[sd.operatingAirline]?.[bc] !== undefined) {
+                        segRate = PARTNER_CLASS_RATES[r.airline.id][sd.operatingAirline][bc];
+                        rateLabel = `class ${bc}: ${segRate}%`;
+                      } else {
+                        const segRates = rates?.[segIsOwn ? "_own" : sd.operatingAirline] || rates?._default || {};
+                        segRate = segRates[sd.cabin] || 0;
+                        rateLabel = useFare ? `${segRate}/$` : `${segRate}%`;
+                      }
+                      return (
+                        <div key={si} style={{ padding: "6px 0", borderBottom: si < r.segDetails.length - 1 ? `1px solid ${css.border}` : "none" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 11 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                              <span style={{ fontWeight: 700, color: css.text, fontFamily: "'Geist Mono', monospace" }}>{sd.origin} → {sd.destination}</span>
+                              <span style={{ fontSize: 9, color: css.text3, fontFamily: "'Geist Mono', monospace" }}>{sd.distanceMiles.toLocaleString()} mi</span>
+                              <span style={{ fontSize: 9, color: css.accent, background: css.accentBg, padding: "1px 6px", borderRadius: 4 }}>{sd.cabin.replace(/_/g, " ")}{bc ? ` (${bc})` : ""}</span>
+                            </div>
+                            <span style={{ fontWeight: 700, color: r.airline.color, fontFamily: "'Geist Mono', monospace" }}>+{sd.credits.toLocaleString()}</span>
+                          </div>
+                          <div style={{ fontSize: 9, color: css.text3, fontFamily: "'Geist Mono', monospace", marginTop: 2 }}>
+                            {useFare
+                              ? `$${(r.totalFare / r.segDetails.length).toLocaleString(undefined, {minimumFractionDigits: 0})} × ${rateLabel} = ${Math.round((r.totalFare / r.segDetails.length) * segRate).toLocaleString()}`
+                              : `${sd.distanceMiles.toLocaleString()} mi × ${rateLabel} = ${Math.round(sd.distanceMiles * segRate / 100).toLocaleString()}`}
+                            {r.eliteBonus > 0 && ` × ${(1 + r.eliteBonus / 100).toFixed(1)} (${r.eliteBonus}% bonus)`}
+                            {` = ${sd.credits.toLocaleString()}`}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Save to History button */}
+            {itinSegments.some(s => s.origin && s.destination) && (
+              <div style={{ marginTop: 20, display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <button onClick={() => {
+                  const route = itinSegments.filter(s => s.origin && s.destination).map(s => `${s.origin}→${s.destination}`).join(", ");
+                  const totalFare = (parseFloat(itinFare.baseFare) || 0) + (parseFloat(itinFare.taxes) || 0) + (parseFloat(itinFare.airlineFees) || 0) + (parseFloat(itinFare.otherFees) || 0);
+                  const creditProg = airlines.find(a => a.id === itinCreditAirline);
+                  const r = itinCalcResults.find(r => r.airline.id === itinCreditAirline);
+                  const entry = {
+                    id: crypto.randomUUID(),
+                    savedAt: new Date().toISOString(),
+                    route,
+                    segments: itinSegments.filter(s => s.origin && s.destination).map(s => ({ ...s })),
+                    fare: { ...itinFare },
+                    totalFare,
+                    creditAirline: itinCreditAirline,
+                    creditProgramName: creditProg?.name || "",
+                    currentTier: itinCurrentTier,
+                    totalCredits: r?.totalCredits || 0,
+                    projectedTier: r?.currentTier?.name || "Base Member",
+                    unit: creditProg?.unit || "",
+                  };
+                  const updated = [entry, ...itinHistory].slice(0, 50);
+                  setItinHistory(updated);
+                  localStorage.setItem("continuum_itin_history", JSON.stringify(updated));
+                }} style={{
+                  padding: "10px 20px", borderRadius: 8, border: `1px solid ${css.accentBorder}`,
+                  background: css.accent, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer",
+                }}>Save to History</button>
+                <button onClick={() => {
+                  setItinSegments([{ id: crypto.randomUUID(), origin: "", destination: "", operatingAirline: "", marketingAirline: "", bookingClass: "", distance: "" }]);
+                  setItinFare({ baseFare: "", taxes: "", airlineFees: "", otherFees: "", currency: "USD" });
+                  setItinCreditAirline("");
+                }} style={{
+                  padding: "10px 20px", borderRadius: 8, border: `1px solid ${css.border}`,
+                  background: "transparent", color: css.text3, fontSize: 12, fontWeight: 600, cursor: "pointer",
+                }}>Clear Form</button>
+              </div>
+            )}
+
+            {/* Saved History */}
+            {itinHistory.length > 0 && (
+              <div style={{ marginTop: 28 }}>
+                <button onClick={() => setShowItinHistory(h => !h)} style={{
+                  display: "flex", alignItems: "center", gap: 8, width: "100%",
+                  padding: "12px 0", border: "none", cursor: "pointer", background: "transparent",
+                  color: css.text2, fontSize: 13, fontWeight: 600, fontFamily: "'Instrument Sans', 'Outfit', sans-serif",
+                }}>
+                  <span style={{ transform: showItinHistory ? "rotate(90deg)" : "none", transition: "transform 0.2s", display: "inline-block" }}>▸</span>
+                  Saved Calculations ({itinHistory.length})
+                </button>
+                {showItinHistory && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
+                    {itinHistory.map(h => {
+                      const creditProg = airlines.find(a => a.id === h.creditAirline);
+                      return (
+                        <div key={h.id} style={{
+                          background: css.surface, border: `1px solid ${css.border}`, borderRadius: 10,
+                          padding: "12px 16px", display: "flex", justifyContent: "space-between", alignItems: "center",
+                          gap: 12, flexWrap: "wrap",
+                        }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: css.text, fontFamily: "'Geist Mono', monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{h.route}</div>
+                            <div style={{ fontSize: 10, color: css.text3, marginTop: 3, display: "flex", gap: 10, flexWrap: "wrap" }}>
+                              <span>{new Date(h.savedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+                              {h.creditProgramName && <span style={{ color: creditProg?.color || css.accent }}>→ {h.creditProgramName}</span>}
+                              {h.totalCredits > 0 && <span style={{ fontWeight: 600, fontFamily: "'Geist Mono', monospace" }}>+{h.totalCredits.toLocaleString()} {h.unit}</span>}
+                              {h.totalFare > 0 && <span>${h.totalFare.toLocaleString()}</span>}
+                              {h.projectedTier && h.projectedTier !== "Base Member" && <span style={{ color: creditProg?.color || css.text2, fontWeight: 600 }}>→ {h.projectedTier}</span>}
+                            </div>
+                          </div>
+                          <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                            <button onClick={() => {
+                              setItinSegments(h.segments.map(s => ({ ...s, id: crypto.randomUUID() })));
+                              setItinFare(h.fare || { baseFare: "", taxes: "", airlineFees: "", otherFees: "", currency: "USD" });
+                              setItinCreditAirline(h.creditAirline || "");
+                            }} style={{
+                              padding: "5px 12px", borderRadius: 6, border: `1px solid ${css.accentBorder}`,
+                              background: css.accentBg, color: css.accent, fontSize: 10, fontWeight: 600, cursor: "pointer",
+                            }}>Load</button>
+                            <button onClick={() => {
+                              const updated = itinHistory.filter(x => x.id !== h.id);
+                              setItinHistory(updated);
+                              localStorage.setItem("continuum_itin_history", JSON.stringify(updated));
+                            }} style={{
+                              padding: "5px 10px", borderRadius: 6, border: `1px solid rgba(239,68,68,0.2)`,
+                              background: "rgba(239,68,68,0.06)", color: "#ef4444", fontSize: 10, fontWeight: 600, cursor: "pointer",
+                            }}>×</button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {flightTrips.length === 0 && _tab !== "itinerary" && (
+          <div style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: "28px 24px", textAlign: "center" }}>
+            <div style={{ fontSize: 13, color: css.text2 }}>No flight trips found. Add flights in the Trips tab to use the optimizer.</div>
+          </div>
+        )}
+
+        {/* ── Tab: Global Status Optimizer ── */}
+        {_tab === "global" && flightTrips.length > 0 && (
+          <div>
+            {/* Recommendation banner */}
+            {bestGlobal && (
+              <div style={{
+                background: css.surface, border: `1px solid ${css.accentBorder}`, borderLeft: `4px solid ${css.accent}`,
+                borderRadius: 14, padding: "18px 22px", marginBottom: 20,
+              }}>
+                <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: css.accent, marginBottom: 6 }}>Recommended</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: css.text }}>
+                  Credit all {flightTrips.length} flights to <span style={{ color: bestGlobal.airline.color }}>{bestGlobal.airline.name}</span>
+                </div>
+                <div style={{ fontSize: 12, color: css.text2, marginTop: 4 }}>
+                  {bestGlobal.currentTier ? `Projected: ${bestGlobal.currentTier.name}` : "Projected: Base Member"}
+                  {bestGlobal.nextTier && ` — ${bestGlobal.pctToNext}% toward ${bestGlobal.nextTier.name}`}
+                  {!bestGlobal.nextTier && bestGlobal.currentTier && ` — Top tier reached!`}
+                  {` · ${bestGlobal.totalFromTrips.toLocaleString()} ${bestGlobal.airline.unit} from trips + ${bestGlobal.existingPts.toLocaleString()} existing`}
+                </div>
+              </div>
+            )}
+
+            {/* All airlines ranked */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {globalResults.map((r, i) => {
+                const isBest = i === 0;
+                return (
+                  <div key={r.airline.id} style={{
+                    background: css.surface, border: `1px solid ${isBest ? r.airline.color + "50" : css.border}`,
+                    borderLeft: `3px solid ${r.airline.color}`, borderRadius: 12, padding: "16px 20px",
+                  }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 8, flexWrap: "wrap" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: isBest ? css.accent : css.text3, fontFamily: "'Geist Mono', monospace", width: 20 }}>#{i + 1}</span>
+                        <ProgramLogo prog={r.airline} size={24} />
+                        <div style={{ fontSize: 13, fontWeight: 600, color: css.text }}>{r.airline.name}</div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        {r.currentTier && <span style={{ fontSize: 10, fontWeight: 600, color: r.airline.color, background: `${r.airline.color}15`, padding: "2px 8px", borderRadius: 12 }}>{r.currentTier.name}</span>}
+                        {!r.nextTier && r.currentTier && <span style={{ fontSize: 10, fontWeight: 700, color: css.success, background: css.successBg, padding: "2px 8px", borderRadius: 12 }}>MAX</span>}
+                      </div>
+                    </div>
+                    <BarFill pct={r.pctToNext} color={r.airline.color} />
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: css.text3, marginTop: 5, fontFamily: "'Geist Mono', monospace" }}>
+                      <span>{r.total.toLocaleString()} {r.airline.unit} total ({r.existingPts.toLocaleString()} existing + {r.totalFromTrips.toLocaleString()} from trips)</span>
+                      {r.nextTier && <span>{r.pctToNext}% → {r.nextTier.name} ({r.nextTier.threshold.toLocaleString()})</span>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── Tab 2: Trip-by-Trip Comparison ── */}
+        {_tab === "trip" && flightTrips.length > 0 && (
+          <div>
+            {/* Trip selector */}
+            <div style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: "16px 20px", marginBottom: 20 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: css.text3, marginBottom: 8 }}>Select a Flight</div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {flightTrips.map(t => (
+                  <button key={t.id} onClick={() => setOptimizerTripId(t.id)} style={{
+                    padding: "8px 14px", borderRadius: 10, cursor: "pointer",
+                    border: `1px solid ${(selectedTrip?.id === t.id) ? css.accent : css.border}`,
+                    background: (selectedTrip?.id === t.id) ? css.accentBg : css.surface2,
+                    color: (selectedTrip?.id === t.id) ? css.accent : css.text,
+                    fontSize: 12, fontWeight: (selectedTrip?.id === t.id) ? 600 : 400,
+                  }}>
+                    {t.route} · {t.class} · {t.date}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {selectedTrip && (
+              <>
+                <div style={{ fontSize: 12, color: css.text2, marginBottom: 14 }}>
+                  Showing how <strong style={{ color: css.text }}>{selectedTrip.route}</strong> ({selectedTrip.class}, {(selectedTrip.estimatedPoints || 0).toLocaleString()} base pts) would affect status on each airline:
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {tripResults.map((r, i) => {
+                    const jump = r.after.pctToNext - r.before.pctToNext;
+                    const advanced = r.after.currentTier?.name !== r.before.currentTier?.name;
+                    return (
+                      <div key={r.airline.id} style={{
+                        background: css.surface, border: `1px solid ${advanced ? css.success + "50" : css.border}`,
+                        borderLeft: `3px solid ${r.airline.color}`, borderRadius: 12, padding: "14px 18px",
+                      }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6, flexWrap: "wrap", gap: 6 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <ProgramLogo prog={r.airline} size={22} />
+                            <span style={{ fontSize: 13, fontWeight: 600, color: css.text }}>{r.airline.name}</span>
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <span style={{ fontSize: 11, fontWeight: 600, fontFamily: "'Geist Mono', monospace", color: r.airline.color }}>+{r.ptsFromTrip.toLocaleString()} {r.airline.unit}</span>
+                            {advanced && <span style={{ fontSize: 10, fontWeight: 700, color: css.success, background: css.successBg, padding: "2px 8px", borderRadius: 12 }}>TIER UP</span>}
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+                          <span style={{ fontSize: 10, color: css.text3, width: 40, flexShrink: 0, fontFamily: "'Geist Mono', monospace" }}>{r.before.pctToNext}%</span>
+                          <BarFill pct={r.before.pctToNext} color={css.border} />
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <span style={{ fontSize: 10, color: css.accent, width: 40, flexShrink: 0, fontFamily: "'Geist Mono', monospace", fontWeight: 700 }}>{r.after.pctToNext}%</span>
+                          <BarFill pct={r.after.pctToNext} color={r.airline.color} />
+                        </div>
+                        <div style={{ fontSize: 10, color: css.text3, marginTop: 5, fontFamily: "'Geist Mono', monospace" }}>
+                          {r.before.currentTier?.name || "Base"} → {r.after.currentTier?.name || "Base"}
+                          {r.after.nextTier && (() => { const gap = r.after.nextTier.threshold - r.existingPts - r.ptsFromTrip; return ` · ${gap > 0 ? gap.toLocaleString() + " to " + r.after.nextTier.name : r.after.nextTier.name + " reached!"}`; })()}
+                          {jump > 0 && <span style={{ color: css.accent, fontWeight: 600 }}> (+{jump}% jump)</span>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ── Tab 3: Alliance Goal Optimizer ── */}
+        {_tab === "alliance" && flightTrips.length > 0 && (
+          <div>
+            {/* Goal selector */}
+            <div style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: "16px 20px", marginBottom: 20 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: css.text3, marginBottom: 8 }}>Target Alliance Status</div>
+              <select value={allianceGoal} onChange={e => setAllianceGoal(e.target.value)} style={{
+                width: "100%", maxWidth: 340, background: css.surface2, border: `1px solid ${css.border}`,
+                color: css.text, padding: "8px 12px", borderRadius: 8, fontSize: 13, fontFamily: "'Instrument Sans', 'Outfit', sans-serif",
+              }}>
+                {GOAL_OPTIONS.map(opt => <option key={opt.key} value={opt.key}>{opt.label}</option>)}
+              </select>
+              <div style={{ fontSize: 12, color: css.text2, marginTop: 8 }}>
+                Which airline program should you credit to in order to reach <strong style={{ color: ALLIANCE_TIER_COLORS[allianceGoal] }}>{ALLIANCE_TIER_LABELS[allianceGoal]}</strong>?
+              </div>
+            </div>
+
+            {/* Recommendation */}
+            {goalResults.length > 0 && goalResults[0].reached && (
+              <div style={{
+                background: css.surface, border: `1px solid ${css.success}40`, borderLeft: `4px solid ${css.success}`,
+                borderRadius: 14, padding: "16px 20px", marginBottom: 16,
+              }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: css.success }}>
+                  You can reach {ALLIANCE_TIER_LABELS[allianceGoal]} by crediting to {goalResults[0].airline.name}!
+                </div>
+                <div style={{ fontSize: 12, color: css.text2, marginTop: 4 }}>
+                  Credit all trips to earn {goalResults[0].tierName} status ({goalResults[0].total.toLocaleString()} / {goalResults[0].threshold.toLocaleString()} {goalResults[0].airline.unit}).
+                </div>
+              </div>
+            )}
+            {goalResults.length > 0 && !goalResults[0].reached && (
+              <div style={{
+                background: css.surface, border: `1px solid ${css.warning}40`, borderLeft: `4px solid ${css.warning}`,
+                borderRadius: 14, padding: "16px 20px", marginBottom: 16,
+              }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: css.warning }}>
+                  Closest path to {ALLIANCE_TIER_LABELS[allianceGoal]}: credit to {goalResults[0].airline.name}
+                </div>
+                <div style={{ fontSize: 12, color: css.text2, marginTop: 4 }}>
+                  You'd reach {goalResults[0].pct}% of {goalResults[0].tierName} ({goalResults[0].total.toLocaleString()} / {goalResults[0].threshold.toLocaleString()} {goalResults[0].airline.unit}) — {goalResults[0].remaining.toLocaleString()} more needed.
+                </div>
+              </div>
+            )}
+            {goalResults.length === 0 && (
+              <div style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: "20px", textAlign: "center", fontSize: 13, color: css.text3 }}>
+                No airline programs in the system map to this alliance tier.
+              </div>
+            )}
+
+            {/* All candidates */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {goalResults.map((r, i) => (
+                <div key={r.airline.id} style={{
+                  background: css.surface, border: `1px solid ${r.reached ? css.success + "40" : css.border}`,
+                  borderLeft: `3px solid ${r.color}`, borderRadius: 12, padding: "16px 20px",
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 8, flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: i === 0 ? css.accent : css.text3, fontFamily: "'Geist Mono', monospace", width: 20 }}>#{i + 1}</span>
+                      <ProgramLogo prog={r.airline} size={24} />
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: css.text }}>{r.airline.name}</div>
+                        <div style={{ fontSize: 10, color: css.text3 }}>Target: {r.tierName} ({r.threshold.toLocaleString()} {r.airline.unit})</div>
+                      </div>
+                    </div>
+                    <div>
+                      {r.reached ? (
+                        <span style={{ fontSize: 10, fontWeight: 700, color: css.success, background: css.successBg, padding: "3px 10px", borderRadius: 12 }}>ACHIEVED</span>
+                      ) : (
+                        <span style={{ fontSize: 11, fontWeight: 600, fontFamily: "'Geist Mono', monospace", color: css.warning }}>{r.remaining.toLocaleString()} short</span>
+                      )}
+                    </div>
+                  </div>
+                  <BarFill pct={r.pct} color={r.reached ? css.success : r.color} />
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: css.text3, marginTop: 5, fontFamily: "'Geist Mono', monospace" }}>
+                    <span>{r.existingPts.toLocaleString()} existing + {r.totalFromTrips.toLocaleString()} from trips = {r.total.toLocaleString()}</span>
+                    <span>{r.pct}%</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── SECTION 4: Credit Card Optimizer ── */}
+        {_tab === "cards" && (() => {
+          const allCards = LOYALTY_PROGRAMS.creditCards;
+          const linkedCards = allCards.filter(c => linkedAccounts[c.id]);
+          const cards = linkedCards.length > 0 ? linkedCards : allCards;
+          const usingAll = linkedCards.length === 0;
+
+          // Build target options: "max_points", plus all airline & hotel programs reachable via transfer
+          const targetOptions = [
+            { id: "max_points", label: "Highest Points (Any Program)", group: "General" },
+          ];
+          const airlineTargets = LOYALTY_PROGRAMS.airlines.map(a => ({ id: a.id, label: `${a.name} (${a.unit})`, group: "Airlines" }));
+          const hotelTargets = LOYALTY_PROGRAMS.hotels.map(h => ({ id: h.id, label: `${h.name} (${h.unit})`, group: "Hotels" }));
+          targetOptions.push(...airlineTargets, ...hotelTargets);
+
+          // For a given card and category, calculate effective points toward target
+          const getEffectiveRate = (cardId, catId) => {
+            const bonus = CC_BONUS_EXPANDED[cardId] || {};
+            const entry = bonus[catId] !== undefined ? bonus[catId] : (bonus.other || 1);
+            const rate = _ccRate(entry, ccBookingMode);
+            if (ccOptTarget === "max_points") return rate;
+            const tp = CC_TRANSFER_PARTNERS[cardId];
+            if (!tp) return 0;
+            if (tp.directProgram === ccOptTarget) return rate;
+            if (tp.partners && tp.partners.includes(ccOptTarget)) return rate;
+            return 0;
+          };
+          // Check if a card/category combo has a portal bonus
+          const hasPortalBonus = (cardId, catId) => {
+            const bonus = CC_BONUS_EXPANDED[cardId] || {};
+            const entry = bonus[catId];
+            return _ccHasPortalBonus(entry);
+          };
+
+          // For each spending category, find the best card
+          const categoryResults = CC_SPENDING_CATS.map(cat => {
+            const cardRanking = cards.map(card => {
+              const rate = getEffectiveRate(card.id, cat.id);
+              const portalBonus = hasPortalBonus(card.id, cat.id);
+              const bonus = CC_BONUS_EXPANDED[card.id] || {};
+              const entry = bonus[cat.id];
+              const directRate = _ccRate(entry, "direct");
+              const portalRate = _ccRate(entry, "portal");
+              return {
+                card, rate, directRate, portalRate, portalBonus,
+                currency: CC_TRANSFER_PARTNERS[card.id]?.currency || card.unit,
+                canReachTarget: ccOptTarget === "max_points" || (() => {
+                  const tp = CC_TRANSFER_PARTNERS[card.id];
+                  if (!tp) return false;
+                  if (tp.directProgram === ccOptTarget) return true;
+                  return tp.partners && tp.partners.includes(ccOptTarget);
+                })(),
+              };
+            }).filter(r => r.rate > 0).sort((a, b) => b.rate - a.rate);
+            return { ...cat, ranking: cardRanking, best: cardRanking[0] || null };
+          });
+
+          // Overall summary: which card is best across all categories
+          const cardWins = {};
+          categoryResults.forEach(cat => {
+            if (cat.best) {
+              cardWins[cat.best.card.id] = (cardWins[cat.best.card.id] || 0) + 1;
+            }
+          });
+          const topCardId = Object.entries(cardWins).sort((a, b) => b[1] - a[1])[0]?.[0];
+          const topCard = cards.find(c => c.id === topCardId);
+
+          // Target program info
+          const targetProg = ccOptTarget !== "max_points" ? [...LOYALTY_PROGRAMS.airlines, ...LOYALTY_PROGRAMS.hotels].find(p => p.id === ccOptTarget) : null;
+
+          // Sign-up bonus / min spend tracker (for linked cards)
+          const purchaseAmt = parseFloat(ccOptAmount) || 100;
+
+          return (
+            <div>
+              {/* Target selector */}
+              <div style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: "18px 22px", marginBottom: 20 }}>
+                <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "flex-end" }}>
+                  <label style={{ flex: 1, minWidth: 200 }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: css.text3, marginBottom: 6 }}>Optimize For</div>
+                    <select value={ccOptTarget} onChange={e => setCcOptTarget(e.target.value)} style={{
+                      width: "100%", background: css.surface2, border: `1px solid ${css.border}`,
+                      color: css.text, padding: "9px 12px", borderRadius: 8, fontSize: 13, fontFamily: "'Instrument Sans', 'Outfit', sans-serif",
+                    }}>
+                      <optgroup label="General">
+                        <option value="max_points">Highest Points (Any Program)</option>
+                      </optgroup>
+                      <optgroup label="Airline Miles">
+                        {airlineTargets.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+                      </optgroup>
+                      <optgroup label="Hotel Points">
+                        {hotelTargets.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+                      </optgroup>
+                    </select>
+                  </label>
+                  <label style={{ width: 140 }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: css.text3, marginBottom: 6 }}>Purchase Amount</div>
+                    <div style={{ position: "relative" }}>
+                      <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: css.text3, fontSize: 13 }}>$</span>
+                      <input type="number" value={ccOptAmount} onChange={e => setCcOptAmount(e.target.value)} min="1" style={{
+                        width: "100%", background: css.surface2, border: `1px solid ${css.border}`,
+                        color: css.text, padding: "9px 12px 9px 22px", borderRadius: 8, fontSize: 13,
+                        fontFamily: "'Geist Mono', monospace", boxSizing: "border-box", outline: "none",
+                      }} />
+                    </div>
+                  </label>
+                </div>
+
+                {/* Booking mode toggle */}
+                <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: css.text3 }}>Booking Method</div>
+                  <div style={{ display: "flex", borderRadius: 8, overflow: "hidden", border: `1px solid ${css.border}` }}>
+                    {[
+                      { id: "direct", label: "Book Direct", desc: "Book on airline/hotel website" },
+                      { id: "portal", label: "Card Travel Portal", desc: "Book via card issuer portal" },
+                    ].map(mode => (
+                      <button key={mode.id} onClick={() => setCcBookingMode(mode.id)} style={{
+                        padding: "7px 16px", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600,
+                        background: ccBookingMode === mode.id ? css.accentBg : css.surface2,
+                        color: ccBookingMode === mode.id ? css.accent : css.text3,
+                        borderRight: mode.id === "direct" ? `1px solid ${css.border}` : "none",
+                      }}>{mode.label}</button>
+                    ))}
+                  </div>
+                  <span style={{ fontSize: 11, color: css.text3, fontStyle: "italic" }}>
+                    {ccBookingMode === "portal" ? "Rates reflect booking through Chase Travel, Amex Travel, Capital One Travel, etc." : "Rates reflect paying directly on airline/hotel websites with your card."}
+                  </span>
+                </div>
+
+                {targetProg && (
+                  <div style={{ fontSize: 12, color: css.text2, marginTop: 10 }}>
+                    Showing which card earns the most <strong style={{ color: targetProg.color }}>{targetProg.name}</strong> {targetProg.unit} via direct earning or transfer partners.
+                  </div>
+                )}
+                {usingAll && (
+                  <div style={{ fontSize: 11, color: css.warning, marginTop: 8 }}>
+                    No cards linked yet — showing all cards. Link your credit cards in Programs to personalize results.
+                  </div>
+                )}
+              </div>
+
+              {/* Top recommendation */}
+              {topCard && (
+                <div style={{
+                  background: css.surface, border: `1px solid ${css.accent}40`, borderLeft: `4px solid ${css.accent}`,
+                  borderRadius: 14, padding: "16px 20px", marginBottom: 20,
+                }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Top Card Overall</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <ProgramLogo prog={topCard} size={28} />
+                    <div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: css.text }}>{topCard.name}</div>
+                      <div style={{ fontSize: 11, color: css.text2 }}>Best card for {cardWins[topCardId]} of {CC_SPENDING_CATS.length} spending categories{ccOptTarget !== "max_points" && targetProg ? ` toward ${targetProg.name}` : ""}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Category-by-category breakdown */}
+              <div style={{ fontSize: 13, fontWeight: 700, color: css.text, marginBottom: 12 }}>Best Card by Spending Category</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
+                {categoryResults.map(cat => (
+                  <div key={cat.id} style={{
+                    background: css.surface, border: `1px solid ${css.border}`, borderRadius: 12, padding: "14px 18px",
+                  }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: cat.ranking.length > 1 ? 10 : 0, flexWrap: "wrap", gap: 8 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <span style={{ fontSize: 18 }}>{cat.icon}</span>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: css.text }}>{cat.label}</div>
+                          {cat.best ? (
+                            <div style={{ fontSize: 11, color: css.text3 }}>
+                              Use <strong style={{ color: css.accent }}>{cat.best.card.name}</strong> — <span style={{ fontFamily: "'Geist Mono', monospace", color: css.gold }}>{cat.best.rate}x</span> {cat.best.currency}
+                              {cat.best.portalBonus && ccBookingMode === "portal" && <span style={{ fontSize: 9, fontWeight: 700, color: css.warning, background: css.warningBg, padding: "1px 6px", borderRadius: 6, marginLeft: 6, border: `1px solid ${css.warning}30` }}>PORTAL RATE</span>}
+                              {cat.best.portalBonus && ccBookingMode === "direct" && <span style={{ fontSize: 9, color: css.text3, marginLeft: 6 }}>({cat.best.portalRate}x via portal)</span>}
+                            </div>
+                          ) : (
+                            <div style={{ fontSize: 11, color: css.text3 }}>No linked card earns toward this target</div>
+                          )}
+                        </div>
+                      </div>
+                      {cat.best && (
+                        <div style={{ textAlign: "right" }}>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: css.gold, fontFamily: "'Geist Mono', monospace" }}>
+                            {(cat.best.rate * purchaseAmt).toLocaleString()}
+                          </div>
+                          <div style={{ fontSize: 9, color: css.text3 }}>pts per ${purchaseAmt.toLocaleString()}</div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Runner-ups */}
+                    {cat.ranking.length > 1 && (
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                        {cat.ranking.map((r, i) => (
+                          <div key={r.card.id} style={{
+                            display: "flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 8,
+                            background: i === 0 ? css.accentBg : css.surface2, border: `1px solid ${i === 0 ? css.accentBorder : css.border}`,
+                            fontSize: 11, color: i === 0 ? css.accent : css.text2,
+                          }}>
+                            <ProgramLogo prog={r.card} size={14} />
+                            <span style={{ fontWeight: i === 0 ? 600 : 400 }}>{r.card.name.split(" ")[0]}</span>
+                            <span style={{ fontFamily: "'Geist Mono', monospace", fontWeight: 600, color: i === 0 ? css.accent : css.text3 }}>{r.rate}x</span>
+                            {r.portalBonus && ccBookingMode === "portal" && <span style={{ fontSize: 8, color: css.warning, fontWeight: 700 }}>P</span>}
+                            {r.portalBonus && ccBookingMode === "direct" && r.portalRate > r.directRate && <span style={{ fontSize: 8, color: css.text3 }}>({r.portalRate}x P)</span>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Transfer partner awareness panel */}
+              {ccOptTarget !== "max_points" && targetProg && (
+                <div style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: "18px 22px", marginBottom: 20 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: css.text, marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 15 }}>🔄</span> Cards That Transfer to {targetProg.name}
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {cards.filter(c => {
+                      const tp = CC_TRANSFER_PARTNERS[c.id];
+                      if (!tp) return false;
+                      if (tp.directProgram === ccOptTarget) return true;
+                      return tp.partners && tp.partners.includes(ccOptTarget);
+                    }).map(card => {
+                      const tp = CC_TRANSFER_PARTNERS[card.id];
+                      const isDirect = tp?.directProgram === ccOptTarget;
+                      return (
+                        <div key={card.id} style={{
+                          display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px",
+                          background: css.surface2, borderRadius: 10, border: `1px solid ${css.border}`,
+                        }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <ProgramLogo prog={card} size={22} />
+                            <div>
+                              <div style={{ fontSize: 12, fontWeight: 600, color: css.text }}>{card.name}</div>
+                              <div style={{ fontSize: 10, color: css.text3 }}>{tp?.currency}</div>
+                            </div>
+                          </div>
+                          <span style={{
+                            fontSize: 10, fontWeight: 600, padding: "3px 10px", borderRadius: 10,
+                            background: isDirect ? css.successBg : css.accentBg,
+                            color: isDirect ? css.success : css.accent,
+                            border: `1px solid ${isDirect ? css.success : css.accent}30`,
+                          }}>{isDirect ? "Direct Earn" : "1:1 Transfer"}</span>
+                        </div>
+                      );
+                    })}
+                    {cards.filter(c => {
+                      const tp = CC_TRANSFER_PARTNERS[c.id];
+                      if (!tp) return false;
+                      return tp.directProgram === ccOptTarget || (tp.partners && tp.partners.includes(ccOptTarget));
+                    }).length === 0 && (
+                      <div style={{ textAlign: "center", padding: "20px", color: css.text3, fontSize: 12 }}>
+                        None of your {usingAll ? "" : "linked "}cards transfer to {targetProg.name}.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Full card comparison table */}
+              <div style={{ fontSize: 13, fontWeight: 700, color: css.text, marginBottom: 12 }}>Full Earn Rate Comparison</div>
+              <div style={{ overflowX: "auto", borderRadius: 14, border: `1px solid ${css.border}` }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", background: css.surface, fontSize: 11 }}>
+                  <thead>
+                    <tr style={{ background: css.surface2 }}>
+                      <th style={{ padding: "10px 14px", textAlign: "left", color: css.text3, fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em", position: "sticky", left: 0, background: css.surface2, zIndex: 1 }}>Card</th>
+                      {CC_SPENDING_CATS.map(cat => (
+                        <th key={cat.id} style={{ padding: "10px 8px", textAlign: "center", color: css.text3, fontWeight: 600, fontSize: 10, whiteSpace: "nowrap" }}>
+                          <div>{cat.icon}</div>{cat.label}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cards.map(card => (
+                      <tr key={card.id} style={{ borderTop: `1px solid ${css.border}` }}>
+                        <td style={{ padding: "8px 14px", display: "flex", alignItems: "center", gap: 6, position: "sticky", left: 0, background: css.surface, zIndex: 1, whiteSpace: "nowrap" }}>
+                          <ProgramLogo prog={card} size={16} />
+                          <span style={{ fontWeight: 500, color: css.text, fontSize: 11 }}>{card.name.length > 18 ? card.name.slice(0, 16) + ".." : card.name}</span>
+                        </td>
+                        {CC_SPENDING_CATS.map(cat => {
+                          const rate = getEffectiveRate(card.id, cat.id);
+                          const isBest = categoryResults.find(c => c.id === cat.id)?.best?.card.id === card.id;
+                          const isPortal = hasPortalBonus(card.id, cat.id);
+                          return (
+                            <td key={cat.id} style={{
+                              padding: "8px", textAlign: "center", fontFamily: "'Geist Mono', monospace",
+                              fontWeight: isBest ? 700 : 400,
+                              color: rate === 0 ? css.text3 + "60" : isBest ? css.accent : css.text,
+                              background: isBest ? css.accentBg : "transparent",
+                              position: "relative",
+                            }}>
+                              {rate === 0 ? "—" : `${rate}x`}
+                              {isPortal && ccBookingMode === "portal" && rate > 0 && <span style={{ position: "absolute", top: 2, right: 2, fontSize: 7, color: css.warning, fontWeight: 700 }}>P</span>}
+                              {isPortal && ccBookingMode === "direct" && rate > 0 && (() => {
+                                const bonus = CC_BONUS_EXPANDED[card.id] || {};
+                                const pRate = _ccRate(bonus[cat.id], "portal");
+                                return pRate > rate ? <div style={{ fontSize: 8, color: css.text3, fontWeight: 400 }}>{pRate}x via P</div> : null;
+                              })()}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          );
+        })()}
+      </div>
+    );
+  };
+
+  // ── helper shared with both report types ──
+  const buildPrintReport = async (title, expsForReport) => {
+    const CURRENCY_SYMBOLS = { USD:"$",EUR:"€",GBP:"£",CAD:"CA$",AUD:"A$",JPY:"¥",CHF:"Fr",CNY:"¥",HKD:"HK$",SGD:"S$",MXN:"MX$",BRL:"R$",INR:"₹",KRW:"₩",AED:"د.إ",THB:"฿",NOK:"kr",SEK:"kr",DKK:"kr",NZD:"NZ$" };
+    const symFor = (cur) => CURRENCY_SYMBOLS[cur] || (cur + " ");
+    const fmtAmt = (n, cur) => n === 0 ? "Free" : `${symFor(cur)}${n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+    const toUSD = (e) => e.amount * (e.fxRate || 1);
+    const tripTotalUSD = expsForReport.reduce((s, e) => s + toUSD(e), 0);
+    const receiptCount = expsForReport.filter(e => e.receipt).length;
+    const catSummary = EXPENSE_CATEGORIES.map(cat => ({
+      ...cat,
+      totalUSD: expsForReport.filter(e => e.category === cat.id).reduce((s,e) => s + toUSD(e), 0),
+      count: expsForReport.filter(e => e.category === cat.id).length,
+    })).filter(c => c.totalUSD > 0);
+    const expensesWithReceipts = expsForReport.filter(e => e.receiptImage?.data);
+    const pdfPageImages = {};
+    for (const exp of expensesWithReceipts) {
+      if (exp.receiptImage.type === "application/pdf") {
+        try { pdfPageImages[exp.id] = await renderPdfToImages(exp.receiptImage.data); } catch(e) { pdfPageImages[exp.id] = []; }
+      }
+    }
+
+    const catRows = catSummary.map(cat => `
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid #2a2640;"><span style="font-size:16px;margin-right:8px;">${cat.icon}</span><span style="font-size:13px;color:#d0d6e0;">${cat.label} (${cat.count})</span></td>
+        <td style="padding:10px 0;border-bottom:1px solid #2a2640;"><div style="background:#2a2640;border-radius:4px;height:6px;width:120px;overflow:hidden;"><div style="width:${tripTotalUSD>0?Math.round((cat.totalUSD/tripTotalUSD)*100):0}%;height:100%;background:${cat.color};border-radius:4px;"></div></div></td>
+        <td style="padding:10px 0;border-bottom:1px solid #2a2640;text-align:right;font-size:13px;font-weight:700;color:#f7f8f8;">$${cat.totalUSD.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      </tr>`).join("");
+
+    const lineRows = expsForReport.map((exp, i) => {
+      const cat = EXPENSE_CATEGORIES.find(c => c.id === exp.category);
+      const cur = exp.currency || "USD";
+      const usdAmt = toUSD(exp);
+      const isForeign = cur !== "USD";
+      const tripName = exp.tripId ? (trips.find(t => t.id === exp.tripId)?.tripName || trips.find(t => t.id === exp.tripId)?.route || "Trip") : "Custom";
+      const receiptIdx = expensesWithReceipts.findIndex(e => e.id === exp.id);
+      return `<tr>
+        <td style="padding:10px 14px;border-bottom:1px solid #2a2640;vertical-align:top;">
+          <div style="font-size:13px;color:#f7f8f8;">${cat?.icon||""} ${exp.description}</div>
+          <div style="font-size:10px;color:#62666d;margin-top:2px;">${tripName}${exp.notes ? " · " + exp.notes : ""}</div>
+        </td>
+        <td style="padding:10px 14px;border-bottom:1px solid #2a2640;font-size:12px;color:#8a8f98;white-space:nowrap;">${exp.date?.slice(5)||""}</td>
+        <td style="padding:10px 14px;border-bottom:1px solid #2a2640;font-size:12px;color:#8a8f98;">${exp.paymentMethod||"—"}</td>
+        <td style="padding:10px 14px;border-bottom:1px solid #2a2640;text-align:right;">
+          <div style="font-size:13px;font-weight:700;color:${exp.amount===0?"#34d399":"#fff"};">${fmtAmt(exp.amount,cur)}</div>
+          ${isForeign?`<div style="font-size:10px;color:#62666d;">$${usdAmt.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})} USD</div>`:""}
+        </td>
+        <td style="padding:10px 14px;border-bottom:1px solid #2a2640;text-align:center;font-size:13px;color:${exp.receipt?"#34d399":"#62666d"};">
+          ${exp.receipt?(receiptIdx>=0?`<span style="font-size:10px;color:#0EA5A0;">p.${receiptIdx+2}</span>`:"✓"):"—"}
+        </td>
+      </tr>`;
+    }).join("");
+
+    const receiptPages = expensesWithReceipts.map((exp, i) => {
+      const cat = EXPENSE_CATEGORIES.find(c => c.id === exp.category);
+      const cur = exp.currency || "USD";
+      const isPdf = exp.receiptImage.type === "application/pdf";
+      const pages = isPdf ? (pdfPageImages[exp.id] || []) : [exp.receiptImage.data];
+      return pages.map((src, pi) => `
+        <div style="page-break-before:always;padding:48px;background:#13111C;min-height:100vh;box-sizing:border-box;">
+          ${pi === 0 ? `
+            <div style="color:#8a8f98;font-size:11px;font-family:monospace;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.1em;">Receipt ${i+1} of ${expensesWithReceipts.length}${isPdf && pages.length > 1 ? ` — Page 1 of ${pages.length}` : ""}</div>
+            <div style="font-size:16px;font-weight:700;color:#f7f8f8;margin-bottom:4px;">${cat?.icon||""} ${exp.description}</div>
+            <div style="font-size:12px;color:#8a8f98;margin-bottom:32px;">${exp.date||""} · ${exp.paymentMethod||""} · ${fmtAmt(exp.amount,cur)}</div>
+          ` : `
+            <div style="color:#8a8f98;font-size:11px;font-family:monospace;margin-bottom:16px;text-transform:uppercase;letter-spacing:0.1em;">Receipt ${i+1} — Page ${pi+1} of ${pages.length} · ${exp.description}</div>
+          `}
+          <img src="${src}" alt="Receipt${isPdf ? ` page ${pi+1}` : ""}" style="width:100%;border-radius:8px;border:1px solid #2a2640;display:block;" />
+        </div>
+      `).join("");
+    }).join("");
+
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title>
+      <style>*{box-sizing:border-box;margin:0;padding:0;}body{background:#13111C;color:#f7f8f8;font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact;}@media print{body{background:#13111C!important;}@page{margin:16mm 18mm;size:A4;}}table{border-collapse:collapse;width:100%;}</style>
+    </head><body>
+      <div style="padding:48px 48px 40px;background:#13111C;min-height:100vh;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:36px;">
+          <div>
+            <img src="${window.location.origin}/continuum-travel-logo.svg" alt="Continuum" style="height:80px;display:block;margin-bottom:12px;" />
+            <div style="font-size:26px;font-weight:800;color:#fff;letter-spacing:-0.5px;">${title}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:11px;color:#8a8f98;">Generated ${new Date().toLocaleDateString()}</div>
+            <div style="font-size:11px;color:#62666d;">Report #${Date.now().toString(36).slice(-6)}</div>
+            <div style="margin-top:6px;font-size:11px;font-weight:700;color:#0EA5A0;">Total in USD</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:28px;">
+          <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:16px;text-align:center;"><div style="font-size:22px;font-weight:800;color:#0EA5A0;">$${tripTotalUSD.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</div><div style="font-size:10px;color:#8a8f98;margin-top:4px;">Total (USD)</div></div>
+          <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:16px;text-align:center;"><div style="font-size:22px;font-weight:700;color:#fff;">${expsForReport.length}</div><div style="font-size:10px;color:#8a8f98;margin-top:4px;">Items</div></div>
+          <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:16px;text-align:center;"><div style="font-size:22px;font-weight:800;color:#34d399;">${receiptCount}/${expsForReport.length}</div><div style="font-size:10px;color:#8a8f98;margin-top:4px;">Receipts</div></div>
+        </div>
+        <div style="margin-bottom:28px;">
+          <div style="font-size:11px;font-weight:700;color:#8a8f98;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;">Breakdown by Category</div>
+          <table><tbody>${catRows}</tbody></table>
+        </div>
+        <div style="margin-bottom:32px;">
+          <div style="font-size:11px;font-weight:700;color:#8a8f98;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;">Line Items</div>
+          <div style="background:#1a1725;border-radius:8px;overflow:hidden;border:1px solid #2a2640;">
+            <table>
+              <thead><tr style="background:rgba(255,255,255,0.04);">
+                <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:#8a8f98;text-transform:uppercase;border-bottom:1px solid #2a2640;">Description</th>
+                <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:#8a8f98;text-transform:uppercase;border-bottom:1px solid #2a2640;">Date</th>
+                <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:#8a8f98;text-transform:uppercase;border-bottom:1px solid #2a2640;">Payment</th>
+                <th style="padding:10px 14px;text-align:right;font-size:10px;font-weight:700;color:#8a8f98;text-transform:uppercase;border-bottom:1px solid #2a2640;">Amount</th>
+                <th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;color:#8a8f98;text-transform:uppercase;border-bottom:1px solid #2a2640;">🧾</th>
+              </tr></thead>
+              <tbody>${lineRows}</tbody>
+              <tfoot><tr style="background:rgba(14,165,160,0.08);">
+                <td colspan="3" style="padding:14px;font-size:13px;font-weight:700;color:#0EA5A0;border-top:2px solid rgba(14,165,160,0.3);">TOTAL (USD)</td>
+                <td style="padding:14px;text-align:right;font-size:15px;font-weight:800;color:#0EA5A0;border-top:2px solid rgba(14,165,160,0.3);">$${tripTotalUSD.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+                <td style="border-top:2px solid rgba(14,165,160,0.3);"></td>
+              </tr></tfoot>
+            </table>
+          </div>
+        </div>
+        <div style="text-align:center;color:#62666d;font-size:10px;border-top:1px solid #2a2640;padding-top:16px;">
+          Generated by Continuum — Elevate Every Journey · ${new Date().toLocaleString()}${expensesWithReceipts.length>0?` · ${expensesWithReceipts.length} receipt${expensesWithReceipts.length!==1?"s":""} attached`:""}
+        </div>
+      </div>
+      ${receiptPages}
+    </body></html>`;
+
+    return html;
+  };
+
+  const openReportWindow = (html, autoPrint = false) => {
+    const w = window.open("", "_blank");
+    if (!w) return;
+    w.document.write(html);
+    w.document.close();
+    if (!autoPrint) return;
+    const imgs = w.document.images;
+    if (imgs.length === 0) { setTimeout(() => { w.focus(); w.print(); }, 300); return; }
+    let loaded = 0;
+    const tryPrint = () => { loaded++; if (loaded >= imgs.length) setTimeout(() => { w.focus(); w.print(); }, 300); };
+    Array.from(imgs).forEach(img => { if (img.complete) tryPrint(); else { img.onload = tryPrint; img.onerror = tryPrint; } });
+  };
+
+  const renderExpenseReports = () => {
+    const openBuilder = (report = null, type = "reimbursement") => {
+      if (report) {
+        setEditingReportId(report.id);
+        setReportBuilder({ title: report.title, selectedTripIds: report.selectedTripIds, excludedExpenseIds: report.excludedExpenseIds, customExpenses: report.customExpenses, reportType: report.reportType || "reimbursement" });
+      } else {
+        setEditingReportId(null);
+        setReportBuilder({ title: "", selectedTripIds: [], excludedExpenseIds: [], customExpenses: [], reportType: type });
+      }
+      setShowReportBuilder(true);
+    };
+
+    const saveReport = async () => {
+      if (!reportBuilder.title.trim()) return;
+      const payload = {
+        title: reportBuilder.title,
+        selected_trip_ids: reportBuilder.selectedTripIds,
+        excluded_expense_ids: reportBuilder.excludedExpenseIds,
+        custom_expenses: reportBuilder.customExpenses,
+        updated_at: new Date().toISOString(),
+      };
+      if (editingReportId) {
+        if (user) await supabase.from("expense_reports").update(payload).eq("id", editingReportId).eq("user_id", user.id);
+        setStandaloneReports(prev => prev.map(r => r.id === editingReportId ? { ...r, ...reportBuilder, id: editingReportId } : r));
+      } else {
+        if (user) {
+          const { data, error } = await supabase.from("expense_reports").insert({ ...payload, user_id: user.id }).select().single();
+          if (!error && data) {
+            setStandaloneReports(prev => [{ ...reportBuilder, id: data.id, createdAt: data.created_at?.slice(0, 10) }, ...prev]);
+          }
+        } else {
+          setStandaloneReports(prev => [{ ...reportBuilder, id: crypto.randomUUID(), createdAt: new Date().toISOString().slice(0, 10) }, ...prev]);
+        }
+      }
+      setShowReportBuilder(false);
+    };
+
+    const deleteReport = async (id) => {
+      setStandaloneReports(prev => prev.filter(r => r.id !== id));
+      if (user) await supabase.from("expense_reports").delete().eq("id", id).eq("user_id", user.id);
+    };
+
+    const getReportExpenses = (report) => {
+      if (report.reportType === "trip_cost") {
+        // Trip cost report — pull from segment costs
+        const segCosts = (report.selectedTripIds || []).flatMap(tripId => {
+          const trip = trips.find(t => t.id === tripId);
+          if (!trip?.segments) return [];
+          return trip.segments.filter(s => !s._isMeta && (s.ticketPrice || s.totalCost || s.cost)).map(s => {
+            const amount = parseFloat(s.ticketPrice || s.totalCost || s.cost || 0);
+            const label = s.type === "flight" ? `${s.flightNumber || ""} ${s.route || "Flight"}`.trim()
+              : s.type === "hotel" || s.type === "accommodation" ? s.property || "Hotel"
+              : s.activityName || s.restaurantName || s.operator || s.company || s.loungeName || s.type || "Item";
+            return { id: `seg_${tripId}_${s._id || label}`, description: label, amount, currency: s.currency || "USD", fxRate: 1, date: s.date || "", category: s.type, _fromSegment: true };
+          });
+        });
+        const custom = (report.customExpenses || []).map(e => ({ ...e, tripId: null }));
+        return [...segCosts, ...custom].sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+      }
+      // Reimbursement report — pull from expense inbox items
+      const tripExps = expenses.filter(e => report.selectedTripIds.includes(e.tripId) && !report.excludedExpenseIds.includes(e.id));
+      const custom = (report.customExpenses || []).map(e => ({ ...e, tripId: null }));
+      return [...tripExps, ...custom].sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+    };
+
+    const toggleTripId = (tripId) => setReportBuilder(p => ({
+      ...p,
+      selectedTripIds: p.selectedTripIds.includes(tripId) ? p.selectedTripIds.filter(id => id !== tripId) : [...p.selectedTripIds, tripId],
+      excludedExpenseIds: p.excludedExpenseIds.filter(eid => !expenses.filter(e => e.tripId === tripId).map(e => e.id).includes(eid)),
+    }));
+
+    const toggleExpenseId = (expId) => setReportBuilder(p => ({
+      ...p,
+      excludedExpenseIds: p.excludedExpenseIds.includes(expId) ? p.excludedExpenseIds.filter(id => id !== expId) : [...p.excludedExpenseIds, expId],
+    }));
+
+    const addCustomExpense = () => {
+      const parsed = { ...reportBuilderCustom, id: crypto.randomUUID(), amount: parseFloat(reportBuilderCustom.amount) || 0, fxRate: parseFloat(reportBuilderCustom.fxRate) || 1, receipt: false };
+      setReportBuilder(p => ({ ...p, customExpenses: [...p.customExpenses, parsed] }));
+      setReportBuilderCustom({ category: "flight", description: "", amount: "", currency: "USD", fxRate: 1, date: "", paymentMethod: "", notes: "" });
+      setShowReportCustomExpense(false);
+    };
+
+    const removeCustomExpense = (id) => setReportBuilder(p => ({ ...p, customExpenses: p.customExpenses.filter(e => e.id !== id) }));
+
+    // Live totals for builder preview
+    // Reimbursement report: only expense inbox items assigned to trips
+    const builderTripExps = expenses.filter(e => reportBuilder.selectedTripIds.includes(e.tripId) && !reportBuilder.excludedExpenseIds.includes(e.id));
+    // Trip cost report: auto-generate from segment costs (flights, hotels, etc.)
+    const builderSegmentCosts = reportBuilder.selectedTripIds.flatMap(tripId => {
+      const trip = trips.find(t => t.id === tripId);
+      if (!trip?.segments) return [];
+      return trip.segments.filter(s => !s._isMeta && (s.ticketPrice || s.totalCost || s.cost)).map(s => {
+        const amount = parseFloat(s.ticketPrice || s.totalCost || s.cost || 0);
+        const label = s.type === "flight" ? `${s.flightNumber || ""} ${s.route || "Flight"}`.trim()
+          : s.type === "hotel" || s.type === "accommodation" ? s.property || "Hotel"
+          : s.activityName || s.restaurantName || s.operator || s.company || s.loungeName || s.type || "Item";
+        return { id: `seg_${trip.id}_${s._id || label}`, description: label, amount, currency: s.currency || "USD", fxRate: 1, date: s.date || "", category: s.type, _fromSegment: true };
+      });
+    });
+    // Report type determines what's included
+    const isReimbursement = reportBuilder.reportType !== "trip_cost";
+    const builderAllExps = isReimbursement
+      ? [...builderTripExps, ...reportBuilder.customExpenses]
+      : [...builderSegmentCosts, ...reportBuilder.customExpenses];
+    const builderTotal = builderAllExps.reduce((s, e) => s + e.amount * (e.fxRate || 1), 0);
+
+    const inputStyle = { display: "block", width: "100%", marginTop: 5, padding: "8px 10px", background: "rgba(255,255,255,0.03)", border: `1px solid ${css.border}`, borderRadius: 7, color: css.text, fontSize: 12, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" };
+    const labelStyle = { fontSize: 10, fontWeight: 600, color: css.text3, textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" };
+
+    return (
+      <div>
+        {/* Header */}
+        <div className="c-a1" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24, gap: 16, flexWrap: "wrap" }}>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: css.text3, marginBottom: 8 }}>Finance</div>
+            <h2 style={{ fontFamily: "'Instrument Sans', 'Outfit', sans-serif", fontSize: isMobile ? 26 : 32, fontWeight: 600, color: css.text, margin: 0, lineHeight: 1.1 }}>Expense Reports</h2>
+            <p style={{ color: css.text2, fontSize: 13, margin: "8px 0 0" }}>Build consolidated reports across multiple trips</p>
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={() => openBuilder(null, "reimbursement")} style={{
+              padding: "10px 16px", borderRadius: 8, border: "none", background: css.accent,
+              color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer",
+            }}>+ Reimbursement Report</button>
+            <button onClick={() => openBuilder(null, "trip_cost")} style={{
+              padding: "10px 16px", borderRadius: 8, border: `1px solid ${css.accent}`, background: "transparent",
+              color: css.accent, fontSize: 12, fontWeight: 700, cursor: "pointer",
+            }}>+ Trip Cost Report</button>
+          </div>
+        </div>
+
+        {/* Saved reports list */}
+        {standaloneReports.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "60px 20px", color: css.text3 }}>
+            <div style={{ fontSize: 40, marginBottom: 14, opacity: 0.4 }}>—</div>
+            <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 20, color: css.text2, marginBottom: 8 }}>No expense reports yet</div>
+            <div style={{ fontSize: 13, color: css.text3, marginBottom: 20 }}>Create a report to combine expenses from multiple trips with custom line items</div>
+            <button onClick={() => openBuilder()} style={{ background: "none", border: "none", color: css.accent, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>Create your first report →</button>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {standaloneReports.map(report => {
+              const exps = getReportExpenses(report);
+              const total = exps.reduce((s, e) => s + e.amount * (e.fxRate || 1), 0);
+              return (
+                <div key={report.id} style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: "20px 24px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 14 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: css.text }}>{report.title}</div>
+                        <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: 4, textTransform: "uppercase", letterSpacing: "0.04em", background: report.reportType === "trip_cost" ? "rgba(59,130,246,0.12)" : `${css.accent}15`, color: report.reportType === "trip_cost" ? "#3b82f6" : css.accent }}>{report.reportType === "trip_cost" ? "Trip Cost" : "Reimbursement"}</span>
+                      </div>
+                      <div style={{ fontSize: 11, color: css.text3, fontFamily: "'Geist Mono', monospace" }}>
+                        {report.createdAt} · {report.selectedTripIds.length} trip{report.selectedTripIds.length !== 1 ? "s" : ""} · {exps.length} items
+                        {report.customExpenses?.length > 0 ? ` · ${report.customExpenses.length} custom` : ""}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: css.gold, fontFamily: "'Geist Mono', monospace" }}>${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                      <div style={{ fontSize: 9, color: css.text3, marginBottom: 8 }}>USD</div>
+                      <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                        <button onClick={async () => { const html = await buildPrintReport(report.title, exps); openReportWindow(html, false); }} style={{ padding: "5px 12px", borderRadius: 8, border: "none", background: css.accent, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                          View
+                        </button>
+                        <button onClick={async () => { const html = await buildPrintReport(report.title, exps); openReportWindow(html, true); }} style={{ padding: "5px 12px", borderRadius: 8, border: `1px solid ${css.border}`, background: "transparent", color: css.text2, fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Print</button>
+                        <button onClick={() => { setForwardReportId(report.id); setForwardEmail(""); setForwardStatus(""); }} style={{ padding: "5px 12px", borderRadius: 8, border: `1px solid ${css.border}`, background: "transparent", color: css.text2, fontSize: 11, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                          Forward
+                        </button>
+                        <button onClick={() => openBuilder(report)} style={{ padding: "5px 12px", borderRadius: 8, border: `1px solid ${css.border}`, background: "transparent", color: css.text2, fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Edit</button>
+                        <button onClick={() => deleteReport(report.id)} style={{ width: 26, height: 26, borderRadius: 8, border: `1px solid rgba(239,68,68,0.2)`, background: "rgba(239,68,68,0.06)", color: "#ef4444", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Report Builder Modal */}
+        {showReportBuilder && (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 16 }}>
+            <div style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: 28, width: "100%", maxWidth: 640, maxHeight: "90vh", overflowY: "auto", display: "flex", flexDirection: "column", gap: 20 }}>
+
+              {/* Title */}
+              <div>
+                <h3 style={{ fontSize: 18, fontWeight: 700, color: css.text, margin: "0 0 4px", fontFamily: "'Inter Tight', Inter, sans-serif" }}>{editingReportId ? "Edit Report" : isReimbursement ? "New Reimbursement Report" : "New Trip Cost Report"}</h3>
+                <p style={{ fontSize: 12, color: css.text3, margin: "0 0 16px" }}>{isReimbursement ? "Expense items you want to claim for reimbursement" : "Total costs from your trip itinerary (flights, hotels, etc.)"}</p>
+                <label>
+                  <span style={labelStyle}>Report Title</span>
+                  <input value={reportBuilder.title} onChange={e => setReportBuilder(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Q1 2026 Business Expenses" style={inputStyle} />
+                </label>
+              </div>
+
+              {/* Trip selector */}
+              <div>
+                <div style={{ ...labelStyle, display: "block", marginBottom: 10 }}>Select Trips to Include</div>
+                {trips.length === 0 ? (
+                  <div style={{ fontSize: 12, color: css.text3 }}>No trips added yet.</div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {trips.map(trip => {
+                      const selected = reportBuilder.selectedTripIds.includes(trip.id);
+                      const tripExps = expenses.filter(e => e.tripId === trip.id);
+                      const excludedCount = reportBuilder.excludedExpenseIds.filter(eid => tripExps.some(e => e.id === eid)).length;
+                      return (
+                        <div key={trip.id}>
+                          <div onClick={() => toggleTripId(trip.id)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 8, border: `1px solid ${selected ? css.accentBorder : css.border}`, background: selected ? css.accentBg : "transparent", cursor: "pointer" }}>
+                            <div style={{ width: 16, height: 16, borderRadius: 4, border: `2px solid ${selected ? css.accent : css.text3}`, background: selected ? css.accent : "transparent", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                              {selected && <span style={{ fontSize: 10, color: "#fff", lineHeight: 1 }}>✓</span>}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: css.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{trip.tripName || trip.route || "Trip"}</div>
+                              <div style={{ fontSize: 10, color: css.text3 }}>{trip.date} · {tripExps.length} expense{tripExps.length !== 1 ? "s" : ""}
+                                {selected && excludedCount > 0 ? ` · ${excludedCount} excluded` : ""}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Individual expense toggles when trip is selected */}
+                          {selected && tripExps.length > 0 && (
+                            <div style={{ marginLeft: 26, marginTop: 4, display: "flex", flexDirection: "column", gap: 3 }}>
+                              {tripExps.map(exp => {
+                                const excluded = reportBuilder.excludedExpenseIds.includes(exp.id);
+                                const cat = EXPENSE_CATEGORIES.find(c => c.id === exp.category);
+                                return (
+                                  <div key={exp.id} onClick={() => toggleExpenseId(exp.id)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", borderRadius: 6, background: excluded ? "rgba(239,68,68,0.05)" : "rgba(255,255,255,0.02)", cursor: "pointer", opacity: excluded ? 0.5 : 1 }}>
+                                    <div style={{ width: 14, height: 14, borderRadius: 3, border: `2px solid ${excluded ? "#ef4444" : css.text3}`, background: excluded ? "rgba(239,68,68,0.2)" : "transparent", flexShrink: 0 }} />
+                                    <span style={{ fontSize: 12 }}>{cat?.icon}</span>
+                                    <span style={{ fontSize: 12, color: css.text2, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.description}</span>
+                                    <span style={{ fontSize: 11, color: css.text3, fontFamily: "'Geist Mono', monospace", flexShrink: 0 }}>${(exp.amount * (exp.fxRate || 1)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                    <span style={{ fontSize: 10, color: excluded ? "#ef4444" : css.text3, flexShrink: 0 }}>{excluded ? "excluded" : "included"}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Custom expenses */}
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                  <span style={labelStyle}>Custom Expenses (not tied to a trip)</span>
+                  <button onClick={() => setShowReportCustomExpense(p => !p)} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${css.accentBorder}`, background: css.accentBg, color: css.accent, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>+ Add</button>
+                </div>
+
+                {showReportCustomExpense && (
+                  <div style={{ background: css.surface2, border: `1px solid ${css.border}`, borderRadius: 10, padding: 16, marginBottom: 10, display: "flex", flexDirection: "column", gap: 10 }}>
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      {EXPENSE_CATEGORIES.map(cat => (
+                        <button key={cat.id} onClick={() => setReportBuilderCustom(p => ({ ...p, category: cat.id }))} style={{ padding: "5px 10px", borderRadius: 7, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600, background: reportBuilderCustom.category === cat.id ? `${cat.color}25` : css.surface2, color: reportBuilderCustom.category === cat.id ? cat.color : css.text3 }}>{cat.icon} {cat.label}</button>
+                      ))}
+                    </div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <label style={{ flex: 2 }}><span style={labelStyle}>Description</span><input value={reportBuilderCustom.description} onChange={e => setReportBuilderCustom(p => ({ ...p, description: e.target.value }))} placeholder="Description" style={inputStyle} /></label>
+                      <label style={{ flex: 1 }}><span style={labelStyle}>Amount</span><input type="number" min="0" step="0.01" value={reportBuilderCustom.amount} onChange={e => setReportBuilderCustom(p => ({ ...p, amount: e.target.value }))} placeholder="0.00" style={inputStyle} /></label>
+                    </div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <label style={{ flex: 1 }}><span style={labelStyle}>Date</span><input type="date" value={reportBuilderCustom.date} onChange={e => setReportBuilderCustom(p => ({ ...p, date: e.target.value }))} style={inputStyle} /></label>
+                      <label style={{ flex: 1 }}><span style={labelStyle}>Payment</span><input value={reportBuilderCustom.paymentMethod} onChange={e => setReportBuilderCustom(p => ({ ...p, paymentMethod: e.target.value }))} placeholder="Card, Cash…" style={inputStyle} /></label>
+                    </div>
+                    <label><span style={labelStyle}>Notes</span><input value={reportBuilderCustom.notes} onChange={e => setReportBuilderCustom(p => ({ ...p, notes: e.target.value }))} placeholder="Optional" style={inputStyle} /></label>
+                    <button onClick={addCustomExpense} disabled={!reportBuilderCustom.description || !reportBuilderCustom.amount} style={{ alignSelf: "flex-end", padding: "8px 18px", borderRadius: 8, border: "none", background: css.accent, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Add Line Item</button>
+                  </div>
+                )}
+
+                {reportBuilder.customExpenses.length > 0 && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    {reportBuilder.customExpenses.map(exp => {
+                      const cat = EXPENSE_CATEGORIES.find(c => c.id === exp.category);
+                      return (
+                        <div key={exp.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", borderRadius: 7, background: "rgba(255,255,255,0.03)", border: `1px solid ${css.border}` }}>
+                          <span style={{ fontSize: 13 }}>{cat?.icon}</span>
+                          <span style={{ flex: 1, fontSize: 12, color: css.text2 }}>{exp.description}</span>
+                          <span style={{ fontSize: 12, color: css.text3, fontFamily: "'Geist Mono', monospace" }}>{exp.date}</span>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: css.text, fontFamily: "'Geist Mono', monospace" }}>${(exp.amount * (exp.fxRate || 1)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                          <button onClick={() => removeCustomExpense(exp.id)} style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", fontSize: 14, padding: "0 4px" }}>×</button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Running total with currency breakdown */}
+              {builderAllExps.length > 0 && (() => {
+                const byCurrency = {};
+                builderAllExps.forEach(e => {
+                  const cur = e.currency || "USD";
+                  byCurrency[cur] = (byCurrency[cur] || 0) + (e.amount * (e.fxRate || 1));
+                });
+                const currencies = Object.entries(byCurrency).sort((a, b) => b[1] - a[1]);
+                return (
+                  <div style={{ background: css.accentBg, border: `1px solid ${css.accentBorder}`, borderRadius: 10, padding: "14px 18px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: currencies.length > 1 ? 8 : 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: css.text2 }}>{builderAllExps.length} item{builderAllExps.length !== 1 ? "s" : ""}</div>
+                      {currencies.length === 1 ? (
+                        <div style={{ fontSize: 18, fontWeight: 800, color: css.accent, fontFamily: "'Geist Mono', monospace" }}>{currencies[0][1].toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currencies[0][0]}</div>
+                      ) : (
+                        <div style={{ fontSize: 13, fontWeight: 700, color: css.accent, fontFamily: "'Geist Mono', monospace" }}>Multi-currency</div>
+                      )}
+                    </div>
+                    {currencies.length > 1 && (
+                      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                        {currencies.map(([cur, amt]) => (
+                          <div key={cur} style={{ fontSize: 12, fontWeight: 700, color: css.text2, fontFamily: "'Geist Mono', monospace" }}>
+                            {amt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span style={{ color: css.text3, fontWeight: 500 }}>{cur}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Actions */}
+              <div style={{ display: "flex", gap: 10 }}>
+                <button onClick={() => setShowReportBuilder(false)} style={{ flex: 1, padding: "11px 0", borderRadius: 8, border: `1px solid ${css.border}`, background: "transparent", color: css.text2, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
+                <button onClick={saveReport} disabled={!reportBuilder.title.trim() || builderAllExps.length === 0} style={{ flex: 1, padding: "11px 0", borderRadius: 8, border: "none", background: !reportBuilder.title.trim() || builderAllExps.length === 0 ? css.surface2 : css.accent, color: !reportBuilder.title.trim() || builderAllExps.length === 0 ? css.text3 : "#fff", fontSize: 13, fontWeight: 700, cursor: !reportBuilder.title.trim() || builderAllExps.length === 0 ? "not-allowed" : "pointer" }}>Save Report</button>
+                {builderAllExps.length > 0 && reportBuilder.title.trim() && (
+                  <button onClick={async () => { await saveReport(); const html = await buildPrintReport(reportBuilder.title, builderAllExps); openReportWindow(html, true); }} style={{ flex: 1, padding: "11px 0", borderRadius: 8, border: "none", background: "#1a3a2a", color: "#34d399", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>🖨️ Save & Print</button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Forward Report Modal */}
+        {forwardReportId && (() => {
+          const report = standaloneReports.find(r => r.id === forwardReportId);
+          if (!report) return null;
+          const exps = getReportExpenses(report);
+          const total = exps.reduce((s, e) => s + e.amount * (e.fxRate || 1), 0);
+
+          const handleForward = async () => {
+            if (!forwardEmail.trim()) return;
+            setForwardStatus("sending");
+            const rows = exps.map(e => {
+              const cat = EXPENSE_CATEGORIES.find(c => c.id === e.category);
+              return `<tr style="border-bottom:1px solid #eee"><td style="padding:8px 12px;font-size:13px">${e.date || ""}</td><td style="padding:8px 12px;font-size:13px">${cat?.label || ""}</td><td style="padding:8px 12px;font-size:13px">${e.description || ""}</td><td style="padding:8px 12px;font-size:13px;text-align:right;font-family:monospace">$${(e.amount * (e.fxRate || 1)).toFixed(2)}</td><td style="padding:8px 12px;font-size:13px">${e.receipt ? "Yes" : "No"}</td></tr>`;
+            }).join("");
+            const html = `<div style="font-family:-apple-system,BlinkMacSystemFont,sans-serif;max-width:700px;margin:0 auto"><div style="background:#D4742D;color:#fff;padding:20px 24px;border-radius:12px 12px 0 0"><h1 style="margin:0;font-size:20px">${report.title.replace(/</g,"&lt;")}</h1><p style="margin:6px 0 0;font-size:13px;opacity:0.85">${exps.length} items · Sent from Continuum</p></div><div style="border:1px solid #eee;border-top:none;border-radius:0 0 12px 12px"><table style="width:100%;border-collapse:collapse"><thead><tr style="background:#f8f8f8"><th style="padding:10px 12px;text-align:left;font-size:11px;color:#888;text-transform:uppercase">Date</th><th style="padding:10px 12px;text-align:left;font-size:11px;color:#888;text-transform:uppercase">Category</th><th style="padding:10px 12px;text-align:left;font-size:11px;color:#888;text-transform:uppercase">Description</th><th style="padding:10px 12px;text-align:right;font-size:11px;color:#888;text-transform:uppercase">Amount</th><th style="padding:10px 12px;text-align:left;font-size:11px;color:#888;text-transform:uppercase">Receipt</th></tr></thead><tbody>${rows}</tbody><tfoot><tr style="background:#f8f8f8;font-weight:700"><td colspan="3" style="padding:12px;font-size:14px">Total</td><td style="padding:12px;font-size:14px;text-align:right;font-family:monospace">$${total.toFixed(2)}</td><td></td></tr></tfoot></table></div><p style="font-size:11px;color:#999;margin-top:16px;text-align:center">Sent via <a href="https://gocontinuum.app" style="color:#D4742D">Continuum</a></p></div>`;
+            try {
+              const resp = await fetch("/api/forward-report", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ recipientEmail: forwardEmail.trim(), reportTitle: report.title, reportHtml: html, senderName: user?.user_metadata?.first_name || "", senderEmail: user?.email || "" }),
+              });
+              const data = await resp.json();
+              if (data.method === "mailto" || data.fallback) {
+                const subject = encodeURIComponent(`Expense Report: ${report.title}`);
+                const body = encodeURIComponent(`Expense Report: ${report.title}\n\nTotal: $${total.toFixed(2)}\nItems: ${exps.length}\n\n${exps.map(e => `${e.date || ""} - ${e.description || ""} - $${(e.amount*(e.fxRate||1)).toFixed(2)}`).join("\n")}\n\nSent from Continuum`);
+                window.open(`mailto:${forwardEmail.trim()}?subject=${subject}&body=${body}`, "_self");
+                setForwardStatus("sent");
+              } else if (data.success) { setForwardStatus("sent"); }
+              else { setForwardStatus("error"); }
+            } catch { setForwardStatus("error"); }
+          };
+
+          return (
+            <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9000, padding: 20 }}>
+              <div onClick={e => e.stopPropagation()} style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 16, padding: "28px 24px", width: "100%", maxWidth: 440 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                  <h3 style={{ fontSize: 18, fontWeight: 700, color: css.text, margin: 0 }}>Forward Report</h3>
+                  <button onClick={() => setForwardReportId(null)} style={{ width: 32, height: 32, border: "none", background: "transparent", color: css.text3, fontSize: 18, cursor: "pointer" }}>x</button>
+                </div>
+                <div style={{ background: css.surface2, borderRadius: 10, padding: "14px 16px", marginBottom: 20 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: css.text }}>{report.title}</div>
+                  <div style={{ fontSize: 12, color: css.text3, marginTop: 4 }}>{exps.length} expense{exps.length !== 1 ? "s" : ""} · ${total.toLocaleString(undefined, { minimumFractionDigits: 2 })} USD{exps.filter(e => e.receipt).length > 0 ? ` · ${exps.filter(e => e.receipt).length} receipt${exps.filter(e => e.receipt).length !== 1 ? "s" : ""}` : ""}</div>
+                </div>
+                {forwardStatus === "sent" ? (
+                  <div style={{ textAlign: "center", padding: "20px 0" }}>
+                    <div style={{ fontSize: 15, fontWeight: 600, color: css.success, marginBottom: 4 }}>Report Sent</div>
+                    <p style={{ fontSize: 13, color: css.text3 }}>Forwarded to {forwardEmail}</p>
+                    <button onClick={() => setForwardReportId(null)} style={{ marginTop: 16, padding: "10px 24px", borderRadius: 8, border: "none", background: css.accent, color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Done</button>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ marginBottom: 16 }}>
+                      <label style={{ fontSize: 10, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>Recipient Email</label>
+                      <input type="email" value={forwardEmail} onChange={e => setForwardEmail(e.target.value)} placeholder="finance@company.com" autoFocus
+                        style={{ width: "100%", padding: "12px 14px", background: css.surface2, border: `1px solid ${css.border}`, borderRadius: 8, color: css.text, fontSize: 14, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }} />
+                    </div>
+                    <p style={{ fontSize: 11, color: css.text3, marginBottom: 16 }}>The full expense report with all line items and receipt indicators will be sent as a formatted email.</p>
+                    <div style={{ display: "flex", gap: 10 }}>
+                      <button onClick={() => setForwardReportId(null)} style={{ flex: 1, padding: "11px 0", borderRadius: 8, border: `1px solid ${css.border}`, background: "transparent", color: css.text2, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
+                      <button onClick={handleForward} disabled={!forwardEmail.trim() || forwardStatus === "sending"} style={{ flex: 1, padding: "11px 0", borderRadius: 8, border: "none", background: forwardEmail.trim() ? css.accent : css.surface2, color: forwardEmail.trim() ? "#fff" : css.text3, fontSize: 13, fontWeight: 700, cursor: forwardEmail.trim() ? "pointer" : "default", opacity: forwardStatus === "sending" ? 0.6 : 1 }}>
+                        {forwardStatus === "sending" ? "Sending..." : "Send Report"}
+                      </button>
+                    </div>
+                    {forwardStatus === "error" && <p style={{ fontSize: 11, color: "#ef4444", marginTop: 8, textAlign: "center" }}>Failed to send. Please try again.</p>}
+                  </>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+
+      </div>
+    );
+  };
+
+  const renderReports = () => {
+    const monthlyData = MONTHS.map((month, i) => {
+      const monthTrips = trips.filter(t => {
+        const d = new Date(t.date);
+        return d.getMonth() === i;
+      });
+      return {
+        month,
+        flights: monthTrips.filter(t => t.type === "flight").length,
+        hotels: monthTrips.filter(t => t.type === "hotel").reduce((s, t) => s + (t.nights || t.estimatedNights || 0), 0),
+        points: monthTrips.reduce((s, t) => s + (t.estimatedPoints || 0), 0),
+      };
+    });
+    const maxPts = Math.max(...monthlyData.map(d => d.points), 1);
+    const totalPoints = trips.reduce((s, t) => s + (t.estimatedPoints || 0), 0);
+    const totalNights = trips.reduce((s, t) => s + (t.estimatedNights || t.nights || 0), 0);
+    const totalFlights = trips.filter(t => t.type === "flight").length;
+
+    // Flight paths + mileage from route strings
+    const flightPaths = [];
+    trips.forEach(t => {
+      const segs = t.segments && t.segments.length > 0 ? t.segments : (t.type === "flight" && t.route ? [{ type: "flight", route: t.route, status: t.status }] : []);
+      segs.filter(s => s.type === "flight" && s.route).forEach(s => {
+        const codes = parseRoute(s.route);
+        if (codes.length < 2) return;
+        const from = AIRPORT_COORDS[codes[0]];
+        const to   = AIRPORT_COORDS[codes[codes.length - 1]];
+        const dist = haversineDistance(from, to);
+        flightPaths.push({ from, to, fromCode: codes[0], toCode: codes[codes.length - 1], dist, id: t.id + "_" + codes.join(""), status: t.status });
+      });
+    });
+
+    const totalMiles = Math.round(flightPaths.reduce((s, p) => s + p.dist, 0));
+    const totalHours = totalMiles > 0 ? (totalMiles / 550) : 0; // ~550 mph avg cruising speed
+    const visitedAirports = [...new Set(flightPaths.flatMap(p => [p.fromCode, p.toCode]))];
+    const currentYear = new Date().getFullYear();
+
+    return (
+      <div>
+        {/* Header */}
+        <div className="c-a1" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 28, gap: 16, flexWrap: "wrap" }}>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: css.text3, marginBottom: 8 }}>Analytics</div>
+            <h2 style={{ fontFamily: "'Instrument Sans', 'Outfit', sans-serif", fontSize: isMobile ? 28 : 36, fontWeight: 600, color: css.text, margin: 0, lineHeight: 1.1 }}>Annual Reports</h2>
+            <p style={{ color: css.text2, fontSize: 13, margin: "8px 0 0" }}>Your 2026 travel year at a glance</p>
+          </div>
+          <button onClick={() => setShowUpgrade(true)} style={{
+            padding: "9px 16px", borderRadius: 8, border: `1px solid ${css.goldBg}`,
+            background: css.goldBg, color: css.gold, fontSize: 12, fontWeight: 600, cursor: "pointer",
+            display: "flex", alignItems: "center", gap: 6,
+          }}>★ Export PDF — Premium</button>
+        </div>
+
+        {/* Summary stats */}
+        <div className="c-a2" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 28 }}>
+          {[
+            { label: "Miles Flown", value: totalMiles > 0 ? totalMiles.toLocaleString() : "—", sub: `${currentYear} year to date`, color: "#38bdf8" },
+            { label: "Flight Hours", value: totalHours > 0 ? `${Math.floor(totalHours)}h ${Math.round((totalHours % 1) * 60)}m` : "—", sub: `${currentYear} year to date`, color: "#a78bfa" },
+            { label: "Flights", value: totalFlights, sub: "planned / confirmed", color: css.success },
+            { label: "Hotel Nights", value: totalNights, sub: "qualifying", color: css.accent },
+            { label: "Points Earned", value: totalPoints.toLocaleString(), sub: "loyalty pts", color: css.gold },
+          ].map((stat, i) => (
+            <div key={i} style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: "18px 20px", boxShadow: D ? "none" : "0 1px 4px rgba(26,21,18,0.05)" }}>
+              <div style={{ fontSize: 24, fontWeight: 700, color: stat.color, fontFamily: "'Geist Mono', monospace", lineHeight: 1 }}>{stat.value}</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: css.text, margin: "6px 0 2px" }}>{stat.label}</div>
+              <div style={{ fontSize: 10, color: css.text3 }}>{stat.sub}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* World Map */}
+        <div className="c-a2b" style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 16, padding: "20px 22px", marginBottom: 24, overflow: "hidden" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 16 }}>
+            <div>
+              <h4 style={{ fontFamily: "'Instrument Sans', 'Outfit', sans-serif", fontSize: 20, fontWeight: 500, color: css.text, margin: "0 0 4px" }}>Flight Map</h4>
+              <div style={{ fontSize: 11, color: css.text3, fontFamily: "'Geist Mono', monospace" }}>
+                {visitedAirports.length} airports · {flightPaths.length} routes · {totalMiles.toLocaleString()} mi
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 16, fontSize: 10, color: css.text3, fontFamily: "Inter, sans-serif" }}>
+              <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 16, height: 2, background: "#0EA5A0", display: "inline-block", borderRadius: 1 }}></span>Confirmed</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 16, height: 2, background: "#8a8f98", display: "inline-block", borderRadius: 1, opacity: 0.6 }}></span>Planned</span>
+            </div>
+          </div>
+          <div style={{ borderRadius: 10, overflow: "hidden", background: D ? "#0d0b14" : "#0f172a" }}>
+            <ComposableMap
+              projectionConfig={{ scale: 147, center: [10, 10] }}
+              style={{ width: "100%", height: "auto" }}
+            >
+              <Geographies geography={GEO_URL}>
+                {({ geographies }) =>
+                  geographies.map(geo => (
+                    <Geography
+                      key={geo.rsmKey}
+                      geography={geo}
+                      fill={D ? "#1e1a2e" : "#1e293b"}
+                      stroke={D ? "#2a2640" : "#334155"}
+                      strokeWidth={0.4}
+                      style={{ default: { outline: "none" }, hover: { outline: "none" }, pressed: { outline: "none" } }}
+                    />
+                  ))
+                }
+              </Geographies>
+
+              {/* Flight path arcs */}
+              {flightPaths.map((path, i) => path.from && path.to && (
+                <Line
+                  key={i}
+                  from={path.from}
+                  to={path.to}
+                  stroke={path.status === "confirmed" ? "#0EA5A0" : "#8a8f98"}
+                  strokeWidth={path.status === "confirmed" ? 1.2 : 0.8}
+                  strokeOpacity={path.status === "confirmed" ? 0.8 : 0.45}
+                  strokeLinecap="round"
+                />
+              ))}
+
+              {/* Airport dots */}
+              {visitedAirports.map(code => {
+                const coords = AIRPORT_COORDS[code];
+                if (!coords) return null;
+                return (
+                  <Marker key={code} coordinates={coords}>
+                    <circle r={2.5} fill="#0EA5A0" fillOpacity={0.9} stroke="#fff" strokeWidth={0.6} />
+                  </Marker>
+                );
+              })}
+            </ComposableMap>
+          </div>
+          {flightPaths.length === 0 && (
+            <div style={{ textAlign: "center", padding: "32px 0", color: css.text3, fontSize: 13 }}>
+              Add flights with routes (e.g. JFK → LAX) to see your flight map
+            </div>
+          )}
+        </div>
+
+        {/* Bar Chart */}
+        <div className="c-a3" style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 16, padding: "20px 22px", marginBottom: 24 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 20 }}>
+            <h4 style={{ fontFamily: "'Instrument Sans', 'Outfit', sans-serif", fontSize: 20, fontWeight: 500, color: css.text, margin: 0 }}>Points by Month</h4>
+            <span style={{ fontSize: 11, color: css.text3, fontFamily: "'Geist Mono', monospace" }}>2026</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "flex-end", gap: isMobile ? 4 : 8, height: 140 }}>
+            {monthlyData.map((d, i) => (
+              <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                {d.points > 0 && (
+                  <div style={{ fontSize: 8, color: css.accent, fontWeight: 700, fontFamily: "'Geist Mono', monospace" }}>
+                    {(d.points / 1000).toFixed(0)}k
+                  </div>
+                )}
+                <div style={{
+                  width: "100%", maxWidth: 28, height: `${Math.max((d.points / maxPts) * 110, 4)}px`, minHeight: 4,
+                  borderRadius: "4px 4px 0 0",
+                  background: d.points > 0
+                    ? `linear-gradient(180deg, ${css.accent}, ${css.accent}80)`
+                    : css.surface2,
+                  border: `1px solid ${d.points > 0 ? css.accentBorder : css.border}`,
+                  transition: "height 0.8s ease",
+                }} />
+                <span style={{ fontSize: 8, color: css.text3, fontFamily: "'Geist Mono', monospace" }}>{d.month.slice(0, 3)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Status Forecast */}
+        <div className="c-a4" style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 16, padding: "20px 22px" }}>
+          <h4 style={{ fontFamily: "'Instrument Sans', 'Outfit', sans-serif", fontSize: 20, fontWeight: 500, color: css.text, margin: "0 0 16px" }}>Year-End Status Forecast</h4>
+          {allPrograms.filter(p => linkedAccounts[p.id] && p.tiers).length === 0 ? (
+            <div style={{ textAlign: "center", padding: "24px 0", color: css.text3, fontSize: 13 }}>
+              Link programs to see your status forecast
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {allPrograms.filter(p => linkedAccounts[p.id] && p.tiers).map(prog => {
+                const status = getProjectedStatus(prog.id);
+                if (!status) return null;
+                const pct = Math.min((status.projected / (status.nextTier?.threshold || status.projected)) * 100, 100);
+                return (
+                  <div key={prog.id} className="c-row-hover" style={{
+                    display: "flex", alignItems: "center", gap: 12, padding: "12px 14px",
+                    background: css.surface2, borderRadius: 10, border: `1px solid ${css.border}`,
+                  }}>
+                    <ProgramLogo prog={prog} size={28} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 5 }}>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: css.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{prog.name}</div>
+                        <div style={{ fontSize: 10, color: status.willAdvance ? css.success : css.text3, flexShrink: 0, marginLeft: 8, fontFamily: "'Geist Mono', monospace" }}>
+                          {status.projectedTier?.name || "Member"}{status.willAdvance ? " ↑" : ""}
+                        </div>
+                      </div>
+                      <div style={{ width: "100%", height: 4, borderRadius: 2, background: css.border, overflow: "hidden" }}>
+                        <div style={{ width: `${pct}%`, height: "100%", borderRadius: 2, background: status.willAdvance ? css.success : prog.color, transition: "width 1s ease" }} />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderAlliances = () => {
+    const lp = {
+      bg: "#08090a", surface: "#0f1012", surface2: "#17191d",
+      border: "#1e2028", border2: "#2a2640",
+      text: "#f7f8f8", text2: "#d0d6e0", dim: "#8a8f98",
+      teal: "#0EA5A0", tealDim: "rgba(14,165,160,0.10)", tealBord: "rgba(14,165,160,0.22)",
+      mono: "'Space Mono','JetBrains Mono',monospace", sans: "'DM Sans','Outfit',sans-serif",
+      red: "#e05252", green: "#3ecf8e", yellow: "#f5a623",
+    };
+    const st = { color: lp.text, fontFamily: lp.sans };
+
+    // Determine user's elite tier from selected program via projected status, with manual override
+    const myStatus = getProjectedStatus(allianceMyProgram);
+    const myEliteLevel = allianceMyTierOverride || myStatus?.currentTier?.name || null;
+    const myAllianceMeta = ALLIANCE_MBR[allianceMyProgram];
+    const myAllianceTierKey = myAllianceMeta && myEliteLevel ? myAllianceMeta.tierMap[myEliteLevel] : null;
+    const availableTiers = Object.keys(myAllianceMeta?.tierMap || {});
+    const myHomeBenefits = HOME_BENEFITS[allianceMyProgram]?.[myEliteLevel] || null;
+
+    // Compare program — only show reciprocal benefits if same alliance
+    const cmpAllianceMeta = ALLIANCE_MBR[allianceCompare];
+    const myAlliance = myAllianceMeta?.alliance;
+    const cmpAlliance = cmpAllianceMeta?.alliance;
+    const sameAlliance = !!(myAlliance && cmpAlliance && myAlliance === cmpAlliance);
+    const cmpTierKey = sameAlliance ? myAllianceTierKey : null;
+    const cmpRecipBenefits = cmpTierKey ? RECIP_BENEFITS[cmpTierKey] : null;
+
+    const compareOptions = Object.entries(ALLIANCE_MBR)
+      .filter(([id]) => id !== allianceMyProgram)
+      .map(([id, meta]) => ({ id, meta }));
+
+    // Program display names
+    const PROG_NAMES = {
+      aa: "American Airlines AAdvantage", ua: "United MileagePlus", dl: "Delta SkyMiles",
+      aeroplan: "Air Canada Aeroplan", singapore_kf: "Singapore KrisFlyer",
+      turkish_miles: "Turkish Miles&Smiles", ba_avios: "British Airways Avios",
+      qantas_ff: "Qantas Frequent Flyer", cathay_mp: "Cathay Pacific Marco Polo",
+      flying_blue: "Air France/KLM Flying Blue",
+    };
+
+    // Group BENEFIT_ROWS by category
+    const cats = [...new Set(BENEFIT_ROWS.map(r => r.cat))];
+
+    const Cell = ({ ben }) => {
+      if (!ben) return (
+        <td style={{ padding: "10px 14px", borderBottom: `1px solid ${lp.border}`, color: lp.dim, fontFamily: lp.mono, fontSize: 12 }}>—</td>
+      );
+      return (
+        <td style={{ padding: "10px 14px", borderBottom: `1px solid ${lp.border}`, verticalAlign: "top" }}>
+          <div style={{ fontFamily: lp.mono, fontSize: 12, fontWeight: 700, color: ben.ok ? lp.green : lp.text2 }}>{ben.v}</div>
+          {ben.d && <div style={{ fontFamily: lp.sans, fontSize: 11, color: lp.dim, marginTop: 3, lineHeight: 1.4 }}>{ben.d}</div>}
+        </td>
+      );
+    };
+
+    const noStatus = !myHomeBenefits;
+
+    return (
+      <div style={{ ...st }}>
+        {/* Header */}
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ fontFamily: lp.mono, fontSize: 11, letterSpacing: 2, color: lp.teal, marginBottom: 8, textTransform: "uppercase" }}>Airline Alliances</div>
+          <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: lp.text, letterSpacing: -0.5 }}>Elite Status Comparison</h1>
+          <p style={{ margin: "6px 0 0", color: lp.dim, fontSize: 14 }}>Compare your current home-carrier benefits against reciprocal benefits on a partner airline.</p>
+        </div>
+
+        {/* Selectors row */}
+        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 28 }}>
+          {/* My Program */}
+          <div style={{ flex: 1, minWidth: 220, background: lp.surface, border: `1px solid ${lp.border}`, padding: "16px 20px" }}>
+            <div style={{ fontFamily: lp.mono, fontSize: 10, letterSpacing: 1.5, color: lp.teal, marginBottom: 8, textTransform: "uppercase" }}>My Program</div>
+            <select
+              value={allianceMyProgram}
+              onChange={e => { setAllianceMyProgram(e.target.value); setAllianceMyTierOverride(null); }}
+              style={{ width: "100%", background: lp.surface2, border: `1px solid ${lp.border2}`, color: lp.text, padding: "8px 10px", fontFamily: lp.mono, fontSize: 12, outline: "none" }}
+            >
+              {Object.entries(PROG_NAMES).map(([id, name]) => (
+                <option key={id} value={id}>{name}</option>
+              ))}
+            </select>
+            {availableTiers.length > 0 && (
+              <div style={{ marginTop: 8 }}>
+                <div style={{ fontFamily: lp.mono, fontSize: 10, letterSpacing: 1, color: lp.dim, marginBottom: 5, textTransform: "uppercase" }}>Membership Tier</div>
+                <select
+                  value={allianceMyTierOverride || (myStatus?.currentTier?.name || "")}
+                  onChange={e => setAllianceMyTierOverride(e.target.value || null)}
+                  style={{ width: "100%", background: lp.surface2, border: `1px solid ${lp.border2}`, color: lp.text, padding: "8px 10px", fontFamily: lp.mono, fontSize: 12, outline: "none" }}
+                >
+                  <option value="">— Select tier —</option>
+                  {availableTiers.map(tier => (
+                    <option key={tier} value={tier}>{tier}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            {myEliteLevel && myAllianceTierKey && (
+              <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ width: 10, height: 10, background: ALLIANCE_TIER_COLORS[myAllianceTierKey] }} />
+                <span style={{ fontFamily: lp.mono, fontSize: 11, color: lp.text2 }}>{myEliteLevel} → {ALLIANCE_TIER_LABELS[myAllianceTierKey]}</span>
+              </div>
+            )}
+            {myEliteLevel && !myAllianceTierKey && (
+              <div style={{ marginTop: 10, fontFamily: lp.mono, fontSize: 11, color: lp.yellow }}>No alliance tier mapped for "{myEliteLevel}"</div>
+            )}
+            {!myEliteLevel && (
+              <div style={{ marginTop: 10, fontFamily: lp.mono, fontSize: 11, color: lp.dim }}>No elite status on file for this program</div>
+            )}
+          </div>
+
+          {/* Compare airline */}
+          <div style={{ flex: 1, minWidth: 220, background: lp.surface, border: `1px solid ${lp.border}`, padding: "16px 20px" }}>
+            <div style={{ fontFamily: lp.mono, fontSize: 10, letterSpacing: 1.5, color: lp.teal, marginBottom: 8, textTransform: "uppercase" }}>Compare Partner Airline</div>
+            <select
+              value={allianceCompare}
+              onChange={e => setAllianceCompare(e.target.value)}
+              style={{ width: "100%", background: lp.surface2, border: `1px solid ${lp.border2}`, color: lp.text, padding: "8px 10px", fontFamily: lp.mono, fontSize: 12, outline: "none" }}
+            >
+              {compareOptions.map(({ id }) => (
+                <option key={id} value={id}>{PROG_NAMES[id] || id}</option>
+              ))}
+            </select>
+            {cmpAllianceMeta && (
+              <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ width: 10, height: 10, background: cmpAllianceMeta.color }} />
+                <span style={{ fontFamily: lp.mono, fontSize: 11, color: lp.text2 }}>{ALLIANCE_LABELS[cmpAllianceMeta.alliance] || cmpAllianceMeta.alliance}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Alliance status badge */}
+          {myAllianceTierKey && (
+            <div style={{
+              flex: 1, minWidth: 220, background: lp.surface, padding: "16px 20px",
+              border: `1px solid ${sameAlliance ? lp.tealBord : lp.border}`,
+              borderLeft: `3px solid ${sameAlliance ? ALLIANCE_TIER_COLORS[myAllianceTierKey] : lp.red}`,
+            }}>
+              <div style={{ fontFamily: lp.mono, fontSize: 10, letterSpacing: 1.5, color: sameAlliance ? lp.teal : lp.red, marginBottom: 8, textTransform: "uppercase" }}>
+                {sameAlliance ? "Reciprocal Tier" : "No Reciprocal Benefits"}
+              </div>
+              {sameAlliance ? (
+                <>
+                  <div style={{ fontFamily: lp.mono, fontSize: 14, fontWeight: 700, color: ALLIANCE_TIER_COLORS[myAllianceTierKey] }}>{ALLIANCE_TIER_LABELS[myAllianceTierKey]}</div>
+                  <div style={{ fontFamily: lp.sans, fontSize: 12, color: lp.dim, marginTop: 4 }}>
+                    {PROG_NAMES[allianceCompare] || allianceCompare} will recognize you as <strong style={{ color: lp.text2 }}>{ALLIANCE_TIER_LABELS[myAllianceTierKey]}</strong>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ fontFamily: lp.mono, fontSize: 13, fontWeight: 700, color: lp.red }}>
+                    {ALLIANCE_LABELS[myAlliance]} ≠ {ALLIANCE_LABELS[cmpAlliance] || cmpAlliance}
+                  </div>
+                  <div style={{ fontFamily: lp.sans, fontSize: 12, color: lp.dim, marginTop: 4 }}>
+                    Your {ALLIANCE_LABELS[myAlliance]} status earns no reciprocal benefits on {PROG_NAMES[allianceCompare] || allianceCompare}. Select a {ALLIANCE_LABELS[myAlliance]} partner to see benefits.
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        {noStatus && (
+          <div style={{ background: lp.surface, border: `1px solid ${lp.border}`, padding: "20px 24px", marginBottom: 24, fontFamily: lp.mono, fontSize: 13, color: lp.yellow }}>
+            No home benefits found for this program/tier combination. Link your loyalty account with an elite status level to see full comparison.
+          </div>
+        )}
+
+        {/* Different alliance — no reciprocal benefits panel */}
+        {!sameAlliance && myAlliance && cmpAlliance && (
+          <div style={{ background: lp.surface, border: `1px solid ${lp.border}`, borderLeft: `4px solid ${lp.red}`, padding: "28px 32px", textAlign: "center" }}>
+            <div style={{ fontFamily: lp.mono, fontSize: 28, marginBottom: 16 }}>✗</div>
+            <div style={{ fontFamily: lp.mono, fontSize: 15, fontWeight: 700, color: lp.text, marginBottom: 10 }}>
+              No Reciprocal Benefits
+            </div>
+            <div style={{ fontFamily: lp.sans, fontSize: 14, color: lp.dim, maxWidth: 480, margin: "0 auto", lineHeight: 1.7 }}>
+              <strong style={{ color: lp.text2 }}>{PROG_NAMES[allianceMyProgram]}</strong> is a <strong style={{ color: ALLIANCE_TIER_COLORS[myAllianceTierKey] || lp.teal }}>{ALLIANCE_LABELS[myAlliance]}</strong> member.
+              {" "}<strong style={{ color: lp.text2 }}>{PROG_NAMES[allianceCompare]}</strong> is a <strong style={{ color: lp.yellow }}>{ALLIANCE_LABELS[cmpAlliance]}</strong> member.
+            </div>
+            <div style={{ fontFamily: lp.sans, fontSize: 13, color: lp.dim, marginTop: 12, lineHeight: 1.6 }}>
+              Your {myEliteLevel} status on {ALLIANCE_LABELS[myAlliance]} does not grant any reciprocal elite benefits when flying {PROG_NAMES[allianceCompare]}.
+              To see reciprocal benefits, select a <strong style={{ color: lp.text2 }}>{ALLIANCE_LABELS[myAlliance]}</strong> partner airline.
+            </div>
+            {/* Show which programs ARE valid partners */}
+            <div style={{ marginTop: 20, display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
+              <span style={{ fontFamily: lp.mono, fontSize: 10, color: lp.dim, alignSelf: "center", letterSpacing: 1 }}>{ALLIANCE_LABELS[myAlliance]} PARTNERS:</span>
+              {Object.entries(ALLIANCE_MBR)
+                .filter(([id, meta]) => id !== allianceMyProgram && meta.alliance === myAlliance)
+                .map(([id]) => (
+                  <button key={id} onClick={() => setAllianceCompare(id)} style={{
+                    padding: "5px 12px", fontFamily: lp.mono, fontSize: 11, cursor: "pointer",
+                    background: lp.surface2, border: `1px solid ${lp.border2}`, color: lp.text2,
+                  }}>
+                    {PROG_NAMES[id] || id}
+                  </button>
+                ))}
+            </div>
+          </div>
+        )}
+
+        {/* Benefit table — only when same alliance */}
+        {sameAlliance && (
+        <div style={{ background: lp.surface, border: `1px solid ${lp.border}`, overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 640 }}>
+            <thead>
+              <tr style={{ background: lp.surface2, borderBottom: `2px solid ${lp.teal}` }}>
+                <th style={{ padding: "12px 14px", textAlign: "left", fontFamily: lp.mono, fontSize: 11, letterSpacing: 1, color: lp.dim, fontWeight: 600, width: "28%" }}>Benefit</th>
+                <th style={{ padding: "12px 14px", textAlign: "left", fontFamily: lp.mono, fontSize: 11, letterSpacing: 1, color: lp.teal, fontWeight: 700 }}>
+                  Your Status ({myEliteLevel || "—"})<br />
+                  <span style={{ color: lp.dim, fontWeight: 400, fontSize: 10 }}>{PROG_NAMES[allianceMyProgram] || allianceMyProgram}</span>
+                </th>
+                <th style={{ padding: "12px 14px", textAlign: "left", fontFamily: lp.mono, fontSize: 11, letterSpacing: 1, color: lp.yellow, fontWeight: 700 }}>
+                  As {ALLIANCE_TIER_LABELS[cmpTierKey]} on {PROG_NAMES[allianceCompare] || allianceCompare}<br />
+                  <span style={{ color: ALLIANCE_TIER_COLORS[cmpTierKey], fontWeight: 600, fontSize: 10 }}>{ALLIANCE_LABELS[myAlliance]} Reciprocal</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {cats.map(cat => {
+                const rows = BENEFIT_ROWS.filter(r => r.cat === cat);
+                return [
+                  <tr key={`cat-${cat}`}>
+                    <td colSpan={3} style={{ padding: "8px 14px 4px", background: lp.bg, fontFamily: lp.mono, fontSize: 10, letterSpacing: 2, color: lp.teal, fontWeight: 700, textTransform: "uppercase", borderBottom: `1px solid ${lp.border}` }}>{cat}</td>
+                  </tr>,
+                  ...rows.map(row => (
+                    <tr key={row.id} style={{ background: lp.surface }}>
+                      <td style={{ padding: "10px 14px", borderBottom: `1px solid ${lp.border}`, verticalAlign: "top" }}>
+                        <div style={{ fontFamily: lp.sans, fontSize: 13, fontWeight: 600, color: lp.text2 }}>{row.label}</div>
+                        <div style={{ fontFamily: lp.sans, fontSize: 11, color: lp.dim, marginTop: 2 }}>{row.sub}</div>
+                      </td>
+                      <Cell ben={myHomeBenefits?.[row.id]} />
+                      <Cell ben={cmpRecipBenefits?.[row.id]} />
+                    </tr>
+                  ))
+                ];
+              })}
+            </tbody>
+          </table>
+        </div>
+        )}
+
+        {/* Footer note */}
+        <div style={{ marginTop: 16, padding: "12px 16px", background: lp.surface, border: `1px solid ${lp.border}`, fontFamily: lp.sans, fontSize: 12, color: lp.dim, lineHeight: 1.6 }}>
+          <strong style={{ color: lp.text2 }}>Disclaimer:</strong> Benefits shown are based on published alliance standards and typical carrier implementations. Actual benefits may vary by route, fare class, and carrier. Always verify with the operating carrier before travel.
+        </div>
+      </div>
+    );
+  };
+
+  const renderInsights = (_previewTab = null) => {
+    const INSIGHT_TABS = [
+      { id: "countdown",  label: "Status Countdown", tier: "free" },
+      { id: "expiration", label: "Expiration Tracker", tier: "free" },
+      { id: "redemption", label: "Redemption Value",   tier: "free" },
+      { id: "transfer",   label: "Transfer Matrix",    tier: "free" },
+      { id: "annual_fee", label: "Annual Fee Calc",    tier: "free" },
+    ];
+    const isPremium = true; // All features free for now
+
+    // ── Helpers ──────────────────────────────────────────────────
+    const allPrograms = [
+      ...LOYALTY_PROGRAMS.airlines,
+      ...LOYALTY_PROGRAMS.hotels,
+      ...LOYALTY_PROGRAMS.creditCards,
+    ];
+    const findProg = (id) => allPrograms.find(p => p.id === id);
+
+    // Infer last-activity date from trips
+    const lastActivityByProg = {};
+    const allTrips = [...(user?.upcomingTrips || []), ...trips];
+    allTrips.forEach(t => {
+      const d = t.date ? new Date(t.date) : null;
+      if (!d || isNaN(d)) return;
+      if (!lastActivityByProg[t.program] || d > lastActivityByProg[t.program]) {
+        lastActivityByProg[t.program] = d;
+      }
+    });
+
+    const today = new Date();
+    const daysBetween = (a, b) => Math.round((b - a) / 86400000);
+
+    // ── Sub-tab: Status Countdown ─────────────────────────────────
+    const renderCountdown = () => {
+      const progsSorted = Object.entries(linkedAccounts)
+        .map(([id, acct]) => {
+          const prog = findProg(id);
+          if (!prog || !prog.tiers) return null;
+          const current = acct.tierCredits ?? acct.currentNights ?? acct.currentRentals ?? 0;
+          const nextTier = prog.tiers.find(t => t.threshold > current);
+          const currentTierObj = [...prog.tiers].reverse().find(t => t.threshold <= current);
+          const deficit = nextTier ? nextTier.threshold - current : 0;
+          const pct = nextTier ? Math.min((current / nextTier.threshold) * 100, 100) : 100;
+          const yearEnd = new Date("2026-12-31");
+          const daysLeft = daysBetween(today, yearEnd);
+          return { id, prog, acct, current, nextTier, currentTierObj, deficit, pct, daysLeft };
+        })
+        .filter(Boolean);
+
+      if (progsSorted.length === 0) {
+        return (
+          <div style={{ textAlign: "center", padding: "60px 20px", color: css.text3 }}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>🔗</div>
+            <div style={{ fontSize: 15, fontWeight: 500 }}>No linked accounts yet</div>
+            <div style={{ fontSize: 13, marginTop: 6 }}>Link your loyalty programs in the Programs tab to see your status countdown.</div>
+          </div>
+        );
+      }
+
+      return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ fontSize: 13, color: css.text3, marginBottom: 4 }}>
+            Qualification year ends <strong style={{ color: css.text }}>Dec 31, 2026</strong> · {Math.round(daysBetween(today, new Date("2026-12-31")) / 30.5)} months remaining
+          </div>
+          {progsSorted.map(({ id, prog, current, nextTier, currentTierObj, deficit, pct, daysLeft }) => (
+            <div key={id} className="c-card" style={{ background: css.surface, border: `1px solid ${css.border}`, padding: "18px 20px", display: "flex", flexDirection: "column", gap: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <ProgramLogo prog={prog} size={28} />
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: css.text }}>{prog.name}</div>
+                    <div style={{ fontSize: 12, color: css.text3 }}>
+                      {currentTierObj ? <span style={{ color: css.gold, fontWeight: 600 }}>{currentTierObj.name}</span> : "No status yet"}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  {nextTier ? (
+                    <>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: css.accent }}>{deficit.toLocaleString()} to go</div>
+                      <div style={{ fontSize: 11, color: css.text3 }}>for {nextTier.name}</div>
+                    </>
+                  ) : (
+                    <div style={{ fontSize: 13, fontWeight: 700, color: css.success }}>Top tier ✓</div>
+                  )}
+                </div>
+              </div>
+              {/* Progress bar */}
+              <div style={{ position: "relative", height: 6, background: css.surface3, borderRadius: 0 }}>
+                <motion.div
+                  initial={{ width: 0 }} animate={{ width: `${pct}%` }}
+                  transition={{ duration: 1, ease: "easeOut" }}
+                  style={{ position: "absolute", top: 0, left: 0, height: "100%", background: pct >= 100 ? css.success : css.accent, borderRadius: 0 }}
+                />
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: css.text3 }}>
+                <span>{current.toLocaleString()} {prog.unit}</span>
+                {nextTier && <span>{nextTier.threshold.toLocaleString()} {prog.unit}</span>}
+              </div>
+              {nextTier && (
+                <div style={{ fontSize: 12, color: css.text3, background: css.surface2, padding: "8px 12px", borderLeft: `2px solid ${css.accentBorder}` }}>
+                  At current pace: <strong style={{ color: css.text }}>{Math.round(deficit / (daysLeft / 30.5))}</strong> {prog.unit}/month needed in {daysLeft} days remaining
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      );
+    };
+
+    // ── Sub-tab: Expiration Tracker ───────────────────────────────
+    const renderExpiration = () => {
+      const rows = Object.entries(linkedAccounts).map(([id, acct]) => {
+        const prog = findProg(id);
+        if (!prog) return null;
+        const rule = EXPIRATION_RULES[id];
+        if (!rule) return null;
+        const balance = acct.currentPoints ?? acct.bonvoyPoints ?? acct.hhPoints ?? acct.ihgPoints ?? acct.pointsBalance ?? acct.currentNights ?? 0;
+        const lastActivity = lastActivityByProg[id];
+        let expiresIn = null, risk = "safe";
+        if (!rule.neverExpire && rule.months > 0) {
+          const expirationDate = lastActivity ? new Date(lastActivity.getTime() + rule.months * 30.5 * 86400000) : null;
+          expiresIn = expirationDate ? daysBetween(today, expirationDate) : null;
+          if (expiresIn !== null) {
+            if (expiresIn < 90) risk = "high";
+            else if (expiresIn < 180) risk = "medium";
+            else risk = "safe";
+          } else {
+            risk = "unknown";
+          }
+        }
+        return { id, prog, acct, rule, balance, expiresIn, risk };
+      }).filter(Boolean);
+
+      const riskColor = { safe: css.success, medium: css.warning, high: "#ef4444", unknown: css.text3 };
+      const riskLabel = { safe: "Safe", medium: "Monitor", high: "At Risk", unknown: "Unknown" };
+
+      if (rows.length === 0) {
+        return (
+          <div style={{ textAlign: "center", padding: "60px 20px", color: css.text3 }}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>⏱️</div>
+            <div style={{ fontSize: 15, fontWeight: 500 }}>No linked accounts</div>
+          </div>
+        );
+      }
+
+      return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {rows.sort((a, b) => {
+            const order = { high: 0, medium: 1, unknown: 2, safe: 3 };
+            return order[a.risk] - order[b.risk];
+          }).map(({ id, prog, rule, balance, expiresIn, risk }) => (
+            <div key={id} className="c-card" style={{ background: css.surface, border: `1px solid ${css.border}`, padding: "16px 20px", display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+              <ProgramLogo prog={prog} size={26} />
+              <div style={{ flex: 1, minWidth: 140 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: css.text }}>{prog.name}</div>
+                <div style={{ fontSize: 11, color: css.text3, marginTop: 2 }}>{balance.toLocaleString()} {prog.unit}</div>
+              </div>
+              <div style={{ flex: 2, minWidth: 160 }}>
+                {rule.neverExpire ? (
+                  <div style={{ fontSize: 12, color: css.success }}>✓ Never expire</div>
+                ) : (
+                  <>
+                    <div style={{ fontSize: 12, color: css.text2 }}>
+                      {expiresIn !== null
+                        ? expiresIn > 0
+                          ? `Expires in ${expiresIn} days`
+                          : "⚠️ May have expired"
+                        : "No recent activity found"}
+                    </div>
+                    <div style={{ fontSize: 11, color: css.text3, marginTop: 2 }}>{rule.note}</div>
+                  </>
+                )}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: riskColor[risk] }} />
+                <span style={{ fontSize: 12, fontWeight: 600, color: riskColor[risk] }}>
+                  {rule.neverExpire ? "Safe" : riskLabel[risk]}
+                </span>
+              </div>
+            </div>
+          ))}
+          <div style={{ fontSize: 11, color: css.text3, marginTop: 4, paddingLeft: 2 }}>
+            * Activity dates inferred from logged trips. Link your accounts for real-time data.
+          </div>
+        </div>
+      );
+    };
+
+    // ── Sub-tab: Redemption Value Engine ─────────────────────────
+    const renderRedemption = () => {
+      if (!isPremium) {
+        return (
+          <div className="c-a1" style={{ textAlign: "center", padding: "60px 20px", background: css.surface, border: `1px solid ${css.border}` }}>
+            <div style={{ fontSize: 36, marginBottom: 16 }}>💎</div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: css.gold, marginBottom: 8 }}>Premium Feature</div>
+            <h3 style={{ fontFamily: "'Instrument Sans', 'Outfit', sans-serif", fontSize: 28, fontWeight: 600, color: css.text, margin: "0 0 12px" }}>Redemption Value Engine</h3>
+            <p style={{ color: css.text2, fontSize: 14, maxWidth: 380, margin: "0 auto 24px", lineHeight: 1.6 }}>See the real dollar value of your miles and points, plus where to get the most out of each balance.</p>
+            <button onClick={() => setActiveView("premium")} className="c-btn-primary" style={{ padding: "10px 24px", background: css.accent, color: "#fff", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, borderRadius: 0 }}>Upgrade to Premium</button>
+          </div>
+        );
+      }
+
+      const entries = Object.entries(linkedAccounts).map(([id, acct]) => {
+        const prog = findProg(id);
+        const rdv = REDEMPTION_VALUES[id];
+        if (!prog || !rdv) return null;
+        const balance = acct.currentPoints ?? acct.bonvoyPoints ?? acct.hhPoints ?? acct.ihgPoints ?? acct.pointsBalance ?? 0;
+        const dollarValue = (balance * rdv.cpp / 100).toFixed(0);
+        return { id, prog, rdv, balance, dollarValue };
+      }).filter(Boolean).sort((a, b) => b.dollarValue - a.dollarValue);
+
+      const totalValue = entries.reduce((s, e) => s + parseFloat(e.dollarValue), 0);
+
+      return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {/* Total value banner */}
+          <div style={{ background: css.accentBg, border: `1px solid ${css.accentBorder}`, padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: css.accent, marginBottom: 4 }}>Portfolio Value (at peak redemption)</div>
+              <div style={{ fontFamily: "'Instrument Sans', 'Outfit', sans-serif", fontSize: 42, fontWeight: 600, color: css.text, lineHeight: 1 }}>
+                ${totalValue.toLocaleString()}
+              </div>
+            </div>
+            <div style={{ fontSize: 12, color: css.text2, maxWidth: 240, lineHeight: 1.5 }}>
+              Based on best achievable cents-per-point (CPP) values, not average. Actual value depends on how you redeem.
+            </div>
+          </div>
+
+          {entries.map(({ id, prog, rdv, balance, dollarValue }) => (
+            <div key={id} className="c-card" style={{ background: css.surface, border: `1px solid ${css.border}`, padding: "18px 20px" }}>
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <ProgramLogo prog={prog} size={28} />
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: css.text }}>{prog.name}</div>
+                    <div style={{ fontSize: 12, color: css.text3 }}>{balance.toLocaleString()} {prog.unit} · <span style={{ color: css.accent, fontWeight: 700 }}>{rdv.cpp}¢/pt peak CPP</span></div>
+                  </div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontFamily: "'Instrument Sans', 'Outfit', sans-serif", fontSize: 28, fontWeight: 600, color: css.text }}>${parseFloat(dollarValue).toLocaleString()}</div>
+                  <div style={{ fontSize: 11, color: css.text3 }}>peak value</div>
+                </div>
+              </div>
+              <div style={{ marginTop: 14, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div style={{ background: css.surface2, padding: "10px 12px", borderLeft: `2px solid ${css.success}` }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: css.success, marginBottom: 4 }}>Best Use</div>
+                  <div style={{ fontSize: 12, color: css.text2, lineHeight: 1.4 }}>{rdv.best}</div>
+                </div>
+                <div style={{ background: css.surface2, padding: "10px 12px", borderLeft: `2px solid #ef4444` }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#ef4444", marginBottom: 4 }}>Avoid</div>
+                  <div style={{ fontSize: 12, color: css.text2, lineHeight: 1.4 }}>{rdv.avoid}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    };
+
+    // ── Sub-tab: Transfer Partner Matrix ─────────────────────────
+    const renderTransfer = () => {
+      if (!isPremium) {
+        return (
+          <div className="c-a1" style={{ textAlign: "center", padding: "60px 20px", background: css.surface, border: `1px solid ${css.border}` }}>
+            <div style={{ fontSize: 36, marginBottom: 16 }}>🔀</div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: css.gold, marginBottom: 8 }}>Premium Feature</div>
+            <h3 style={{ fontFamily: "'Instrument Sans', 'Outfit', sans-serif", fontSize: 28, fontWeight: 600, color: css.text, margin: "0 0 12px" }}>Transfer Partner Matrix</h3>
+            <p style={{ color: css.text2, fontSize: 14, maxWidth: 380, margin: "0 auto 24px", lineHeight: 1.6 }}>Explore which credit card currencies can reach your target airline or hotel program, and chart the optimal transfer path.</p>
+            <button onClick={() => setActiveView("premium")} className="c-btn-primary" style={{ padding: "10px 24px", background: css.accent, color: "#fff", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, borderRadius: 0 }}>Upgrade to Premium</button>
+          </div>
+        );
+      }
+
+      // Build matrix: all linked credit cards that have transfer partners
+      const linkedCards = Object.keys(linkedAccounts).filter(id => CC_TRANSFER_PARTNERS[id]?.partners);
+      const allTargets = [...new Set(linkedCards.flatMap(id => CC_TRANSFER_PARTNERS[id].partners))];
+
+      // Goal finder
+      const goalMatches = transferGoal
+        ? linkedCards.filter(id => CC_TRANSFER_PARTNERS[id]?.partners?.includes(transferGoal))
+        : [];
+
+      const targetProg = transferGoal ? findProg(transferGoal) : null;
+
+      return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          {/* Goal finder */}
+          <div style={{ background: css.surface, border: `1px solid ${css.border}`, padding: "20px" }}>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: css.text3, marginBottom: 12 }}>Transfer Path Advisor</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+              <div style={{ flex: 1, minWidth: 200 }}>
+                <div style={{ fontSize: 12, color: css.text2, marginBottom: 6 }}>I want to earn points in...</div>
+                <select
+                  value={transferGoal}
+                  onChange={e => setTransferGoal(e.target.value)}
+                  style={{ width: "100%", padding: "9px 12px", background: css.surface2, border: `1px solid ${css.border}`, color: css.text, fontSize: 13, borderRadius: 0, cursor: "pointer" }}
+                >
+                  <option value="">Select a target program</option>
+                  {allTargets.map(tid => {
+                    const tp = findProg(tid);
+                    return tp ? <option key={tid} value={tid}>{tp.name}</option> : null;
+                  })}
+                </select>
+              </div>
+            </div>
+            {transferGoal && (
+              <div style={{ marginTop: 16 }}>
+                {goalMatches.length > 0 ? (
+                  <>
+                    <div style={{ fontSize: 12, color: css.success, fontWeight: 600, marginBottom: 10 }}>
+                      ✓ {goalMatches.length} card{goalMatches.length > 1 ? "s" : ""} can transfer to {targetProg?.name}
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {goalMatches.map(cardId => {
+                        const cardProg = findProg(cardId);
+                        const tp = CC_TRANSFER_PARTNERS[cardId];
+                        const balance = linkedAccounts[cardId]?.pointsBalance ?? 0;
+                        return (
+                          <div key={cardId} style={{ display: "flex", alignItems: "center", gap: 12, background: css.surface2, padding: "10px 14px", borderLeft: `2px solid ${css.accent}` }}>
+                            <ProgramLogo prog={cardProg} size={22} />
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: css.text }}>{cardProg?.name}</div>
+                              <div style={{ fontSize: 11, color: css.text3 }}>{tp.currency}</div>
+                            </div>
+                            <div style={{ textAlign: "right" }}>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: css.accent }}>{balance.toLocaleString()} pts</div>
+                              <div style={{ fontSize: 11, color: css.text3 }}>available to transfer</div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ fontSize: 13, color: "#ef4444" }}>
+                    None of your linked cards can transfer to {targetProg?.name}. Consider adding a card that does.
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Full matrix */}
+          <div style={{ background: css.surface, border: `1px solid ${css.border}`, padding: "20px" }}>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: css.text3, marginBottom: 16 }}>Your Transfer Matrix</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {linkedCards.map(cardId => {
+                const cardProg = findProg(cardId);
+                const tp = CC_TRANSFER_PARTNERS[cardId];
+                const balance = linkedAccounts[cardId]?.pointsBalance ?? 0;
+                return (
+                  <div key={cardId}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                      <ProgramLogo prog={cardProg} size={22} />
+                      <div style={{ fontSize: 13, fontWeight: 600, color: css.text }}>{cardProg?.name}</div>
+                      <div style={{ fontSize: 11, color: css.accent, fontWeight: 600, marginLeft: "auto" }}>{balance.toLocaleString()} {tp.currency}</div>
+                    </div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, paddingLeft: 32 }}>
+                      {tp.partners.map(pid => {
+                        const pp = findProg(pid);
+                        const isGoal = pid === transferGoal;
+                        return pp ? (
+                          <button
+                            key={pid}
+                            onClick={() => setTransferGoal(pid)}
+                            style={{
+                              display: "inline-flex", alignItems: "center", gap: 5,
+                              padding: "4px 10px", border: `1px solid ${isGoal ? css.accent : css.border}`,
+                              background: isGoal ? css.accentBg : "transparent",
+                              color: isGoal ? css.accent : css.text2,
+                              fontSize: 11, fontWeight: isGoal ? 600 : 400, cursor: "pointer", borderRadius: 0,
+                            }}
+                          >
+                            <ProgramLogo prog={pp} size={14} />
+                            {pp.name.split(" ")[0]}
+                          </button>
+                        ) : null;
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // ── Sub-tab: Annual Fee Calculator ────────────────────────────
+    const renderAnnualFee = () => {
+      if (!isPremium) {
+        return (
+          <div className="c-a1" style={{ textAlign: "center", padding: "60px 20px", background: css.surface, border: `1px solid ${css.border}` }}>
+            <div style={{ fontSize: 36, marginBottom: 16 }}>🧮</div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: css.gold, marginBottom: 8 }}>Premium Feature</div>
+            <h3 style={{ fontFamily: "'Instrument Sans', 'Outfit', sans-serif", fontSize: 28, fontWeight: 600, color: css.text, margin: "0 0 12px" }}>Annual Fee Calculator</h3>
+            <p style={{ color: css.text2, fontSize: 14, maxWidth: 380, margin: "0 auto 24px", lineHeight: 1.6 }}>Tally the dollar value of benefits you actually use and see whether your card is truly worth the fee.</p>
+            <button onClick={() => setActiveView("premium")} className="c-btn-primary" style={{ padding: "10px 24px", background: css.accent, color: "#fff", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, borderRadius: 0 }}>Upgrade to Premium</button>
+          </div>
+        );
+      }
+
+      const cardData = CARD_BENEFITS_DATA[annualFeeCard];
+      const catColors = { travel: css.accent, lifestyle: css.gold, lounge: "#8B6CF6", status: css.success, rewards: css.text2 };
+
+      const getEffectiveValue = (b) => {
+        const key = `${annualFeeCard}:${b.id}`;
+        const custom = customBenefitValues[key];
+        return (custom !== undefined && custom !== "") ? Number(custom) : b.value;
+      };
+      const usedValue = cardData
+        ? cardData.benefits.reduce((sum, b) => {
+            const key = `${annualFeeCard}:${b.id}`;
+            return sum + (checkedBenefits[key] ? getEffectiveValue(b) : 0);
+          }, 0)
+        : 0;
+      const netValue = usedValue - (cardData?.annualFee || 0);
+
+      return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          {/* Card selector */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {Object.keys(CARD_BENEFITS_DATA).map(cid => {
+              const cp = findProg(cid);
+              return (
+                <button
+                  key={cid}
+                  onClick={() => setAnnualFeeCard(cid)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 8,
+                    padding: "8px 14px", border: `1px solid ${annualFeeCard === cid ? css.accent : css.border}`,
+                    background: annualFeeCard === cid ? css.accentBg : css.surface,
+                    color: annualFeeCard === cid ? css.accent : css.text2,
+                    fontSize: 12, fontWeight: annualFeeCard === cid ? 700 : 400,
+                    cursor: "pointer", borderRadius: 0,
+                  }}
+                >
+                  {cp && <ProgramLogo prog={cp} size={16} />}
+                  {cp?.name || cid}
+                </button>
+              );
+            })}
+          </div>
+
+          {cardData && (
+            <>
+              {/* Net value summary */}
+              <div style={{ background: netValue >= 0 ? css.successBg : css.warningBg, border: `1px solid ${netValue >= 0 ? css.success : css.warning}`, padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: netValue >= 0 ? css.success : css.warning, marginBottom: 6 }}>
+                    {netValue >= 0 ? "Card is paying for itself" : "Card is costing you"}
+                  </div>
+                  <div style={{ fontFamily: "'Instrument Sans', 'Outfit', sans-serif", fontSize: 38, fontWeight: 600, color: css.text, lineHeight: 1 }}>
+                    {netValue >= 0 ? "+" : ""}{netValue < 0 ? `-$${Math.abs(netValue).toLocaleString()}` : `$${netValue.toLocaleString()}`}
+                    <span style={{ fontSize: 16, color: css.text3, marginLeft: 8, fontFamily: "'Instrument Sans', 'Outfit', sans-serif", fontWeight: 400 }}>net value</span>
+                  </div>
+                </div>
+                <div style={{ fontSize: 13, color: css.text2, textAlign: "right" }}>
+                  <div>Benefits used: <strong style={{ color: css.text }}>${usedValue.toLocaleString()}</strong></div>
+                  <div>Annual fee: <strong style={{ color: css.text }}>−${cardData.annualFee.toLocaleString()}</strong></div>
+                </div>
+              </div>
+
+              {/* Benefits checklist */}
+              <div style={{ background: css.surface, border: `1px solid ${css.border}`, padding: "20px" }}>
+                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 6 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: css.text3 }}>
+                    Check off benefits you use · edit value to match what you actually get
+                  </div>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                  {cardData.benefits.map(benefit => {
+                    const key = `${annualFeeCard}:${benefit.id}`;
+                    const checked = !!checkedBenefits[key];
+                    const customVal = customBenefitValues[key];
+                    const isCustomized = customVal !== undefined && customVal !== "" && Number(customVal) !== benefit.value;
+                    return (
+                      <div
+                        key={benefit.id}
+                        className="c-row-hover"
+                        onClick={() => setCheckedBenefits(prev => ({ ...prev, [key]: !prev[key] }))}
+                        style={{
+                          display: "flex", alignItems: "center", gap: 14, padding: "12px 10px",
+                          cursor: "pointer", borderBottom: `1px solid ${css.surface2}`,
+                          background: checked ? (D ? "rgba(61,184,122,0.05)" : "rgba(61,184,122,0.04)") : "transparent",
+                        }}
+                      >
+                        {/* Checkbox */}
+                        <div style={{
+                          width: 18, height: 18, border: `2px solid ${checked ? css.success : css.border}`,
+                          background: checked ? css.success : "transparent", display: "flex",
+                          alignItems: "center", justifyContent: "center", flexShrink: 0,
+                          transition: "all 0.15s ease",
+                        }}>
+                          {checked && <span style={{ color: "#fff", fontSize: 11, lineHeight: 1 }}>✓</span>}
+                        </div>
+                        {/* Label + note */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                            <span style={{ fontSize: 13, fontWeight: 500, color: css.text }}>{benefit.name}</span>
+                            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: catColors[benefit.cat] || css.text3, opacity: 0.8 }}>{benefit.cat}</span>
+                          </div>
+                          <div style={{ fontSize: 11, color: css.text3, marginTop: 2, lineHeight: 1.4 }}>{benefit.note}</div>
+                        </div>
+                        {/* Editable value */}
+                        <div
+                          onClick={e => e.stopPropagation()}
+                          style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", flexShrink: 0, gap: 2 }}
+                        >
+                          <div style={{ display: "flex", alignItems: "center", border: `1px solid ${isCustomized ? css.accent : css.border}`, background: css.surface2, transition: "border-color 0.15s" }}>
+                            <span style={{ padding: "4px 0 4px 8px", fontSize: 13, fontWeight: 600, color: checked ? css.success : css.text3 }}>$</span>
+                            <input
+                              type="number"
+                              min="0"
+                              value={customVal !== undefined ? customVal : benefit.value}
+                              onChange={e => setCustomBenefitValues(prev => ({ ...prev, [key]: e.target.value }))}
+                              style={{
+                                width: 64, padding: "4px 8px 4px 2px", border: "none", outline: "none",
+                                background: "transparent", fontSize: 13, fontWeight: 600,
+                                color: checked ? css.success : css.text3,
+                                fontFamily: "'Instrument Sans', 'Outfit', sans-serif", textAlign: "right",
+                              }}
+                            />
+                          </div>
+                          {isCustomized && (
+                            <button
+                              onClick={() => setCustomBenefitValues(prev => { const n = { ...prev }; delete n[key]; return n; })}
+                              style={{ fontSize: 10, color: css.text3, background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "'Instrument Sans', 'Outfit', sans-serif", lineHeight: 1 }}
+                            >
+                              reset (${benefit.value})
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{ marginTop: 16, paddingTop: 12, borderTop: `1px solid ${css.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <button
+                    onClick={() => {
+                      const allKeys = cardData.benefits.reduce((acc, b) => {
+                        acc[`${annualFeeCard}:${b.id}`] = true;
+                        return acc;
+                      }, {});
+                      setCheckedBenefits(prev => ({ ...prev, ...allKeys }));
+                    }}
+                    style={{ fontSize: 12, color: css.accent, background: "none", border: "none", cursor: "pointer", fontFamily: "'Instrument Sans', 'Outfit', sans-serif", padding: 0 }}
+                  >
+                    Check all
+                  </button>
+                  <button
+                    onClick={() => {
+                      const cleared = cardData.benefits.reduce((acc, b) => {
+                        acc[`${annualFeeCard}:${b.id}`] = false;
+                        return acc;
+                      }, {});
+                      setCheckedBenefits(prev => ({ ...prev, ...cleared }));
+                    }}
+                    style={{ fontSize: 12, color: css.text3, background: "none", border: "none", cursor: "pointer", fontFamily: "'Instrument Sans', 'Outfit', sans-serif", padding: 0 }}
+                  >
+                    Clear all
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      );
+    };
+
+    // ── Main Insights layout ──────────────────────────────────────
+    const activeTab = _previewTab ?? insightTab;
+    const subContent =
+      activeTab === "countdown"  ? renderCountdown()  :
+      activeTab === "expiration" ? renderExpiration() :
+      activeTab === "redemption" ? renderRedemption() :
+      activeTab === "transfer"   ? renderTransfer()   :
+                                   renderAnnualFee();
+
+    // Preview mode: return raw sub-content for nav thumbnail
+    if (_previewTab !== null) return subContent;
+
+    return (
+      <div>
+        {/* Header */}
+        <div className="c-a1" style={{ marginBottom: 28 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: css.accent, marginBottom: 8 }}>Intelligence Layer</div>
+          <h2 style={{ fontFamily: "'Instrument Sans', 'Outfit', sans-serif", fontSize: isMobile ? 28 : 38, fontWeight: 600, color: css.text, margin: 0, lineHeight: 1.1 }}>Insights</h2>
+          <p style={{ color: css.text2, fontSize: 14, marginTop: 8, lineHeight: 1.6 }}>Track your qualification runway, protect expiring miles, and maximize every point you have.</p>
+        </div>
+
+        {/* Sub-tab bar — desktop only (mobile uses header strip) */}
+        {!isMobile && (
+          <div style={{ display: "flex", gap: 0, borderBottom: `1px solid ${css.border}`, marginBottom: 24 }}>
+            {INSIGHT_TABS.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setInsightTab(tab.id)}
+                style={{
+                  padding: "10px 18px", border: "none", cursor: "pointer", background: "transparent",
+                  borderBottom: activeTab === tab.id ? `2px solid ${css.accent}` : "2px solid transparent",
+                  color: activeTab === tab.id ? css.accent : css.text3,
+                  fontSize: 13, fontWeight: activeTab === tab.id ? 600 : 400,
+                  fontFamily: "'Instrument Sans', 'Outfit', sans-serif",
+                  display: "flex", alignItems: "center", gap: 6, marginBottom: -1,
+                }}
+              >
+                {tab.label}
+                {tab.tier === "premium" && !isPremium && (
+                  <span style={{ fontSize: 9, background: css.goldBg, color: css.gold, padding: "1px 5px", fontWeight: 700, border: `1px solid ${D ? "rgba(201,168,76,0.2)" : "rgba(201,168,76,0.3)"}` }}>PRO</span>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Content */}
+        <div className="c-a2">
+          {subContent}
+        </div>
+      </div>
+    );
+  };
+
+  const renderPremium = () => (
+    <div>
+      {/* Hero */}
+      <div className="c-a1" style={{ textAlign: "center", marginBottom: 40, paddingTop: 8 }}>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
+          <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: 160, display: "block", filter: D ? "brightness(0.9) saturate(0.9)" : "brightness(0.6) sepia(1) hue-rotate(-15deg) saturate(2.5)" }} />
+        </div>
+        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.16em", textTransform: "uppercase", color: css.gold, marginBottom: 10 }}>Unlock the Full Journey</div>
+        <h2 style={{ fontFamily: "'Instrument Sans', 'Outfit', sans-serif", fontSize: isMobile ? 32 : 44, fontWeight: 600, color: css.text, margin: 0, lineHeight: 1.1 }}>Continuum Premium</h2>
+        <p style={{ color: css.text2, fontSize: 15, marginTop: 10, lineHeight: 1.6 }}>Maximize every mile, every night, every point.</p>
+      </div>
+
+      {/* Pricing cards */}
+      <div className="c-a2" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16, marginBottom: 40 }}>
+        {[
+          {
+            name: "Free", price: "$0", period: "forever",
+            accent: css.text3, accentBg: css.surface2, border: css.border,
+            features: ["3 linked programs", "Basic dashboard", "Manual trip entry", "Annual summary", "Community support"],
+            cta: "Current Plan", ctaStyle: { background: css.surface2, color: css.text2, border: `1px solid ${css.border}` },
+          },
+          {
+            name: "Premium", price: "$9.99", period: "/month", popular: true,
+            accent: css.accent, accentBg: css.accentBg, border: css.accentBorder,
+            features: ["Unlimited programs", "Trip Optimizer AI", "Status match alerts", "PDF reports & exports", "Card recommendations", "Mileage expiration alerts", "Flighty sync export", "Ad-free experience"],
+            cta: "Upgrade Now", ctaStyle: { background: css.accent, color: "#fff", border: "none" },
+          },
+          {
+            name: "Pro", price: "$24.99", period: "/month",
+            accent: css.gold, accentBg: css.goldBg, border: `${css.gold}40`,
+            features: ["Everything in Premium", "API access & integrations", "Multi-year status tracking", "Tax deduction reports", "Team/family accounts", "White-label option", "Dedicated account manager", "Custom analytics"],
+            cta: "Upgrade Now", ctaStyle: { background: css.gold, color: "#1A1200", border: "none" },
+          },
+        ].map((plan, i) => (
+          <div key={i} className="c-card" style={{
+            background: css.surface, border: `1px solid ${plan.border}`,
+            borderTop: plan.popular ? `3px solid ${plan.accent}` : `3px solid transparent`,
+            borderRadius: 16, padding: 28, position: "relative",
+            boxShadow: plan.popular ? (D ? "0 4px 24px rgba(212,116,45,0.15)" : "0 4px 24px rgba(212,116,45,0.12)") : (D ? "none" : "0 1px 4px rgba(26,21,18,0.05)"),
+          }}>
+            {plan.popular && (
+              <div style={{
+                position: "absolute", top: -1, left: "50%", transform: "translateX(-50%)",
+                background: plan.accent, color: "#fff", fontSize: 9, fontWeight: 700,
+                padding: "3px 14px", borderRadius: "0 0 8px 8px", letterSpacing: "0.1em",
+              }}>MOST POPULAR</div>
+            )}
+            <div style={{ marginBottom: 6 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: plan.accent, letterSpacing: "0.06em", textTransform: "uppercase" }}>{plan.name}</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 20 }}>
+              <span style={{ fontSize: 38, fontWeight: 700, color: css.text, fontFamily: "'Instrument Sans', 'Outfit', sans-serif", lineHeight: 1 }}>{plan.price}</span>
+              <span style={{ fontSize: 12, color: css.text3 }}>{plan.period}</span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 9, marginBottom: 24 }}>
+              {plan.features.map((f, fi) => (
+                <div key={fi} style={{ display: "flex", alignItems: "center", gap: 9, fontSize: 12, color: css.text2 }}>
+                  <span style={{ color: plan.accent, fontWeight: 700, flexShrink: 0 }}>✓</span> {f}
+                </div>
+              ))}
+            </div>
+            <button onClick={() => plan.cta !== "Current Plan" && setShowUpgrade(true)} style={{
+              width: "100%", padding: "12px 0", borderRadius: 10,
+              fontSize: 13, fontWeight: 600, cursor: plan.cta === "Current Plan" ? "default" : "pointer",
+              transition: "all 0.15s", ...plan.ctaStyle,
+            }}>{plan.cta}</button>
+          </div>
+        ))}
+      </div>
+
+      {/* Feature highlights grid */}
+      <div className="c-a3" style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 16, padding: "24px 22px" }}>
+        <h3 style={{ fontFamily: "'Instrument Sans', 'Outfit', sans-serif", fontSize: 24, fontWeight: 500, color: css.text, margin: "0 0 20px" }}>Why upgrade?</h3>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
+          {[
+            { icon: "🧠", title: "AI Trip Optimizer", desc: "Credit every flight to the right program for maximum status acceleration" },
+            { icon: "🔔", title: "Status Match Alerts", desc: "Get notified when airlines offer challenges that match your profile" },
+            { icon: "📊", title: "Advanced Analytics", desc: "Multi-year tracking, spend analysis, and loyalty ROI reporting" },
+            { icon: "💳", title: "Card Advisor", desc: "Personalized card recommendations based on your real travel patterns" },
+            { icon: "📄", title: "Tax Reports", desc: "Export categorized travel expenses for business deductions" },
+            { icon: "👨‍👩‍👧", title: "Family Accounts", desc: "Track the whole household and optimize your combined loyalty strategy" },
+          ].map((f, i) => (
+            <div key={i} style={{ padding: "16px 14px", borderRadius: 10, background: css.surface2, border: `1px solid ${css.border}` }}>
+              <div style={{ fontSize: 22, marginBottom: 8 }}>{f.icon}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: css.text, marginBottom: 5 }}>{f.title}</div>
+              <div style={{ fontSize: 11, color: css.text2, lineHeight: 1.55 }}>{f.desc}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  // ============================================================
+  // NEWS FEED
+  // ============================================================
+  const renderNews = () => {
+    const filtered = newsSourceFilter === "all" ? newsArticles : newsArticles.filter(a => a.source === newsSourceFilter);
+    return (
+      <div>
+        <div className="c-a1" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 28, gap: 16, flexWrap: "wrap" }}>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: css.text3, marginBottom: 8 }}>Points & Travel</div>
+            <h2 style={{ fontFamily: "'Instrument Sans', 'Outfit', sans-serif", fontSize: isMobile ? 28 : 36, fontWeight: 600, color: css.text, margin: 0, lineHeight: 1.1 }}>News & Deals</h2>
+            <p style={{ color: css.text2, fontSize: 13, margin: "8px 0 0" }}>Latest posts from top travel & points blogs</p>
+          </div>
+          <button onClick={fetchNews} disabled={newsLoading} style={{
+            display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 8,
+            border: `1px solid ${css.border}`, background: css.surface, color: css.text2,
+            fontSize: 12, fontWeight: 600, cursor: newsLoading ? "default" : "pointer", opacity: newsLoading ? 0.6 : 1,
+          }}>
+            {newsLoading ? "Refreshing…" : "↻ Refresh"}
+          </button>
+        </div>
+
+        {/* Source filter pills */}
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 24 }}>
+          {[{ id: "all", name: "All Sources", color: css.accent }, ...NEWS_SOURCES].map(src => {
+            const active = newsSourceFilter === src.id;
+            return (
+              <button key={src.id} onClick={() => setNewsSourceFilter(src.id)} style={{
+                padding: "5px 12px", borderRadius: 20, border: `1px solid ${active ? src.color : css.border}`,
+                background: active ? `${src.color}18` : css.surface, color: active ? src.color : css.text3,
+                fontSize: 11, fontWeight: active ? 700 : 500, cursor: "pointer", transition: "all 0.15s",
+              }}>{src.name}</button>
+            );
+          })}
+        </div>
+
+        {/* Loading skeleton */}
+        {newsLoading && (
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
+            {Array.from({ length: 9 }).map((_, i) => (
+              <div key={i} style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 12, overflow: "hidden" }}>
+                <div style={{ height: 160, background: css.surface2, animation: "pulse 1.5s infinite" }} />
+                <div style={{ padding: "14px 16px" }}>
+                  <div style={{ height: 10, width: "40%", background: css.surface2, borderRadius: 4, marginBottom: 10 }} />
+                  <div style={{ height: 14, width: "90%", background: css.surface2, borderRadius: 4, marginBottom: 6 }} />
+                  <div style={{ height: 14, width: "70%", background: css.surface2, borderRadius: 4 }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Articles grid */}
+        {!newsLoading && filtered.length === 0 && (
+          <div style={{ textAlign: "center", padding: "60px 20px", color: css.text3, fontSize: 14 }}>
+            {newsFetched ? "No articles found for this source." : "Loading news…"}
+          </div>
+        )}
+
+        {!newsLoading && filtered.length > 0 && (
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
+            {filtered.map(article => (
+              <a key={article.id} href={article.link} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
+                <div style={{
+                  background: css.surface, border: `1px solid ${css.border}`, borderRadius: 12, overflow: "hidden",
+                  transition: "transform 0.15s, box-shadow 0.15s", cursor: "pointer", height: "100%", display: "flex", flexDirection: "column",
+                  borderTop: `3px solid ${article.sourceColor}`,
+                }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = `0 8px 24px ${article.sourceColor}20`; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; }}
+                >
+                  {article.thumbnail && (
+                    <div style={{ height: 160, overflow: "hidden", background: css.surface2 }}>
+                      <img src={article.thumbnail} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        onError={e => { e.currentTarget.parentElement.style.display = "none"; }} />
+                    </div>
+                  )}
+                  <div style={{ padding: "14px 16px", flex: 1, display: "flex", flexDirection: "column" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                      <span style={{
+                        fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
+                        color: article.sourceColor, fontFamily: "'Geist Mono', monospace",
+                        background: `${article.sourceColor}15`, padding: "2px 7px", borderRadius: 4,
+                      }}>{article.sourceName}</span>
+                      <span style={{ fontSize: 10, color: css.text3, fontFamily: "'Geist Mono', monospace" }}>
+                        {new Date(article.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 16, fontWeight: 600, color: css.text, lineHeight: 1.4, marginBottom: 8, fontFamily: "'Instrument Sans', 'Outfit', sans-serif" }}>
+                      {article.title}
+                    </div>
+                    <div style={{ fontSize: 12, color: css.text3, lineHeight: 1.5, flex: 1 }}>
+                      {article.description}
+                    </div>
+                    <div style={{ marginTop: 12, fontSize: 11, color: article.sourceColor, fontWeight: 600 }}>Read more →</div>
+                  </div>
+                </div>
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // ============================================================
+  // LOUNGES TAB
+  // ============================================================
+  const renderLounges = () => {
+    const D = darkMode;
+    const lounges = loungeAirport ? (LOUNGE_DATABASE[loungeAirport] || []) : [];
+    const airportCodes = Object.keys(LOUNGE_DATABASE).sort();
+
+    const handleSearch = () => {
+      const code = loungeSearchCode.trim().toUpperCase();
+      if (LOUNGE_DATABASE[code]) {
+        setLoungeAirport(code);
+        setLoungeExpandedId(null);
+      }
+    };
+
+    const saveLoungeVisit = (visit) => {
+      const updated = [visit, ...loungeVisits];
+      setLoungeVisits(updated);
+      localStorage.setItem("continuum_lounge_visits", JSON.stringify(updated));
+    };
+
+    const removeLoungeVisit = (idx) => {
+      const updated = loungeVisits.filter((_, i) => i !== idx);
+      setLoungeVisits(updated);
+      localStorage.setItem("continuum_lounge_visits", JSON.stringify(updated));
+    };
+
+    const networkLabel = (n) => {
+      const map = { centurion: "Amex Centurion", capital_one: "Capital One", priority_pass: "Priority Pass", delta_sky_club: "Delta Sky Club", admirals_club: "Admirals Club", flagship: "AA Flagship First Dining", polaris: "United Polaris", united_club: "United Club", alaska_lounge: "Alaska Lounge", cathay_lounge: "Cathay Pacific", singapore_lounge: "Singapore Airlines", generic_airline: "Airline Lounge", plaza_premium: "Plaza Premium", turkish_lounge: "Turkish Airlines", emirates_lounge: "Emirates", qantas_lounge: "Qantas", chase_sapphire_lounge: "Chase Sapphire Lounge", greenwich_lounge: "Greenwich Lounge", soho_lounge: "Soho Lounge", chelsea_lounge: "Chelsea Lounge" };
+      return map[n] || n;
+    };
+
+    const networkColor = (n) => {
+      const map = { centurion: "#006FCF", capital_one: "#D03027", priority_pass: "#6B4E2E", delta_sky_club: "#003366", admirals_club: "#0078D2", flagship: "#0078D2", polaris: "#002244", united_club: "#002244", alaska_lounge: "#01426A", cathay_lounge: "#006564", singapore_lounge: "#003876", generic_airline: "#666", plaza_premium: "#8B6F47", turkish_lounge: "#C8102E", emirates_lounge: "#D71920", qantas_lounge: "#E0162B", chase_sapphire_lounge: "#1A1F36", greenwich_lounge: "#0078D2", soho_lounge: "#0078D2", chelsea_lounge: "#0078D2" };
+      return map[n] || css.accent;
+    };
+
+    const renderStars = (rating) => {
+      const full = Math.floor(rating);
+      const half = rating - full >= 0.3;
+      const stars = [];
+      for (let i = 0; i < 5; i++) {
+        if (i < full) stars.push(<svg key={i} width="14" height="14" viewBox="0 0 24 24" fill={css.accent} stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>);
+        else if (i === full && half) stars.push(<svg key={i} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="none"><defs><clipPath id={`half${i}`}><rect x="0" y="0" width="12" height="24"/></clipPath></defs><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill={css.accent} clipPath={`url(#half${i})`}/><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="none" stroke={css.border} strokeWidth="1.5"/></svg>);
+        else stars.push(<svg key={i} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={css.border} strokeWidth="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>);
+      }
+      return <span style={{ display: "inline-flex", alignItems: "center", gap: 1 }}>{stars}</span>;
+    };
+
+    // Build airline options from all airlines in LOYALTY_PROGRAMS
+    const allAirlineOptions = LOYALTY_PROGRAMS.airlines.map(a => ({ id: a.id, name: a.name }));
+
+    return (
+      <div>
+        {/* Header */}
+        <div className="c-a1" style={{ marginBottom: 24 }}>
+          <h2 style={{ fontSize: isMobile ? 24 : 32, fontWeight: 700, color: css.text, margin: 0, letterSpacing: "-0.02em" }}>Lounges</h2>
+          <p style={{ color: css.text3, fontSize: 13, margin: "6px 0 0" }}>Access based on your programs. {Object.keys(linkedAccounts).length} program{Object.keys(linkedAccounts).length !== 1 ? "s" : ""} linked.</p>
+        </div>
+
+        {/* Flight context — what are you flying? */}
+        <div className="c-a2" style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, padding: isMobile ? "16px" : "20px 24px", marginBottom: 24, boxShadow: css.shadow }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: css.text, marginBottom: 14 }}>What are you flying?</div>
+          <div style={{ display: "flex", gap: isMobile ? 8 : 12, flexWrap: "wrap", alignItems: "flex-end" }}>
+            <div style={{ flex: isMobile ? "1 1 100%" : "1 1 180px", minWidth: isMobile ? 0 : 160 }}>
+              <label style={{ fontSize: 10, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>Airline</label>
+              <select value={loungeFlightAirline} onChange={e => setLoungeFlightAirline(e.target.value)} style={{ width: "100%", padding: "10px 12px", background: css.surface2, border: `1px solid ${css.border}`, borderRadius: 8, color: css.text, fontSize: 13, fontFamily: "inherit", cursor: "pointer" }}>
+                <option value="">Any airline</option>
+                {allAirlineOptions.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+              </select>
+            </div>
+            <div style={{ flex: isMobile ? "1 1 48%" : "1 1 160px", minWidth: isMobile ? 0 : 140 }}>
+              <label style={{ fontSize: 10, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>Class</label>
+              <select value={loungeFlightClass} onChange={e => setLoungeFlightClass(e.target.value)} style={{ width: "100%", padding: "10px 12px", background: css.surface2, border: `1px solid ${css.border}`, borderRadius: 8, color: css.text, fontSize: 13, fontFamily: "inherit", cursor: "pointer" }}>
+                <option value="economy">Economy</option>
+                <option value="premium_economy">Premium Economy</option>
+                <option value="business">Business</option>
+                <option value="first">First</option>
+              </select>
+            </div>
+            <div style={{ flex: isMobile ? "1 1 48%" : "1 1 160px", minWidth: isMobile ? 0 : 140 }}>
+              <label style={{ fontSize: 10, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>Route</label>
+              <select value={loungeAccessRoute} onChange={e => setLoungeAccessRoute(e.target.value)} style={{ width: "100%", padding: "10px 12px", background: css.surface2, border: `1px solid ${css.border}`, borderRadius: 8, color: css.text, fontSize: 13, fontFamily: "inherit", cursor: "pointer" }}>
+                <option value="domestic">Domestic</option>
+                <option value="international">International</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div>
+            {/* Searchable airport dropdown */}
+            <div style={{ position: "relative", marginBottom: 24, maxWidth: 420 }}>
+              <input
+                value={loungeSearchCode}
+                onChange={e => { setLoungeSearchCode(e.target.value); setLoungeDropdownOpen(true); }}
+                onFocus={() => setLoungeDropdownOpen(true)}
+                placeholder="Search airport name or IATA code..."
+                style={{
+                  width: "100%", padding: "12px 14px", borderRadius: 10,
+                  border: `1px solid ${loungeDropdownOpen ? css.accent : css.border}`,
+                  background: css.surface, color: css.text, fontSize: 14,
+                  fontFamily: "'Instrument Sans', 'Outfit', sans-serif",
+                  outline: "none", boxSizing: "border-box", transition: "border-color 0.15s",
+                }}
+              />
+              {loungeAirport && !loungeDropdownOpen && (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: css.accent, fontFamily: "'Space Mono', monospace" }}>{loungeAirport}</span>
+                  <span style={{ fontSize: 12, color: css.text2 }}>{AIRPORT_CITY[loungeAirport] || ""}</span>
+                  <button onClick={() => { setLoungeAirport(null); setLoungeSearchCode(""); setLoungeExpandedId(null); }} style={{
+                    background: "none", border: "none", cursor: "pointer", color: css.text3, fontSize: 11, padding: "2px 6px",
+                  }}>Clear</button>
+                </div>
+              )}
+              {loungeDropdownOpen && (() => {
+                const query = loungeSearchCode.trim().toLowerCase();
+                const filtered = airportCodes.filter(code => {
+                  const city = (AIRPORT_CITY[code] || "").toLowerCase();
+                  return code.toLowerCase().includes(query) || city.includes(query);
+                }).sort((a, b) => {
+                  const cityA = AIRPORT_CITY[a] || a;
+                  const cityB = AIRPORT_CITY[b] || b;
+                  return cityA.localeCompare(cityB);
+                });
+                if (filtered.length === 0) return null;
+                return (
+                  <div style={{
+                    position: "absolute", top: "100%", left: 0, right: 0, marginTop: 4, zIndex: 200,
+                    background: css.surface, border: `1px solid ${css.border}`, borderRadius: 10,
+                    boxShadow: D ? "0 8px 24px rgba(0,0,0,0.6)" : "0 8px 24px rgba(0,0,0,0.12)",
+                    maxHeight: 280, overflowY: "auto",
+                  }}>
+                    {filtered.map(code => {
+                      const isActive = loungeAirport === code;
+                      return (
+                        <button key={code} onClick={() => {
+                          setLoungeAirport(code);
+                          setLoungeExpandedId(null);
+                          setLoungeSearchCode(code + " - " + (AIRPORT_CITY[code] || code));
+                          setLoungeDropdownOpen(false);
+                        }} style={{
+                          display: "flex", alignItems: "center", gap: 10, width: "100%",
+                          padding: "10px 14px", border: "none", cursor: "pointer", textAlign: "left",
+                          background: isActive ? css.accentBg : "transparent",
+                          color: isActive ? css.accent : css.text,
+                          fontSize: 13, fontFamily: "'Instrument Sans', 'Outfit', sans-serif",
+                          borderBottom: `1px solid ${css.border}`, transition: "background 0.1s",
+                        }}
+                          onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = css.surface2; }}
+                          onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
+                        >
+                          <span style={{ fontWeight: 700, fontFamily: "'Space Mono', monospace", fontSize: 12, minWidth: 36 }}>{code}</span>
+                          <span style={{ color: isActive ? css.accent : css.text2 }}>{AIRPORT_CITY[code] || code}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+              {loungeDropdownOpen && (
+                <div onClick={() => setLoungeDropdownOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 199 }} />
+              )}
+            </div>
+
+            {/* Lounge list — accessible first, then others */}
+            {loungeAirport && (() => {
+              // Force recalculation when flight context changes (referenced for reactivity)
+              void loungeFlightAirline; void loungeFlightClass;
+              // Sort: accessible lounges first (by rating desc), then inaccessible
+              const loungesWithAccess = lounges.map(l => ({ ...l, _access: getLoungeAccess(l.network, l) }));
+              const accessible = loungesWithAccess.filter(l => l._access.length > 0).sort((a, b) => b.rating - a.rating);
+              return (
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: css.text2, marginBottom: 16 }}>
+                  {accessible.length > 0 ? `${accessible.length} lounge${accessible.length !== 1 ? "s" : ""} you can access at ${loungeAirport}` : `No accessible lounges at ${loungeAirport}`}
+                </div>
+                {accessible.length === 0 && (
+                  <div style={{ padding: "40px 20px", textAlign: "center", borderRadius: 14, background: css.surface, border: `1px solid ${css.border}` }}>
+                    <p style={{ fontSize: 13, color: css.text3, margin: 0 }}>You don't have access to any lounges at this airport with your current programs and flight</p>
+                  </div>
+                )}
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {accessible.map(lounge => {
+                    const expanded = loungeExpandedId === lounge.id;
+                    const accessRules = lounge._access;
+                    const hasAccess = accessRules.length > 0;
+                    const nColor = networkColor(lounge.network);
+
+                    // Trigger photo fetch on expand
+                    // Photo fetch moved to useEffect below
+
+                    return (
+                      <div key={lounge.id} style={{
+                        background: css.surface, border: `1px solid ${expanded ? css.accentBorder : css.border}`,
+                        borderRadius: 12, overflow: "hidden", transition: "all 0.2s",
+                      }}>
+                        {/* Collapsed header */}
+                        <div onClick={() => setLoungeExpandedId(expanded ? null : lounge.id)} style={{
+                          padding: "14px 18px", cursor: "pointer", display: "flex", alignItems: "center", gap: 14,
+                        }}>
+                          {/* Network color bar */}
+                          <div style={{ width: 4, height: 40, borderRadius: 2, background: nColor, flexShrink: 0 }} />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                              <span style={{ fontSize: 15, fontWeight: 600, color: css.text }}>{lounge.name}</span>
+                              {hasAccess && (
+                                <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: css.successBg, color: css.success, border: `1px solid ${css.success}30`, letterSpacing: "0.03em" }}>ACCESS</span>
+                              )}
+                            </div>
+                            <div style={{ display: "flex", gap: 12, marginTop: 4, fontSize: 12, color: css.text3 }}>
+                              <span>Terminal {lounge.terminal}</span>
+                              <span style={{ color: nColor, fontWeight: 600 }}>{networkLabel(lounge.network)}</span>
+                            </div>
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                              {renderStars(lounge.rating)}
+                              <span style={{ fontSize: 12, fontWeight: 600, color: css.text2, marginLeft: 4 }}>{lounge.rating}</span>
+                            </div>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={css.text3} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: expanded ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>
+                              <polyline points="6 9 12 15 18 9" />
+                            </svg>
+                          </div>
+                        </div>
+
+                        {/* Expanded content */}
+                        {expanded && (
+                          <div style={{ padding: "0 18px 18px", borderTop: `1px solid ${css.border}` }}>
+                            {/* Photo */}
+                            {loungePhotos[lounge.id] && (
+                              <div style={{ margin: "14px 0", borderRadius: 8, overflow: "hidden", height: 180 }}>
+                                <img src={loungePhotos[lounge.id]} alt={lounge.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                              </div>
+                            )}
+
+                            {/* Details grid */}
+                            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16, marginTop: 14 }}>
+                              <div>
+                                <div style={{ fontSize: 11, fontWeight: 600, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Details</div>
+                                <div style={{ fontSize: 13, color: css.text2, lineHeight: 1.8 }}>
+                                  <div><span style={{ color: css.text3 }}>Location:</span> {lounge.location}</div>
+                                  <div><span style={{ color: css.text3 }}>Hours:</span> {lounge.hours}</div>
+                                  <div><span style={{ color: css.text3 }}>Network:</span> <span style={{ color: nColor, fontWeight: 600 }}>{networkLabel(lounge.network)}</span></div>
+                                </div>
+                              </div>
+                              <div>
+                                <div style={{ fontSize: 11, fontWeight: 600, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Amenities</div>
+                                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                                  {lounge.amenities.map(a => (
+                                    <span key={a} style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 8px", borderRadius: 6, background: css.surface2, fontSize: 11, color: css.text2 }}>
+                                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d={AMENITY_ICONS[a] || "M12 12m-9 0a9 9 0 1018 0 9 9 0 10-18 0"} />
+                                      </svg>
+                                      {AMENITY_LABELS[a] || a}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Access rules */}
+                            {accessRules.length > 0 && (
+                              <div style={{ marginTop: 16 }}>
+                                <div style={{ fontSize: 11, fontWeight: 600, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>Your Access</div>
+                                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                                  {accessRules.map((rule, ri) => (
+                                    <div key={ri} style={{ padding: "8px 12px", borderRadius: 8, background: css.successBg, border: `1px solid ${css.success}20`, display: "flex", alignItems: "center", gap: 10 }}>
+                                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={css.success} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
+                                        <polyline points="22 4 12 14.01 9 11.01" />
+                                      </svg>
+                                      <div style={{ flex: 1 }}>
+                                        <span style={{ fontSize: 12, fontWeight: 600, color: css.success }}>
+                                          {rule.source === "card" ? rule.cardName : `${rule.airlineName} ${rule.tier}`}
+                                        </span>
+                                        <span style={{ fontSize: 11, color: css.text3, marginLeft: 8 }}>{rule.guestNote}</span>
+                                        {rule.condition && <span style={{ fontSize: 10, color: css.warning, marginLeft: 6 }}>(Conditional)</span>}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Log visit button */}
+                            <div style={{ marginTop: 16, display: "flex", gap: 8 }}>
+                              <button onClick={(e) => { e.stopPropagation(); saveLoungeVisit({ loungeId: lounge.id, loungeName: lounge.name, airport: loungeAirport, date: new Date().toISOString().split("T")[0], network: lounge.network }); }} style={{
+                                padding: "8px 16px", borderRadius: 8, border: `1px solid ${css.accentBorder}`,
+                                background: css.accentBg, color: css.accent, fontSize: 12, fontWeight: 600,
+                                cursor: "pointer",
+                              }}>Log Visit</button>
+                              {lounge.placeQuery && (
+                                <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lounge.placeQuery)}`} target="_blank" rel="noopener noreferrer" style={{
+                                  padding: "8px 16px", borderRadius: 8, border: `1px solid ${css.border}`,
+                                  background: css.surface, color: css.text2, fontSize: 12, fontWeight: 600,
+                                  textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4,
+                                }}>
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                  Google Maps
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              );
+            })()}
+
+            {/* Empty state */}
+            {!loungeAirport && (
+              <div style={{ textAlign: "center", padding: "60px 20px", color: css.text3 }}>
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke={css.text3} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.4, marginBottom: 16 }}>
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+                  <circle cx="12" cy="10" r="3" />
+                </svg>
+                <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 4 }}>Search for an airport</div>
+                <div style={{ fontSize: 13 }}>Search for an airport by name or IATA code above to browse lounges</div>
+              </div>
+            )}
+          </div>
+      </div>
+    );
+  };
+
+  // ============================================================
   // NAV CONFIG
   // ============================================================
   // SVG icon components for sidebar — clean, minimal stroke icons
@@ -5016,7 +12193,7 @@ Start by introducing yourself briefly in-character with personality, and give an
 
   return (
     <div data-theme={D ? "dark" : "light"} style={{
-      height: "100dvh", overflow: "hidden", background: css.bg, display: "flex", flexDirection: "column",
+      height: "100vh", overflow: "hidden", background: css.bg, display: "flex", flexDirection: "column",
       fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Instrument Sans', sans-serif", color: css.text, position: "relative",
       transition: "background 0.3s ease, color 0.3s ease",
     }}>
@@ -5064,13 +12241,10 @@ Start by introducing yourself briefly in-character with personality, and give an
           padding: isMobile ? "0 16px" : "0 32px",
           height: isMobile ? 56 : 64,
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0, cursor: "pointer" }} onClick={() => { setActiveView("dashboard"); setDashSubTab("overview"); setTripDetailId(null); }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
             <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: isMobile ? 50 : 80, display: "block", filter: D ? "brightness(0.85)" : "brightness(0.55) sepia(1) hue-rotate(-15deg) saturate(3)" }} />
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-            <button onClick={async () => { if ('serviceWorker' in navigator) { const regs = await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map(r => r.unregister())); } if ('caches' in window) { const keys = await caches.keys(); await Promise.all(keys.map(k => caches.delete(k))); } window.location.reload(true); }} title="Refresh" style={{ width: 34, height: 34, borderRadius: "50%", border: `1px solid ${css.border}`, background: "transparent", color: css.text3, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <NavIcon d={<><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></>} size={16} />
-            </button>
             <button onClick={() => setDarkMode(m => !m)} style={{ width: 34, height: 34, borderRadius: "50%", border: `1px solid ${css.border}`, background: "transparent", color: css.text3, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <NavIcon d={D ? <><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></> : <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>} size={16} />
             </button>
@@ -5090,7 +12264,7 @@ Start by introducing yourself briefly in-character with personality, and give an
 
       {/* ── Main Content ── */}
       <main style={{ flex: 1, overflowY: "auto", position: "relative" }}>
-        <div style={{ maxWidth: 1400, margin: "0 auto", padding: isMobile ? "20px 16px calc(90px + env(safe-area-inset-bottom))" : "32px 48px calc(90px + env(safe-area-inset-bottom))" }}>
+        <div style={{ maxWidth: 1400, margin: "0 auto", padding: isMobile ? "20px 16px 80px" : "32px 48px 80px" }}>
           {viewRenderers[activeView]?.()}
         </div>
       </main>
@@ -5142,108 +12316,72 @@ Start by introducing yourself briefly in-character with personality, and give an
           return { x: Math.max(0, Math.min(x, img.offsetWidth)), y: Math.max(0, Math.min(y, img.offsetHeight)) };
         };
 
-        // Compute rect from refs and push to state (batched, no extra re-renders during drag)
-        const updateRect = () => {
-          const s = cropStartRef.current, e = cropEndRef.current;
-          if (!s || !e) return;
-          setCropRect({
-            left: Math.min(s.x, e.x), top: Math.min(s.y, e.y),
-            width: Math.abs(e.x - s.x), height: Math.abs(e.y - s.y),
-          });
-        };
+        // Smooth edge-scroll: interval-based so it continues while holding near edges
+        const scrollInterval = { current: null };
+        const scrollSpeed = { current: 0 };
+        const lastClient = { current: { x: 0, y: 0 } };
 
-        // Edge scroll tick — uses refs, no state dependency
-        const edgeScrollTick = () => {
-          const container = cropContainerRef.current;
-          if (!container) { cropScrollRaf.current = null; return; }
-          const { x: vx, y: vy } = cropScrollVel.current;
-          if (Math.abs(vx) < 0.1 && Math.abs(vy) < 0.1) { cropScrollRaf.current = null; return; }
-          container.scrollTop += vy;
-          container.scrollLeft += vx;
-          cropEndRef.current = getPos(cropLastClient.current.x, cropLastClient.current.y);
-          updateRect();
-          cropScrollRaf.current = requestAnimationFrame(edgeScrollTick);
+        const startEdgeScroll = () => {
+          if (scrollInterval.current) return;
+          scrollInterval.current = setInterval(() => {
+            const container = cropContainerRef.current;
+            if (!container || scrollSpeed.current === 0) return;
+            container.scrollTop += scrollSpeed.current;
+            setCropEnd(getPos(lastClient.current.x, lastClient.current.y));
+          }, 16);
         };
 
         const stopEdgeScroll = () => {
-          if (cropScrollRaf.current) { cancelAnimationFrame(cropScrollRaf.current); cropScrollRaf.current = null; }
-          cropScrollVel.current = { x: 0, y: 0 };
+          if (scrollInterval.current) { clearInterval(scrollInterval.current); scrollInterval.current = null; }
+          scrollSpeed.current = 0;
         };
 
-        const updateEdgeScroll = (clientX, clientY) => {
+        const updateEdgeScroll = (clientY) => {
           const container = cropContainerRef.current;
           if (!container) return;
           const rect = container.getBoundingClientRect();
-          const edgeZone = 50;
-          let vy = 0, vx = 0;
-          if (clientY > rect.bottom - edgeZone) vy = Math.min(2.5, ((clientY - (rect.bottom - edgeZone)) / edgeZone) * 2.5);
-          else if (clientY < rect.top + edgeZone) vy = -Math.min(2.5, (((rect.top + edgeZone) - clientY) / edgeZone) * 2.5);
-          if (clientX > rect.right - edgeZone) vx = Math.min(2.5, ((clientX - (rect.right - edgeZone)) / edgeZone) * 2.5);
-          else if (clientX < rect.left + edgeZone) vx = -Math.min(2.5, (((rect.left + edgeZone) - clientX) / edgeZone) * 2.5);
-          cropScrollVel.current = { x: vx, y: vy };
-          if ((vx !== 0 || vy !== 0) && !cropScrollRaf.current) cropScrollRaf.current = requestAnimationFrame(edgeScrollTick);
+          const edgeZone = 60;
+          if (clientY > rect.bottom - edgeZone) {
+            const pct = (clientY - (rect.bottom - edgeZone)) / edgeZone;
+            scrollSpeed.current = 2 + pct * 6;
+            startEdgeScroll();
+          } else if (clientY < rect.top + edgeZone) {
+            const pct = ((rect.top + edgeZone) - clientY) / edgeZone;
+            scrollSpeed.current = -(2 + pct * 6);
+            startEdgeScroll();
+          } else {
+            scrollSpeed.current = 0;
+          }
         };
 
-        // All handlers use refs — no stale closure, no pause on re-render
-        // Use a short cooldown after mouseUp to prevent click-to-mouseDown retrigger
-        const dragEndTime = { current: 0 };
-
         const handleMouseDown = (e) => {
-          // Ignore if this is a click event firing right after a drag ended
-          if (Date.now() - dragEndTime.current < 150) return;
           const pos = getPos(e.clientX, e.clientY);
-          cropStartRef.current = pos;
-          cropEndRef.current = pos;
-          cropDragRef.current = true;
-          cropLastClient.current = { x: e.clientX, y: e.clientY };
-          setCropRect({ left: pos.x, top: pos.y, width: 0, height: 0 });
-          // Listen on document so mouseUp is captured even outside the container
-          document.addEventListener("mousemove", handleMouseMove);
-          document.addEventListener("mouseup", handleMouseUp);
+          setCropStart(pos);
+          setCropEnd(pos);
+          setCropDragging(true);
+          lastClient.current = { x: e.clientX, y: e.clientY };
           e.preventDefault();
         };
         const handleMouseMove = (e) => {
-          if (!cropDragRef.current) return;
-          cropLastClient.current = { x: e.clientX, y: e.clientY };
-          cropEndRef.current = getPos(e.clientX, e.clientY);
-          updateRect();
-          updateEdgeScroll(e.clientX, e.clientY);
+          if (!cropDragging) return;
+          lastClient.current = { x: e.clientX, y: e.clientY };
+          setCropEnd(getPos(e.clientX, e.clientY));
+          updateEdgeScroll(e.clientY);
         };
-        const handleMouseUp = () => {
-          cropDragRef.current = false;
-          dragEndTime.current = Date.now();
-          stopEdgeScroll();
-          document.removeEventListener("mousemove", handleMouseMove);
-          document.removeEventListener("mouseup", handleMouseUp);
-        };
-        const handleTouchStart = (e) => {
-          const t = e.touches[0]; const pos = getPos(t.clientX, t.clientY);
-          cropStartRef.current = pos; cropEndRef.current = pos; cropDragRef.current = true;
-          cropLastClient.current = { x: t.clientX, y: t.clientY };
-          setCropRect({ left: pos.x, top: pos.y, width: 0, height: 0 });
-          e.preventDefault();
-        };
-        const handleTouchMove = (e) => {
-          if (!cropDragRef.current) return;
-          const t = e.touches[0];
-          cropLastClient.current = { x: t.clientX, y: t.clientY };
-          cropEndRef.current = getPos(t.clientX, t.clientY);
-          updateRect();
-          updateEdgeScroll(t.clientX, t.clientY);
-          e.preventDefault();
-        };
-        const handleTouchEnd = (e) => { cropDragRef.current = false; stopEdgeScroll(); e.preventDefault(); };
+        const handleMouseUp = () => { setCropDragging(false); stopEdgeScroll(); };
+        const handleTouchStart = (e) => { const t = e.touches[0]; const pos = getPos(t.clientX, t.clientY); setCropStart(pos); setCropEnd(pos); setCropDragging(true); lastClient.current = { x: t.clientX, y: t.clientY }; e.preventDefault(); };
+        const handleTouchMove = (e) => { if (!cropDragging) return; const t = e.touches[0]; lastClient.current = { x: t.clientX, y: t.clientY }; setCropEnd(getPos(t.clientX, t.clientY)); updateEdgeScroll(t.clientY); };
+        const handleTouchEnd = () => { setCropDragging(false); stopEdgeScroll(); };
 
         const saveCrop = async () => {
-          const s = cropStartRef.current, e = cropEndRef.current;
-          if (!s || !e || !cropImgRef.current) return;
+          if (!cropStart || !cropEnd || !cropImgRef.current) return;
           const img = cropImgRef.current;
           const scaleX = img.naturalWidth / img.offsetWidth;
           const scaleY = img.naturalHeight / img.offsetHeight;
-          const sx = Math.min(s.x, e.x) * scaleX;
-          const sy = Math.min(s.y, e.y) * scaleY;
-          const sw = Math.abs(e.x - s.x) * scaleX;
-          const sh = Math.abs(e.y - s.y) * scaleY;
+          const sx = Math.min(cropStart.x, cropEnd.x) * scaleX;
+          const sy = Math.min(cropStart.y, cropEnd.y) * scaleY;
+          const sw = Math.abs(cropEnd.x - cropStart.x) * scaleX;
+          const sh = Math.abs(cropEnd.y - cropStart.y) * scaleY;
           if (sw < 10 || sh < 10) return;
           const canvas = document.createElement("canvas");
           canvas.width = sw; canvas.height = sh;
@@ -5259,20 +12397,26 @@ Start by introducing yourself briefly in-character with personality, and give an
             const { error } = await supabase.from("expenses").update({ receipt: true, receipt_image: croppedImage }).eq("id", cropExpenseId).eq("user_id", user.id);
             if (error) console.error("Failed to save cropped receipt:", error.message);
           }
-          { setCropExpenseId(null); setCropRect(null); cropStartRef.current = null; cropEndRef.current = null; cropDragRef.current = false; };
-          setCropRect(null);
+          setCropExpenseId(null);
         };
+
+        const cropRect = cropStart && cropEnd ? {
+          left: Math.min(cropStart.x, cropEnd.x),
+          top: Math.min(cropStart.y, cropEnd.y),
+          width: Math.abs(cropEnd.x - cropStart.x),
+          height: Math.abs(cropEnd.y - cropStart.y),
+        } : null;
 
         return (
           <div style={{ position: "fixed", inset: 0, zIndex: 9500, background: "rgba(0,0,0,0.85)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 20 }}>
             <div style={{ background: css.surface, borderRadius: 14, padding: "20px", maxWidth: 700, width: "100%", maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
                 <div style={{ fontSize: 16, fontWeight: 700, color: css.text }}>Crop Receipt</div>
-                <button onClick={() => { setCropExpenseId(null); setCropRect(null); cropStartRef.current = null; cropEndRef.current = null; cropDragRef.current = false; }} style={{ width: 32, height: 32, border: "none", background: "transparent", color: css.text3, fontSize: 18, cursor: "pointer" }}>x</button>
+                <button onClick={() => setCropExpenseId(null)} style={{ width: 32, height: 32, border: "none", background: "transparent", color: css.text3, fontSize: 18, cursor: "pointer" }}>x</button>
               </div>
               <p style={{ fontSize: 12, color: css.text3, marginBottom: 12 }}>Click and drag to select the area you want to keep, then click Save.</p>
               <div ref={cropContainerRef} style={{ position: "relative", overflow: "auto", flex: 1, cursor: "crosshair", userSelect: "none", WebkitUserSelect: "none", touchAction: "none", WebkitTouchCallout: "none" }}
-                onMouseDown={handleMouseDown}
+                onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}
                 onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
                 <img ref={cropImgRef} src={exp.receiptImage.data} alt="Receipt" style={{ width: "100%", height: "auto", display: "block", pointerEvents: "none" }} crossOrigin="anonymous" />
                 {/* Darkened overlay outside crop area */}
@@ -5287,8 +12431,8 @@ Start by introducing yourself briefly in-character with personality, and give an
                 )}
               </div>
               <div style={{ display: "flex", gap: 10, marginTop: 14, justifyContent: "flex-end" }}>
-                <button onClick={() => { cropStartRef.current = null; cropEndRef.current = null; setCropRect(null); }} style={{ padding: "9px 18px", borderRadius: 8, border: `1px solid ${css.border}`, background: "transparent", color: css.text2, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Reset</button>
-                <button onClick={() => { setCropExpenseId(null); setCropRect(null); cropStartRef.current = null; cropEndRef.current = null; cropDragRef.current = false; }} style={{ padding: "9px 18px", borderRadius: 8, border: `1px solid ${css.border}`, background: "transparent", color: css.text2, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
+                <button onClick={() => { setCropStart(null); setCropEnd(null); }} style={{ padding: "9px 18px", borderRadius: 8, border: `1px solid ${css.border}`, background: "transparent", color: css.text2, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Reset</button>
+                <button onClick={() => setCropExpenseId(null)} style={{ padding: "9px 18px", borderRadius: 8, border: `1px solid ${css.border}`, background: "transparent", color: css.text2, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
                 <button onClick={saveCrop} disabled={!cropRect || cropRect.width < 10 || cropRect.height < 10} style={{ padding: "9px 18px", borderRadius: 8, border: "none", background: (cropRect && cropRect.width >= 10) ? css.accent : css.surface2, color: (cropRect && cropRect.width >= 10) ? "#fff" : css.text3, fontSize: 13, fontWeight: 700, cursor: (cropRect && cropRect.width >= 10) ? "pointer" : "default" }}>Save Crop</button>
               </div>
             </div>
@@ -5513,7 +12657,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                       {flightRouteOptions[legIdx] && (
                         <div style={{ marginBottom: 10, display: "flex", flexDirection: "column", gap: 6 }}>
                           {flightRouteOptions[legIdx].map((opt, oi) => (
-                            <button key={oi} onClick={() => applyFlightRouteOption(legIdx, opt)} style={{
+                            <button key={oi} onClick={() => applyFlightRouteOption(legIndex, opt)} style={{
                               display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
                               padding: "10px 14px", borderRadius: 8, border: `1px solid ${css.border}`,
                               background: css.surface, cursor: "pointer", fontFamily: "inherit", textAlign: "left",
@@ -6058,14 +13202,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                             const updated = (settingsForm.additionalEmails || []).filter((_, i) => i !== idx);
                             setSettingsForm(f => ({ ...f, additionalEmails: updated }));
                             if (user) {
-                              // Delete the additional row but never delete the primary user-email row
-                              const primaryEmail = (user.email || "").toLowerCase();
-                              if (email.toLowerCase() !== primaryEmail) {
-                                await supabase.from("user_forwarding_addresses")
-                                  .delete()
-                                  .eq("user_id", user.id)
-                                  .eq("email", email.toLowerCase());
-                              }
+                              await supabase.from("user_forwarding_addresses").delete().eq("user_id", user.id).eq("email", email).neq("forwarding_address", userForwardingAddress);
                             }
                             setSettingsMsg({ type: "success", text: `Removed ${email}` });
                           }} style={{ border: "none", background: "transparent", color: "#ef4444", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>Remove</button>
@@ -6080,28 +13217,14 @@ Start by introducing yourself briefly in-character with personality, and give an
                         if (!email || !email.includes("@")) { setSettingsMsg({ type: "error", text: "Enter a valid email" }); return; }
                         if (email === user?.email?.toLowerCase()) { setSettingsMsg({ type: "error", text: "This is already your primary email" }); return; }
                         if ((settingsForm.additionalEmails || []).includes(email)) { setSettingsMsg({ type: "error", text: "Email already added" }); return; }
-                        // Save to Supabase — query first, then insert only if missing,
-                        // to avoid depending on a specific onConflict target constraint.
+                        // Save to Supabase — create a new forwarding address entry pointing to the same user
                         if (user) {
-                          const { data: existing } = await supabase
-                            .from("user_forwarding_addresses")
-                            .select("id")
-                            .eq("user_id", user.id)
-                            .eq("email", email);
-                          if (!existing || existing.length === 0) {
-                            const { error: insErr } = await supabase
-                              .from("user_forwarding_addresses")
-                              .insert({
-                                user_id: user.id,
-                                email: email,
-                                forwarding_address: userForwardingAddress,
-                                verified: true,
-                              });
-                            if (insErr) {
-                              setSettingsMsg({ type: "error", text: `Failed to add: ${insErr.message}` });
-                              return;
-                            }
-                          }
+                          await supabase.from("user_forwarding_addresses").upsert({
+                            user_id: user.id,
+                            email: email,
+                            forwarding_address: userForwardingAddress, // Same token — routes to same inbox
+                            verified: true,
+                          }, { onConflict: "user_id,email" });
                         }
                         setSettingsForm(f => ({ ...f, additionalEmails: [...(f.additionalEmails || []), email] }));
                         if (input) input.value = "";
@@ -6134,12 +13257,6 @@ Start by introducing yourself briefly in-character with personality, and give an
                   <div>
                     <div style={sectionHead}>Travel Preferences</div>
                     <label style={{ display: "block", marginBottom: 14 }}><span style={lbl}>Home Airport (IATA code)</span><input value={settingsForm.homeAirport} onChange={e => setSettingsForm(f => ({ ...f, homeAirport: e.target.value.toUpperCase().slice(0, 3) }))} placeholder="e.g. JFK, LAX, YYZ" style={sf} maxLength={3} /></label>
-                    <label style={{ display: "block", marginBottom: 14 }}><span style={lbl}>Passport Country</span>
-                      <select value={settingsForm.passportCountry} onChange={e => setSettingsForm(f => ({ ...f, passportCountry: e.target.value }))} style={{ ...sf, cursor: "pointer" }}>
-                        <option value="">Select passport country...</option>
-                        {[["US","United States"],["CA","Canada"],["GB","United Kingdom"],["AU","Australia"],["NZ","New Zealand"],["IE","Ireland"],["DE","Germany"],["FR","France"],["NL","Netherlands"],["IT","Italy"],["ES","Spain"],["PT","Portugal"],["CH","Switzerland"],["AT","Austria"],["BE","Belgium"],["SE","Sweden"],["NO","Norway"],["DK","Denmark"],["FI","Finland"],["JP","Japan"],["KR","South Korea"],["SG","Singapore"],["HK","Hong Kong SAR"],["TW","Taiwan"],["MY","Malaysia"],["TH","Thailand"],["PH","Philippines"],["IN","India"],["CN","China"],["BR","Brazil"],["MX","Mexico"],["AR","Argentina"],["CL","Chile"],["CO","Colombia"],["AE","UAE"],["SA","Saudi Arabia"],["IL","Israel"],["ZA","South Africa"],["NG","Nigeria"],["EG","Egypt"],["KE","Kenya"],["BM","Bermuda (British Overseas)"],["TT","Trinidad & Tobago"],["JM","Jamaica"],["BB","Barbados"]].map(([code, name]) => <option key={code} value={code}>{name}</option>)}
-                      </select>
-                    </label>
                     <label style={{ display: "block", marginBottom: 20 }}><span style={lbl}>Default Currency</span>
                       <select value={settingsForm.defaultCurrency} onChange={e => setSettingsForm(f => ({ ...f, defaultCurrency: e.target.value }))} style={{ ...sf, cursor: "pointer" }}>
                         {["USD","CAD","GBP","EUR","AUD","JPY","SGD","HKD"].map(c => <option key={c} value={c} style={{ background: css.surface }}>{c}</option>)}
@@ -6958,26 +14075,6 @@ Start by introducing yourself briefly in-character with personality, and give an
 
       {/* Add / Edit Expense Modal */}
       {/* Share Trip Modal */}
-      {/* Confirm Modal — replaces window.confirm for reliable cross-platform behavior */}
-      {confirmModal && (
-        <div onClick={e => { e.stopPropagation(); e.preventDefault(); }} style={{ position: "fixed", inset: 0, zIndex: 99999, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, touchAction: "none" }}>
-          <div style={{ width: "100%", maxWidth: 380, background: D ? "#1a1a1a" : "#fff", border: `1px solid ${css.border}`, borderRadius: 14, padding: "28px 24px 20px", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}>
-            <div style={{ fontSize: 16, fontWeight: 700, color: css.text, marginBottom: 6 }}>Confirm</div>
-            <div style={{ fontSize: 14, color: css.text2, marginBottom: 24, lineHeight: 1.6 }}>{confirmModal.message}</div>
-            <div style={{ display: "flex", gap: 10 }}>
-              <button onClick={() => setConfirmModal(null)} style={{
-                flex: 1, padding: "12px 0", borderRadius: 8, border: `1px solid ${css.border}`,
-                background: "transparent", color: css.text2, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
-              }}>Cancel</button>
-              <button onClick={() => { const cb = confirmModal.onConfirm; setConfirmModal(null); cb(); }} style={{
-                flex: 1, padding: "12px 0", borderRadius: 8, border: "none",
-                background: "#ef4444", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-              }}>Confirm</button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {showShareModal && (() => {
         const trip = allTripsWithShared.find(t => t.id === showShareModal);
         return (
@@ -6985,7 +14082,7 @@ Start by introducing yourself briefly in-character with personality, and give an
             <div style={{ width: "100%", maxWidth: 440, background: D ? "#141414" : "#fff", border: `2px solid ${D ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"}`, padding: 32, position: "relative" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
                 <h2 style={{ fontSize: 18, fontWeight: 800, color: css.text, margin: 0 }}>Share Trip</h2>
-                <button onClick={() => { setShowShareModal(null); setShareStatus(""); setSharePermission("read"); }} style={{ width: 36, height: 36, border: `1px solid ${css.border}`, background: "transparent", color: css.text3, fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+                <button onClick={() => { setShowShareModal(null); setShareStatus(""); }} style={{ width: 36, height: 36, border: `1px solid ${css.border}`, background: "transparent", color: css.text3, fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
               </div>
               {trip && <div style={{ fontSize: 13, fontWeight: 600, color: css.text2, marginBottom: 16 }}>{trip.tripName || trip.location || "Trip"}</div>}
               <div style={{ marginBottom: 16 }}>
@@ -6994,34 +14091,11 @@ Start by introducing yourself briefly in-character with personality, and give an
                   style={{ display: "block", width: "100%", padding: "12px 16px", background: css.surface2, border: `1px solid ${css.border}`, color: css.text, fontSize: 14, outline: "none", boxSizing: "border-box" }} />
                 <div style={{ fontSize: 10, color: css.text3, marginTop: 4 }}>They'll see this trip next time they open Continuum</div>
               </div>
-              <div style={{ marginBottom: 16 }}>
-                <label style={{ fontSize: 11, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 8 }}>Permission Level</label>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button onClick={() => setSharePermission("read")} style={{
-                    flex: 1, padding: "10px 12px", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "inherit", transition: "all 0.15s",
-                    border: `1px solid ${sharePermission === "read" ? css.accent : css.border}`,
-                    background: sharePermission === "read" ? (D ? "rgba(14,165,160,0.1)" : "rgba(14,165,160,0.06)") : "transparent",
-                    color: sharePermission === "read" ? css.accent : css.text3,
-                  }}>
-                    <div style={{ fontWeight: 700, marginBottom: 2 }}>View Only</div>
-                    <div style={{ fontSize: 10, fontWeight: 400, opacity: 0.7 }}>Can view trips, receipts, and itineraries</div>
-                  </button>
-                  <button onClick={() => setSharePermission("edit")} style={{
-                    flex: 1, padding: "10px 12px", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "inherit", transition: "all 0.15s",
-                    border: `1px solid ${sharePermission === "edit" ? "#3b82f6" : css.border}`,
-                    background: sharePermission === "edit" ? (D ? "rgba(59,130,246,0.1)" : "rgba(59,130,246,0.06)") : "transparent",
-                    color: sharePermission === "edit" ? "#3b82f6" : css.text3,
-                  }}>
-                    <div style={{ fontWeight: 700, marginBottom: 2 }}>Can Edit</div>
-                    <div style={{ fontSize: 10, fontWeight: 400, opacity: 0.7 }}>Can edit trip details, segments, and expenses</div>
-                  </button>
-                </div>
-              </div>
               {shareStatus === "sent" && <div style={{ padding: "10px 14px", background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)", color: "#22c55e", fontSize: 12, fontWeight: 600, marginBottom: 16 }}>Trip shared successfully!</div>}
               {shareStatus === "already" && <div style={{ padding: "10px 14px", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", color: "#f59e0b", fontSize: 12, fontWeight: 600, marginBottom: 16 }}>This trip is already shared with that email</div>}
               {shareStatus === "error" && <div style={{ padding: "10px 14px", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", color: "#ef4444", fontSize: 12, fontWeight: 600, marginBottom: 16 }}>Failed to share. Please try again.</div>}
               <div style={{ display: "flex", gap: 10 }}>
-                <button onClick={() => { setShowShareModal(null); setShareStatus(""); setSharePermission("read"); }} style={{ flex: 1, padding: "12px 0", border: `1px solid ${css.border}`, background: "transparent", color: css.text2, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
+                <button onClick={() => { setShowShareModal(null); setShareStatus(""); }} style={{ flex: 1, padding: "12px 0", border: `1px solid ${css.border}`, background: "transparent", color: css.text2, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
                 <button onClick={handleShareTrip} disabled={!shareEmail.trim()} style={{ flex: 1, padding: "12px 0", border: "none", background: shareEmail.trim() ? "#3b82f6" : css.surface2, color: shareEmail.trim() ? "#fff" : css.text3, fontSize: 13, fontWeight: 700, cursor: shareEmail.trim() ? "pointer" : "not-allowed" }}>Share</button>
               </div>
             </div>
@@ -7419,59 +14493,57 @@ Start by introducing yourself briefly in-character with personality, and give an
               try { pdfPageImages[exp.id] = await renderPdfToImages(exp.receiptImage.data); } catch(e) { pdfPageImages[exp.id] = []; }
             }
           }
-          // Light theme palette — ink-saving for print
-          const PC = { bg: "#ffffff", text: "#111827", text2: "#374151", text3: "#6b7280", text4: "#9ca3af", border: "#e5e7eb", borderSoft: "#f3f4f6", rowAlt: "#f9fafb", accent: "#0EA5A0", accentBg: "rgba(14,165,160,0.06)", accentBorder: "rgba(14,165,160,0.25)", positive: "#059669", muted: "#9ca3af" };
-          const fmtAttendees = (v) => { const s = (v || "").toString().trim(); return !s || s.toLowerCase() === "self" ? "Self" : s; };
           const catRows = catSummary.map(cat => `
             <tr>
-              <td style="padding:10px 0;border-bottom:1px solid ${PC.borderSoft};">
-                <span style="font-size:13px;color:${PC.text2};">${cat.label} (${cat.count})</span>
+              <td style="padding:10px 0;border-bottom:1px solid #2a2640;">
+                <span style="font-size:16px;margin-right:8px;">${cat.icon}</span>
+                <span style="font-size:13px;color:#d0d6e0;">${cat.label} (${cat.count})</span>
               </td>
-              <td style="padding:10px 0;border-bottom:1px solid ${PC.borderSoft};">
-                <div style="background:${PC.borderSoft};border-radius:4px;height:6px;width:120px;overflow:hidden;">
+              <td style="padding:10px 0;border-bottom:1px solid #2a2640;">
+                <div style="background:#2a2640;border-radius:4px;height:6px;width:120px;overflow:hidden;">
                   <div style="width:${tripTotalUSD > 0 ? Math.round((cat.totalUSD/tripTotalUSD)*100) : 0}%;height:100%;background:${cat.color};border-radius:4px;"></div>
                 </div>
               </td>
-              <td style="padding:10px 0;border-bottom:1px solid ${PC.borderSoft};text-align:right;font-size:13px;font-weight:700;color:${PC.text};">$${cat.totalUSD.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+              <td style="padding:10px 0;border-bottom:1px solid #2a2640;text-align:right;font-size:13px;font-weight:700;color:#f7f8f8;">$${cat.totalUSD.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
             </tr>`).join("");
           const lineRows = tripExps.map((exp, i) => {
+            const cat = EXPENSE_CATEGORIES.find(c => c.id === exp.category);
             const cur = exp.currency || "USD";
             const usdAmt = toUSD(exp);
             const isForeign = cur !== "USD";
             const receiptIdx = expensesWithReceipts.findIndex(e => e.id === exp.id);
-            const attendees = fmtAttendees(exp.individuals);
             return `
             <tr>
-              <td style="padding:10px 14px;border-bottom:1px solid ${PC.borderSoft};vertical-align:top;">
-                <div style="font-size:13px;color:${PC.text};">${exp.description}</div>
-                ${exp.notes ? `<div style="font-size:10px;color:${PC.text3};margin-top:2px;">${exp.notes}</div>` : ""}
+              <td style="padding:10px 14px;border-bottom:1px solid #2a2640;vertical-align:top;">
+                <div style="font-size:13px;color:#f7f8f8;">${cat?.icon || ""} ${exp.description}</div>
+                ${exp.notes ? `<div style="font-size:10px;color:#62666d;margin-top:2px;">${exp.notes}</div>` : ""}
               </td>
-              <td style="padding:10px 14px;border-bottom:1px solid ${PC.borderSoft};font-size:12px;color:${PC.text2};white-space:nowrap;">${exp.date?.slice(5) || ""}</td>
-              <td style="padding:10px 14px;border-bottom:1px solid ${PC.borderSoft};font-size:12px;color:${PC.text2};">${exp.paymentMethod || "—"}</td>
-              <td style="padding:10px 14px;border-bottom:1px solid ${PC.borderSoft};font-size:12px;color:${attendees === "Self" ? PC.text3 : PC.text2};">${attendees}</td>
-              <td style="padding:10px 14px;border-bottom:1px solid ${PC.borderSoft};text-align:right;">
-                <div style="font-size:13px;font-weight:700;color:${exp.amount===0?PC.positive:PC.text};">${fmtAmt(exp.amount, cur)}</div>
-                ${isForeign ? `<div style="font-size:10px;color:${PC.text3};">$${usdAmt.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})} USD</div>` : ""}
+              <td style="padding:10px 14px;border-bottom:1px solid #2a2640;font-size:12px;color:#8a8f98;white-space:nowrap;">${exp.date?.slice(5) || ""}</td>
+              <td style="padding:10px 14px;border-bottom:1px solid #2a2640;font-size:12px;color:#8a8f98;">${exp.paymentMethod || "—"}</td>
+              <td style="padding:10px 14px;border-bottom:1px solid #2a2640;text-align:right;">
+                <div style="font-size:13px;font-weight:700;color:${exp.amount===0?"#34d399":"#ffffff"};">${fmtAmt(exp.amount, cur)}</div>
+                ${isForeign ? `<div style="font-size:10px;color:#62666d;">$${usdAmt.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})} USD</div>` : ""}
               </td>
-              <td style="padding:10px 14px;border-bottom:1px solid ${PC.borderSoft};text-align:center;font-size:11px;color:${exp.receipt?PC.accent:PC.muted};">
-                ${exp.receipt ? (receiptIdx >= 0 ? `<a href="#receipt-${receiptIdx+1}" style="color:${PC.accent};font-size:10px;text-decoration:none;">p.${receiptIdx+1+1}</a>` : "✓") : "—"}
+              <td style="padding:10px 14px;border-bottom:1px solid #2a2640;text-align:center;font-size:13px;color:${exp.receipt?"#34d399":"#62666d"};">
+                ${exp.receipt ? (receiptIdx >= 0 ? `<a href="#receipt-${receiptIdx+1}" style="color:#0EA5A0;font-size:10px;">p.${receiptIdx+1+1}</a>` : "✓") : "—"}
               </td>
             </tr>`;
           }).join("");
           const receiptPages = expensesWithReceipts.map((exp, i) => {
+            const cat = EXPENSE_CATEGORIES.find(c => c.id === exp.category);
             const cur = exp.currency || "USD";
             const isPdf = exp.receiptImage.type === "application/pdf";
             const pages = isPdf ? (pdfPageImages[exp.id] || []) : [exp.receiptImage.data];
             return pages.map((src, pi) => `
-              <div id="${pi === 0 ? `receipt-${i+1}` : ""}" style="page-break-before:always;padding:48px;background:${PC.bg};min-height:100vh;box-sizing:border-box;">
+              <div id="${pi === 0 ? `receipt-${i+1}` : ""}" style="page-break-before:always;padding:48px;background:#13111C;min-height:100vh;box-sizing:border-box;">
                 ${pi === 0 ? `
-                  <div style="color:${PC.text3};font-size:11px;font-family:monospace;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.1em;">Receipt ${i+1} of ${expensesWithReceipts.length}${isPdf && pages.length > 1 ? ` — Page 1 of ${pages.length}` : ""}</div>
-                  <div style="font-size:16px;font-weight:700;color:${PC.text};margin-bottom:4px;">${exp.description}</div>
-                  <div style="font-size:12px;color:${PC.text3};margin-bottom:32px;">${exp.date||""} · ${exp.paymentMethod||""} · ${fmtAmt(exp.amount,cur)}</div>
+                  <div style="color:#8a8f98;font-size:11px;font-family:monospace;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.1em;">Receipt ${i+1} of ${expensesWithReceipts.length}${isPdf && pages.length > 1 ? ` — Page 1 of ${pages.length}` : ""}</div>
+                  <div style="font-size:16px;font-weight:700;color:#f7f8f8;margin-bottom:4px;">${cat?.icon||""} ${exp.description}</div>
+                  <div style="font-size:12px;color:#8a8f98;margin-bottom:32px;">${exp.date||""} · ${exp.paymentMethod||""} · ${fmtAmt(exp.amount,cur)}</div>
                 ` : `
-                  <div style="color:${PC.text3};font-size:11px;font-family:monospace;margin-bottom:16px;text-transform:uppercase;letter-spacing:0.1em;">Receipt ${i+1} — Page ${pi+1} of ${pages.length} · ${exp.description}</div>
+                  <div style="color:#8a8f98;font-size:11px;font-family:monospace;margin-bottom:16px;text-transform:uppercase;letter-spacing:0.1em;">Receipt ${i+1} — Page ${pi+1} of ${pages.length} · ${exp.description}</div>
                 `}
-                <img src="${src}" alt="Receipt${isPdf ? ` page ${pi+1}` : ""}" style="width:100%;border-radius:8px;border:1px solid ${PC.border};display:block;" />
+                <img src="${src}" alt="Receipt${isPdf ? ` page ${pi+1}` : ""}" style="width:100%;border-radius:8px;border:1px solid #2a2640;display:block;" />
               </div>
             `).join("");
           }).join("");
@@ -7479,81 +14551,79 @@ Start by introducing yourself briefly in-character with personality, and give an
             <title>Expense Report — ${getTripName(trip)}</title>
             <style>
               * { box-sizing: border-box; margin: 0; padding: 0; }
-              body { background: ${PC.bg}; color: ${PC.text}; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+              body { background: #13111C; color: #f7f8f8; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
               @media print {
-                body { background: ${PC.bg} !important; }
+                body { background: #13111C !important; }
                 @page { margin: 16mm 18mm; size: A4; }
               }
               table { border-collapse: collapse; width: 100%; }
-              a { text-decoration: none; }
             </style>
           </head><body>
-            <div style="padding:48px 48px 40px;background:${PC.bg};min-height:100vh;">
+            <div style="padding:48px 48px 40px;background:#13111C;min-height:100vh;">
               <!-- Header -->
-              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:36px;border-bottom:1px solid ${PC.border};padding-bottom:24px;">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:36px;">
                 <div>
-                  <img src="${window.location.origin}/continuum-travel-logo.svg" alt="Continuum" style="height:60px;display:block;margin-bottom:12px;filter:brightness(0);" />
-                  <div style="font-size:26px;font-weight:800;color:${PC.text};letter-spacing:-0.5px;">Expense Report</div>
+                  <img src="${window.location.origin}/continuum-travel-logo.svg" alt="Continuum" style="height:80px;display:block;margin-bottom:12px;" />
+                  <div style="font-size:26px;font-weight:800;color:#fff;letter-spacing:-0.5px;">Expense Report</div>
                 </div>
                 <div style="text-align:right;">
-                  <div style="font-size:11px;color:${PC.text3};">Generated ${new Date().toLocaleDateString()}</div>
-                  <div style="font-size:11px;color:${PC.text4};">Report #${trip.id}-${Date.now().toString(36).slice(-4)}</div>
-                  <div style="margin-top:6px;font-size:11px;font-weight:700;color:${PC.accent};">Total in USD</div>
+                  <div style="font-size:11px;color:#8a8f98;">Generated ${new Date().toLocaleDateString()}</div>
+                  <div style="font-size:11px;color:#62666d;">Report #${trip.id}-${Date.now().toString(36).slice(-4)}</div>
+                  <div style="margin-top:6px;font-size:11px;font-weight:700;color:#0EA5A0;">Total in USD</div>
                 </div>
               </div>
               <!-- Trip -->
-              <div style="background:${PC.accentBg};border:1px solid ${PC.accentBorder};border-radius:10px;padding:20px;margin-bottom:28px;">
-                <div style="font-size:18px;font-weight:700;color:${PC.text};margin-bottom:6px;">${getTripName(trip)}</div>
-                <div style="font-size:13px;color:${PC.text2};">${trip.date||""} · ${prog?.name||"Unknown"} · ${trip.status||""}</div>
+              <div style="background:rgba(14,165,160,0.08);border:1px solid rgba(14,165,160,0.2);border-radius:10px;padding:20px;margin-bottom:28px;">
+                <div style="font-size:18px;font-weight:700;color:#f7f8f8;margin-bottom:6px;">${trip.type==="flight"?"—":trip.type==="hotel"?"—":"—"} ${getTripName(trip)}</div>
+                <div style="font-size:13px;color:#8a8f98;">${trip.date||""} · ${prog?.name||"Unknown"} · ${trip.status||""}</div>
               </div>
               <!-- Stats -->
               <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:28px;">
-                <div style="background:${PC.rowAlt};border:1px solid ${PC.border};border-radius:8px;padding:16px;text-align:center;">
-                  <div style="font-size:22px;font-weight:800;color:${PC.accent};">$${tripTotalUSD.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
-                  <div style="font-size:10px;color:${PC.text3};margin-top:4px;text-transform:uppercase;letter-spacing:0.08em;">Total (USD)</div>
+                <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:16px;text-align:center;">
+                  <div style="font-size:22px;font-weight:800;color:#0EA5A0;">$${tripTotalUSD.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+                  <div style="font-size:10px;color:#8a8f98;margin-top:4px;">Total (USD)</div>
                 </div>
-                <div style="background:${PC.rowAlt};border:1px solid ${PC.border};border-radius:8px;padding:16px;text-align:center;">
-                  <div style="font-size:22px;font-weight:700;color:${PC.text};">${tripExps.length}</div>
-                  <div style="font-size:10px;color:${PC.text3};margin-top:4px;text-transform:uppercase;letter-spacing:0.08em;">Items</div>
+                <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:16px;text-align:center;">
+                  <div style="font-size:22px;font-weight:700;color:#fff;">${tripExps.length}</div>
+                  <div style="font-size:10px;color:#8a8f98;margin-top:4px;">Items</div>
                 </div>
-                <div style="background:${PC.rowAlt};border:1px solid ${PC.border};border-radius:8px;padding:16px;text-align:center;">
-                  <div style="font-size:22px;font-weight:800;color:${PC.positive};">${receiptCount}/${tripExps.length}</div>
-                  <div style="font-size:10px;color:${PC.text3};margin-top:4px;text-transform:uppercase;letter-spacing:0.08em;">Receipts</div>
+                <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:16px;text-align:center;">
+                  <div style="font-size:22px;font-weight:800;color:#34d399;">${receiptCount}/${tripExps.length}</div>
+                  <div style="font-size:10px;color:#8a8f98;margin-top:4px;">Receipts</div>
                 </div>
               </div>
               <!-- Category Breakdown -->
               <div style="margin-bottom:28px;">
-                <div style="font-size:11px;font-weight:700;color:${PC.text3};text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;">Breakdown by Category</div>
+                <div style="font-size:11px;font-weight:700;color:#8a8f98;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;">Breakdown by Category</div>
                 <table><tbody>${catRows}</tbody></table>
               </div>
               <!-- Line Items -->
               <div style="margin-bottom:32px;">
-                <div style="font-size:11px;font-weight:700;color:${PC.text3};text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;">Line Items</div>
-                <div style="background:${PC.bg};border-radius:8px;overflow:hidden;border:1px solid ${PC.border};">
+                <div style="font-size:11px;font-weight:700;color:#8a8f98;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;">Line Items</div>
+                <div style="background:#1a1725;border-radius:8px;overflow:hidden;border:1px solid #2a2640;">
                   <table>
                     <thead>
-                      <tr style="background:${PC.rowAlt};">
-                        <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:${PC.text3};text-transform:uppercase;border-bottom:1px solid ${PC.border};">Description</th>
-                        <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:${PC.text3};text-transform:uppercase;border-bottom:1px solid ${PC.border};">Date</th>
-                        <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:${PC.text3};text-transform:uppercase;border-bottom:1px solid ${PC.border};">Payment</th>
-                        <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:${PC.text3};text-transform:uppercase;border-bottom:1px solid ${PC.border};">Attendees</th>
-                        <th style="padding:10px 14px;text-align:right;font-size:10px;font-weight:700;color:${PC.text3};text-transform:uppercase;border-bottom:1px solid ${PC.border};">Amount</th>
-                        <th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;color:${PC.text3};text-transform:uppercase;border-bottom:1px solid ${PC.border};">Rcpt</th>
+                      <tr style="background:rgba(255,255,255,0.04);">
+                        <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:#8a8f98;text-transform:uppercase;border-bottom:1px solid #2a2640;">Description</th>
+                        <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:#8a8f98;text-transform:uppercase;border-bottom:1px solid #2a2640;">Date</th>
+                        <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:#8a8f98;text-transform:uppercase;border-bottom:1px solid #2a2640;">Payment</th>
+                        <th style="padding:10px 14px;text-align:right;font-size:10px;font-weight:700;color:#8a8f98;text-transform:uppercase;border-bottom:1px solid #2a2640;">Amount</th>
+                        <th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;color:#8a8f98;text-transform:uppercase;border-bottom:1px solid #2a2640;">🧾</th>
                       </tr>
                     </thead>
                     <tbody>${lineRows}</tbody>
                     <tfoot>
-                      <tr style="background:${PC.accentBg};">
-                        <td colspan="4" style="padding:14px;font-size:13px;font-weight:700;color:${PC.accent};border-top:2px solid ${PC.accentBorder};">TOTAL (USD)</td>
-                        <td style="padding:14px;text-align:right;font-size:15px;font-weight:800;color:${PC.accent};border-top:2px solid ${PC.accentBorder};">$${tripTotalUSD.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
-                        <td style="border-top:2px solid ${PC.accentBorder};"></td>
+                      <tr style="background:rgba(14,165,160,0.08);">
+                        <td colspan="3" style="padding:14px;font-size:13px;font-weight:700;color:#0EA5A0;border-top:2px solid rgba(14,165,160,0.3);">TOTAL (USD)</td>
+                        <td style="padding:14px;text-align:right;font-size:15px;font-weight:800;color:#0EA5A0;border-top:2px solid rgba(14,165,160,0.3);">$${tripTotalUSD.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+                        <td style="border-top:2px solid rgba(14,165,160,0.3);"></td>
                       </tr>
                     </tfoot>
                   </table>
                 </div>
               </div>
               <!-- Footer -->
-              <div style="text-align:center;color:${PC.text3};font-size:10px;border-top:1px solid ${PC.border};padding-top:16px;">
+              <div style="text-align:center;color:#62666d;font-size:10px;border-top:1px solid #2a2640;padding-top:16px;">
                 Generated by Continuum — Elevate Every Journey · ${new Date().toLocaleString()}
                 ${expensesWithReceipts.length > 0 ? ` · ${expensesWithReceipts.length} receipt${expensesWithReceipts.length!==1?"s":""} attached` : ""}
               </div>
@@ -7661,15 +14731,11 @@ Start by introducing yourself briefly in-character with personality, and give an
                     const cur = exp.currency || "USD";
                     const isForeign = cur !== "USD";
                     const usdAmt = toUSD(exp);
-                    const attendeesRaw = (exp.individuals || "").toString().trim();
-                    const attendees = !attendeesRaw || attendeesRaw.toLowerCase() === "self" ? "Self" : attendeesRaw;
-                    const attendeesColor = attendees === "Self" ? "#62666d" : "#b8c0cf";
                     return (
                       <div key={exp.id} style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 80px" : "1fr 80px 90px 90px 28px", gap: 8, padding: "10px 14px", borderBottom: i < tripExps.length - 1 ? "1px solid rgba(0,0,0,0.02)" : "none", alignItems: "center" }}>
                         <div>
                           <span style={{ fontSize: 12, color: "#f7f8f8", fontFamily: "Inter, sans-serif" }}>{cat?.icon} {exp.description}</span>
                           {exp.notes && <div style={{ fontSize: 10, color: "#62666d", marginTop: 1 }}>{exp.notes}</div>}
-                          <div style={{ fontSize: 10, color: attendeesColor, marginTop: 1, fontFamily: "Inter, sans-serif" }}>Attendees: {attendees}</div>
                           {isMobile && <div style={{ fontSize: 10, color: "#62666d", marginTop: 1 }}>{exp.date?.slice(5)} {exp.receipt ? "🧾" : ""}</div>}
                         </div>
                         {!isMobile && <span style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>{exp.date?.slice(5)}</span>}
@@ -7713,4 +14779,3 @@ Start by introducing yourself briefly in-character with personality, and give an
     </div>
   );
 }
-
