@@ -5,7 +5,7 @@ export function renderPrograms(s, _previewSub = null) {
     progAddType, setProgAddType, progAddId, setProgAddId, progAddTier, setProgAddTier,
     ProgramLogo, expandedCardId, setExpandedCardId,
     cardBenefitValues, setCardBenefitValue, cardCustomBenefits, addCustomBenefit, updateCustomBenefit, removeCustomBenefit,
-    getCardNetValue, showConfirm } = s;
+    getCardNetValue, showConfirm, getTripExpenses, getTripTotal, getTripName, formatTripDates, EXPENSE_CATEGORIES, SegIcon, AIRPORT_CITY, AIRLINE_CS, HOTEL_CS, OTA_CS } = s;
   const D = darkMode;
     // Simple single-page program manager
     const allAirlines = LOYALTY_PROGRAMS.airlines;

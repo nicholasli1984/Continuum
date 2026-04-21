@@ -1,4 +1,5 @@
 import React from "react";
+import { LOYALTY_PROGRAMS } from "../constants/programs";
 import { LANDMARK_FALLBACK_PHOTOS } from "../constants/airline-data";
 
 export function renderDashboard(s) {

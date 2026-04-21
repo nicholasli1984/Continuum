@@ -1,5 +1,6 @@
 import React from "react";
 import { LOUNGE_DATABASE, AMENITY_ICONS, AMENITY_LABELS } from "../constants/lounges";
+import { LOYALTY_PROGRAMS } from "../constants/programs";
 export function renderLounges(s) {
   const { css, isMobile, darkMode, user, linkedAccounts,
     loungeAirport, setLoungeAirport, loungeSearchCode, setLoungeSearchCode,

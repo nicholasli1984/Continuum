@@ -4823,7 +4823,7 @@ Start by introducing yourself briefly in-character with personality, and give an
     landmarkPhotos, userForwardingAddress,
     formatTripDates, getTripExpenses, getTripTotal, getTripName,
     getFlightLiveStatus, getPackingItems, packingLists, customPackItems,
-    EXPENSE_CATEGORIES, SegIcon, SectionLabel,
+    EXPENSE_CATEGORIES, SegIcon, SectionLabel, ProgramLogo,
     nextTrip, upcomingTripsFiltered, allTripsWithShared,
     pushSupported, pushEnabled, enablePushNotifications,
     addTripFromItinerary, dismissItinerary, updateItinSeg: (itinId, segIdx, updates) => {
@@ -4842,7 +4842,7 @@ Start by introducing yourself briefly in-character with personality, and give an
     setShowAddExpense, setNewExpense, setEditExpenseId, setShowAddSegment, setShowCreateTrip,
     setShowExpenseReport, setShowShareModal, setShareEmail, setShareStatus, setSharePermission,
     openEditTrip, removeTrip, removeExpense, editSegment, deleteSegment, showConfirm,
-    getTripExpenses, getTripTotal, getTripName, formatTripDates,
+    getTripExpenses, getTripTotal, getTripName, formatTripDates, ProgramLogo, EXPENSE_CATEGORIES,
     getTripGoogleCalUrl, getTripOutlookUrl, downloadTripICS,
     EXPENSE_CATEGORIES, SegIcon, segTypeInfo, segTime, segTitle, segSubtitle, segLocation,
     getFlightLiveStatus, weatherCache, tempUnit, setTempUnit,
@@ -4860,7 +4860,7 @@ Start by introducing yourself briefly in-character with personality, and give an
     generateFlightyICS, togglePackItem,
   });
 
-  const renderPrograms = (_previewSub = null) => renderProgramsPage({ css, isMobile, darkMode, user, linkedAccounts, setLinkedAccounts, supabase, progAddType, setProgAddType, progAddId, setProgAddId, progAddTier, setProgAddTier, ProgramLogo, expandedCardId, setExpandedCardId, cardBenefitValues, setCardBenefitValue, cardCustomBenefits, addCustomBenefit, updateCustomBenefit, removeCustomBenefit, getCardNetValue, showConfirm }, _previewSub);
+  const renderPrograms = (_previewSub = null) => renderProgramsPage({ css, isMobile, darkMode, user, linkedAccounts, setLinkedAccounts, supabase, progAddType, setProgAddType, progAddId, setProgAddId, progAddTier, setProgAddTier, ProgramLogo, expandedCardId, setExpandedCardId, cardBenefitValues, setCardBenefitValue, cardCustomBenefits, addCustomBenefit, updateCustomBenefit, removeCustomBenefit, getCardNetValue, showConfirm, getTripExpenses, getTripTotal, getTripName, formatTripDates, EXPENSE_CATEGORIES, SegIcon, AIRPORT_CITY, AIRLINE_CS, HOTEL_CS, OTA_CS }, _previewSub);
   const renderExpenses = () => {
     // Redirect handled by navItem click
     return null;
@@ -4875,13 +4875,13 @@ Start by introducing yourself briefly in-character with personality, and give an
     optimizerTab, setOptimizerTab, optimizerTripId, setOptimizerTripId,
     ccOptTarget, setCcOptTarget, ccOptAmount, setCcOptAmount, ccBookingMode, setCcBookingMode,
     allianceGoal, setAllianceGoal, setActiveView, AIRPORT_COORDS, AIRPORT_CITY,
-    formatTripDates,
+    formatTripDates, ProgramLogo, EXPENSE_CATEGORIES,
   }, _previewTab);
 
   const renderExpenseReports = () => renderExpenseReportsPage({ css, isMobile, darkMode, user, trips, expenses, allPrograms, supabase, standaloneReports, setStandaloneReports, showReportBuilder, setShowReportBuilder, reportBuilder, setReportBuilder, editingReportId, setEditingReportId, reportBuilderCustom, setReportBuilderCustom, forwardReportId, setForwardReportId, forwardEmail, setForwardEmail, forwardStatus, setForwardStatus, EXPENSE_CATEGORIES, showConfirm, getTripExpenses, getTripTotal, getTripName, formatTripDates, getReportExpenses, buildPrintReport, openReportWindow });
-  const renderReports = () => renderReportsPage({ css, isMobile, darkMode, user, trips, expenses, linkedAccounts, allPrograms, EXPENSE_CATEGORIES, AIRPORT_COORDS, AIRPORT_CITY, getTripExpenses, getTripTotal, getTripName, formatTripDates, haversineDistance, parseRoute, greatCircleMiles });
+  const renderReports = () => renderReportsPage({ css, isMobile, darkMode, user, trips, expenses, linkedAccounts, allPrograms, EXPENSE_CATEGORIES, AIRPORT_COORDS, AIRPORT_CITY, getTripExpenses, getTripTotal, getTripName, formatTripDates, haversineDistance, parseRoute, greatCircleMiles, ProgramLogo });
   const renderAlliances = () => renderAlliancesPage({ css, isMobile, darkMode, user, linkedAccounts, allPrograms, ProgramLogo });
-  const renderInsights = (_previewTab = null) => renderInsightsPage({ css, isMobile, darkMode, user, trips, expenses, linkedAccounts, allPrograms, insightsTab, setInsightsTab, EXPENSE_CATEGORIES, formatTripDates, getTripExpenses, getTripTotal, getTripName, AIRPORT_CITY, setActiveView }, _previewTab);
+  const renderInsights = (_previewTab = null) => renderInsightsPage({ css, isMobile, darkMode, user, trips, expenses, linkedAccounts, allPrograms, insightsTab, setInsightsTab, EXPENSE_CATEGORIES, formatTripDates, getTripExpenses, getTripTotal, getTripName, AIRPORT_CITY, setActiveView, ProgramLogo }, _previewTab);
   const renderPremium = () => renderPremiumPage({ css, isMobile, darkMode });
   const renderNews = () => renderNewsPage({ css, isMobile, darkMode, newsItems, newsLoading, newsError, fetchNews, NEWS_SOURCES });
   const renderLounges = () => renderLoungesPage({ css, isMobile, darkMode, user, linkedAccounts, loungeAirport, setLoungeAirport, loungeSearchCode, setLoungeSearchCode, loungeDropdownOpen, setLoungeDropdownOpen, loungeExpandedId, setLoungeExpandedId, loungeFlightAirline, setLoungeFlightAirline, loungeFlightClass, setLoungeFlightClass, loungeAccessRoute, setLoungeAccessRoute, loungePhotos, loungeVisits, setLoungeVisits, getLoungeAccess, saveLoungeVisit, removeLoungeVisit, fetchLoungePhoto, AIRPORT_CITY, showConfirm });

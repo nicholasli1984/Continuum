@@ -1,9 +1,10 @@
 import React from "react";
+import { CC_TRANSFER_PARTNERS } from "../constants/airline-data";
 export function renderInsights(s, _previewTab = null) {
   const { css, isMobile, darkMode, user, trips, expenses, linkedAccounts, allPrograms,
     insightsTab, setInsightsTab, EXPENSE_CATEGORIES,
     formatTripDates, getTripExpenses, getTripTotal, getTripName,
-    AIRPORT_CITY, setActiveView } = s;
+    AIRPORT_CITY, setActiveView, ProgramLogo } = s;
   const D = darkMode;
     const INSIGHT_TABS = [
       { id: "countdown",  label: "Status Countdown", tier: "free" },

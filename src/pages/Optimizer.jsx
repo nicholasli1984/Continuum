@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { LOYALTY_PROGRAMS } from "../constants/programs";
+import { LOYALTY_PROGRAMS, PROGRAM_DIRECTORY } from "../constants/programs";
 import { CC_SPENDING_CATS, CC_TRANSFER_PARTNERS, CC_BONUS_EXPANDED, ELITE_BONUS_PCT, PARTNER_CLASS_RATES, PARTNER_EARN_RATES } from "../constants/airline-data";
+import { ALLIANCE_MBR, ALLIANCE_TIER_COLORS, ALLIANCE_TIER_LABELS } from "../constants/benefits";
 
 export function renderOptimizer(s, _previewTab = null) {
   // Destructure the state bag
@@ -11,7 +12,7 @@ export function renderOptimizer(s, _previewTab = null) {
     optimizerTab, setOptimizerTab, optimizerTripId, setOptimizerTripId,
     ccOptTarget, setCcOptTarget, ccOptAmount, setCcOptAmount, ccBookingMode, setCcBookingMode,
     allianceGoal, setAllianceGoal, setActiveView, AIRPORT_COORDS, AIRPORT_CITY,
-    formatTripDates } = s;
+    formatTripDates, ProgramLogo, EXPENSE_CATEGORIES } = s;
     const _tab = _previewTab || optimizerTab;
     const flightTrips = trips.filter(t => t.type === "flight");
     const airlines = LOYALTY_PROGRAMS.airlines;

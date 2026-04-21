@@ -3,7 +3,7 @@ export function renderReports(s) {
   const { css, isMobile, darkMode, user, trips, expenses, linkedAccounts, allPrograms,
     EXPENSE_CATEGORIES, AIRPORT_COORDS, AIRPORT_CITY,
     getTripExpenses, getTripTotal, getTripName, formatTripDates,
-    haversineDistance, parseRoute, greatCircleMiles } = s;
+    haversineDistance, parseRoute, greatCircleMiles, ProgramLogo } = s;
   const D = darkMode;
     const monthlyData = MONTHS.map((month, i) => {
       const monthTrips = trips.filter(t => {
