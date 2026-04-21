@@ -4795,6 +4795,8 @@ Start by introducing yourself briefly in-character with personality, and give an
   };
 
   const allTripsWithShared = [...trips, ...sharedTrips];
+  const todayStr2 = new Date().toISOString().slice(0, 10);
+  const nextTrip = trips.filter(t => (t.date || "") >= todayStr2).sort((a, b) => (a.date || "").localeCompare(b.date || ""))[0] || null;
   const filteredTrips = allTripsWithShared.filter(t => {
     if (filterStatus !== "all" && t.status !== filterStatus) return false;
     if (searchQuery && !JSON.stringify(t).toLowerCase().includes(searchQuery.toLowerCase())) return false;
@@ -4803,6 +4805,13 @@ Start by introducing yourself briefly in-character with personality, and give an
   const upcomingTripsFiltered = filteredTrips.filter(t => { const end = getTripEndDate(t); return !end || end >= todayStr; }).sort((a, b) => (a.date || "").localeCompare(b.date || ""));
 
   const pastTripsFiltered = filteredTrips.filter(t => { const end = getTripEndDate(t); return end && end < todayStr; }).sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+
+  const SectionLabel = ({ children, action, actionLabel }) => (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+      <h3 style={{ fontSize: 14, fontWeight: 700, color: css.text, margin: 0 }}>{children}</h3>
+      {action && <button onClick={action} style={{ background: "none", border: "none", color: css.text3, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>{actionLabel || "View all"} →</button>}
+    </div>
+  );
 
   const renderDashboard = () => renderDashboardPage({
     css, isMobile, user, trips, expenses, sharedTrips, darkMode,
