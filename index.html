@@ -49,34 +49,35 @@
   </head>
   <body>
     <div id="root"></div>
+    <div id="privacy-footer" style="position:fixed;bottom:0;width:100%;text-align:center;padding:10px;font-size:11px;font-family:sans-serif;color:#6B6458;z-index:0;pointer-events:none;"><a href="/privacy.html" style="color:#8B6F47;pointer-events:auto;">Privacy Policy</a></div>
     <script>
-      // Validate localStorage JSON — corrupted data crashes React before mounting
+      // AGGRESSIVE cache busting — runs BEFORE the app renders.
+      // On every page load, fetch the real sw.js from the server to check if
+      // there's a newer version. If the SW or caches are stale, nuke everything
+      // and hard-reload to guarantee fresh content.
       (function() {
-        var keys = ["continuum_visa_cache","continuum_packing_lists","continuum_custom_pack_items",
-          "continuum_lounge_visits","continuum_card_benefit_values","continuum_card_custom_benefits",
-          "continuum_expenses_guest"];
-        keys.forEach(function(k) {
-          try { var v = localStorage.getItem(k); if (v) JSON.parse(v); }
-          catch(e) { localStorage.removeItem(k); }
-        });
-      })();
+        var V = "__BUILD_TS__";
 
-      // Cache management: purge stale SW caches, reload once if needed.
-      // Uses two localStorage keys to prevent infinite reload loops.
-      (function() {
-        var V = "v20260421e";
-        var reloadKey = "_sw_reloading";
-        if (localStorage.getItem("_sw_ver") === V) return; // already on latest version
-
-        // If we're mid-reload (second pass), mark as done and stop
-        if (localStorage.getItem(reloadKey) === V) {
-          localStorage.setItem("_sw_ver", V);
-          localStorage.removeItem(reloadKey);
+        // Step 1: If we already verified this build version, skip everything.
+        if (localStorage.getItem("_sw_ver") === V) {
+          // Still listen for future SW updates during this session
+          listenForUpdates();
           return;
         }
 
-        // First pass: purge everything, then reload ONCE
-        localStorage.setItem(reloadKey, V);
+        // Step 2: If we're in the middle of a reload cycle, mark as done.
+        if (localStorage.getItem("_sw_reloading") === V) {
+          localStorage.setItem("_sw_ver", V);
+          localStorage.removeItem("_sw_reloading");
+          listenForUpdates();
+          return;
+        }
+
+        // Step 3: Stale version detected — nuke everything and reload.
+        localStorage.setItem("_sw_reloading", V);
+
+        // Hide the page immediately to prevent flash of old content
+        document.documentElement.style.display = "none";
 
         var done = Promise.resolve();
         if ("serviceWorker" in navigator) {
@@ -91,9 +92,82 @@
             });
           }
         }).then(function() {
-          // All SWs unregistered, all caches cleared — reload to get fresh content
-          location.reload();
+          // Force a true network fetch by busting the URL cache.
+          // Preserve hash so the refresh-button restore (#v=...&t=...) survives.
+          location.replace(location.pathname + "?_cb=" + Date.now() + (location.hash || ""));
         });
+
+        // Block further execution — the page will reload
+        throw new Error("CACHE_BUST_RELOAD");
+
+        function listenForUpdates() {
+          if (!("serviceWorker" in navigator)) return;
+
+          // Listen for SW_UPDATED message from push-sw.js activate handler
+          navigator.serviceWorker.addEventListener("message", function(event) {
+            if (event.data && event.data.type === "SW_UPDATED") {
+              if (!window._swReloading) { window._swReloading = true; window.location.reload(); }
+            }
+          });
+
+          navigator.serviceWorker.getRegistration().then(function(reg) {
+            if (!reg) return;
+            if (reg.waiting) {
+              reg.waiting.postMessage({ type: "SKIP_WAITING" });
+              return;
+            }
+            // Force check for SW update on every page load
+            reg.update().catch(function() {});
+            reg.addEventListener("updatefound", function() {
+              var nw = reg.installing;
+              if (!nw) return;
+              nw.addEventListener("statechange", function() {
+                if (nw.state === "installed" && navigator.serviceWorker.controller) {
+                  nw.postMessage({ type: "SKIP_WAITING" });
+                }
+              });
+            });
+          });
+          navigator.serviceWorker.addEventListener("controllerchange", function() {
+            if (!window._swReloading) { window._swReloading = true; window.location.reload(); }
+          });
+        }
+      })();
+    </script>
+    <script>
+      // Manual SW registration with updateViaCache:'none' to force fresh sw.js fetch
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" }).then(function(reg) {
+          reg.update().catch(function() {});
+        }).catch(function() {});
+      }
+      // Server-side version check — fetch bypasses SW with cache:'no-store'.
+      // If the server's build timestamp differs from ours, we're stale.
+      (function() {
+        var myVersion = "__BUILD_TS__";
+        fetch("/build-version.json?_=" + Date.now(), { cache: "no-store" }).then(function(r) { return r.json(); }).then(function(data) {
+          if (data.v && data.v !== myVersion) {
+            // Server has a newer deploy — nuke everything and reload
+            document.documentElement.style.display = "none";
+            var done = Promise.resolve();
+            if ("serviceWorker" in navigator) {
+              done = navigator.serviceWorker.getRegistrations().then(function(regs) {
+                return Promise.all(regs.map(function(r) { return r.unregister(); }));
+              });
+            }
+            done.then(function() {
+              if ("caches" in window) {
+                return caches.keys().then(function(keys) {
+                  return Promise.all(keys.map(function(k) { return caches.delete(k); }));
+                });
+              }
+            }).then(function() {
+              localStorage.removeItem("_sw_ver");
+              localStorage.removeItem("_sw_reloading");
+              location.replace("/?_cb=" + Date.now() + (location.hash || ""));
+            });
+          }
+        }).catch(function() {});
       })();
     </script>
     <script type="module" src="./src/main.jsx"></script>

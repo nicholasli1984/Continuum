@@ -15,34 +15,38 @@ export const LOUNGE_DATABASE = {
   JFK: [
     { id: "jfk_centurion_t4", name: "Amex Centurion Lounge", terminal: "T4", network: "centurion", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","spa","phone_rooms"], hours: "6:00 AM - 11:00 PM", location: "Near Gate B20", placeQuery: "American Express Centurion Lounge JFK Terminal 4" },
     { id: "jfk_sky_club_t4", name: "Delta Sky Club", terminal: "T4", network: "delta_sky_club", alliance: "skyteam", rating: 4.2, amenities: ["showers","hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Near Gate B37", placeQuery: "Delta Sky Club JFK Terminal 4" },
-    { id: "jfk_cap1", name: "Capital One Lounge", terminal: "T6/T7", network: "capital_one", rating: 4.6, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "5:30 AM - 11:00 PM", location: "Terminal 6", placeQuery: "Capital One Lounge JFK Airport" },
+    { id: "jfk_cap1", name: "Capital One Lounge", terminal: "T6", network: "capital_one", rating: 4.6, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "5:30 AM - 11:00 PM", location: "Terminal 6", placeQuery: "Capital One Lounge JFK Airport" },
     { id: "jfk_polaris", name: "United Polaris Lounge", terminal: "T7", network: "polaris", alliance: "star", rating: 4.4, amenities: ["showers","hot_food","bar","wifi","nap_pods","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Terminal 7", placeQuery: "United Polaris Lounge JFK" },
     { id: "jfk_admirals_t8", name: "Admirals Club", terminal: "T8", network: "admirals_club", alliance: "oneworld", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 8", placeQuery: "Admirals Club JFK Terminal 8" },
-    { id: "jfk_flagship_t8", name: "AA Flagship First Dining", terminal: "T8", network: "flagship", alliance: "oneworld", rating: 4.4, amenities: ["showers","hot_food","bar","wifi","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Terminal 8 near Gate 1", placeQuery: "American Airlines Flagship First Dining JFK" },
+    { id: "jfk_flagship_lounge_t8", name: "AA Flagship Lounge", terminal: "T8", network: "flagship", alliance: "oneworld", rating: 4.2, amenities: ["showers","hot_food","bar","wifi","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Terminal 8 Concourse B mezzanine", placeQuery: "American Airlines Flagship Lounge JFK Terminal 8" },
+    { id: "jfk_flagship_t8", name: "AA Flagship First Dining", terminal: "T8", network: "flagship", alliance: "oneworld", tier: "first", rating: 4.4, amenities: ["showers","hot_food","bar","wifi","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Terminal 8 near Gate 1", placeQuery: "American Airlines Flagship First Dining JFK" },
     { id: "jfk_greenwich", name: "Greenwich Lounge", terminal: "T8", network: "greenwich_lounge", alliance: "oneworld", rating: 4.5, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal 8", placeQuery: "Greenwich Lounge JFK Terminal 8" },
     { id: "jfk_soho", name: "Soho Lounge", terminal: "T8", network: "soho_lounge", alliance: "oneworld", rating: 4.3, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 8", placeQuery: "Soho Lounge JFK Terminal 8" },
     { id: "jfk_chelsea", name: "Chelsea Lounge", terminal: "T8", network: "chelsea_lounge", alliance: "oneworld", rating: 4.2, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 8", placeQuery: "Chelsea Lounge JFK Terminal 8" },
     { id: "jfk_pp_kingsford", name: "KingsfordSmith Lounge", terminal: "T1", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Terminal 1", placeQuery: "KingsfordSmith Lounge JFK" },
-    { id: "jfk_ba_lounge", name: "British Airways Lounge", terminal: "T8", network: "generic_airline", alliance: "oneworld", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with BA flights", location: "Terminal 8", placeQuery: "British Airways Lounge JFK Terminal 8" },
+    // Removed: jfk_ba_lounge — BA moved to T8 in 2022 but does NOT operate a standalone lounge.
+    // BA premium passengers use the AA-operated Greenwich/Soho/Chelsea lounges (already listed above).
     { id: "jfk_turkish", name: "Turkish Airlines Lounge", terminal: "T1", network: "turkish_lounge", alliance: "star", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 11:00 PM", location: "Terminal 1", placeQuery: "Turkish Airlines Lounge JFK" },
     { id: "jfk_korean_air", name: "Korean Air Lounge", terminal: "T1", network: "generic_airline", alliance: "skyteam", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with KE flights", location: "Terminal 1", placeQuery: "Korean Air Lounge JFK" },
     { id: "jfk_air_france", name: "Air France Lounge", terminal: "T1", network: "generic_airline", alliance: "skyteam", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with AF flights", location: "Terminal 1", placeQuery: "Air France Lounge JFK Terminal 1" },
     { id: "jfk_united_club", name: "United Club", terminal: "T7", network: "united_club", alliance: "star", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 7", placeQuery: "United Club JFK Terminal 7" },
-    { id: "jfk_sky_club_t2", name: "Delta Sky Club", terminal: "T2", network: "delta_sky_club", alliance: "skyteam", rating: 4.0, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 2", placeQuery: "Delta Sky Club JFK Terminal 2" },
-    { id: "jfk_chase_sapphire", name: "Chase Sapphire Lounge", terminal: "T5", network: "chase_sapphire_lounge", rating: 4.4, amenities: ["showers","hot_food","bar","wifi","phone_rooms"], hours: "5:30 AM - 11:00 PM", location: "Terminal 5", placeQuery: "Chase Sapphire Lounge JFK Terminal 5" },
-    { id: "jfk_qatar", name: "Qatar Airways Lounge", terminal: "T8", network: "generic_airline", alliance: "oneworld", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with QR flights", location: "Terminal 8", placeQuery: "Qatar Airways Lounge JFK" },
-    { id: "jfk_cathay", name: "Cathay Pacific Lounge", terminal: "T8", network: "cathay_lounge", alliance: "oneworld", rating: 4.0, amenities: ["hot_food","bar","wifi"], hours: "Varies with CX flights", location: "Terminal 8", placeQuery: "Cathay Pacific Lounge JFK" },
+    // Removed: "jfk_sky_club_t2" — JFK Terminal 2 was demolished in 2023, lounge no longer exists
+    { id: "jfk_chase_sapphire", name: "Chase Sapphire Lounge", terminal: "T4", network: "chase_sapphire_lounge", rating: 4.4, amenities: ["showers","hot_food","bar","wifi","phone_rooms"], hours: "5:30 AM - 11:00 PM", location: "Terminal 4 (post-security)", placeQuery: "Chase Sapphire Lounge JFK Terminal 4" },
+    // Removed: jfk_qatar — Qatar moved to T8 in 2022 but does NOT operate a standalone lounge here.
+    // Qatar premium passengers use the AA-operated Soho/Chelsea lounges (Soho for J, Chelsea for F).
+    // Removed: jfk_cathay — Cathay closed its standalone JFK lounge years ago. After moving to T8 in 2022,
+    // CX premium passengers use the AA-operated Soho/Chelsea lounges.
   ],
   LAX: [
     { id: "lax_cap1", name: "Capital One Lounge", terminal: "T3", network: "capital_one", rating: 4.6, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "5:30 AM - 11:00 PM", location: "Terminal 3", placeQuery: "Capital One Lounge LAX" },
     { id: "lax_centurion", name: "Amex Centurion Lounge", terminal: "TBIT", network: "centurion", rating: 4.4, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "6:00 AM - 11:00 PM", location: "Tom Bradley Int'l Terminal", placeQuery: "American Express Centurion Lounge LAX" },
     { id: "lax_polaris", name: "United Polaris Lounge", terminal: "T7", network: "polaris", alliance: "star", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","nap_pods"], hours: "5:00 AM - Last Departure", location: "Terminal 7", placeQuery: "United Polaris Lounge LAX" },
     { id: "lax_sky_club", name: "Delta Sky Club", terminal: "T3", network: "delta_sky_club", alliance: "skyteam", rating: 4.1, amenities: ["hot_food","bar","wifi","outdoor_terrace"], hours: "4:30 AM - Last Departure", location: "Terminal 3", placeQuery: "Delta Sky Club LAX" },
-    { id: "lax_flagship", name: "AA Flagship Lounge", terminal: "T4/5", network: "flagship", alliance: "oneworld", rating: 4.2, amenities: ["showers","hot_food","bar","wifi","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Terminal 4", placeQuery: "American Airlines Flagship Lounge LAX" },
+    { id: "lax_flagship", name: "AA Flagship Lounge", terminal: "T4", network: "flagship", alliance: "oneworld", rating: 4.2, amenities: ["showers","hot_food","bar","wifi","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Terminal 4", placeQuery: "American Airlines Flagship Lounge LAX" },
     { id: "lax_star_alliance", name: "Star Alliance Lounge", terminal: "TBIT", network: "generic_airline", alliance: "star", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 12:00 AM", location: "Tom Bradley Terminal", placeQuery: "Star Alliance Lounge LAX" },
-    { id: "lax_admirals_t4", name: "Admirals Club", terminal: "T4/5", network: "admirals_club", alliance: "oneworld", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 5 near Gate 52A", placeQuery: "Admirals Club LAX Terminal 5" },
+    { id: "lax_admirals_t4", name: "Admirals Club", terminal: "T5", network: "admirals_club", alliance: "oneworld", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 5 near Gate 52A", placeQuery: "Admirals Club LAX Terminal 5" },
     { id: "lax_united_club", name: "United Club", terminal: "T7", network: "united_club", alliance: "star", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 7", placeQuery: "United Club LAX Terminal 7" },
-    { id: "lax_qantas_first", name: "Qantas First Lounge", terminal: "TBIT", network: "qantas_lounge", alliance: "oneworld", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","spa","a_la_carte"], hours: "6:00 AM - Last Departure", location: "Tom Bradley Int'l Terminal", placeQuery: "Qantas First Class Lounge LAX" },
+    { id: "lax_qantas_first", name: "Qantas First Lounge", terminal: "TBIT", network: "qantas_lounge", alliance: "oneworld", tier: "first", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","spa","a_la_carte"], hours: "6:00 AM - Last Departure", location: "Tom Bradley Int'l Terminal", placeQuery: "Qantas First Class Lounge LAX" },
     { id: "lax_qantas_business", name: "Qantas Business Lounge", terminal: "TBIT", network: "qantas_lounge", alliance: "oneworld", rating: 4.1, amenities: ["showers","hot_food","bar","wifi"], hours: "6:00 AM - Last Departure", location: "Tom Bradley Int'l Terminal", placeQuery: "Qantas Business Lounge LAX" },
     { id: "lax_korean_air", name: "Korean Air Lounge", terminal: "TBIT", network: "generic_airline", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with KE flights", location: "Tom Bradley Int'l Terminal", placeQuery: "Korean Air Lounge LAX" },
     { id: "lax_oneworld", name: "oneworld Lounge", terminal: "TBIT", network: "generic_airline", alliance: "oneworld", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - Last Departure", location: "Tom Bradley Int'l Terminal", placeQuery: "oneworld Lounge LAX" },
@@ -116,8 +120,8 @@ export const LOUNGE_DATABASE = {
     { id: "lhr_cathay", name: "Cathay Pacific Lounge", terminal: "T3", network: "cathay_lounge", alliance: "oneworld", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","nap_pods"], hours: "6:00 AM - 10:30 PM", location: "Terminal 3", placeQuery: "Cathay Pacific Lounge Heathrow" },
     { id: "lhr_singapore", name: "Singapore Airlines SilverKris Lounge", terminal: "T2", network: "singapore_lounge", alliance: "star", rating: 4.2, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal 2", placeQuery: "Singapore Airlines SilverKris Lounge Heathrow" },
     { id: "lhr_ba_galleries", name: "British Airways Galleries Lounge", terminal: "T5", network: "generic_airline", alliance: "oneworld", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal 5", placeQuery: "British Airways Galleries Lounge Heathrow Terminal 5" },
-    { id: "lhr_ba_galleries_first", name: "British Airways Galleries First Lounge", terminal: "T5", network: "generic_airline", alliance: "oneworld", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Terminal 5 South", placeQuery: "British Airways Galleries First Lounge Heathrow Terminal 5" },
-    { id: "lhr_ba_concorde", name: "British Airways Concorde Room", terminal: "T5", network: "generic_airline", alliance: "oneworld", rating: 4.7, amenities: ["showers","hot_food","bar","wifi","a_la_carte","spa"], hours: "5:00 AM - Last Departure", location: "Terminal 5", placeQuery: "British Airways Concorde Room Heathrow" },
+    { id: "lhr_ba_galleries_first", name: "British Airways Galleries First Lounge", terminal: "T5", network: "generic_airline", alliance: "oneworld", tier: "first", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Terminal 5 South", placeQuery: "British Airways Galleries First Lounge Heathrow Terminal 5" },
+    { id: "lhr_ba_concorde", name: "British Airways Concorde Room", terminal: "T5", network: "ba_concorde", alliance: "oneworld", rating: 4.7, amenities: ["showers","hot_food","bar","wifi","a_la_carte","spa"], hours: "5:00 AM - Last Departure", location: "Terminal 5", placeQuery: "British Airways Concorde Room Heathrow" },
     { id: "lhr_ba_galleries_t3", name: "British Airways Galleries Lounge", terminal: "T3", network: "generic_airline", alliance: "oneworld", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal 3", placeQuery: "British Airways Galleries Lounge Heathrow Terminal 3" },
     { id: "lhr_qantas", name: "Qantas Lounge", terminal: "T3", network: "qantas_lounge", alliance: "oneworld", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with QF flights", location: "Terminal 3", placeQuery: "Qantas Lounge Heathrow Terminal 3" },
     { id: "lhr_united_club", name: "United Club", terminal: "T2", network: "united_club", alliance: "star", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Terminal 2", placeQuery: "United Club Heathrow Terminal 2" },
@@ -137,11 +141,11 @@ export const LOUNGE_DATABASE = {
     { id: "nrt_delta_sky", name: "Delta Sky Club", terminal: "T1", network: "delta_sky_club", alliance: "skyteam", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "Varies with DL flights", location: "Terminal 1 South Wing", placeQuery: "Delta Sky Club Narita" },
     { id: "nrt_cathay", name: "Cathay Pacific Lounge", terminal: "T2", network: "cathay_lounge", alliance: "oneworld", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with CX flights", location: "Terminal 2", placeQuery: "Cathay Pacific Lounge Narita" },
     { id: "nrt_qantas", name: "Qantas Lounge", terminal: "T2", network: "qantas_lounge", alliance: "oneworld", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies with QF flights", location: "Terminal 2", placeQuery: "Qantas Lounge Narita Airport" },
-    { id: "nrt_jal_first", name: "JAL First Class Lounge", terminal: "T2", network: "generic_airline", alliance: "oneworld", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","a_la_carte"], hours: "7:00 AM - Last Departure", location: "Terminal 2", placeQuery: "JAL First Class Lounge Narita" },
+    { id: "nrt_jal_first", name: "JAL First Class Lounge", terminal: "T2", network: "generic_airline", alliance: "oneworld", tier: "first", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","a_la_carte"], hours: "7:00 AM - Last Departure", location: "Terminal 2", placeQuery: "JAL First Class Lounge Narita" },
     { id: "nrt_singapore", name: "Singapore Airlines SilverKris Lounge", terminal: "T1", network: "singapore_lounge", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with SQ flights", location: "Terminal 1 South Wing", placeQuery: "Singapore Airlines SilverKris Lounge Narita" },
   ],
   HND: [
-    { id: "hnd_jal_first", name: "JAL First Class Lounge", terminal: "T3", network: "generic_airline", alliance: "oneworld", rating: 4.6, amenities: ["showers","hot_food","bar","wifi","a_la_carte"], hours: "Varies with JL flights", location: "Terminal 3 International", placeQuery: "JAL First Class Lounge Haneda Terminal 3" },
+    { id: "hnd_jal_first", name: "JAL First Class Lounge", terminal: "T3", network: "generic_airline", alliance: "oneworld", tier: "first", rating: 4.6, amenities: ["showers","hot_food","bar","wifi","a_la_carte"], hours: "Varies with JL flights", location: "Terminal 3 International", placeQuery: "JAL First Class Lounge Haneda Terminal 3" },
     { id: "hnd_jal_sakura", name: "JAL Sakura Lounge", terminal: "T3", network: "generic_airline", alliance: "oneworld", rating: 4.4, amenities: ["showers","hot_food","bar","wifi"], hours: "Varies with JL flights", location: "Terminal 3 International", placeQuery: "JAL Sakura Lounge Haneda Terminal 3" },
     { id: "hnd_ana_suite", name: "ANA Suite Lounge", terminal: "T3", network: "ana_suite", alliance: "star", rating: 4.7, amenities: ["showers","hot_food","bar","wifi","a_la_carte"], hours: "Varies with NH flights", location: "Terminal 3 International", placeQuery: "ANA Suite Lounge Haneda Terminal 3" },
     { id: "hnd_ana_lounge", name: "ANA Lounge", terminal: "T3", network: "generic_airline", alliance: "star", rating: 4.4, amenities: ["showers","hot_food","bar","wifi"], hours: "Varies with NH flights", location: "Terminal 3 International", placeQuery: "ANA Lounge Haneda Terminal 3" },
@@ -156,9 +160,9 @@ export const LOUNGE_DATABASE = {
     { id: "hnd_sky_lounge", name: "Sky Lounge", terminal: "T3", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "24 hours", location: "Terminal 3 International", placeQuery: "Sky Lounge Haneda Terminal 3" },
   ],
   HKG: [
-    { id: "hkg_cathay_wing", name: "Cathay Pacific The Wing First Class Lounge", terminal: "T1", network: "cathay_lounge", alliance: "oneworld", rating: 4.7, amenities: ["showers","hot_food","bar","wifi","nap_pods","a_la_carte"], hours: "5:30 AM - Last Departure", location: "Level 7 near Gate 1", placeQuery: "Cathay Pacific The Wing First Class Lounge Hong Kong" },
+    { id: "hkg_cathay_wing", name: "Cathay Pacific The Wing First Class Lounge", terminal: "T1", network: "cathay_lounge", alliance: "oneworld", tier: "first", rating: 4.7, amenities: ["showers","hot_food","bar","wifi","nap_pods","a_la_carte"], hours: "5:30 AM - Last Departure", location: "Level 7 near Gate 1", placeQuery: "Cathay Pacific The Wing First Class Lounge Hong Kong" },
     { id: "hkg_cathay_wing_biz", name: "Cathay Pacific The Wing Business Class Lounge", terminal: "T1", network: "cathay_lounge", alliance: "oneworld", rating: 4.3, amenities: ["showers","hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Level 7 near Gate 1", placeQuery: "Cathay Pacific The Wing Business Class Lounge Hong Kong" },
-    { id: "hkg_cathay_pier_first", name: "Cathay Pacific The Pier First Class Lounge", terminal: "T1", network: "cathay_lounge", alliance: "oneworld", rating: 4.8, amenities: ["showers","hot_food","bar","wifi","nap_pods","a_la_carte","spa"], hours: "5:30 AM - Last Departure", location: "Near Gate 65", placeQuery: "Cathay Pacific The Pier First Class Lounge Hong Kong" },
+    { id: "hkg_cathay_pier_first", name: "Cathay Pacific The Pier First Class Lounge", terminal: "T1", network: "cathay_lounge", alliance: "oneworld", tier: "first", rating: 4.8, amenities: ["showers","hot_food","bar","wifi","nap_pods","a_la_carte","spa"], hours: "5:30 AM - Last Departure", location: "Near Gate 65", placeQuery: "Cathay Pacific The Pier First Class Lounge Hong Kong" },
     { id: "hkg_cathay_pier_biz", name: "Cathay Pacific The Pier Business Class Lounge", terminal: "T1", network: "cathay_lounge", alliance: "oneworld", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","nap_pods"], hours: "5:30 AM - Last Departure", location: "Near Gate 65", placeQuery: "Cathay Pacific The Pier Business Class Lounge Hong Kong" },
     { id: "hkg_cathay_bridge", name: "Cathay Pacific The Bridge", terminal: "T1", network: "cathay_lounge", alliance: "oneworld", rating: 4.2, amenities: ["showers","hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Near Gate 35", placeQuery: "Cathay Pacific The Bridge Lounge Hong Kong" },
     { id: "hkg_cathay_deck", name: "Cathay Pacific The Deck", terminal: "T1", network: "cathay_lounge", alliance: "oneworld", rating: 4.0, amenities: ["hot_food","bar","wifi","outdoor_terrace"], hours: "5:30 AM - Last Departure", location: "Near Gate 16", placeQuery: "Cathay Pacific The Deck Lounge Hong Kong" },
@@ -176,7 +180,7 @@ export const LOUNGE_DATABASE = {
   ],
   SIN: [
     { id: "sin_silverkris_t2", name: "SilverKris Business Class Lounge", terminal: "T2", network: "singapore_lounge", alliance: "star", rating: 4.5, amenities: ["showers","hot_food","bar","wifi"], hours: "24 hours", location: "Terminal 2", placeQuery: "Singapore Airlines SilverKris Business Lounge Changi Terminal 2" },
-    { id: "sin_silverkris_t3", name: "SilverKris First Class Lounge", terminal: "T3", network: "singapore_lounge", alliance: "star", rating: 4.7, amenities: ["showers","hot_food","bar","wifi","nap_pods","a_la_carte"], hours: "24 hours", location: "Terminal 3", placeQuery: "Singapore Airlines SilverKris First Class Lounge Changi Terminal 3" },
+    { id: "sin_silverkris_t3", name: "SilverKris First Class Lounge", terminal: "T3", network: "singapore_lounge", alliance: "star", tier: "first", rating: 4.7, amenities: ["showers","hot_food","bar","wifi","nap_pods","a_la_carte"], hours: "24 hours", location: "Terminal 3", placeQuery: "Singapore Airlines SilverKris First Class Lounge Changi Terminal 3" },
     { id: "sin_silverkris_t3_biz", name: "SilverKris Business Class Lounge", terminal: "T3", network: "singapore_lounge", alliance: "star", rating: 4.5, amenities: ["showers","hot_food","bar","wifi"], hours: "24 hours", location: "Terminal 3", placeQuery: "Singapore Airlines SilverKris Business Lounge Changi Terminal 3" },
     { id: "sin_qantas", name: "Qantas Singapore Lounge", terminal: "T1", network: "qantas_lounge", alliance: "oneworld", rating: 4.2, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with QF flights", location: "Terminal 1", placeQuery: "Qantas Lounge Singapore Changi Airport" },
     { id: "sin_ba_lounge", name: "British Airways Lounge", terminal: "T1", network: "generic_airline", alliance: "oneworld", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies with BA flights", location: "Terminal 1", placeQuery: "British Airways Lounge Singapore Changi" },
@@ -194,6 +198,17 @@ export const LOUNGE_DATABASE = {
   ],
   BDA: [
     { id: "bda_pp_lounge", name: "BDA Airport Lounge", terminal: "Main", network: "priority_pass", rating: 3.2, amenities: ["bar","wifi"], hours: "Varies", location: "Main Terminal", placeQuery: "Bermuda Airport Lounge" },
+  ],
+  // ── New York LaGuardia LGA (rebuild completed 2022) ──
+  // Two main terminals after the $8B rebuild: Terminal B (American + Delta partners + low-cost) and Terminal C (Delta hub).
+  LGA: [
+    { id: "lga_centurion_b", name: "Amex Centurion Lounge", terminal: "B", network: "centurion", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "5:30 AM - 10:00 PM", location: "Terminal B near Gate B41", placeQuery: "American Express Centurion Lounge LaGuardia" },
+    { id: "lga_chase_sapphire_b", name: "Chase Sapphire Lounge", terminal: "B", network: "chase_sapphire_lounge", rating: 4.4, amenities: ["showers","hot_food","bar","wifi","phone_rooms"], hours: "5:30 AM - 10:00 PM", location: "Terminal B post-security", placeQuery: "Chase Sapphire Lounge LaGuardia" },
+    { id: "lga_admirals_b", name: "Admirals Club", terminal: "B", network: "admirals_club", alliance: "oneworld", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Terminal B Concourse C", placeQuery: "Admirals Club LaGuardia Terminal B" },
+    { id: "lga_sky_club_c", name: "Delta Sky Club", terminal: "C", network: "delta_sky_club", alliance: "skyteam", rating: 4.6, amenities: ["showers","hot_food","bar","wifi","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Terminal C — flagship 36,000 sq ft", placeQuery: "Delta Sky Club LaGuardia Terminal C" },
+    { id: "lga_sky_club_c_concD", name: "Delta Sky Club", terminal: "C", network: "delta_sky_club", alliance: "skyteam", rating: 4.4, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal C Concourse D", placeQuery: "Delta Sky Club LaGuardia Concourse D" },
+    { id: "lga_united_club_b", name: "United Club", terminal: "B", network: "united_club", alliance: "star", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 9:00 PM", location: "Terminal B near Gate B19", placeQuery: "United Club LaGuardia" },
+    { id: "lga_air_canada_b", name: "Air Canada Maple Leaf Lounge", terminal: "B", network: "generic_airline", alliance: "star", rating: 3.9, amenities: ["hot_food","bar","wifi"], hours: "Varies with AC flights", location: "Terminal B", placeQuery: "Air Canada Maple Leaf Lounge LaGuardia" },
   ],
   // Americas — expanded
   EWR: [
@@ -403,7 +418,7 @@ export const LOUNGE_DATABASE = {
     { id: "doh_qatar_alm", name: "Qatar Airways Al Mourjan Business Lounge", terminal: "Main", network: "generic_airline", alliance: "oneworld", rating: 4.7, amenities: ["showers","hot_food","bar","wifi","nap_pods","spa","a_la_carte"], hours: "24 hours", location: "Main Departures", placeQuery: "Al Mourjan Business Lounge Doha Hamad" },
     { id: "doh_qatar_gold", name: "Qatar Airways Al Mourjan Garden", terminal: "Main", network: "generic_airline", alliance: "oneworld", rating: 4.8, amenities: ["showers","hot_food","bar","wifi","nap_pods","spa","a_la_carte","outdoor_terrace"], hours: "24 hours", location: "Main Departures", placeQuery: "Al Mourjan Garden Lounge Doha Hamad" },
     { id: "doh_pp_oryx", name: "Oryx Lounge", terminal: "Main", network: "priority_pass", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "South Node", placeQuery: "Oryx Lounge Doha Hamad Airport" },
-    { id: "doh_qatar_first", name: "Qatar Airways Al Safwa First Class Lounge", terminal: "Main", network: "generic_airline", alliance: "oneworld", rating: 4.9, amenities: ["showers","hot_food","bar","wifi","spa","nap_pods","a_la_carte"], hours: "24 hours", location: "Near Gate A1", placeQuery: "Al Safwa First Class Lounge Doha Hamad" },
+    { id: "doh_qatar_first", name: "Qatar Airways Al Safwa First Class Lounge", terminal: "Main", network: "generic_airline", alliance: "oneworld", tier: "first", rating: 4.9, amenities: ["showers","hot_food","bar","wifi","spa","nap_pods","a_la_carte"], hours: "24 hours", location: "Near Gate A1", placeQuery: "Al Safwa First Class Lounge Doha Hamad" },
     { id: "doh_pp_plaza", name: "Plaza Premium Lounge", terminal: "Main", network: "plaza_premium", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "South Node", placeQuery: "Plaza Premium Lounge Doha Hamad Airport" },
   ],
   AUH: [
@@ -425,8 +440,8 @@ export const LOUNGE_DATABASE = {
     { id: "icn_asiana_business", name: "Asiana Business Lounge", terminal: "T1", network: "generic_airline", alliance: "star", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - Last Departure", location: "Terminal 1", placeQuery: "Asiana Business Lounge Incheon" },
     { id: "icn_pp_matina", name: "Matina Lounge", terminal: "T1", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "7:00 AM - 10:00 PM", location: "Terminal 1", placeQuery: "Matina Lounge Incheon Airport" },
     { id: "icn_sky_hub", name: "Sky Hub Lounge", terminal: "T1", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "7:00 AM - 10:00 PM", location: "Terminal 1 East", placeQuery: "Sky Hub Lounge Incheon Airport" },
-    { id: "icn_ke_first", name: "Korean Air First Class Lounge", terminal: "T2", network: "generic_airline", alliance: "skyteam", rating: 4.6, amenities: ["showers","hot_food","bar","wifi","nap_pods","a_la_carte","spa"], hours: "6:00 AM - Last Departure", location: "Terminal 2", placeQuery: "Korean Air First Class Lounge Incheon" },
-    { id: "icn_asiana_first", name: "Asiana First Class Lounge", terminal: "T1", network: "generic_airline", alliance: "star", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","nap_pods"], hours: "6:00 AM - Last Departure", location: "Terminal 1", placeQuery: "Asiana First Class Lounge Incheon" },
+    { id: "icn_ke_first", name: "Korean Air First Class Lounge", terminal: "T2", network: "generic_airline", alliance: "skyteam", tier: "first", rating: 4.6, amenities: ["showers","hot_food","bar","wifi","nap_pods","a_la_carte","spa"], hours: "6:00 AM - Last Departure", location: "Terminal 2", placeQuery: "Korean Air First Class Lounge Incheon" },
+    { id: "icn_asiana_first", name: "Asiana First Class Lounge", terminal: "T1", network: "generic_airline", alliance: "star", tier: "first", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","nap_pods"], hours: "6:00 AM - Last Departure", location: "Terminal 1", placeQuery: "Asiana First Class Lounge Incheon" },
     { id: "icn_cathay", name: "Cathay Pacific Lounge", terminal: "T1", network: "cathay_lounge", alliance: "oneworld", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with CX flights", location: "Terminal 1", placeQuery: "Cathay Pacific Lounge Incheon" },
     { id: "icn_singapore", name: "Singapore Airlines SilverKris Lounge", terminal: "T1", network: "singapore_lounge", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with SQ flights", location: "Terminal 1", placeQuery: "SilverKris Lounge Incheon" },
     { id: "icn_delta_sky", name: "Delta Sky Club", terminal: "T2", network: "delta_sky_club", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies with DL flights", location: "Terminal 2", placeQuery: "Delta Sky Club Incheon" },
@@ -447,7 +462,7 @@ export const LOUNGE_DATABASE = {
     { id: "bkk_eva_lounge", name: "EVA Air Lounge", terminal: "Main", network: "generic_airline", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with BR flights", location: "Concourse D", placeQuery: "EVA Air Lounge Bangkok Suvarnabhumi" },
     { id: "bkk_korean_air", name: "Korean Air Lounge", terminal: "Main", network: "generic_airline", alliance: "skyteam", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "Varies with KE flights", location: "Concourse F", placeQuery: "Korean Air Lounge Bangkok Suvarnabhumi" },
     { id: "bkk_jal", name: "JAL Sakura Lounge", terminal: "Main", network: "generic_airline", alliance: "oneworld", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with JL flights", location: "Concourse C", placeQuery: "JAL Sakura Lounge Bangkok Suvarnabhumi" },
-    { id: "bkk_thai_royal_first", name: "Thai Airways Royal First Lounge", terminal: "Main", network: "generic_airline", alliance: "star", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","spa","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Concourse D", placeQuery: "Thai Airways Royal First Lounge Suvarnabhumi" },
+    { id: "bkk_thai_royal_first", name: "Thai Airways Royal First Lounge", terminal: "Main", network: "generic_airline", alliance: "star", tier: "first", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","spa","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Concourse D", placeQuery: "Thai Airways Royal First Lounge Suvarnabhumi" },
     { id: "bkk_oman_air", name: "Oman Air Lounge", terminal: "Main", network: "generic_airline", alliance: "oneworld", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Concourse E", placeQuery: "Oman Air Lounge Bangkok Suvarnabhumi" },
   ],
   TPE: [
@@ -475,7 +490,7 @@ export const LOUNGE_DATABASE = {
   ],
   SYD: [
     { id: "syd_qantas_business", name: "Qantas Business Lounge", terminal: "T1", network: "qantas_lounge", alliance: "oneworld", rating: 4.2, amenities: ["showers","hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 1 Int'l", placeQuery: "Qantas Business Lounge Sydney Airport" },
-    { id: "syd_qantas_first", name: "Qantas First Lounge", terminal: "T1", network: "qantas_lounge", alliance: "oneworld", rating: 4.6, amenities: ["showers","hot_food","bar","wifi","spa","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Terminal 1 Int'l", placeQuery: "Qantas First Class Lounge Sydney" },
+    { id: "syd_qantas_first", name: "Qantas First Lounge", terminal: "T1", network: "qantas_lounge", alliance: "oneworld", tier: "first", rating: 4.6, amenities: ["showers","hot_food","bar","wifi","spa","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Terminal 1 Int'l", placeQuery: "Qantas First Class Lounge Sydney" },
     { id: "syd_singapore_sl", name: "SilverKris Lounge", terminal: "T1", network: "singapore_lounge", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - Last Departure", location: "Terminal 1", placeQuery: "SilverKris Lounge Sydney Airport" },
     { id: "syd_pp_sky_team", name: "SkyTeam Lounge", terminal: "T1", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 11:00 PM", location: "Terminal 1", placeQuery: "SkyTeam Lounge Sydney Airport" },
     { id: "syd_air_nz", name: "Air New Zealand Lounge", terminal: "T1", network: "generic_airline", alliance: "star", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with NZ flights", location: "Terminal 1 Int'l", placeQuery: "Air New Zealand Lounge Sydney Airport" },
@@ -486,7 +501,7 @@ export const LOUNGE_DATABASE = {
   ],
   MEL: [
     { id: "mel_qantas_business", name: "Qantas Business Lounge", terminal: "T1", network: "qantas_lounge", alliance: "oneworld", rating: 4.1, amenities: ["showers","hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 1 Int'l", placeQuery: "Qantas Business Lounge Melbourne Airport" },
-    { id: "mel_qantas_first", name: "Qantas First Lounge", terminal: "T1", network: "qantas_lounge", alliance: "oneworld", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","spa","a_la_carte"], hours: "5:30 AM - Last Departure", location: "Terminal 1 Int'l", placeQuery: "Qantas First Lounge Melbourne" },
+    { id: "mel_qantas_first", name: "Qantas First Lounge", terminal: "T1", network: "qantas_lounge", alliance: "oneworld", tier: "first", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","spa","a_la_carte"], hours: "5:30 AM - Last Departure", location: "Terminal 1 Int'l", placeQuery: "Qantas First Lounge Melbourne" },
     { id: "mel_pp_menzies", name: "Menzies Aviation Lounge", terminal: "T2", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 10:00 PM", location: "Terminal 2", placeQuery: "Menzies Aviation Lounge Melbourne Airport" },
   ],
   AKL: [
@@ -499,7 +514,7 @@ export const LOUNGE_DATABASE = {
     { id: "pvg_cathay", name: "Cathay Pacific Lounge", terminal: "T2", network: "cathay_lounge", alliance: "oneworld", rating: 3.9, amenities: ["hot_food","bar","wifi"], hours: "6:30 AM - Last Departure", location: "Terminal 2", placeQuery: "Cathay Pacific Lounge Shanghai Pudong" },
   ],
   PEK: [
-    { id: "pek_air_china", name: "Air China First Class Lounge", terminal: "T3E", network: "generic_airline", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers","nap_pods"], hours: "6:00 AM - Last Departure", location: "Terminal 3E Int'l", placeQuery: "Air China First Class Lounge Beijing Capital Terminal 3" },
+    { id: "pek_air_china", name: "Air China First Class Lounge", terminal: "T3E", network: "generic_airline", alliance: "star", tier: "first", rating: 4.0, amenities: ["hot_food","bar","wifi","showers","nap_pods"], hours: "6:00 AM - Last Departure", location: "Terminal 3E Int'l", placeQuery: "Air China First Class Lounge Beijing Capital Terminal 3" },
     { id: "pek_pp_bgs", name: "BGS Premier Lounge", terminal: "T3E", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Terminal 3E", placeQuery: "BGS Premier Lounge Beijing Capital Airport" },
   ],
   CAN: [
@@ -519,7 +534,7 @@ export const LOUNGE_DATABASE = {
     { id: "phl_pp_minute", name: "Minute Suites", terminal: "A East", network: "priority_pass", rating: 3.4, amenities: ["wifi","nap_pods"], hours: "24 hours", location: "Terminal A East", placeQuery: "Minute Suites Philadelphia Airport" },
   ],
   IAD: [
-    { id: "iad_united_club", name: "United Club", terminal: "C/D", network: "united_club", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Concourse C", placeQuery: "United Club Dulles Airport" },
+    { id: "iad_united_club", name: "United Club", terminal: "C", network: "united_club", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Concourse C", placeQuery: "United Club Dulles Airport" },
     { id: "iad_polaris", name: "United Polaris Lounge", terminal: "Int'l", network: "polaris", alliance: "star", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","nap_pods","a_la_carte"], hours: "6:00 AM - Last Departure", location: "International Departures", placeQuery: "United Polaris Lounge Dulles" },
     { id: "iad_pp_turkish", name: "Turkish Airlines Lounge", terminal: "Int'l", network: "priority_pass", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 11:00 PM", location: "International", placeQuery: "Turkish Airlines Lounge Dulles" },
   ],
@@ -669,7 +684,7 @@ export const CARD_LOUNGE_ACCESS = {
   ],
   // Source: delta.com/sky-club/access — updated 2026
   delta_reserve: [
-    { network: "delta_sky_club", guests: 0, guestNote: "15 visit days/yr. Guests $50 each (max 2 or family). Unlimited after $75K spend. 4 one-time guest passes/yr" },
+    { network: "delta_sky_club", condition: "flying_delta", guests: 0, guestNote: "15 visit days/yr when flying Delta. Guests $50 each (max 2 or family). Unlimited after $75K spend. 4 one-time guest passes/yr" },
   ],
   // Source: chase.com/united — updated 2026
   united_club_card: [
@@ -780,59 +795,98 @@ export const ELITE_LOUNGE_ACCESS = {
   },
 };
 
+// Map a program's elite tier to its alliance tier (Ruby/Sapphire/Emerald, etc.)
+// Keys MUST match the IDs in LOYALTY_PROGRAMS.airlines (programs.js).
 export const ELITE_ALLIANCE_MAP = {
-  // American Airlines → oneworld
-  aa: { alliance: "oneworld", tiers: { "Gold": "Ruby", "Platinum": "Sapphire", "Platinum Pro": "Sapphire", "Executive Platinum": "Emerald", "ConciergeKey": "Emerald" } },
-  // British Airways → oneworld
-  ba_avios: { alliance: "oneworld", tiers: { "Bronze": "Ruby", "Silver": "Sapphire", "Gold": "Emerald" } },
-  // Cathay Pacific → oneworld
-  cathay_mp: { alliance: "oneworld", tiers: { "Green": "Ruby", "Silver": "Sapphire", "Gold": "Sapphire", "Diamond": "Emerald" } },
-  // Qantas → oneworld
-  qantas_ff: { alliance: "oneworld", tiers: { "Silver": "Ruby", "Gold": "Sapphire", "Platinum": "Emerald", "Platinum One": "Emerald" } },
-  // Alaska → oneworld
-  as: { alliance: "oneworld", tiers: { "MVP": "Ruby", "MVP Gold": "Sapphire", "MVP Gold 75K": "Emerald" } },
-  // United → Star Alliance
-  ua: { alliance: "star", tiers: { "Premier Silver": "Silver", "Premier Gold": "Gold", "Premier Platinum": "Gold", "Premier 1K": "Gold", "Global Services": "Gold" } },
-  // Air Canada → Star Alliance
-  aeroplan: { alliance: "star", tiers: { "25K": "Silver", "35K": "Silver", "50K": "Gold", "75K": "Gold", "Super Elite 100K": "Gold" } },
-  // ANA → Star Alliance
-  ana_mc: { alliance: "star", tiers: { "Bronze": "Silver", "Platinum": "Gold", "Diamond": "Gold", "Super Flyers": "Gold" } },
-  // Singapore → Star Alliance
+  // ── oneworld ──
+  aa:           { alliance: "oneworld", tiers: { "Gold": "Ruby", "Platinum": "Sapphire", "Platinum Pro": "Sapphire", "Executive Platinum": "Emerald", "ConciergeKey": "Emerald" } },
+  ba_avios:     { alliance: "oneworld", tiers: { "Bronze": "Ruby", "Silver": "Sapphire", "Gold": "Emerald" } },
+  cathay_mp:    { alliance: "oneworld", tiers: { "Green": "Ruby", "Silver": "Sapphire", "Gold": "Sapphire", "Diamond": "Emerald" } },
+  qantas_ff:    { alliance: "oneworld", tiers: { "Silver": "Ruby", "Gold": "Sapphire", "Platinum": "Emerald", "Platinum One": "Emerald" } },
+  atmos:        { alliance: "oneworld", tiers: { "MVP": "Ruby", "MVP Gold": "Sapphire", "MVP Gold 75K": "Emerald", "MVP Gold 100K": "Emerald" } },
+  jal:          { alliance: "oneworld", tiers: { "Crystal": "Ruby", "Sapphire": "Sapphire", "JGC Premier": "Sapphire", "Diamond": "Emerald" } },
+  iberia:       { alliance: "oneworld", tiers: { "Plata": "Ruby", "Oro": "Sapphire", "Platino": "Emerald", "Infinita": "Emerald", "Infinita Prime": "Emerald" } },
+  finnair:      { alliance: "oneworld", tiers: { "Silver": "Ruby", "Gold": "Sapphire", "Platinum": "Emerald", "Platinum Lumo": "Emerald" } },
+  qatar:        { alliance: "oneworld", tiers: { "Silver": "Ruby", "Gold": "Sapphire", "Platinum": "Emerald" } },
+  malaysia:     { alliance: "oneworld", tiers: { "Silver": "Ruby", "Gold": "Sapphire", "Platinum": "Emerald" } },
+  oman_air:     { alliance: "oneworld", tiers: { "Silver": "Ruby", "Gold": "Sapphire", "Platinum": "Emerald" } },
+  aer_lingus:   { alliance: "oneworld", tiers: { "Silver": "Ruby", "Platinum": "Sapphire", "Concierge": "Emerald" } },
+
+  // ── Star Alliance ──
+  ua:           { alliance: "star", tiers: { "Premier Silver": "Silver", "Premier Gold": "Gold", "Premier Platinum": "Gold", "Premier 1K": "Gold", "Global Services": "Gold" } },
+  aeroplan:     { alliance: "star", tiers: { "25K": "Silver", "35K": "Silver", "50K": "Gold", "75K": "Gold", "Super Elite 100K": "Gold" } },
+  ana:          { alliance: "star", tiers: { "Bronze": "Silver", "Platinum": "Gold", "Diamond": "Gold", "Super Flyers": "Gold" } },
   singapore_kf: { alliance: "star", tiers: { "KrisFlyer Elite Silver": "Silver", "KrisFlyer Elite Gold": "Gold", "PPS Club": "Gold" } },
-  // Delta → SkyTeam
-  dl: { alliance: "skyteam", tiers: { "Silver Medallion": "Elite", "Gold Medallion": "Elite Plus", "Platinum Medallion": "Elite Plus", "Diamond Medallion": "Elite Plus" } },
-  // Korean Air → SkyTeam
-  korean_skypass: { alliance: "skyteam", tiers: { "Morning Calm": "Elite", "Morning Calm Premium": "Elite Plus", "Million Miler": "Elite Plus" } },
-  // Air France/KLM → SkyTeam
-  flying_blue: { alliance: "skyteam", tiers: { "Silver": "Elite", "Gold": "Elite Plus", "Platinum": "Elite Plus", "Ultimate": "Elite Plus" } },
+  lufthansa:    { alliance: "star", tiers: { "Frequent Traveller": "Silver", "Senator": "Gold", "HON Circle": "Gold" } },
+  swiss:        { alliance: "star", tiers: { "Frequent Traveller": "Silver", "Senator": "Gold", "HON Circle": "Gold" } },
+  austrian:     { alliance: "star", tiers: { "Frequent Traveller": "Silver", "Senator": "Gold", "HON Circle": "Gold" } },
+  turkish_miles:{ alliance: "star", tiers: { "Classic Plus": "Silver", "Elite": "Gold", "Elite Plus": "Gold" } },
+  thai:         { alliance: "star", tiers: { "Silver": "Silver", "Gold": "Gold", "Platinum": "Gold" } },
+  asiana:       { alliance: "star", tiers: { "Silver": "Silver", "Gold": "Gold", "Diamond": "Gold", "Diamond Plus": "Gold", "Platinum": "Gold" } },
+  eva_air:      { alliance: "star", tiers: { "Green": "Silver", "Gold": "Gold", "Diamond": "Gold", "Paragon": "Gold" } },
+  air_china:    { alliance: "star", tiers: { "Silver": "Silver", "Gold": "Gold", "Platinum": "Gold" } },
+  air_india:    { alliance: "star", tiers: { "Silver": "Silver", "Golden": "Gold", "Maharajah": "Gold" } },
+  air_nz:       { alliance: "star", tiers: { "Silver": "Silver", "Gold": "Gold", "Elite": "Gold" } },
+  copa:         { alliance: "star", tiers: { "Silver": "Silver", "Gold": "Gold", "Platinum": "Gold", "Presidential Platinum": "Gold" } },
+  brussels:     { alliance: "star", tiers: { "Frequent Traveller": "Silver", "Senator": "Gold", "HON Circle": "Gold" } },
+  lot:          { alliance: "star", tiers: { "Silver": "Silver", "Gold": "Gold", "HON Circle": "Gold" } },
+  tap:          { alliance: "star", tiers: { "Silver": "Silver", "Gold": "Gold", "Platinum": "Gold" } },
+  aegean:       { alliance: "star", tiers: { "Silver": "Silver", "Gold": "Gold" } },
+
+  // ── SkyTeam ──
+  dl:           { alliance: "skyteam", tiers: { "Silver Medallion": "Elite", "Gold Medallion": "Elite Plus", "Platinum Medallion": "Elite Plus", "Diamond Medallion": "Elite Plus" } },
+  flying_blue:  { alliance: "skyteam", tiers: { "Silver": "Elite", "Gold": "Elite Plus", "Platinum": "Elite Plus", "Ultimate": "Elite Plus" } },
+  korean_air:   { alliance: "skyteam", tiers: { "Morning Calm": "Elite", "Morning Calm Premium": "Elite Plus", "Million Miler": "Elite Plus" } },
+  aeromexico:   { alliance: "skyteam", tiers: { "AM Plus": "Elite", "Gold": "Elite Plus", "Platinum": "Elite Plus", "Titanium": "Elite Plus" } },
+  saudia:       { alliance: "skyteam", tiers: { "Silver": "Elite", "Gold": "Elite Plus", "Platinum": "Elite Plus" } },
+  vietnam_air:  { alliance: "skyteam", tiers: { "Titanium": "Elite", "Gold": "Elite Plus", "Platinum": "Elite Plus" } },
+  garuda:       { alliance: "skyteam", tiers: { "Silver": "Elite", "Gold": "Elite Plus", "Platinum": "Elite Plus" } },
+  china_eastern:{ alliance: "skyteam", tiers: { "Silver": "Elite", "Gold": "Elite Plus", "Platinum": "Elite Plus" } },
+  ita_airways:  { alliance: "skyteam", tiers: { "Premium": "Elite", "Executive": "Elite Plus", "Volare Club": "Elite Plus" } },
+  virgin_fc:    { alliance: "skyteam", tiers: { "Silver": "Elite", "Gold": "Elite Plus" } },
+  sas:          { alliance: "skyteam", tiers: { "EuroBonus Silver": "Elite", "EuroBonus Gold": "Elite Plus", "EuroBonus Diamond": "Elite Plus" } },
 };
 
+// Lookup table for "is this airline in an alliance?" — uses the operating
+// airline ID a user picks in the lounge filter dropdown.
+// Keys MUST match the IDs in LOYALTY_PROGRAMS.airlines (programs.js).
 export const AIRLINE_ALLIANCE = {
-  // oneworld
-  aa: "oneworld", ba_avios: "oneworld", cathay_mp: "oneworld", qantas_ff: "oneworld", as: "oneworld",
-  ib: "oneworld", ay: "oneworld", jl: "oneworld", mh: "oneworld", qr: "oneworld", rj: "oneworld", s7: "oneworld", at: "oneworld", fj: "oneworld", oj: "oneworld",
-  // Star Alliance
-  ua: "star", aeroplan: "star", ana_mc: "star", singapore_kf: "star", lh: "star", os: "star", lx: "star", tk: "star",
-  et: "star", sk: "star", tp: "star", ca: "star", ai: "star", oz: "star", nh: "star", sq: "star", tg: "star", br: "star", cm: "star", av: "star", ms: "star", sa: "star",
-  // SkyTeam
-  dl: "skyteam", flying_blue: "skyteam", korean_skypass: "skyteam", am: "skyteam", ci: "skyteam", cz: "skyteam", ga: "skyteam",
-  ke: "skyteam", kl: "skyteam", me: "skyteam", mu: "skyteam", ro: "skyteam", su: "skyteam", sv: "skyteam", vn: "skyteam",
+  // ── oneworld (current as of 2026) ──
+  aa: "oneworld", ba_avios: "oneworld", cathay_mp: "oneworld", qantas_ff: "oneworld",
+  atmos: "oneworld", iberia: "oneworld", finnair: "oneworld", jal: "oneworld",
+  malaysia: "oneworld", qatar: "oneworld", aer_lingus: "oneworld",
+  oman_air: "oneworld", // joined oneworld in 2024
+
+  // ── Star Alliance ──
+  ua: "star", aeroplan: "star", ana: "star", singapore_kf: "star",
+  lufthansa: "star", swiss: "star", austrian: "star", turkish_miles: "star",
+  thai: "star", asiana: "star", eva_air: "star", air_china: "star",
+  air_india: "star", air_nz: "star", copa: "star",
+  brussels: "star", lot: "star", tap: "star", aegean: "star",
+
+  // ── SkyTeam ──
+  dl: "skyteam", flying_blue: "skyteam", korean_air: "skyteam",
+  aeromexico: "skyteam", saudia: "skyteam", vietnam_air: "skyteam",
+  garuda: "skyteam", china_eastern: "skyteam", ita_airways: "skyteam",
+  virgin_fc: "skyteam", // Virgin Atlantic joined SkyTeam 2023
+  sas: "skyteam",       // SAS joined SkyTeam 2024 (left Star Alliance)
+  // Note: Aeroflot is suspended; China Southern left SkyTeam in 2019.
 };
 
 export const ALLIANCE_LOUNGE_ACCESS = {
   oneworld: {
     "Ruby": { lounges: [] },
     "Sapphire": { lounges: [
-      { networkTypes: ["generic_airline","cathay_lounge","qantas_lounge","admirals_club","alaska_lounge"], guests: 1, guestNote: "oneworld Sapphire: business class lounges + 1 guest on same-day oneworld flight" },
+      { networkTypes: ["generic_airline","cathay_lounge","qantas_lounge","admirals_club","alaska_lounge","greenwich_lounge","soho_lounge"], guests: 1, guestNote: "oneworld Sapphire: business class lounges + 1 guest on same-day oneworld flight" },
     ]},
     "Emerald": { lounges: [
-      { networkTypes: ["generic_airline","cathay_lounge","qantas_lounge","admirals_club","alaska_lounge"], guests: 1, guestNote: "oneworld Emerald: first & business class lounges + 1 guest. Access regardless of cabin" },
+      { networkTypes: ["generic_airline","cathay_lounge","qantas_lounge","admirals_club","alaska_lounge","greenwich_lounge","soho_lounge","flagship"], guests: 1, guestNote: "oneworld Emerald: first & business class lounges + 1 guest, regardless of cabin on same-day oneworld flight" },
     ]},
   },
   star: {
     "Silver": { lounges: [] },
     "Gold": { lounges: [
-      { networkTypes: ["generic_airline","singapore_lounge","united_club"], guests: 1, guestNote: "Star Alliance Gold: business class lounges + 1 guest on same-day Star Alliance flight" },
+      { networkTypes: ["generic_airline","singapore_lounge","united_club","turkish_lounge"], guests: 1, guestNote: "Star Alliance Gold: business class lounges + 1 guest on same-day Star Alliance flight" },
     ]},
   },
   skyteam: {

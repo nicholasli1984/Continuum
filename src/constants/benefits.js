@@ -1,7 +1,6 @@
-// Alliance benefits comparison data
-
-// Helper used by HOME_BENEFITS and RECIP_BENEFITS
 const _b = (v, d, ok) => ({ v, d, ok: !!ok });
+
+// Alliance benefits comparison data
 
 export const ALLIANCE_MBR = {
   ua:           { alliance:"star",     color:"#002244", tierMap:{ Silver:"sa_silver", Gold:"sa_gold", Platinum:"sa_gold", "1K":"sa_gold" }},

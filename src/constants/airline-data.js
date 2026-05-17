@@ -26,7 +26,7 @@ export const AIRPORT_COORDS = {
   DEL:[77.103,28.556],DPS:[115.167,-8.748],GMP:[126.791,37.559],HAN:[105.807,21.221],HKG:[113.915,22.309],
   ICN:[126.451,37.463],KIX:[135.244,34.427],KUL:[101.710,2.743],MNL:[121.020,14.509],NRT:[140.386,35.765],
   PEK:[116.585,40.080],PVG:[121.805,31.143],RGN:[96.133,16.907],SGN:[106.652,10.819],SIN:[103.994,1.350],
-  SZX:[113.811,22.639],TPE:[121.233,25.077],XIY:[108.752,34.447],XMN:[118.128,24.544],HND:[139.781,35.549],
+  SZX:[113.811,22.639],TPE:[121.233,25.077],TSA:[121.552,25.069],XIY:[108.752,34.447],XMN:[118.128,24.544],HND:[139.781,35.549],
   KHH:[120.350,22.577],OKA:[127.646,26.196],CKG:[106.642,29.720],WUH:[114.208,30.784],
   // Middle East & Africa
   AUH:[54.651,24.433],CAI:[31.400,30.122],CMN:[-7.590,33.368],DOH:[51.608,25.261],DXB:[55.364,25.253],
@@ -49,7 +49,7 @@ export const AIRPORT_CITY = {
   EDI:"Edinburgh",FCO:"Rome",FRA:"Frankfurt",GVA:"Geneva",HEL:"Helsinki",IST:"Istanbul",LHR:"London",LIS:"Lisbon",
   MAD:"Madrid",MAN:"Manchester",MUC:"Munich",OSL:"Oslo",PRG:"Prague",VIE:"Vienna",ZRH:"Zurich",WAW:"Warsaw",BUD:"Budapest",NCE:"Nice",
   BKK:"Bangkok",CGK:"Jakarta",DEL:"Delhi",DPS:"Bali",HKG:"Hong Kong",ICN:"Seoul",KIX:"Osaka",KUL:"Kuala Lumpur",
-  MNL:"Manila",NRT:"Tokyo",PEK:"Beijing",PVG:"Shanghai",SGN:"Ho Chi Minh City",SIN:"Singapore",TPE:"Taipei",HND:"Tokyo",
+  MNL:"Manila",NRT:"Tokyo",PEK:"Beijing",PVG:"Shanghai",SGN:"Ho Chi Minh City",SIN:"Singapore",TPE:"Taipei",TSA:"Taipei",HND:"Tokyo",
   OKA:"Okinawa",AUH:"Abu Dhabi",CAI:"Cairo",DOH:"Doha",DXB:"Dubai",JNB:"Johannesburg",NBO:"Nairobi",CPT:"Cape Town",
   AKL:"Auckland",BNE:"Brisbane",MEL:"Melbourne",SYD:"Sydney",PER:"Perth",
   PTY:"Panama City",CAN:"Guangzhou",BOM:"Mumbai",
@@ -439,14 +439,18 @@ export const CC_BONUS_EXPANDED = {
   // Amex Platinum: 5x on flights booked directly with airlines OR via amextravel.com (no portal uplift for flights).
   // Hotels: 1x direct, 5x prepaid via Amex Travel portal.
   amex_plat:        { dining: 1, flights: 5, hotels: { d: 1, p: 5 }, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
-  // Amex Gold: 3x on flights booked directly with airlines OR via amextravel.com (same either way).
-  amex_gold:        { dining: 4, flights: 3, hotels: 1, groceries: 4, gas: 1, streaming: 1, rent: 0, other: 1 },
+  // Amex Gold: 4x dining (capped $50K/yr), 4x US supermarkets (capped $25K/yr).
+  // 3x on flights booked directly with airlines OR via amextravel.com (same rate either way).
+  // 2x on prepaid hotels via amextravel.com (1x direct).
+  amex_gold:        { dining: 4, flights: 3, hotels: { d: 1, p: 2 }, groceries: 4, gas: 1, streaming: 1, rent: 0, other: 1 },
   // Amex Green: 3x on travel & transit (flights, hotels, Uber, etc.) regardless of booking method.
   amex_green:       { dining: 3, flights: 3, hotels: 3, groceries: 1, gas: 3, streaming: 1, rent: 0, other: 1 },
-  // Chase Sapphire Reserve: 3x direct travel & dining. Via Chase Travel portal: 8x flights, 10x hotels & cars.
-  chase_sapphire:   { dining: 3, flights: { d: 3, p: 8 }, hotels: { d: 3, p: 10 }, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
-  // Chase Sapphire Preferred: 2x direct travel. Via Chase Travel: 5x flights & hotels.
-  chase_sapphire_pref: { dining: 3, flights: { d: 2, p: 5 }, hotels: { d: 2, p: 5 }, groceries: 1, gas: 1, streaming: 3, rent: 0, other: 1 },
+  // Chase Sapphire Reserve (2025 refresh): 8x travel via Chase Travel,
+  // 4x direct flights with airlines, 3x dining, 1x other. Plus Points Boost on redemption.
+  chase_sapphire:   { dining: 3, flights: { d: 4, p: 8 }, hotels: { d: 3, p: 8 }, groceries: 1, gas: 1, streaming: 1, rent: 0, other: 1 },
+  // Chase Sapphire Preferred: 5x via Chase Travel, 3x dining, 3x online groceries
+  // (excl. Walmart/Target/wholesale clubs), 3x select streaming, 2x direct travel.
+  chase_sapphire_pref: { dining: 3, flights: { d: 2, p: 5 }, hotels: { d: 2, p: 5 }, groceries: 3, gas: 1, streaming: 3, rent: 0, other: 1 },
   // Capital One Venture X: 2x base. Via Capital One Travel portal: 5x flights, 10x hotels & car rentals.
   cap1_venturex:    { dining: 2, flights: { d: 2, p: 5 }, hotels: { d: 2, p: 10 }, groceries: 2, gas: 2, streaming: 2, rent: 2, other: 2 },
   // Capital One Venture (regular): 2x base everywhere. Via Capital One Travel: 5x hotels & cars only — flights stay 2x.

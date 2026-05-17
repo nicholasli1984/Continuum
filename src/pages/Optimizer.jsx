@@ -1,7 +1,13 @@
 import React, { useState } from "react";
-import { LOYALTY_PROGRAMS, PROGRAM_DIRECTORY } from "../constants/programs";
+import { LOYALTY_PROGRAMS } from "../constants/programs";
 import { CC_SPENDING_CATS, CC_TRANSFER_PARTNERS, CC_BONUS_EXPANDED, ELITE_BONUS_PCT, PARTNER_CLASS_RATES, PARTNER_EARN_RATES } from "../constants/airline-data";
-import { ALLIANCE_MBR, ALLIANCE_TIER_COLORS, ALLIANCE_TIER_LABELS } from "../constants/benefits";
+
+const _ccRate = (entry, mode) => {
+  if (typeof entry === "number") return entry;
+  if (entry && typeof entry === "object") return mode === "portal" ? (entry.p || entry.d || 0) : (entry.d || 0);
+  return 0;
+};
+const _ccHasPortalBonus = (entry) => typeof entry === "object" && entry.p > entry.d;
 
 export function renderOptimizer(s, _previewTab = null) {
   // Destructure the state bag
@@ -12,7 +18,8 @@ export function renderOptimizer(s, _previewTab = null) {
     optimizerTab, setOptimizerTab, optimizerTripId, setOptimizerTripId,
     ccOptTarget, setCcOptTarget, ccOptAmount, setCcOptAmount, ccBookingMode, setCcBookingMode,
     allianceGoal, setAllianceGoal, setActiveView, AIRPORT_COORDS, AIRPORT_CITY,
-    formatTripDates, ProgramLogo, EXPENSE_CATEGORIES } = s;
+    formatTripDates, ProgramLogo, ALLIANCE_MBR, darkMode, EXPENSE_CATEGORIES } = s;
+
     const _tab = _previewTab || optimizerTab;
     const flightTrips = trips.filter(t => t.type === "flight");
     const airlines = LOYALTY_PROGRAMS.airlines;
@@ -196,7 +203,7 @@ export function renderOptimizer(s, _previewTab = null) {
               const reached = totalPts >= tier.threshold;
               return (
                 <div key={tier.name} style={{ position: "absolute", left: `${pos}%`, transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap" }}>
-                  <div style={{ fontSize: 8, fontWeight: reached ? 700 : 500, color: reached ? color : css.text3, fontFamily: "'Geist Mono', monospace" }}>
+                  <div style={{ fontSize: 10, fontWeight: reached ? 700 : 500, color: reached ? color : css.text3, fontFamily: "'Geist Mono', monospace" }}>
                     {tier.name}
                   </div>
                   <div style={{ fontSize: 7, color: css.text3, fontFamily: "'Geist Mono', monospace" }}>
@@ -217,7 +224,7 @@ export function renderOptimizer(s, _previewTab = null) {
     };
 
     const fieldStyle = { display: "block", width: "100%", padding: "8px 10px", background: css.surface2, border: `1px solid ${css.border}`, borderRadius: 7, color: css.text, fontSize: 12, fontFamily: "'Instrument Sans', 'Outfit', sans-serif", outline: "none", boxSizing: "border-box" };
-    const labelStyle = { fontSize: 9, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4, display: "block" };
+    const labelStyle = { fontSize: 11, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4, display: "block" };
 
     return (
       <div>
@@ -241,7 +248,7 @@ export function renderOptimizer(s, _previewTab = null) {
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: css.accent }}>Segment {idx + 1}</div>
                     {itinSegments.length > 1 && (
-                      <button onClick={() => removeItinSeg(seg.id)} style={{ width: 24, height: 24, borderRadius: 6, border: `1px solid rgba(239,68,68,0.2)`, background: "rgba(239,68,68,0.06)", color: "#ef4444", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+                      <button onClick={() => removeItinSeg(seg.id)} style={{ width: 24, height: 24, borderRadius: 6, border: `1px solid rgba(200,85,61,0.2)`, background: "rgba(200,85,61,0.06)", color: "#C8553D", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
                     )}
                   </div>
                   {/* Route */}
@@ -465,35 +472,35 @@ export function renderOptimizer(s, _previewTab = null) {
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginTop: 24, marginBottom: 16 }}>
                     <div style={{ background: css.surface2, borderRadius: 8, padding: "12px 14px", textAlign: "center" }}>
                       <div style={{ fontSize: 16, fontWeight: 700, color: css.text, fontFamily: "'Geist Mono', monospace" }}>{r.existingPts.toLocaleString()}</div>
-                      <div style={{ fontSize: 9, color: css.text3, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Existing</div>
+                      <div style={{ fontSize: 11, color: css.text3, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Existing</div>
                     </div>
                     <div style={{ background: `${r.airline.color}12`, border: `1px solid ${r.airline.color}25`, borderRadius: 8, padding: "12px 14px", textAlign: "center" }}>
                       <div style={{ fontSize: 16, fontWeight: 700, color: r.airline.color, fontFamily: "'Geist Mono', monospace" }}>+{r.totalCredits.toLocaleString()}</div>
-                      <div style={{ fontSize: 9, color: css.text3, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>This Trip</div>
+                      <div style={{ fontSize: 11, color: css.text3, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>This Trip</div>
                     </div>
                     <div style={{ background: css.surface2, borderRadius: 8, padding: "12px 14px", textAlign: "center" }}>
                       <div style={{ fontSize: 16, fontWeight: 700, color: css.text, fontFamily: "'Geist Mono', monospace" }}>{r.projTotal.toLocaleString()}</div>
-                      <div style={{ fontSize: 9, color: css.text3, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Projected</div>
+                      <div style={{ fontSize: 11, color: css.text3, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Projected</div>
                     </div>
                   </div>
 
                   {/* Current / Next tier */}
                   <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 16 }}>
                     <div style={{ flex: 1, minWidth: 120 }}>
-                      <div style={{ fontSize: 9, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Projected Tier</div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Projected Tier</div>
                       <div style={{ fontSize: 14, fontWeight: 700, color: r.currentTier ? r.airline.color : css.text3 }}>{r.currentTier?.name || "Base Member"}</div>
                       {r.currentTier?.perks && <div style={{ fontSize: 10, color: css.text2, marginTop: 2, lineHeight: 1.4 }}>{r.currentTier.perks}</div>}
                     </div>
                     {r.nextTier && (
                       <div style={{ flex: 1, minWidth: 120 }}>
-                        <div style={{ fontSize: 9, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Next Tier</div>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Next Tier</div>
                         <div style={{ fontSize: 14, fontWeight: 700, color: css.text2 }}>{r.nextTier.name}</div>
                         <div style={{ fontSize: 11, color: css.accent, fontWeight: 600, fontFamily: "'Geist Mono', monospace", marginTop: 2 }}>{(r.nextTier.threshold - r.projTotal).toLocaleString()} {r.airline.unit} remaining ({r.pctToNext}%)</div>
                       </div>
                     )}
                     {!r.nextTier && r.currentTier && (
                       <div style={{ flex: 1, minWidth: 120 }}>
-                        <div style={{ fontSize: 9, fontWeight: 700, color: css.success, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Top Tier Reached</div>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: css.success, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Top Tier Reached</div>
                         <div style={{ fontSize: 14, fontWeight: 700, color: css.success }}>Maximum Status</div>
                       </div>
                     )}
@@ -501,7 +508,7 @@ export function renderOptimizer(s, _previewTab = null) {
 
                   {/* Per-segment breakdown */}
                   <div style={{ borderTop: `1px solid ${css.border}`, paddingTop: 12 }}>
-                    <div style={{ fontSize: 9, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Segment Breakdown</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Segment Breakdown</div>
                     {r.segDetails.map((sd, si) => {
                       const rates = PARTNER_EARN_RATES[r.airline.id];
                       const segIsOwn = r.airline.id === sd.operatingAirline;
@@ -524,12 +531,12 @@ export function renderOptimizer(s, _previewTab = null) {
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 11 }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                               <span style={{ fontWeight: 700, color: css.text, fontFamily: "'Geist Mono', monospace" }}>{sd.origin} → {sd.destination}</span>
-                              <span style={{ fontSize: 9, color: css.text3, fontFamily: "'Geist Mono', monospace" }}>{sd.distanceMiles.toLocaleString()} mi</span>
-                              <span style={{ fontSize: 9, color: css.accent, background: css.accentBg, padding: "1px 6px", borderRadius: 4 }}>{sd.cabin.replace(/_/g, " ")}{bc ? ` (${bc})` : ""}</span>
+                              <span style={{ fontSize: 11, color: css.text3, fontFamily: "'Geist Mono', monospace" }}>{sd.distanceMiles.toLocaleString()} mi</span>
+                              <span style={{ fontSize: 11, color: css.accent, background: css.accentBg, padding: "1px 6px", borderRadius: 4 }}>{sd.cabin.replace(/_/g, " ")}{bc ? ` (${bc})` : ""}</span>
                             </div>
                             <span style={{ fontWeight: 700, color: r.airline.color, fontFamily: "'Geist Mono', monospace" }}>+{sd.credits.toLocaleString()}</span>
                           </div>
-                          <div style={{ fontSize: 9, color: css.text3, fontFamily: "'Geist Mono', monospace", marginTop: 2 }}>
+                          <div style={{ fontSize: 11, color: css.text3, fontFamily: "'Geist Mono', monospace", marginTop: 2 }}>
                             {useFare
                               ? `$${(r.totalFare / r.segDetails.length).toLocaleString(undefined, {minimumFractionDigits: 0})} × ${rateLabel} = ${Math.round((r.totalFare / r.segDetails.length) * segRate).toLocaleString()}`
                               : `${sd.distanceMiles.toLocaleString()} mi × ${rateLabel} = ${Math.round(sd.distanceMiles * segRate / 100).toLocaleString()}`}
@@ -629,8 +636,8 @@ export function renderOptimizer(s, _previewTab = null) {
                               setItinHistory(updated);
                               localStorage.setItem("continuum_itin_history", JSON.stringify(updated));
                             }} style={{
-                              padding: "5px 10px", borderRadius: 6, border: `1px solid rgba(239,68,68,0.2)`,
-                              background: "rgba(239,68,68,0.06)", color: "#ef4444", fontSize: 10, fontWeight: 600, cursor: "pointer",
+                              padding: "5px 10px", borderRadius: 6, border: `1px solid rgba(200,85,61,0.2)`,
+                              background: "rgba(200,85,61,0.06)", color: "#C8553D", fontSize: 10, fontWeight: 600, cursor: "pointer",
                             }}>×</button>
                           </div>
                         </div>
@@ -1028,8 +1035,8 @@ export function renderOptimizer(s, _previewTab = null) {
                           {cat.best ? (
                             <div style={{ fontSize: 11, color: css.text3 }}>
                               Use <strong style={{ color: css.accent }}>{cat.best.card.name}</strong> — <span style={{ fontFamily: "'Geist Mono', monospace", color: css.gold }}>{cat.best.rate}x</span> {cat.best.currency}
-                              {cat.best.portalBonus && ccBookingMode === "portal" && <span style={{ fontSize: 9, fontWeight: 700, color: css.warning, background: css.warningBg, padding: "1px 6px", borderRadius: 6, marginLeft: 6, border: `1px solid ${css.warning}30` }}>PORTAL RATE</span>}
-                              {cat.best.portalBonus && ccBookingMode === "direct" && <span style={{ fontSize: 9, color: css.text3, marginLeft: 6 }}>({cat.best.portalRate}x via portal)</span>}
+                              {cat.best.portalBonus && ccBookingMode === "portal" && <span style={{ fontSize: 11, fontWeight: 700, color: css.warning, background: css.warningBg, padding: "1px 6px", borderRadius: 6, marginLeft: 6, border: `1px solid ${css.warning}30` }}>PORTAL RATE</span>}
+                              {cat.best.portalBonus && ccBookingMode === "direct" && <span style={{ fontSize: 11, color: css.text3, marginLeft: 6 }}>({cat.best.portalRate}x via portal)</span>}
                             </div>
                           ) : (
                             <div style={{ fontSize: 11, color: css.text3 }}>No linked card earns toward this target</div>
@@ -1041,7 +1048,7 @@ export function renderOptimizer(s, _previewTab = null) {
                           <div style={{ fontSize: 14, fontWeight: 700, color: css.gold, fontFamily: "'Geist Mono', monospace" }}>
                             {(cat.best.rate * purchaseAmt).toLocaleString()}
                           </div>
-                          <div style={{ fontSize: 9, color: css.text3 }}>pts per ${purchaseAmt.toLocaleString()}</div>
+                          <div style={{ fontSize: 11, color: css.text3 }}>pts per ${purchaseAmt.toLocaleString()}</div>
                         </div>
                       )}
                     </div>
@@ -1058,8 +1065,8 @@ export function renderOptimizer(s, _previewTab = null) {
                             <ProgramLogo prog={r.card} size={14} />
                             <span style={{ fontWeight: i === 0 ? 600 : 400 }}>{r.card.name.split(" ")[0]}</span>
                             <span style={{ fontFamily: "'Geist Mono', monospace", fontWeight: 600, color: i === 0 ? css.accent : css.text3 }}>{r.rate}x</span>
-                            {r.portalBonus && ccBookingMode === "portal" && <span style={{ fontSize: 8, color: css.warning, fontWeight: 700 }}>P</span>}
-                            {r.portalBonus && ccBookingMode === "direct" && r.portalRate > r.directRate && <span style={{ fontSize: 8, color: css.text3 }}>({r.portalRate}x P)</span>}
+                            {r.portalBonus && ccBookingMode === "portal" && <span style={{ fontSize: 10, color: css.warning, fontWeight: 700 }}>P</span>}
+                            {r.portalBonus && ccBookingMode === "direct" && r.portalRate > r.directRate && <span style={{ fontSize: 10, color: css.text3 }}>({r.portalRate}x P)</span>}
                           </div>
                         ))}
                       </div>
@@ -1155,7 +1162,7 @@ export function renderOptimizer(s, _previewTab = null) {
                               {isPortal && ccBookingMode === "direct" && rate > 0 && (() => {
                                 const bonus = CC_BONUS_EXPANDED[card.id] || {};
                                 const pRate = _ccRate(bonus[cat.id], "portal");
-                                return pRate > rate ? <div style={{ fontSize: 8, color: css.text3, fontWeight: 400 }}>{pRate}x via P</div> : null;
+                                return pRate > rate ? <div style={{ fontSize: 10, color: css.text3, fontWeight: 400 }}>{pRate}x via P</div> : null;
                               })()}
                             </td>
                           );
@@ -1172,140 +1179,3 @@ export function renderOptimizer(s, _previewTab = null) {
     );
   };
 
-  // ── helper shared with both report types ──
-  const buildPrintReport = async (title, expsForReport) => {
-    const CURRENCY_SYMBOLS = { USD:"$",EUR:"€",GBP:"£",CAD:"CA$",AUD:"A$",JPY:"¥",CHF:"Fr",CNY:"¥",HKD:"HK$",SGD:"S$",MXN:"MX$",BRL:"R$",INR:"₹",KRW:"₩",AED:"د.إ",THB:"฿",NOK:"kr",SEK:"kr",DKK:"kr",NZD:"NZ$" };
-    const symFor = (cur) => CURRENCY_SYMBOLS[cur] || (cur + " ");
-    const fmtAmt = (n, cur) => n === 0 ? "Free" : `${symFor(cur)}${n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`;
-    const toUSD = (e) => e.amount * (e.fxRate || 1);
-    const tripTotalUSD = expsForReport.reduce((s, e) => s + toUSD(e), 0);
-    const receiptCount = expsForReport.filter(e => e.receipt).length;
-    const catSummary = EXPENSE_CATEGORIES.map(cat => ({
-      ...cat,
-      totalUSD: expsForReport.filter(e => e.category === cat.id).reduce((s,e) => s + toUSD(e), 0),
-      count: expsForReport.filter(e => e.category === cat.id).length,
-    })).filter(c => c.totalUSD > 0);
-    const expensesWithReceipts = expsForReport.filter(e => e.receiptImage?.data);
-    const pdfPageImages = {};
-    for (const exp of expensesWithReceipts) {
-      if (exp.receiptImage.type === "application/pdf") {
-        try { pdfPageImages[exp.id] = await renderPdfToImages(exp.receiptImage.data); } catch(e) { pdfPageImages[exp.id] = []; }
-      }
-    }
-
-    const catRows = catSummary.map(cat => `
-      <tr>
-        <td style="padding:10px 0;border-bottom:1px solid #2a2640;"><span style="font-size:16px;margin-right:8px;">${cat.icon}</span><span style="font-size:13px;color:#d0d6e0;">${cat.label} (${cat.count})</span></td>
-        <td style="padding:10px 0;border-bottom:1px solid #2a2640;"><div style="background:#2a2640;border-radius:4px;height:6px;width:120px;overflow:hidden;"><div style="width:${tripTotalUSD>0?Math.round((cat.totalUSD/tripTotalUSD)*100):0}%;height:100%;background:${cat.color};border-radius:4px;"></div></div></td>
-        <td style="padding:10px 0;border-bottom:1px solid #2a2640;text-align:right;font-size:13px;font-weight:700;color:#f7f8f8;">$${cat.totalUSD.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
-      </tr>`).join("");
-
-    const lineRows = expsForReport.map((exp, i) => {
-      const cat = EXPENSE_CATEGORIES.find(c => c.id === exp.category);
-      const cur = exp.currency || "USD";
-      const usdAmt = toUSD(exp);
-      const isForeign = cur !== "USD";
-      const tripName = exp.tripId ? (trips.find(t => t.id === exp.tripId)?.tripName || trips.find(t => t.id === exp.tripId)?.route || "Trip") : "Custom";
-      const receiptIdx = expensesWithReceipts.findIndex(e => e.id === exp.id);
-      return `<tr>
-        <td style="padding:10px 14px;border-bottom:1px solid #2a2640;vertical-align:top;">
-          <div style="font-size:13px;color:#f7f8f8;">${cat?.icon||""} ${exp.description}</div>
-          <div style="font-size:10px;color:#62666d;margin-top:2px;">${tripName}${exp.notes ? " · " + exp.notes : ""}</div>
-        </td>
-        <td style="padding:10px 14px;border-bottom:1px solid #2a2640;font-size:12px;color:#8a8f98;white-space:nowrap;">${exp.date?.slice(5)||""}</td>
-        <td style="padding:10px 14px;border-bottom:1px solid #2a2640;font-size:12px;color:#8a8f98;">${exp.paymentMethod||"—"}</td>
-        <td style="padding:10px 14px;border-bottom:1px solid #2a2640;text-align:right;">
-          <div style="font-size:13px;font-weight:700;color:${exp.amount===0?"#34d399":"#fff"};">${fmtAmt(exp.amount,cur)}</div>
-          ${isForeign?`<div style="font-size:10px;color:#62666d;">$${usdAmt.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})} USD</div>`:""}
-        </td>
-        <td style="padding:10px 14px;border-bottom:1px solid #2a2640;text-align:center;font-size:13px;color:${exp.receipt?"#34d399":"#62666d"};">
-          ${exp.receipt?(receiptIdx>=0?`<span style="font-size:10px;color:#0EA5A0;">p.${receiptIdx+2}</span>`:"✓"):"—"}
-        </td>
-      </tr>`;
-    }).join("");
-
-    const receiptPages = expensesWithReceipts.map((exp, i) => {
-      const cat = EXPENSE_CATEGORIES.find(c => c.id === exp.category);
-      const cur = exp.currency || "USD";
-      const isPdf = exp.receiptImage.type === "application/pdf";
-      const pages = isPdf ? (pdfPageImages[exp.id] || []) : [exp.receiptImage.data];
-      return pages.map((src, pi) => `
-        <div style="page-break-before:always;padding:48px;background:#13111C;min-height:100vh;box-sizing:border-box;">
-          ${pi === 0 ? `
-            <div style="color:#8a8f98;font-size:11px;font-family:monospace;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.1em;">Receipt ${i+1} of ${expensesWithReceipts.length}${isPdf && pages.length > 1 ? ` — Page 1 of ${pages.length}` : ""}</div>
-            <div style="font-size:16px;font-weight:700;color:#f7f8f8;margin-bottom:4px;">${cat?.icon||""} ${exp.description}</div>
-            <div style="font-size:12px;color:#8a8f98;margin-bottom:32px;">${exp.date||""} · ${exp.paymentMethod||""} · ${fmtAmt(exp.amount,cur)}</div>
-          ` : `
-            <div style="color:#8a8f98;font-size:11px;font-family:monospace;margin-bottom:16px;text-transform:uppercase;letter-spacing:0.1em;">Receipt ${i+1} — Page ${pi+1} of ${pages.length} · ${exp.description}</div>
-          `}
-          <img src="${src}" alt="Receipt${isPdf ? ` page ${pi+1}` : ""}" style="width:100%;border-radius:8px;border:1px solid #2a2640;display:block;" />
-        </div>
-      `).join("");
-    }).join("");
-
-    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title>
-      <style>*{box-sizing:border-box;margin:0;padding:0;}body{background:#13111C;color:#f7f8f8;font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact;}@media print{body{background:#13111C!important;}@page{margin:16mm 18mm;size:A4;}}table{border-collapse:collapse;width:100%;}</style>
-    </head><body>
-      <div style="padding:48px 48px 40px;background:#13111C;min-height:100vh;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:36px;">
-          <div>
-            <img src="${window.location.origin}/continuum-travel-logo.svg" alt="Continuum" style="height:80px;display:block;margin-bottom:12px;" />
-            <div style="font-size:26px;font-weight:800;color:#fff;letter-spacing:-0.5px;">${title}</div>
-          </div>
-          <div style="text-align:right;">
-            <div style="font-size:11px;color:#8a8f98;">Generated ${new Date().toLocaleDateString()}</div>
-            <div style="font-size:11px;color:#62666d;">Report #${Date.now().toString(36).slice(-6)}</div>
-            <div style="margin-top:6px;font-size:11px;font-weight:700;color:#0EA5A0;">Total in USD</div>
-          </div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:28px;">
-          <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:16px;text-align:center;"><div style="font-size:22px;font-weight:800;color:#0EA5A0;">$${tripTotalUSD.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</div><div style="font-size:10px;color:#8a8f98;margin-top:4px;">Total (USD)</div></div>
-          <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:16px;text-align:center;"><div style="font-size:22px;font-weight:700;color:#fff;">${expsForReport.length}</div><div style="font-size:10px;color:#8a8f98;margin-top:4px;">Items</div></div>
-          <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:16px;text-align:center;"><div style="font-size:22px;font-weight:800;color:#34d399;">${receiptCount}/${expsForReport.length}</div><div style="font-size:10px;color:#8a8f98;margin-top:4px;">Receipts</div></div>
-        </div>
-        <div style="margin-bottom:28px;">
-          <div style="font-size:11px;font-weight:700;color:#8a8f98;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;">Breakdown by Category</div>
-          <table><tbody>${catRows}</tbody></table>
-        </div>
-        <div style="margin-bottom:32px;">
-          <div style="font-size:11px;font-weight:700;color:#8a8f98;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;">Line Items</div>
-          <div style="background:#1a1725;border-radius:8px;overflow:hidden;border:1px solid #2a2640;">
-            <table>
-              <thead><tr style="background:rgba(255,255,255,0.04);">
-                <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:#8a8f98;text-transform:uppercase;border-bottom:1px solid #2a2640;">Description</th>
-                <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:#8a8f98;text-transform:uppercase;border-bottom:1px solid #2a2640;">Date</th>
-                <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:#8a8f98;text-transform:uppercase;border-bottom:1px solid #2a2640;">Payment</th>
-                <th style="padding:10px 14px;text-align:right;font-size:10px;font-weight:700;color:#8a8f98;text-transform:uppercase;border-bottom:1px solid #2a2640;">Amount</th>
-                <th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;color:#8a8f98;text-transform:uppercase;border-bottom:1px solid #2a2640;">🧾</th>
-              </tr></thead>
-              <tbody>${lineRows}</tbody>
-              <tfoot><tr style="background:rgba(14,165,160,0.08);">
-                <td colspan="3" style="padding:14px;font-size:13px;font-weight:700;color:#0EA5A0;border-top:2px solid rgba(14,165,160,0.3);">TOTAL (USD)</td>
-                <td style="padding:14px;text-align:right;font-size:15px;font-weight:800;color:#0EA5A0;border-top:2px solid rgba(14,165,160,0.3);">$${tripTotalUSD.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
-                <td style="border-top:2px solid rgba(14,165,160,0.3);"></td>
-              </tr></tfoot>
-            </table>
-          </div>
-        </div>
-        <div style="text-align:center;color:#62666d;font-size:10px;border-top:1px solid #2a2640;padding-top:16px;">
-          Generated by Continuum — Elevate Every Journey · ${new Date().toLocaleString()}${expensesWithReceipts.length>0?` · ${expensesWithReceipts.length} receipt${expensesWithReceipts.length!==1?"s":""} attached`:""}
-        </div>
-      </div>
-      ${receiptPages}
-    </body></html>`;
-
-    return html;
-  };
-
-  const openReportWindow = (html, autoPrint = false) => {
-    const w = window.open("", "_blank");
-    if (!w) return;
-    w.document.write(html);
-    w.document.close();
-    if (!autoPrint) return;
-    const imgs = w.document.images;
-    if (imgs.length === 0) { setTimeout(() => { w.focus(); w.print(); }, 300); return; }
-    let loaded = 0;
-    const tryPrint = () => { loaded++; if (loaded >= imgs.length) setTimeout(() => { w.focus(); w.print(); }, 300); };
-    Array.from(imgs).forEach(img => { if (img.complete) tryPrint(); else { img.onload = tryPrint; img.onerror = tryPrint; } });
-  };

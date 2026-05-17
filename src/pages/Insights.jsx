@@ -1,11 +1,25 @@
-import React from "react";
-import { CC_TRANSFER_PARTNERS } from "../constants/airline-data";
+import React, { useState } from "react";
+
+// Render-function entrypoint kept for backward compat with viewRenderers.
+// Delegates to InsightsPage (a REAL React component) so hooks inside it are
+// legal. The previous inline pattern was a TDZ landmine — useState in a
+// plain function called from another component's render.
 export function renderInsights(s, _previewTab = null) {
+  return <InsightsPage {...s} _previewTab={_previewTab} />;
+}
+
+function InsightsPage(s) {
+  const _previewTab = s._previewTab;
   const { css, isMobile, darkMode, user, trips, expenses, linkedAccounts, allPrograms,
-    insightsTab, setInsightsTab, EXPENSE_CATEGORIES,
+    EXPENSE_CATEGORIES,
     formatTripDates, getTripExpenses, getTripTotal, getTripName,
-    AIRPORT_CITY, setActiveView, ProgramLogo } = s;
+    AIRPORT_CITY, setActiveView,
+    ProgramLogo, transferGoal, setTransferGoal, EXPIRATION_RULES, REDEMPTION_VALUES, CC_TRANSFER_PARTNERS, motion, CARD_BENEFITS_DATA } = s;
   const D = darkMode;
+    const [insightTab, setInsightTab] = useState("countdown");
+    const [annualFeeCard, setAnnualFeeCard] = useState("amex_plat");
+    const [checkedBenefits, setCheckedBenefits] = useState({});
+    const [customBenefitValues, setCustomBenefitValues] = useState({});
     const INSIGHT_TABS = [
       { id: "countdown",  label: "Status Countdown", tier: "free" },
       { id: "expiration", label: "Expiration Tracker", tier: "free" },
@@ -13,8 +27,6 @@ export function renderInsights(s, _previewTab = null) {
       { id: "transfer",   label: "Transfer Matrix",    tier: "free" },
       { id: "annual_fee", label: "Annual Fee Calc",    tier: "free" },
     ];
-    const isPremium = true; // All features free for now
-
     // ── Helpers ──────────────────────────────────────────────────
     // allPrograms passed via state bag
     const findProg = (id) => allPrograms.find(p => p.id === id);
@@ -135,7 +147,7 @@ export function renderInsights(s, _previewTab = null) {
         return { id, prog, acct, rule, balance, expiresIn, risk };
       }).filter(Boolean);
 
-      const riskColor = { safe: css.success, medium: css.warning, high: "#ef4444", unknown: css.text3 };
+      const riskColor = { safe: css.success, medium: css.warning, high: "#C8553D", unknown: css.text3 };
       const riskLabel = { safe: "Safe", medium: "Monitor", high: "At Risk", unknown: "Unknown" };
 
       if (rows.length === 0) {
@@ -192,18 +204,6 @@ export function renderInsights(s, _previewTab = null) {
 
     // ── Sub-tab: Redemption Value Engine ─────────────────────────
     const renderRedemption = () => {
-      if (!isPremium) {
-        return (
-          <div className="c-a1" style={{ textAlign: "center", padding: "60px 20px", background: css.surface, border: `1px solid ${css.border}` }}>
-            <div style={{ fontSize: 36, marginBottom: 16 }}>💎</div>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: css.gold, marginBottom: 8 }}>Premium Feature</div>
-            <h3 style={{ fontFamily: "'Instrument Sans', 'Outfit', sans-serif", fontSize: 28, fontWeight: 600, color: css.text, margin: "0 0 12px" }}>Redemption Value Engine</h3>
-            <p style={{ color: css.text2, fontSize: 14, maxWidth: 380, margin: "0 auto 24px", lineHeight: 1.6 }}>See the real dollar value of your miles and points, plus where to get the most out of each balance.</p>
-            <button onClick={() => setActiveView("premium")} className="c-btn-primary" style={{ padding: "10px 24px", background: css.accent, color: "#fff", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, borderRadius: 0 }}>Upgrade to Premium</button>
-          </div>
-        );
-      }
-
       const entries = Object.entries(linkedAccounts).map(([id, acct]) => {
         const prog = findProg(id);
         const rdv = REDEMPTION_VALUES[id];
@@ -250,8 +250,8 @@ export function renderInsights(s, _previewTab = null) {
                   <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: css.success, marginBottom: 4 }}>Best Use</div>
                   <div style={{ fontSize: 12, color: css.text2, lineHeight: 1.4 }}>{rdv.best}</div>
                 </div>
-                <div style={{ background: css.surface2, padding: "10px 12px", borderLeft: `2px solid #ef4444` }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#ef4444", marginBottom: 4 }}>Avoid</div>
+                <div style={{ background: css.surface2, padding: "10px 12px", borderLeft: `2px solid #C8553D` }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#C8553D", marginBottom: 4 }}>Avoid</div>
                   <div style={{ fontSize: 12, color: css.text2, lineHeight: 1.4 }}>{rdv.avoid}</div>
                 </div>
               </div>
@@ -263,18 +263,6 @@ export function renderInsights(s, _previewTab = null) {
 
     // ── Sub-tab: Transfer Partner Matrix ─────────────────────────
     const renderTransfer = () => {
-      if (!isPremium) {
-        return (
-          <div className="c-a1" style={{ textAlign: "center", padding: "60px 20px", background: css.surface, border: `1px solid ${css.border}` }}>
-            <div style={{ fontSize: 36, marginBottom: 16 }}>🔀</div>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: css.gold, marginBottom: 8 }}>Premium Feature</div>
-            <h3 style={{ fontFamily: "'Instrument Sans', 'Outfit', sans-serif", fontSize: 28, fontWeight: 600, color: css.text, margin: "0 0 12px" }}>Transfer Partner Matrix</h3>
-            <p style={{ color: css.text2, fontSize: 14, maxWidth: 380, margin: "0 auto 24px", lineHeight: 1.6 }}>Explore which credit card currencies can reach your target airline or hotel program, and chart the optimal transfer path.</p>
-            <button onClick={() => setActiveView("premium")} className="c-btn-primary" style={{ padding: "10px 24px", background: css.accent, color: "#fff", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, borderRadius: 0 }}>Upgrade to Premium</button>
-          </div>
-        );
-      }
-
       // Build matrix: all linked credit cards that have transfer partners
       const linkedCards = Object.keys(linkedAccounts).filter(id => CC_TRANSFER_PARTNERS[id]?.partners);
       const allTargets = [...new Set(linkedCards.flatMap(id => CC_TRANSFER_PARTNERS[id].partners))];
@@ -336,7 +324,7 @@ export function renderInsights(s, _previewTab = null) {
                     </div>
                   </>
                 ) : (
-                  <div style={{ fontSize: 13, color: "#ef4444" }}>
+                  <div style={{ fontSize: 13, color: "#C8553D" }}>
                     None of your linked cards can transfer to {targetProg?.name}. Consider adding a card that does.
                   </div>
                 )}
@@ -392,18 +380,6 @@ export function renderInsights(s, _previewTab = null) {
 
     // ── Sub-tab: Annual Fee Calculator ────────────────────────────
     const renderAnnualFee = () => {
-      if (!isPremium) {
-        return (
-          <div className="c-a1" style={{ textAlign: "center", padding: "60px 20px", background: css.surface, border: `1px solid ${css.border}` }}>
-            <div style={{ fontSize: 36, marginBottom: 16 }}>🧮</div>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: css.gold, marginBottom: 8 }}>Premium Feature</div>
-            <h3 style={{ fontFamily: "'Instrument Sans', 'Outfit', sans-serif", fontSize: 28, fontWeight: 600, color: css.text, margin: "0 0 12px" }}>Annual Fee Calculator</h3>
-            <p style={{ color: css.text2, fontSize: 14, maxWidth: 380, margin: "0 auto 24px", lineHeight: 1.6 }}>Tally the dollar value of benefits you actually use and see whether your card is truly worth the fee.</p>
-            <button onClick={() => setActiveView("premium")} className="c-btn-primary" style={{ padding: "10px 24px", background: css.accent, color: "#fff", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, borderRadius: 0 }}>Upgrade to Premium</button>
-          </div>
-        );
-      }
-
       const cardData = CARD_BENEFITS_DATA[annualFeeCard];
       const catColors = { travel: css.accent, lifestyle: css.gold, lounge: "#8B6CF6", status: css.success, rewards: css.text2 };
 
@@ -610,9 +586,6 @@ export function renderInsights(s, _previewTab = null) {
                 }}
               >
                 {tab.label}
-                {tab.tier === "premium" && !isPremium && (
-                  <span style={{ fontSize: 9, background: css.goldBg, color: css.gold, padding: "1px 5px", fontWeight: 700, border: `1px solid ${D ? "rgba(201,168,76,0.2)" : "rgba(201,168,76,0.3)"}` }}>PRO</span>
-                )}
               </button>
             ))}
           </div>

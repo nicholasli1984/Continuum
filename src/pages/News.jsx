@@ -1,6 +1,6 @@
 import React from "react";
 export function renderNews(s) {
-  const { css, isMobile, darkMode, newsItems, newsLoading, newsError, fetchNews, NEWS_SOURCES } = s;
+  const { css, isMobile, darkMode, newsLoading, fetchNews, NEWS_SOURCES, newsArticles, newsSourceFilter, setNewsSourceFilter, newsFetched } = s;
   const D = darkMode;
     const filtered = newsSourceFilter === "all" ? newsArticles : newsArticles.filter(a => a.source === newsSourceFilter);
     return (
@@ -78,7 +78,7 @@ export function renderNews(s) {
                   <div style={{ padding: "14px 16px", flex: 1, display: "flex", flexDirection: "column" }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
                       <span style={{
-                        fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
+                        fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
                         color: article.sourceColor, fontFamily: "'Geist Mono', monospace",
                         background: `${article.sourceColor}15`, padding: "2px 7px", borderRadius: 4,
                       }}>{article.sourceName}</span>
