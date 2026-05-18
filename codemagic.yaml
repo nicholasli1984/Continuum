@@ -1,0 +1,134 @@
+# Codemagic CI/CD config — iOS App Store / TestFlight pipeline.
+#
+# Builds the Capacitor iOS app on a Codemagic macOS runner and uploads to
+# TestFlight. All credentials are pulled from Codemagic environment groups —
+# nothing sensitive lives in this file.
+#
+# One-time Codemagic setup before the first build:
+#   1. Codemagic → Teams → Personal → Integrations → App Store Connect:
+#        - Issuer ID, Key ID, upload the .p8 private key
+#        - Reference name: "app_store_connect"
+#   2. App Store Connect → Apps → +New App with bundle id app.gocontinuum.continuum
+#
+# After that, every push to `main` (or manual trigger) ships a new TestFlight
+# build automatically — `git push` from iPad → ~15 min → build available.
+
+workflows:
+  ios-release:
+    name: iOS · TestFlight release
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: app_store_connect
+    environment:
+      ios_signing:
+        # `bundle_identifier` must match capacitor.config.ts → appId.
+        # `distribution_type: app_store` produces an App Store-signed .ipa.
+        # Codemagic's xcode-project use-profiles + the App Store Connect
+        # integration above auto-creates and downloads the distribution
+        # certificate and provisioning profile — no manual cert management.
+        distribution_type: app_store
+        bundle_identifier: app.gocontinuum.continuum
+      vars:
+        XCODE_WORKSPACE: "ios/App/App.xcworkspace"
+        XCODE_SCHEME: "App"
+        APP_STORE_APPLE_ID: # set this in Codemagic env vars after creating
+                            # the App Store Connect app record (numeric "Apple ID"
+                            # shown in App Information). Leave blank to use bundle id.
+      node: 20
+      xcode: latest
+      cocoapods: default
+    # Auto-trigger on push is disabled during initial setup. Re-enable by
+    # uncommenting the events list once the first manual build succeeds and
+    # you're ready for every push to main to ship a TestFlight build.
+    triggering:
+      # events:
+      #   - push
+      branch_patterns:
+        - pattern: main
+          include: true
+          source: true
+    scripts:
+      - name: Install npm dependencies
+        script: |
+          npm ci
+
+      - name: Build the web bundle
+        script: |
+          npm run build
+
+      - name: Add iOS platform if missing, then sync
+        script: |
+          # First-ever build won't have ios/ committed — bootstrap it here.
+          # Subsequent runs just sync the built web assets.
+          if [ ! -d "ios" ]; then
+            echo "iOS platform not found — running 'npx cap add ios'"
+            npx cap add ios
+          fi
+          npx cap sync ios
+
+      - name: Patch Info.plist with permission usage descriptions
+        script: |
+          # Apple rejects apps that call camera / photo-library APIs without a
+          # specific, user-facing usage string in Info.plist. These strings
+          # appear in the OS permission prompt — they must explain WHY the app
+          # needs the access in terms the user understands.
+          # We patch idempotently: `plutil -insert` adds the key if absent,
+          # `-replace` falls through if it already exists.
+          PLIST="ios/App/App/Info.plist"
+          set_str() {
+            plutil -insert "$1" -string "$2" "$PLIST" 2>/dev/null || \
+              plutil -replace "$1" -string "$2" "$PLIST"
+          }
+          set_str NSCameraUsageDescription "Continuum uses your camera to snap photos of receipts, so we can attach them to your expense reports."
+          set_str NSPhotoLibraryUsageDescription "Continuum needs access to your photos so you can pick existing receipt images to attach to expenses."
+          set_str NSPhotoLibraryAddUsageDescription "Continuum saves cropped or annotated receipt images back to your photo library when you tap Save."
+          echo "Info.plist permission strings:"
+          plutil -p "$PLIST" | grep -E "(NSCamera|NSPhotoLibrary)" || true
+
+      - name: Set version + build number from Codemagic
+        script: |
+          # Auto-bump CFBundleVersion to a unique value per build (TestFlight
+          # rejects duplicate build numbers). Marketing version (CFBundleShortVersionString)
+          # is left to whatever's in Info.plist — you bump it manually for
+          # 1.0 → 1.1 type changes.
+          cd ios/App
+          BUILD_NUMBER=$(($(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo 0) + 1))
+          echo "Setting build number to $BUILD_NUMBER"
+          agvtool new-version -all "$BUILD_NUMBER"
+
+      - name: Install CocoaPods
+        script: |
+          cd ios/App
+          pod install
+
+      - name: Set up code signing
+        script: |
+          # Auto-fetch (or create) distribution cert + provisioning profile via
+          # the App Store Connect API key. Then patch the Xcode project to use them.
+          xcode-project use-profiles
+
+      - name: Build .ipa
+        script: |
+          xcode-project build-ipa \
+            --workspace "$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME"
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.app
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
+
+    publishing:
+      app_store_connect:
+        # Auth uses the integration declared at the top.
+        auth: integration
+        # `submit_to_testflight: true` makes the build available in TestFlight
+        # immediately. Set `submit_to_app_store: true` when you're ready to
+        # ship a release for App Store review (typically after TestFlight QA).
+        submit_to_testflight: true
+        # Add internal testers to a TestFlight group named "Continuum" in
+        # App Store Connect to have them auto-receive new builds.
+        beta_groups:
+          - Continuum Internal
