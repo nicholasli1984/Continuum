@@ -58,6 +58,17 @@
       (function() {
         var V = "__BUILD_TS__";
 
+        // Skip entirely when running inside the Capacitor native shell. The
+        // HTML is bundled into the iOS / Android app — there is no CDN, no
+        // service worker on the install path, and no stale-cache scenario.
+        // Running the script here triggers `display: none` + `location.replace`
+        // which left iOS users on a black screen after the splash. Detect via
+        // the URL scheme (set by the native WebView) so we run before the
+        // Capacitor global is available.
+        if (location.protocol === "capacitor:" || location.protocol === "ionic:" || (typeof window.Capacitor !== "undefined" && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())) {
+          return;
+        }
+
         // Step 1: If we already verified this build version, skip everything.
         if (localStorage.getItem("_sw_ver") === V) {
           // Still listen for future SW updates during this session
@@ -135,8 +146,11 @@
       })();
     </script>
     <script>
+      // Skip service worker registration + version polling on Capacitor native.
+      // Same reason as above: bundled HTML, no remote staleness to detect.
+      var __isNativeShell = (location.protocol === "capacitor:" || location.protocol === "ionic:" || (typeof window.Capacitor !== "undefined" && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()));
       // Manual SW registration with updateViaCache:'none' to force fresh sw.js fetch
-      if ("serviceWorker" in navigator) {
+      if (!__isNativeShell && "serviceWorker" in navigator) {
         navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" }).then(function(reg) {
           reg.update().catch(function() {});
         }).catch(function() {});
@@ -144,6 +158,7 @@
       // Server-side version check — fetch bypasses SW with cache:'no-store'.
       // If the server's build timestamp differs from ours, we're stale.
       (function() {
+        if (__isNativeShell) return;
         var myVersion = "__BUILD_TS__";
         var checking = false;
 
