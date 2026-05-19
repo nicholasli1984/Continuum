@@ -1,10 +1,22 @@
 import webpush from "web-push";
+import { createClient } from "@supabase/supabase-js";
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "https://gocontinuum.app");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+
+  // Handle subscribe action (merged from push-subscribe)
+  if (req.query.action === "subscribe") {
+    try {
+      const { userId, subscription } = req.body;
+      if (!userId || !subscription) return res.status(400).json({ error: "Missing userId or subscription" });
+      const supabase = createClient(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+      await supabase.from("push_subscriptions").upsert({ user_id: userId, subscription: JSON.stringify(subscription), updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+      return res.json({ ok: true });
+    } catch (e) { return res.status(500).json({ error: e.message }); }
+  }
 
   const vapidPublic = (process.env.VITE_VAPID_PUBLIC_KEY || "").trim();
   const vapidPrivate = (process.env.VAPID_PRIVATE_KEY || "").trim();
