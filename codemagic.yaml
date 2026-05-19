@@ -19,7 +19,13 @@ workflows:
     max_build_duration: 60
     instance_type: mac_mini_m2
     integrations:
-      app_store_connect: app_store_connect
+      # Reference name of the .p8 key uploaded under Codemagic team settings
+      # → Integrations → Apple Developer Portal → Manage keys. The newer
+      # Codemagic UI merged "App Store Connect" and "Apple Developer Portal"
+      # into a single integration; the per-key reference name is what the
+      # workflow looks up (was originally documented as "app_store_connect"
+      # but actually saved as "Continuum Travel" during setup).
+      app_store_connect: Continuum Travel
     environment:
       ios_signing:
         # `bundle_identifier` must match capacitor.config.ts → appId.
