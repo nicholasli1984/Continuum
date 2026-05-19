@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Policy — Continuum</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;1,400&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter Tight', sans-serif; background: #F4F1EC; color: #15130F; line-height: 1.7; padding: 60px 24px 80px; max-width: 720px; margin: 0 auto; }
+    h1 { font-family: 'Fraunces', serif; font-weight: 400; font-size: 36px; letter-spacing: -0.02em; margin-bottom: 8px; }
+    .date { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #6B6458; margin-bottom: 40px; }
+    h2 { font-family: 'Fraunces', serif; font-weight: 400; font-size: 22px; letter-spacing: -0.01em; margin: 36px 0 12px; padding-bottom: 8px; border-bottom: 1px solid #E2DCCE; }
+    p { margin-bottom: 16px; font-size: 14px; color: #2C2A26; }
+    ul { margin: 0 0 16px 20px; font-size: 14px; color: #2C2A26; }
+    li { margin-bottom: 6px; }
+    a { color: #8B6F47; text-decoration: none; border-bottom: 1px solid #8B6F4740; }
+    a:hover { border-bottom-color: #8B6F47; }
+    .back { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #8B6F47; border: 1px solid #8B6F47; padding: 10px 20px; display: inline-block; margin-top: 40px; text-decoration: none; transition: all 0.2s; }
+    .back:hover { background: #8B6F47; color: #F4F1EC; border-bottom: 1px solid #8B6F47; }
+  </style>
+</head>
+<body>
+  <h1>Privacy Policy</h1>
+  <div class="date">Effective May 14, 2026</div>
+
+  <h2>Overview</h2>
+  <p>Continuum ("we", "our", "us") is a personal travel management application available at gocontinuum.app and as native apps on iOS and Android. This policy describes what data we collect, how we use it, and which third-party services process it on our behalf.</p>
+
+  <h2>Information we collect</h2>
+  <p>When you create an account and use Continuum, we collect and store:</p>
+  <ul>
+    <li><strong>Account information</strong> — your name and email address. You can create an account using email + password, a magic-link sent to your email, Sign in with Apple, or Sign in with Google.</li>
+    <li><strong>Travel data</strong> — trips, flight segments, hotel bookings, activities, rental cars, dates, destinations, and confirmation numbers you add or import.</li>
+    <li><strong>Expense data</strong> — receipts (including photos you snap or upload), merchants, amounts, currencies, dates, categories, and notes.</li>
+    <li><strong>Forwarded email content</strong> — when you forward a booking email to your personal <code>@gocontinuum.app</code> address, we store the raw email text (up to 10KB) so we can parse it and so you can review the source. We do <strong>not</strong> access your inbox unless you explicitly connect Gmail (see "Optional integrations" below).</li>
+    <li><strong>Loyalty programs</strong> — airline, hotel, rental, and credit card programs you choose to link, including your member numbers, balances, tier status, and reward vouchers.</li>
+    <li><strong>Expense-split data</strong> — names and emails of companions you split expenses with, plus the expenses themselves.</li>
+    <li><strong>Push notification tokens</strong> — if you enable notifications, the device/browser endpoint required to send them.</li>
+  </ul>
+
+  <h2>How we use your information</h2>
+  <p>Your data is used solely to provide and improve the Continuum service:</p>
+  <ul>
+    <li>Display and organize your trips, expenses, and loyalty status.</li>
+    <li>Parse forwarded emails and uploaded receipts into structured trip/expense data using AI (see "Third-party services" below).</li>
+    <li>Generate expense reports as PDFs, optionally emailed to a recipient you specify.</li>
+    <li>Send push notifications for booking changes, expiring vouchers, and trip reminders.</li>
+    <li>Greet you by name and personalize the dashboard.</li>
+    <li>Diagnose and fix bugs that affect your account.</li>
+  </ul>
+
+  <h2>Third-party services</h2>
+  <p>Continuum operates on top of several third-party services. We carefully selected providers that respect data privacy and have data processing agreements in place.</p>
+  <ul>
+    <li><strong>Supabase</strong> — hosts our primary database (Postgres) and authentication on AWS infrastructure. All your account data, trips, expenses, and receipts are stored here with row-level security so only you can access your own rows.</li>
+    <li><strong>Vercel</strong> — hosts the web application and serverless functions; request logs may transit Vercel.</li>
+    <li><strong>Anthropic (Claude API)</strong> — when you forward a booking email, upload a receipt for OCR, or drag in a PDF/Word itinerary, the content is sent to Anthropic's Claude API for AI parsing. Per Anthropic's API agreement, inputs are <em>not</em> retained for model training by default. We do not send any data to Claude that you did not explicitly trigger.</li>
+    <li><strong>Resend</strong> — sends outbound emails (e.g. expense reports you forward to a recipient). Resend receives the recipient address, your name + reply-to email, and the PDF attachment.</li>
+    <li><strong>Cloudflare</strong> — DNS and inbound email routing. Forwarded emails to <code>@gocontinuum.app</code> addresses transit Cloudflare before being processed.</li>
+    <li><strong>PostHog</strong> — product analytics. We log anonymous events such as which features you use, identified by your user ID and email so we can troubleshoot user-reported issues. PostHog is configured as first-party analytics and does not share data with advertising networks.</li>
+    <li><strong>Sentry</strong> — error and crash monitoring. When the app errors, we send a stack trace and your user ID to Sentry so we can diagnose what went wrong. No data is collected when the app runs normally.</li>
+    <li><strong>Google OAuth</strong> — optional sign-in provider. If you choose "Sign in with Google", Google verifies your identity and returns your name and email.</li>
+    <li><strong>Apple Sign-in</strong> — optional sign-in provider. If you choose "Sign in with Apple", Apple verifies your identity. Apple offers a relay email if you choose not to share your real email — we honor that.</li>
+    <li><strong>Google Maps Places API</strong> — used for city / hotel autocomplete when adding bookings manually. Queries you type are sent to Google but are not persisted by us.</li>
+  </ul>
+
+  <h2>Optional integrations</h2>
+  <p>Continuum offers integrations that require additional permissions, all opt-in:</p>
+  <ul>
+    <li><strong>Gmail import</strong> — if you explicitly authorize Continuum to read your Gmail, we filter for travel-related messages (matching airline, hotel, and booking-pattern keywords) and parse those into trips. We do not read messages outside that filter. You can disconnect at any time in Settings or revoke access in your Google Account.</li>
+    <li><strong>Camera / Photo library (iOS / Android native apps)</strong> — when you tap "Snap Receipt", we request camera access; when you pick a receipt photo from your library, we request photo library access. Permissions are requested only when triggered and are not used for any other purpose.</li>
+    <li><strong>Push notifications</strong> — when you opt in, we store a device-specific subscription endpoint so we can send notifications about your trips and vouchers.</li>
+  </ul>
+
+  <h2>Data we do <em>not</em> collect</h2>
+  <p>We explicitly do not collect:</p>
+  <ul>
+    <li>Precise location (GPS).</li>
+    <li>Coarse location (cell tower / Wi-Fi).</li>
+    <li>Health or fitness data.</li>
+    <li>Payment or financial data — Continuum is free; there are no in-app purchases or stored payment methods.</li>
+    <li>Your iOS or Android contacts. When you add an expense-split companion, you type their email manually.</li>
+    <li>Advertising identifiers (IDFA, AAID) — we have nothing to advertise.</li>
+    <li>Browsing or search history outside of Continuum.</li>
+  </ul>
+
+  <h2>Tracking</h2>
+  <p>Continuum does <strong>not</strong> share data with third-party data brokers, does not fingerprint devices, and does not combine your data with third-party data for advertising. We do not "track" you in the sense Apple defines the term. All analytics are first-party.</p>
+
+  <h2>Data storage and security</h2>
+  <p>Your data is stored in Supabase (Postgres on AWS) with row-level security ensuring only you can access your own rows. All client–server traffic is over HTTPS. Anthropic, Sentry, PostHog, and Resend each receive only the specific data described above, over HTTPS, and are governed by their own data processing agreements.</p>
+
+  <h2>Data retention and deletion</h2>
+  <p>Your data is retained as long as your account is active. You can permanently delete your account and all associated data <strong>directly from the app</strong>: Settings → Account → Danger Zone → Delete Account. This action is irreversible and removes all data tied to your user ID (trips, expenses, receipts, forwarding addresses, linked programs, vouchers, expense reports, split groups) plus your authentication record. Deletion typically completes within a few seconds.</p>
+  <p>If you cannot reach the app for any reason, you can also request deletion by emailing the address below.</p>
+
+  <h2>Your rights</h2>
+  <p>You have the right to:</p>
+  <ul>
+    <li>Access your personal data (Settings → Account → Export My Data downloads a JSON archive).</li>
+    <li>Correct inaccurate data.</li>
+    <li>Permanently delete your account and data (Settings → Account → Delete Account).</li>
+    <li>Disconnect optional integrations (Gmail in Dashboard; camera / photos / notifications in OS Settings; Apple/Google sign-in by deleting your account).</li>
+    <li>Contact us with questions or complaints.</li>
+  </ul>
+
+  <h2>Children's privacy</h2>
+  <p>Continuum is not directed at children under 13 (or under 16 in the EEA / UK). We do not knowingly collect data from children.</p>
+
+  <h2>International users</h2>
+  <p>Continuum is operated from North America. By using the app, you consent to your data being transferred to and processed in the United States and other jurisdictions where our third-party processors operate, including those listed above.</p>
+
+  <h2>Contact</h2>
+  <p>For privacy-related questions, requests for access or deletion, or complaints, contact us at <a href="mailto:nicholas.sh.li@gmail.com">nicholas.sh.li@gmail.com</a>.</p>
+
+  <h2>Changes to this policy</h2>
+  <p>We may update this privacy policy from time to time. Changes will be posted on this page with an updated effective date. Material changes will be highlighted in the app.</p>
+
+  <a class="back" href="https://gocontinuum.app">Back to Continuum</a>
+</body>
+</html>
