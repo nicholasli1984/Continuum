@@ -80,7 +80,7 @@ https://gocontinuum.app/privacy.html
 
 **Support email**
 ```
-nicholas.sh.li@gmail.com
+contact@gocontinuum.app
 ```
 
 **Website**
@@ -120,7 +120,7 @@ You collect data over the internet.
 (All Supabase API calls and your Vercel functions use HTTPS.)
 
 ### Users can request data deletion: YES
-Direct them to email nicholas.sh.li@gmail.com — you can delete their Supabase rows manually.
+Direct them to email contact@gocontinuum.app — you can delete their Supabase rows manually.
 
 ### Data types collected (check each that applies):
 
@@ -258,7 +258,7 @@ The web build at gocontinuum.app is the canonical app — the iOS shell is
 a Capacitor wrapper around the same React codebase. No platform-specific
 behavior beyond native camera + push.
 
-Contact: nicholas.sh.li@gmail.com
+Contact: contact@gocontinuum.app
 ```
 
 ---
