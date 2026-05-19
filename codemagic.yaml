@@ -118,8 +118,17 @@ workflows:
 
       - name: Set up code signing
         script: |
-          # Auto-fetch (or create) distribution cert + provisioning profile via
-          # the App Store Connect API key. Then patch the Xcode project to use them.
+          # Full automated signing flow. The previous version only ran
+          # `xcode-project use-profiles`, which expects a distribution cert to
+          # already exist and only creates the profile. With no cert in the
+          # team (or only stale ones), that fails with "No matching profiles
+          # found." `fetch-signing-files --create` does the full job:
+          # creates the cert if needed, creates the profile, downloads both.
+          keychain initialize
+          app-store-connect fetch-signing-files "app.gocontinuum.continuum" \
+            --type IOS_APP_STORE \
+            --create
+          keychain add-certificates
           xcode-project use-profiles
 
       - name: Build .ipa
