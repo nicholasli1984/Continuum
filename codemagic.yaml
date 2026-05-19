@@ -113,14 +113,24 @@ workflows:
 
       - name: Set version + build number from Codemagic
         script: |
-          # Auto-bump CFBundleVersion to a unique value per build (TestFlight
-          # rejects duplicate build numbers). Marketing version (CFBundleShortVersionString)
-          # is left to whatever's in Info.plist — you bump it manually for
-          # 1.0 → 1.1 type changes.
+          # Set CFBundleVersion to the max of (Apple's latest known build,
+          # Codemagic's per-workflow $BUILD_NUMBER) + 1. The previous version
+          # of this step queried only `get-latest-app-store-build-number`,
+          # which ignores TestFlight-only builds — so when we successfully
+          # uploaded Build #2 to TestFlight (but didn't submit for review),
+          # the next upload tried to reuse #2 and Apple rejected it with
+          # "The provided entity includes an attribute with a value that has
+          # already been used." Now we also check TestFlight's latest and
+          # take the larger.
           cd ios/App
-          BUILD_NUMBER=$(($(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo 0) + 1))
-          echo "Setting build number to $BUILD_NUMBER"
-          agvtool new-version -all "$BUILD_NUMBER"
+          LATEST_APP_STORE=$(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo 0)
+          LATEST_TESTFLIGHT=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo 0)
+          LATEST=$(( LATEST_APP_STORE > LATEST_TESTFLIGHT ? LATEST_APP_STORE : LATEST_TESTFLIGHT ))
+          NEW_BUILD_NUMBER=$(( LATEST + 1 ))
+          echo "Latest App Store build: $LATEST_APP_STORE"
+          echo "Latest TestFlight build: $LATEST_TESTFLIGHT"
+          echo "Setting new CFBundleVersion to: $NEW_BUILD_NUMBER"
+          agvtool new-version -all "$NEW_BUILD_NUMBER"
 
       - name: Install CocoaPods (skip on Capacitor 8 SPM)
         script: |
