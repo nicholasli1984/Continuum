@@ -118,16 +118,20 @@ workflows:
 
       - name: Set up code signing
         script: |
-          # Full automated signing flow. The previous version only ran
-          # `xcode-project use-profiles`, which expects a distribution cert to
-          # already exist and only creates the profile. With no cert in the
-          # team (or only stale ones), that fails with "No matching profiles
-          # found." `fetch-signing-files --create` does the full job:
-          # creates the cert if needed, creates the profile, downloads both.
+          # Manual signing flow. We tried two prior approaches that both
+          # failed on this Apple Developer account:
+          #   1. `xcode-project use-profiles` alone — needs an existing cert
+          #   2. `app-store-connect fetch-signing-files --create` — Apple's
+          #      API silently rejected cert creation
+          # Both produced "No matching profiles found" with no diagnosable
+          # detail. We now sidestep the API entirely: the cert and profile
+          # were generated manually (CSR via OpenSSL → Apple → .p12) and
+          # uploaded to Codemagic's team-level Code Signing Identities.
+          # `keychain add-certificates` pulls the uploaded .p12 into the
+          # runner's keychain; `xcode-project use-profiles` matches the
+          # uploaded .mobileprovision to the Xcode project's bundle id and
+          # patches the project settings.
           keychain initialize
-          app-store-connect fetch-signing-files "app.gocontinuum.continuum" \
-            --type IOS_APP_STORE \
-            --create
           keychain add-certificates
           xcode-project use-profiles
 
