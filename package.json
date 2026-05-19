@@ -11,7 +11,8 @@
     "cap:sync:android": "vite build && cap sync android",
     "cap:open:android": "cap open android",
     "cap:run:android": "vite build && cap sync android && cap run android",
-    "cap:assets": "capacitor-assets generate --android",
+    "icon:generate": "node scripts/generate-icon.mjs",
+    "cap:assets": "node scripts/generate-icon.mjs && capacitor-assets generate --android --ios",
     "android:setup-signing": "powershell -ExecutionPolicy Bypass -File scripts/setup-android-signing.ps1",
     "android:build-aab": "npm run cap:sync:android && cd android && cmd /c gradlew.bat bundleRelease"
   },

@@ -67,6 +67,17 @@ workflows:
           fi
           npx cap sync ios
 
+      - name: Regenerate iOS app icon + splash from assets/
+        script: |
+          # Apple rejected v1 with "placeholder icon" (Guideline 2.3.8). The
+          # source PNGs in assets/ are now real branded artwork — re-run the
+          # Capacitor Assets generator on every build so the iOS project
+          # picks up the latest icon and splash variants.
+          # `npm run cap:assets` runs both the icon script and capacitor-assets.
+          npm run cap:assets
+          echo "iOS app icon generated. Sample of AppIcon.appiconset:"
+          ls -la ios/App/App/Assets.xcassets/AppIcon.appiconset/ | head -10
+
       - name: Patch Info.plist with permission usage descriptions
         script: |
           # Apple rejects apps that call camera / photo-library APIs without a

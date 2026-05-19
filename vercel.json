@@ -50,6 +50,7 @@
   ],
   "rewrites": [
     { "source": "/privacy", "destination": "/privacy.html" },
+    { "source": "/support", "destination": "/support.html" },
     { "source": "/api/gmail-webhook", "destination": "/api/gmail-auth" },
     { "source": "/((?!api/|privacy).*)", "destination": "/index.html" }
   ],
