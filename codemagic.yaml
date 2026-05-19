@@ -29,12 +29,15 @@ workflows:
         # certificate and provisioning profile — no manual cert management.
         distribution_type: app_store
         bundle_identifier: app.gocontinuum.continuum
+      groups:
+        # APP_STORE_APPLE_ID lives here — the 10-digit numeric Apple ID for
+        # the Continuum app record in App Store Connect. Defined in the
+        # Codemagic UI (Continuum → Environment variables) so it's not in
+        # the repo; the group is referenced by name and pulled at build time.
+        - app_store_connect_env
       vars:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
-        APP_STORE_APPLE_ID: # set this in Codemagic env vars after creating
-                            # the App Store Connect app record (numeric "Apple ID"
-                            # shown in App Information). Leave blank to use bundle id.
       node: 20
       xcode: latest
       cocoapods: default
