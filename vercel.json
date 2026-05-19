@@ -1,6 +1,13 @@
 {
   "headers": [
     {
+      "source": "/",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+        { "key": "Pragma", "value": "no-cache" }
+      ]
+    },
+    {
       "source": "/index.html",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
@@ -14,9 +21,22 @@
       ]
     },
     {
+      "source": "/push-sw.js",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/build-version.json",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
+    {
       "source": "/((?!assets/).*)",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, must-revalidate" }
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+        { "key": "Pragma", "value": "no-cache" }
       ]
     }
   ],
@@ -29,6 +49,24 @@
     }
   ],
   "rewrites": [
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
-  ]
+    { "source": "/privacy", "destination": "/privacy.html" },
+    { "source": "/api/gmail-webhook", "destination": "/api/gmail-auth" },
+    { "source": "/((?!api/|privacy).*)", "destination": "/index.html" }
+  ],
+  "crons": [
+    { "path": "/api/news?action=refresh-transfer-bonuses", "schedule": "0 12 * * 1" }
+  ],
+  "functions": {
+    "api/forward-report.js": {
+      "includeFiles": "node_modules/pdfkit/js/data/**"
+    },
+    "api/inbound-email.js": {
+      "memory": 1024,
+      "maxDuration": 60
+    },
+    "api/render-html-to-png.js": {
+      "memory": 1024,
+      "maxDuration": 30
+    }
+  }
 }

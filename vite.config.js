@@ -2,12 +2,31 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import { writeFileSync } from 'fs'
+
+const BUILD_TS = Date.now().toString(36);
 
 export default defineConfig({
+  define: {
+    '__BUILD_TS__': JSON.stringify(BUILD_TS),
+  },
   plugins: [
     react(),
+    // Replace __BUILD_TS__ in index.html and write version file for API
+    {
+      name: 'html-build-ts',
+      transformIndexHtml(html) {
+        return html.replace(/__BUILD_TS__/g, BUILD_TS);
+      },
+      buildStart() {
+        // Write build timestamp so the API endpoint can read it
+        writeFileSync('public/build-version.json', JSON.stringify({ v: BUILD_TS }));
+      },
+    },
     VitePWA({
       registerType: 'autoUpdate',
+      // Disable the default virtual:pwa-register — we'll register manually
+      injectRegister: false,
       includeAssets: ['favicon.ico', 'icon.svg', 'apple-touch-icon-180x180.png'],
       manifest: {
         name: 'Continuum — Elite Status Intelligence',
@@ -39,15 +58,23 @@ export default defineConfig({
         skipWaiting: true,
         clientsClaim: true,
         importScripts: ['/push-sw.js'],
-        globPatterns: ['**/*.{js,css,ico,png,svg,woff2}'],
-        // index.html is NOT precached — served via NetworkFirst runtime route
-        // so new deploys always propagate immediately
+        // Only precache static assets (icons, images) — NOT JS/CSS bundles
+        // JS/CSS have content hashes in filenames and are fetched fresh via NetworkFirst
+        globPatterns: ['**/*.{ico,png,svg,woff2}'],
         navigateFallback: null,
+        // Clean up old precaches on activate
+        cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
+            // HTML pages — always go to network, never serve stale HTML
             urlPattern: ({ request }) => request.mode === 'navigate',
+            handler: 'NetworkOnly',
+          },
+          {
+            // JS and CSS — network first with short cache
+            urlPattern: /\.(?:js|css)$/,
             handler: 'NetworkFirst',
-            options: { cacheName: 'html-cache', expiration: { maxEntries: 1, maxAgeSeconds: 3600 }, networkTimeoutSeconds: 3 },
+            options: { cacheName: 'assets-cache', expiration: { maxEntries: 30, maxAgeSeconds: 86400 }, networkTimeoutSeconds: 5 },
           },
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,

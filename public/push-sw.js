@@ -1,3 +1,29 @@
+// ── Aggressive cache purge on activate ──
+// This runs inside the Workbox SW. On every activation, nuke ALL runtime
+// caches (html-cache, assets-cache, etc.) so stale HTML is never served.
+// The Workbox precache is handled separately by cleanupOutdatedCaches.
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) => {
+      return Promise.all(
+        keys
+          .filter((k) => k.includes("html-cache") || k.includes("assets-cache"))
+          .map((k) => caches.delete(k))
+      );
+    }).then(() => {
+      // Force all open tabs to use this new SW immediately
+      return self.clients.claim();
+    }).then(() => {
+      // Tell all controlled pages to reload so they get fresh HTML
+      return self.clients.matchAll({ type: "window" }).then((windowClients) => {
+        windowClients.forEach((client) => {
+          client.postMessage({ type: "SW_UPDATED" });
+        });
+      });
+    })
+  );
+});
+
 // Push notification handler — loaded by the Workbox service worker via importScripts
 self.addEventListener("push", (event) => {
   if (!event.data) return;

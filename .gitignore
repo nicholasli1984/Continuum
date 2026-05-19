@@ -1,8 +1,61 @@
 node_modules/
 dist/
 .env
+.env.vercel
 .DS_Store
 
 .vercel
 .env*.local
 .claude/settings.local.json
+
+# Personal scratchpad — HTML mockups, AI prompt notes
+prompts/
+
+# Stray Windows-temp artifacts that landed at repo root
+tempsimple.png
+tempwhite.png
+UsersnichoAppDataLocalTemp*
+C:*
+
+# Large source media kept locally only (App Store screenshots are committed,
+# but the raw 95MB hero video is not).
+dev/hawaiiVideo.original.mp4
+dev/null
+
+# Android signing — paths only, never the key itself
+android/key.properties
+
+# Capacitor / Android build artifacts (keep source, ignore generated)
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/app/release/
+android/app/debug/
+*.keystore
+*.jks
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+android/capacitor.settings.gradle
+android/capacitor.build.gradle
+
+# Capacitor / iOS — keep source, ignore generated/CI artifacts.
+# The ios/ folder itself is committed once it's been added (so Codemagic
+# doesn't have to bootstrap from scratch every build).
+ios/App/Pods/
+ios/App/build/
+ios/App/App/public/
+ios/App/App/capacitor.config.json
+ios/App/App/config.xml
+ios/DerivedData/
+ios/App/Podfile.lock
+ios/.xcode.env.local
+*.ipa
+*.dSYM
+*.dSYM.zip
+*.mobileprovision
+*.p8
+*.p12
+*.cer
+build/ios/
