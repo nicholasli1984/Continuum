@@ -1,0 +1,10 @@
+# Copy this file to `android/key.properties` and fill in your values.
+# DO NOT commit android/key.properties — it's already in .gitignore.
+#
+# storeFile must be an ABSOLUTE path to your .keystore file.
+# Keep the keystore OUT of this repo (e.g. ~/keystores/continuum-release.keystore).
+
+storePassword=YOUR_KEYSTORE_PASSWORD
+keyPassword=YOUR_KEY_PASSWORD
+keyAlias=continuum
+storeFile=/absolute/path/to/continuum-release.keystore
