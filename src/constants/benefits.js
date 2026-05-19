@@ -1,3 +1,5 @@
+const _b = (v, d, ok) => ({ v, d, ok: !!ok });
+
 // Alliance benefits comparison data
 
 export const ALLIANCE_MBR = {

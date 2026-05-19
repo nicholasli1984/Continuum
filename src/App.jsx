@@ -19,7 +19,26 @@ import { renderPrograms as renderProgramsPage } from "./pages/Programs";
 import { renderAlliances as renderAlliancesPage } from "./pages/Alliances";
 import { renderReports as renderReportsPage } from "./pages/Reports";
 import { renderNews as renderNewsPage } from "./pages/News";
-import { renderPremium as renderPremiumPage } from "./pages/Premium";
+// Premium page removed — every feature is available to every signed-in user.
+import { renderExpenseSplit as renderExpenseSplitPage } from "./pages/ExpenseSplit";
+import { renderWallet as renderWalletPage } from "./pages/Wallet";
+import { renderAwardSweetSpots as renderAwardSweetSpotsPage } from "./pages/AwardSweetSpots";
+// Premium / paid-tier system removed — see git history if reintroducing.
+import Tour from "./components/tour/Tour";
+import VoucherModal from "./components/VoucherModal";
+import { snapReceiptNative, isNative } from "./utils/nativeCamera";
+import { expenseUSD } from "./utils/expenseUsd";
+import { isLandingDemo, getDemoTrip } from "./utils/landingDemo";
+import LandingPhoneCarousel from "./components/LandingPhoneCarousel";
+import { getReportExpenses, buildExpenseReportMembership } from "./utils/reportExpenses";
+import { buildPrintReport } from "./utils/buildPrintReport";
+import ReportedBadge from "./components/ReportedBadge";
+import { TOUR_STEPS } from "./components/tour/tourSteps";
+import { DEMO_TRIPS, DEMO_EXPENSES, readDemoMode, writeDemoMode } from "./constants/demoData";
+import { useTransferBonuses } from "./components/transferBonuses/useTransferBonuses";
+import { CARD_TO_CURRENCY } from "./constants/pointValues";
+import HoverGlowButton from "./components/HoverGlowButton";
+import OnboardingWizard from "./components/onboarding/OnboardingWizard";
 
 // ============================================================
 // LOGO COMPONENT — Geometric travel icon in Neuron brand style
@@ -389,7 +408,7 @@ const IconBtn = ({ icon, label, active, onClick, badge }) => (
     background: active ? "rgba(14,165,160,0.15)" : "transparent", color: active ? "#0EA5A0" : "rgba(0,0,0,0.35)", transition: "all 0.2s",
   }}>
     {icon}
-    {badge && <span style={{ position: "absolute", top: 4, right: 4, width: 8, height: 8, borderRadius: "50%", background: "#ef4444" }} />}
+    {badge && <span style={{ position: "absolute", top: 4, right: 4, width: 8, height: 8, borderRadius: "50%", background: "#C8553D" }} />}
   </button>
 );
 
@@ -422,6 +441,58 @@ const renderPdfToImages = async (pdfDataUrl) => {
   return images;
 };
 
+// ── Render a multi-page PDF to a single tall PNG (stitches every page
+// vertically). Used when storing a PDF receipt as an image so multi-page
+// receipts (hotel folios, multi-day Uber statements) preserve every page
+// instead of getting truncated to page 1.
+//
+// Returns a PNG data URL.
+const renderPdfToStitchedImage = async (pdfDataUrl, opts = {}) => {
+  const { scale = 2, gap = 16, gapColor = "#FFFFFF" } = opts;
+  if (!window.pdfjsLib) {
+    await new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+      s.onload = () => {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+        resolve();
+      };
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+  const pdf = await window.pdfjsLib.getDocument(pdfDataUrl).promise;
+  const pages = [];
+  let maxWidth = 0, totalHeight = 0;
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const viewport = page.getViewport({ scale });
+    const canvas = document.createElement("canvas");
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
+    pages.push(canvas);
+    if (canvas.width > maxWidth) maxWidth = canvas.width;
+    totalHeight += canvas.height;
+  }
+  const totalGap = gap * Math.max(0, pages.length - 1);
+  const out = document.createElement("canvas");
+  out.width = maxWidth;
+  out.height = totalHeight + totalGap;
+  const ctx = out.getContext("2d");
+  ctx.fillStyle = gapColor;
+  ctx.fillRect(0, 0, out.width, out.height);
+  let y = 0;
+  for (const c of pages) {
+    // Center horizontally if a page is narrower than maxWidth
+    const x = Math.floor((maxWidth - c.width) / 2);
+    ctx.drawImage(c, x, y);
+    y += c.height + gap;
+  }
+  return out.toDataURL("image/png", 0.92);
+};
+
 // ── Expense localStorage helpers (module-level, no closure issues) ──
 const EXPENSES_STORAGE_KEY = (uid) => `continuum_expenses_${uid}`;
 const saveExpensesToStorage = (uid, exps) => {
@@ -447,22 +518,62 @@ const loadExpensesFromStorage = (uid) => {
 // ============================================================
 // GOOGLE PLACES AUTOCOMPLETE COMPONENT
 // ============================================================
-let googleMapsLoadPromise = null;
-const loadGoogleMaps = () => {
-  if (window.google?.maps?.places) return Promise.resolve();
-  if (googleMapsLoadPromise) return googleMapsLoadPromise;
+//
+// Google's modern Maps loader (loading=async, v=weekly) does NOT eagerly
+// attach sub-libraries to window.google.maps. Reading google.maps.places
+// directly returns undefined until you explicitly await
+// `google.maps.importLibrary("places")`. The legacy synchronous pattern
+// (just construct `new google.maps.places.Autocomplete(...)`) used to work
+// by accident; through 2025–2026 Google progressively enforced the async
+// pattern and that path silently stopped resolving the Places namespace.
+//
+// `loadGooglePlaces()` returns the resolved Places library object so
+// callers can construct Autocomplete / PlacesService against it directly,
+// without ever touching the (possibly empty) `window.google.maps.places`.
+let googleMapsScriptPromise = null;
+let googlePlacesLibPromise = null;
+
+const loadGoogleMapsScript = () => {
+  if (window.google?.maps?.importLibrary) return Promise.resolve();
+  if (googleMapsScriptPromise) return googleMapsScriptPromise;
   const key = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-  if (!key) return Promise.reject("No API key");
-  googleMapsLoadPromise = new Promise((resolve, reject) => {
+  if (!key) return Promise.reject(new Error("No API key"));
+  googleMapsScriptPromise = new Promise((resolve, reject) => {
     const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&loading=async&v=weekly`;
     script.async = true;
-    script.onload = resolve;
-    script.onerror = reject;
+    script.defer = true;
+    script.onload = () => {
+      if (window.google?.maps?.importLibrary) resolve();
+      else { googleMapsScriptPromise = null; reject(new Error("importLibrary unavailable after script load")); }
+    };
+    script.onerror = (e) => {
+      // Clear the cached rejected promise so a future call can retry — without
+      // this, one transient network failure permanently breaks Place
+      // Autocomplete for the rest of the session.
+      googleMapsScriptPromise = null;
+      reject(e instanceof Error ? e : new Error("Google Maps script failed to load"));
+    };
     document.head.appendChild(script);
   });
-  return googleMapsLoadPromise;
+  googleMapsScriptPromise.catch(() => {});
+  return googleMapsScriptPromise;
 };
+
+// Resolves to the Places library namespace (containing Autocomplete,
+// PlacesService, etc.). Cached so repeated callers share one fetch.
+const loadGooglePlaces = () => {
+  if (googlePlacesLibPromise) return googlePlacesLibPromise;
+  googlePlacesLibPromise = loadGoogleMapsScript()
+    .then(() => window.google.maps.importLibrary("places"))
+    .catch((err) => { googlePlacesLibPromise = null; throw err; });
+  googlePlacesLibPromise.catch(() => {});
+  return googlePlacesLibPromise;
+};
+
+// Kept as a thin back-compat alias so existing callers still resolve, but
+// prefer `loadGooglePlaces()` which gives you the library object directly.
+const loadGoogleMaps = () => loadGooglePlaces().then(() => {});
 
 const PlacesAutocomplete = ({ value, onChange, onPlaceSelect, placeholder, style, placesType }) => {
   const inputRef = useRef(null);
@@ -484,12 +595,12 @@ const PlacesAutocomplete = ({ value, onChange, onPlaceSelect, placeholder, style
   // Load Google Maps and attach autocomplete
   useEffect(() => {
     let cancelled = false;
-    loadGoogleMaps().then(() => {
+    loadGooglePlaces().then((places) => {
       if (cancelled || !inputRef.current || autocompleteRef.current) return;
-      if (!window.google?.maps?.places) return;
+      if (!places?.Autocomplete) return;
       const options = { fields: ["formatted_address", "name", "geometry"] };
       if (placesType === "establishment") options.types = ["establishment"];
-      const ac = new window.google.maps.places.Autocomplete(inputRef.current, options);
+      const ac = new places.Autocomplete(inputRef.current, options);
       ac.addListener("place_changed", () => {
         const place = ac.getPlace();
         if (!place) return;
@@ -582,6 +693,510 @@ const TripCityBackground = ({ theme, cityName, darkMode }) => {
   );
 };
 
+// Renders an HTML-typed receipt as a pure React card. We previously tried
+// 7 different rendering strategies (data: URLs, srcDoc, Blob URLs,
+// dangerouslySetInnerHTML, Shadow DOM, document.write into iframe,
+// html2canvas auto-conversion) — every one of them produced blank output
+// on real-world transactional emails because those emails rely on CID
+// background images (which die in forwarding) + white text. So we stopped
+// fighting it and render structured data instead. The original email HTML
+// is still accessible via "Open Original Email" — that opens in a new
+// window with document.write, which is the ONE renderer that actually
+// works (no service worker, no sandbox, full browser doc).
+function HtmlReceiptViewer({ exp, css, user, supabase, setExpenses, setCropExpenseId, setCropRect, cropStartRef, cropEndRef }) {
+  const D = css.bg !== "#FFFFFF";
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [migrating, setMigrating] = useState(false);
+  const [migrationError, setMigrationError] = useState("");
+  const cardRef = useRef(null);
+
+  // Decode the raw HTML once for the "Open Original Email" modal
+  const rawHtml = useMemo(() => {
+    const dataUrl = exp.receiptImage?.data;
+    if (!dataUrl) return "";
+    if (!dataUrl.startsWith("data:")) return dataUrl;
+    try {
+      const b64 = dataUrl.split(",")[1] || "";
+      const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+      let html = new TextDecoder("utf-8").decode(bytes);
+      if (html.charCodeAt(0) === 0xFEFF) html = html.slice(1);
+      return html;
+    } catch {
+      return "";
+    }
+  }, [exp.receiptImage?.data]);
+
+  // Auto-migrate legacy text/html receipts into image/png by POSTing the
+  // HTML to the server's Chromium screenshot endpoint. Runs once per
+  // record. After migration the parent re-renders with the PNG and falls
+  // through to the regular image renderer (which has Crop built-in).
+  const migratedOnceRef = useRef(false);
+  useEffect(() => {
+    if (migratedOnceRef.current) return;
+    if (!rawHtml || !user || !supabase) return;
+    // Only migrate genuine HTML receipts (not the summary-card text fallback)
+    if (!/<\/?(html|body|div|table|p|font|td|tr|h[1-6])\b/i.test(rawHtml)) return;
+    migratedOnceRef.current = true;
+    let cancelled = false;
+
+    (async () => {
+      setMigrating(true);
+      setMigrationError("");
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        if (!token) throw new Error("Not signed in");
+        const resp = await fetch("/api/render-html-to-png", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ html: rawHtml }),
+        });
+        const payload = await resp.json();
+        if (!resp.ok || !payload?.ok || !payload?.dataUrl) {
+          throw new Error(payload?.error || `HTTP ${resp.status}`);
+        }
+        if (cancelled) return;
+        const newImg = {
+          name: (exp.receiptImage?.name || "receipt").replace(/\.html?$/i, "") + ".png",
+          size: payload.bytes,
+          type: "image/png",
+          data: payload.dataUrl,
+          summary: exp.receiptImage?.summary,
+        };
+        setExpenses(prev => prev.map(ex => ex.id === exp.id ? { ...ex, receiptImage: newImg } : ex));
+        await supabase.from("expenses").update({ receipt_image: newImg }).eq("id", exp.id).eq("user_id", user.id);
+      } catch (err) {
+        if (!cancelled) {
+          console.error("[HtmlReceiptViewer] migration failed", err);
+          setMigrationError(err?.message || "Conversion failed");
+          migratedOnceRef.current = false; // allow retry
+        }
+      } finally {
+        if (!cancelled) setMigrating(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [rawHtml, user, supabase, exp.id, exp.receiptImage?.name, exp.receiptImage?.summary, setExpenses]);
+
+  // Build the receipt summary. New records (from the updated server) carry
+  // a `.summary` object inline. Older records that pre-date that change
+  // get a best-effort summary extracted from the raw HTML at render time.
+  const summary = useMemo(() => {
+    if (exp.receiptImage?.summary) return exp.receiptImage.summary;
+    // Legacy fallback: extract from rawHtml
+    const stripTags = (s) => String(s || "")
+      .replace(/<style[\s\S]*?<\/style>/gi, "")
+      .replace(/<script[\s\S]*?<\/script>/gi, "")
+      .replace(/<\/?(p|div|br|tr|li|h[1-6]|hr|table)[^>]*>/gi, "\n")
+      .replace(/<[^>]+>/g, "")
+      .replace(/&nbsp;/gi, " ")
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/[ \t]+/g, " ")
+      .replace(/\n[ \t]+/g, "\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+    return {
+      merchant: "",
+      category: exp.category || "",
+      amount: exp.amount || 0,
+      currency: exp.currency || "USD",
+      date: exp.date || "",
+      fromEmail: "",
+      subject: "",
+      bodyText: stripTags(rawHtml).slice(0, 5000),
+      hasAttachment: false,
+      attachmentName: null,
+    };
+  }, [exp.receiptImage?.summary, rawHtml, exp]);
+
+  const handleOpenOriginal = () => {
+    if (!rawHtml) return;
+    setShowEmailModal(true);
+  };
+
+  const handleCropCard = async () => {
+    try {
+      if (!cardRef.current) return;
+      const html2canvas = (await import("html2canvas")).default;
+      const canvas = await html2canvas(cardRef.current, {
+        useCORS: true,
+        allowTaint: true,
+        scale: 2,
+        backgroundColor: D ? "#181818" : "#ffffff",
+      });
+      const dataUrl = canvas.toDataURL("image/png", 0.92);
+      const newImg = { name: `receipt-${Date.now()}.png`, size: dataUrl.length, type: "image/png", data: dataUrl };
+      setExpenses(prev => prev.map(ex => ex.id === exp.id ? { ...ex, receiptImage: newImg } : ex));
+      if (user) await supabase.from("expenses").update({ receipt_image: newImg }).eq("id", exp.id).eq("user_id", user.id);
+      setTimeout(() => {
+        setCropExpenseId(exp.id);
+        setCropRect(null);
+        cropStartRef.current = null;
+        cropEndRef.current = null;
+      }, 100);
+    } catch (e) {
+      console.error("Crop failed:", e);
+    }
+  };
+
+  const cardBg = D ? "#181818" : "#ffffff";
+  const cardText = D ? "#f5f5f5" : "#1a1a1a";
+  const cardMeta = D ? "#999" : "#888";
+  const cardDivider = D ? "#2a2a2a" : "#eaeaea";
+  const bodyBg = D ? "#0f0f0f" : "#fafafa";
+
+  const formatCategory = (c) => String(c || "other").replace(/_/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
+
+  if (migrating) {
+    return (
+      <div style={{ border: `1px solid ${css.border}`, borderRadius: 8, overflow: "hidden", background: cardBg, color: cardText, padding: "48px 24px", textAlign: "center" }}>
+        <div style={{ width: 36, height: 36, border: `3px solid ${cardDivider}`, borderTopColor: css.accent, borderRadius: "50%", margin: "0 auto 16px", animation: "spin 1s linear infinite" }} />
+        <div style={{ fontSize: 14, fontWeight: 600, color: cardText, marginBottom: 4 }}>Converting email to image…</div>
+        <div style={{ fontSize: 12, color: cardMeta }}>One-time conversion. This happens on the server (~5 seconds).</div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div ref={cardRef} style={{ border: `1px solid ${css.border}`, borderRadius: 8, overflow: "hidden", background: cardBg, color: cardText }}>
+        {migrationError && (
+          <div style={{ padding: "10px 14px", background: D ? "rgba(244,165,98,0.12)" : "#fff5e6", borderBottom: `1px solid ${cardDivider}`, color: D ? "#f4a562" : "#8a5a00", fontSize: 11 }}>
+            Auto-conversion to image failed: {migrationError}. Showing the parsed card instead.
+          </div>
+        )}
+        <div style={{ padding: "20px 20px 16px", borderBottom: `2px solid ${cardText}` }}>
+          <div style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: cardMeta, marginBottom: 6, fontWeight: 600 }}>
+            Email Receipt
+          </div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: cardText, lineHeight: 1.2 }}>
+            {summary.merchant || summary.subject || "Receipt"}
+          </div>
+          {summary.subject && summary.subject !== summary.merchant && (
+            <div style={{ fontSize: 12, color: cardMeta, marginTop: 4 }}>{summary.subject}</div>
+          )}
+        </div>
+
+        <div style={{ padding: "16px 20px", display: "grid", gridTemplateColumns: "auto 1fr", gap: "10px 16px", fontSize: 13 }}>
+          <div style={{ color: cardMeta }}>Amount</div>
+          <div style={{ color: cardText, fontWeight: 600, fontFamily: "'Geist Mono', monospace" }}>
+            {summary.currency} {Number(summary.amount || 0).toFixed(2)}
+          </div>
+          <div style={{ color: cardMeta }}>Date</div>
+          <div style={{ color: cardText, fontFamily: "'Geist Mono', monospace" }}>{summary.date || "—"}</div>
+          <div style={{ color: cardMeta }}>Category</div>
+          <div style={{ color: cardText }}>{formatCategory(summary.category)}</div>
+          {summary.fromEmail && (
+            <>
+              <div style={{ color: cardMeta }}>From</div>
+              <div style={{ color: cardText, wordBreak: "break-all" }}>{summary.fromEmail}</div>
+            </>
+          )}
+          {summary.hasAttachment && summary.attachmentName && (
+            <>
+              <div style={{ color: cardMeta }}>Attachment</div>
+              <div style={{ color: cardText, wordBreak: "break-all" }}>{summary.attachmentName}</div>
+            </>
+          )}
+        </div>
+
+        {summary.bodyText && (
+          <>
+            <div style={{ padding: "12px 20px 8px", borderTop: `1px solid ${cardDivider}` }}>
+              <div style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: cardMeta, fontWeight: 600 }}>
+                Email Body
+              </div>
+            </div>
+            <div style={{ padding: "0 20px 20px" }}>
+              <div style={{ background: bodyBg, border: `1px solid ${cardDivider}`, borderRadius: 6, padding: "14px 16px", fontSize: 13, lineHeight: 1.6, color: cardText, maxHeight: 360, overflow: "auto", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                {summary.bodyText}
+              </div>
+            </div>
+          </>
+        )}
+
+        <div style={{ padding: "10px 14px", borderTop: `1px solid ${cardDivider}`, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, background: D ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)" }}>
+          <span style={{ fontSize: 11, color: cardMeta }}>{(exp.receiptImage.size / 1024).toFixed(0)} KB</span>
+          <div style={{ display: "flex", gap: 6 }}>
+            <button
+              onClick={handleCropCard}
+              style={{ padding: "5px 12px", borderRadius: 4, border: `1px solid ${css.border}`, background: "transparent", color: css.text2, fontSize: 11, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
+            >
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2v14a2 2 0 002 2h14"/><path d="M18 22V8a2 2 0 00-2-2H2"/></svg>
+              Crop
+            </button>
+            <button
+              onClick={handleOpenOriginal}
+              disabled={!rawHtml}
+              style={{ padding: "5px 12px", borderRadius: 4, border: `1px solid ${css.accent}`, background: "transparent", color: css.accent, fontSize: 11, fontWeight: 600, cursor: rawHtml ? "pointer" : "default", opacity: rawHtml ? 1 : 0.5 }}
+            >
+              View Email
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {showEmailModal && (
+        <OriginalEmailModal
+          rawHtml={rawHtml}
+          onClose={() => setShowEmailModal(false)}
+        />
+      )}
+    </>
+  );
+}
+
+// Full-screen overlay that renders the original email's HTML inside an
+// iframe via document.write, with aggressive readability CSS injected so
+// transactional emails (which usually have white text on a CID background
+// image — dead after forwarding) still render as readable dark-on-white.
+function OriginalEmailModal({ rawHtml, onClose }) {
+  const iframeRef = useRef(null);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!rawHtml || !iframeRef.current) return;
+
+    const safetyCss = `<style id="continuum-safety-css">
+  html, body { background: #ffffff !important; margin: 0 !important; padding: 0 !important; }
+  body { color: #1a1a1a !important; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important; font-size: 14px !important; line-height: 1.55 !important; padding: 24px !important; box-sizing: border-box !important; }
+  body *, body *::before, body *::after { color: #1a1a1a !important; background-image: none !important; }
+  body table, body tr, body td, body th { background-color: transparent !important; border-color: #e5e5e5 !important; }
+  body a { color: #0066cc !important; text-decoration: underline; }
+  body img { max-width: 100% !important; height: auto !important; border: none !important; }
+  body img[src^="cid:"] { display: none !important; }
+  body font[color] { color: #1a1a1a !important; }
+  body [bgcolor] { background-color: transparent !important; }
+  body h1, body h2, body h3, body h4, body h5, body h6 { color: #0a0a0a !important; }
+  body hr { border-color: #e5e5e5 !important; }
+</style>`;
+
+    // Build the doc with safety CSS injected at the end of <head> AND
+    // again at the end of <body> so it always wins specificity ties.
+    let docToWrite;
+    if (/<\/head>/i.test(rawHtml)) {
+      docToWrite = rawHtml.replace(/<\/head>/i, safetyCss + "</head>");
+    } else if (/<html[\s>]/i.test(rawHtml)) {
+      docToWrite = rawHtml.replace(/<html[^>]*>/i, (m) => m + "<head>" + safetyCss + "</head>");
+    } else {
+      docToWrite = `<!doctype html><html><head><meta charset="utf-8">${safetyCss}</head><body>${rawHtml}</body></html>`;
+    }
+    if (/<\/body>/i.test(docToWrite)) {
+      docToWrite = docToWrite.replace(/<\/body>/i, safetyCss + "</body>");
+    }
+
+    const writeIt = () => {
+      try {
+        const doc = iframeRef.current?.contentDocument;
+        if (!doc) return;
+        doc.open();
+        doc.write(docToWrite);
+        doc.close();
+        setLoaded(true);
+      } catch (e) {
+        console.error("[OriginalEmailModal] write failed", e);
+      }
+    };
+    // Try immediately and one frame later for safety
+    writeIt();
+    const raf = requestAnimationFrame(writeIt);
+    return () => cancelAnimationFrame(raf);
+  }, [rawHtml]);
+
+  // Lock body scroll while modal is open
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
+  return (
+    <div
+      style={{
+        position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)",
+        zIndex: 100000, display: "flex", alignItems: "center", justifyContent: "center",
+        padding: 20,
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          background: "#fff", borderRadius: 8, overflow: "hidden",
+          width: "100%", maxWidth: 900, height: "90vh",
+          display: "flex", flexDirection: "column",
+          boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div style={{
+          padding: "12px 16px", borderBottom: "1px solid #eaeaea",
+          display: "flex", justifyContent: "space-between", alignItems: "center",
+          background: "#fafafa",
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: "#1a1a1a" }}>Original Email</div>
+          <button
+            onClick={onClose}
+            style={{
+              width: 28, height: 28, borderRadius: 4,
+              border: "1px solid #ddd", background: "#fff",
+              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 16, color: "#666",
+            }}
+          >
+            ×
+          </button>
+        </div>
+        <iframe
+          ref={iframeRef}
+          title="Original email"
+          style={{ flex: 1, width: "100%", border: "none", background: "#fff" }}
+        />
+        {!loaded && (
+          <div style={{ padding: 12, textAlign: "center", color: "#888", fontSize: 12, borderTop: "1px solid #eaeaea" }}>
+            Loading…
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Renders a receipt image with a clear fallback when the image data is
+// corrupt or empty (which can happen with stale records written by the
+// failed html2canvas auto-converter — those got persisted with a near-
+// empty PNG and now load to a broken-image icon). On image error we show
+// a recovery panel that lets the user clear the receipt so they can
+// re-forward the source email.
+function ImageReceiptWithFallback({ exp, css, D, user, supabase, setExpenses, setCropExpenseId, setCropRect, cropStartRef, cropEndRef }) {
+  const [imgError, setImgError] = useState(false);
+  const [clearing, setClearing] = useState(false);
+  const [recoveryRunning, setRecoveryRunning] = useState(false);
+  const recoveryAttemptedRef = useRef(false);
+  const tooSmall = (exp.receiptImage?.size || 0) < 2000; // empty PNGs from the failed converter were ~1KB
+
+  // Auto-recover: detect blank/near-blank PNGs that have a `summary` field
+  // attached. These came from a botched migration that rendered the original
+  // Outlook HTML (which is mostly MSO/VML and renders blank in Chromium).
+  // Recovery: build a card HTML from the summary fields and re-render it
+  // server-side via the same screenshot endpoint. The summary always has
+  // the parsed text content so the new PNG is guaranteed to be readable.
+  useEffect(() => {
+    if (recoveryAttemptedRef.current) return;
+    const ri = exp.receiptImage;
+    if (!ri || ri.type !== "image/png" || !ri.summary) return;
+    // Threshold: a real email screenshot is ~80KB-500KB. < 30KB is almost
+    // certainly a blank-white PNG from the failed migration.
+    if ((ri.size || 0) >= 30000) return;
+    if (!user || !supabase) return;
+
+    recoveryAttemptedRef.current = true;
+    let cancelled = false;
+
+    (async () => {
+      setRecoveryRunning(true);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        if (!token) throw new Error("not signed in");
+        // Send the summary fields; server uses Claude to generate styled
+        // HTML that looks like a real transactional email, then renders
+        // that to PNG via Chromium.
+        const resp = await fetch("/api/render-html-to-png", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ summary: ri.summary }),
+        });
+        const payload = await resp.json();
+        if (!resp.ok || !payload?.ok || !payload?.dataUrl) {
+          throw new Error(payload?.error || `HTTP ${resp.status}`);
+        }
+        if (cancelled) return;
+        const newImg = {
+          name: (ri.name || "receipt").replace(/\.png$/i, "") + ".png",
+          size: payload.bytes,
+          type: "image/png",
+          data: payload.dataUrl,
+          summary: ri.summary,
+        };
+        setExpenses(prev => prev.map(ex => ex.id === exp.id ? { ...ex, receiptImage: newImg } : ex));
+        await supabase.from("expenses").update({ receipt_image: newImg }).eq("id", exp.id).eq("user_id", user.id);
+      } catch (err) {
+        console.error("[ImageReceiptWithFallback] recovery failed", err);
+        if (!cancelled) recoveryAttemptedRef.current = false;
+      } finally {
+        if (!cancelled) setRecoveryRunning(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [exp.id, exp.receiptImage, user, supabase, setExpenses]);
+
+  const clearReceipt = async () => {
+    if (clearing) return;
+    setClearing(true);
+    try {
+      setExpenses(prev => prev.map(ex => ex.id === exp.id ? { ...ex, receiptImage: null, receipt: false } : ex));
+      if (user) {
+        await supabase.from("expenses").update({ receipt_image: null, receipt: false }).eq("id", exp.id).eq("user_id", user.id);
+      }
+    } catch (e) {
+      console.error("Clear receipt failed:", e);
+    } finally {
+      setClearing(false);
+    }
+  };
+
+  if (recoveryRunning) {
+    return (
+      <div style={{ border: `1px solid ${css.border}`, borderRadius: 8, padding: "48px 24px", textAlign: "center", background: D ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)" }}>
+        <div style={{ width: 36, height: 36, border: `3px solid ${css.border}`, borderTopColor: css.accent, borderRadius: "50%", margin: "0 auto 16px", animation: "spin 1s linear infinite" }} />
+        <div style={{ fontSize: 14, fontWeight: 600, color: css.text2, marginBottom: 4 }}>Rebuilding receipt image…</div>
+        <div style={{ fontSize: 12, color: css.text3 }}>One-time recovery from your parsed data (~5 seconds).</div>
+      </div>
+    );
+  }
+
+  if (imgError || tooSmall) {
+    return (
+      <div style={{ border: `1px dashed ${css.border}`, borderRadius: 8, padding: 24, textAlign: "center", background: D ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)" }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: css.text2, marginBottom: 6 }}>Receipt image unavailable</div>
+        <div style={{ fontSize: 12, color: css.text3, marginBottom: 14, lineHeight: 1.5 }}>
+          This receipt was stored in a format we can no longer read. Clear it and re-forward the source email to <strong>expenses@gocontinuum.app</strong> — the new viewer will render it correctly.
+        </div>
+        <button
+          onClick={clearReceipt}
+          disabled={clearing}
+          style={{ padding: "6px 14px", borderRadius: 6, border: `1px solid ${css.accent}`, background: "transparent", color: css.accent, fontSize: 11, fontWeight: 600, cursor: clearing ? "default" : "pointer", opacity: clearing ? 0.6 : 1 }}
+        >
+          {clearing ? "Clearing…" : "Clear receipt"}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <img
+        src={exp.receiptImage.data}
+        alt="Receipt"
+        onError={() => setImgError(true)}
+        style={{ width: "100%", maxHeight: 500, objectFit: "contain", border: `1px solid ${css.border}`, background: D ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)" }}
+      />
+      <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+        <button onClick={() => { setCropExpenseId(exp.id); setCropRect(null); cropStartRef.current = null; cropEndRef.current = null; }} style={{ padding: "6px 14px", borderRadius: 6, border: `1px solid ${css.border}`, background: "transparent", color: css.text2, fontSize: 11, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2v14a2 2 0 002 2h14"/><path d="M18 22V8a2 2 0 00-2-2H2"/></svg>
+          Crop
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // MAIN APP
 // ============================================================
 export default function EliteStatusTracker() {
@@ -619,19 +1234,98 @@ export default function EliteStatusTracker() {
   const [deferredInstallEvent, setDeferredInstallEvent] = useState(null);
   const [publicPage, setPublicPage] = useState("login");
   const [user, setUser] = useState(null);
-  const [activeView, setActiveView] = useState("dashboard");
+  // Restore the view we were on before a manual refresh. The refresh button
+  // encodes state in the URL hash (e.g. #v=trips&t=abc-123) before reloading
+  // because the hash survives any PWA / service-worker caching weirdness that
+  // sessionStorage sometimes doesn't.
+  const [activeView, setActiveView] = useState(() => {
+    try {
+      const hash = (typeof window !== "undefined" && window.location.hash) || "";
+      const m = hash.match(/[#&]v=([a-z]+)/i);
+      if (m) return m[1];
+    } catch {}
+    return "dashboard";
+  });
+
+  // Modal state for the first-run flows. Declared up here (instead of with
+  // the other modal state below) so the useEffects right beneath can include
+  // them in their dependency arrays without hitting a temporal-dead-zone error.
+  const [showTour, setShowTour] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // First-run onboarding wizard: shown before the tour. ?onboard=1 forces it.
+  useEffect(() => {
+    if (!user) return;
+    const params = new URLSearchParams(window.location.search);
+    const force = params.get("onboard") === "1";
+    const completed = !!user.user_metadata?.onboarded_v1;
+    if (force || !completed) {
+      const t = setTimeout(() => setShowOnboarding(true), 400);
+      return () => clearTimeout(t);
+    }
+  }, [user]);
+
+  // First-run tour: auto-open once per user (tracked in user_metadata), or
+  // whenever the URL contains ?tour=1 so it can be re-run on demand. Holds
+  // off if onboarding is open so we don't stack two modals.
+  useEffect(() => {
+    if (!user) return;
+    if (showOnboarding) return;
+    const params = new URLSearchParams(window.location.search);
+    const force = params.get("tour") === "1";
+    const completed = !!user.user_metadata?.tour_completed_v2;
+    // Don't trigger the tour if the user hasn't onboarded yet — they'll see
+    // the wizard first, and the tour will fire once that closes (next render
+    // when onboarded_v1 is true and showOnboarding is false).
+    const onboarded = !!user.user_metadata?.onboarded_v1;
+    if ((force || !completed) && (onboarded || force)) {
+      const t = setTimeout(() => setShowTour(true), 600);
+      return () => clearTimeout(t);
+    }
+  }, [user, showOnboarding]);
   // Redirect expenses view to trips (expenses is rendered within trips)
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [isRegistering, setIsRegistering] = useState(false);
   const [registerForm, setRegisterForm] = useState({ name: "", email: "", password: "" });
   const [authError, setAuthError] = useState("");
+  const [authInfo, setAuthInfo] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
+  // PWA / standalone-mode detection. When the app is launched from the
+  // home-screen icon (iOS/Android) or from an installed Windows/Mac PWA
+  // window, display-mode: standalone resolves true and we collapse the
+  // hero typography + open the auth sheet by default so the user lands
+  // straight on the sign-in flow instead of a marketing page.
+  const [isPwaStandalone, setIsPwaStandalone] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return window.matchMedia && (
+        window.matchMedia("(display-mode: standalone)").matches ||
+        window.matchMedia("(display-mode: fullscreen)").matches ||
+        window.navigator.standalone === true
+      );
+    } catch { return false; }
+  });
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mql = window.matchMedia("(display-mode: standalone)");
+    const handler = (e) => setIsPwaStandalone(e.matches);
+    if (mql.addEventListener) mql.addEventListener("change", handler);
+    else mql.addListener?.(handler);
+    return () => {
+      if (mql.removeEventListener) mql.removeEventListener("change", handler);
+      else mql.removeListener?.(handler);
+    };
+  }, []);
   const [showAddTrip, setShowAddTrip] = useState(false);
   const [newTrip, setNewTrip] = useState({ tripName: "", status: "planned", segments: [defaultSegment()] });
   // New simplified trip creation
   const [showCreateTrip, setShowCreateTrip] = useState(false);
   const [createTripForm, setCreateTripForm] = useState({ name: "", destination: "", startDate: "", endDate: "", status: "planned" });
+  const [createTripError, setCreateTripError] = useState("");
+  const [createTripSaving, setCreateTripSaving] = useState(false);
   const [showAddSegment, setShowAddSegment] = useState(null); // trip ID to add segment to
+  const [showMoveSegment, setShowMoveSegment] = useState(null); // { tripId, segIdx } to move a segment to another trip
   const [addSegmentType, setAddSegmentType] = useState(null); // which segment type form is open
   const [segmentForm, setSegmentForm] = useState({});
   const [flightLegs, setFlightLegs] = useState([{ id: 1, flightNumber: "", date: "", arrivalDate: "", departureTime: "", arrivalTime: "", departureAirport: "", arrivalAirport: "", departureTerminal: "", arrivalTerminal: "", airline: "", aircraft: "", lookupMsg: "" }]);
@@ -675,6 +1369,9 @@ export default function EliteStatusTracker() {
     try { return JSON.parse(localStorage.getItem("continuum_packing_lists") || "{}"); } catch { return {}; }
   });
   const [packExpanded, setPackExpanded] = useState(null); // which packing category is open
+  const [packingViewTripId, setPackingViewTripId] = useState(null); // drill into a trip's packing list from dashboard
+  const [timelineDate, setTimelineDate] = useState(new Date().toISOString().slice(0, 10)); // selected date for Today's Timeline
+  const [railActive, setRailActive] = useState(0); // carousel index for Today tab
   const [customPackItems, setCustomPackItems] = useState(() => {
     try { return JSON.parse(localStorage.getItem("continuum_custom_pack_items") || "{}"); } catch { return {}; }
   });
@@ -685,133 +1382,40 @@ export default function EliteStatusTracker() {
   const togglePackItem = (tripId, itemId) => {
     savePackingLists({ ...packingLists, [tripId]: { ...(packingLists[tripId] || {}), [itemId]: !packingLists[tripId]?.[itemId] } });
   };
-  const PACKING_TEMPLATES = {
-    documents: {
-      label: "Documents",
-      icon: "M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z",
-      items: [
-        { id: "passport", label: "Passport", always: true },
-        { id: "visa", label: "Visa / Entry permit", intl: true },
-        { id: "boarding_pass", label: "Boarding passes", flight: true },
-        { id: "hotel_conf", label: "Hotel confirmations", hotel: true },
-        { id: "travel_insurance", label: "Travel insurance docs", intl: true },
-        { id: "global_entry", label: "Global Entry / NEXUS card" },
-        { id: "drivers_license", label: "Driver's license" },
-        { id: "credit_cards", label: "Credit cards + backup" },
-        { id: "cash_currency", label: "Local currency / cash", intl: true },
-        { id: "covid_docs", label: "Health / vaccination records", intl: true },
-        { id: "itinerary_print", label: "Printed itinerary backup" },
-      ],
-    },
-    electronics: {
-      label: "Electronics",
-      icon: "M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z",
-      items: [
-        { id: "phone_charger", label: "Phone + charger", always: true },
-        { id: "power_adapter", label: "Power adapter / converter", intl: true },
-        { id: "laptop", label: "Laptop + charger", business: true },
-        { id: "headphones", label: "Headphones / earbuds", always: true },
-        { id: "power_bank", label: "Portable power bank" },
-        { id: "camera", label: "Camera + SD cards" },
-        { id: "kindle", label: "E-reader / Kindle" },
-      ],
-    },
-    clothing: {
-      label: "Clothing",
-      icon: "M20.38 3.46L16 2 12 5 8 2 3.62 3.46a1 1 0 00-.76.95V22h18V4.41a1 1 0 00-.48-.95z",
-      items: [
-        { id: "underwear", label: "Underwear", always: true, perDay: true },
-        { id: "socks", label: "Socks", always: true, perDay: true },
-        { id: "tshirts", label: "T-shirts / tops", always: true, perDay: true },
-        { id: "pants", label: "Pants / shorts", always: true },
-        { id: "jacket", label: "Jacket / coat", cold: true },
-        { id: "rain_jacket", label: "Rain jacket / umbrella", rain: true },
-        { id: "sleepwear", label: "Sleepwear", always: true },
-        { id: "swimwear", label: "Swimwear", beach: true },
-        { id: "formal", label: "Formal wear / suit", business: true },
-        { id: "dress_shoes", label: "Dress shoes", business: true },
-        { id: "walking_shoes", label: "Walking shoes / sneakers", always: true },
-        { id: "sandals", label: "Sandals / flip-flops", beach: true },
-        { id: "hat_sunglasses", label: "Hat + sunglasses", warm: true },
-        { id: "scarf_gloves", label: "Scarf + gloves", cold: true },
-      ],
-    },
-    toiletries: {
-      label: "Toiletries",
-      icon: "M12 2v20M2 12h20",
-      items: [
-        { id: "toothbrush", label: "Toothbrush + toothpaste", always: true },
-        { id: "deodorant", label: "Deodorant", always: true },
-        { id: "shampoo", label: "Shampoo + conditioner" },
-        { id: "sunscreen", label: "Sunscreen", warm: true },
-        { id: "medications", label: "Medications / prescriptions" },
-        { id: "first_aid", label: "First aid basics" },
-        { id: "skincare", label: "Skincare / moisturizer" },
-        { id: "razor", label: "Razor + shaving kit" },
-        { id: "contacts", label: "Contact lenses + solution" },
-      ],
-    },
-    misc: {
-      label: "Miscellaneous",
-      icon: "M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z",
-      items: [
-        { id: "luggage_lock", label: "Luggage lock + tags", always: true },
-        { id: "travel_pillow", label: "Travel pillow + eye mask", flight: true },
-        { id: "water_bottle", label: "Reusable water bottle" },
-        { id: "snacks", label: "Snacks for travel" },
-        { id: "laundry_bag", label: "Laundry bag" },
-        { id: "packing_cubes", label: "Packing cubes" },
-        { id: "guidebook", label: "Guidebook / phrasebook", intl: true },
-        { id: "gifts", label: "Gifts / souvenirs space" },
-      ],
-    },
+  const PACK_CATEGORIES = {
+    documents: { title: "Documents", icon: "M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z M14 2v6h6 M8 13h8 M8 17h8", items: [
+      { id: "dp_passport", label: "Passport" }, { id: "dp_visa", label: "Visa (if required)" }, { id: "dp_boarding", label: "Boarding passes" },
+      { id: "dp_hotel_conf", label: "Hotel confirmations" }, { id: "dp_insurance", label: "Travel insurance" }, { id: "dp_wallet", label: "Wallet, credit cards, ID" },
+    ]},
+    clothing: { title: "Clothing", icon: "M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.47a1 1 0 00.99.84H6v10a2 2 0 002 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.47a2 2 0 00-1.34-2.23z", items: [
+      { id: "dp_tops", label: "Shirts / tops" }, { id: "dp_pants", label: "Pants / shorts" }, { id: "dp_underwear", label: "Underwear" },
+      { id: "dp_socks", label: "Socks" }, { id: "dp_jacket", label: "Light jacket" }, { id: "dp_sleepwear", label: "Sleepwear" }, { id: "dp_outfit", label: "One nice outfit" },
+    ]},
+    shoes: { title: "Footwear", icon: "M3 18c0-2 1-3 3-3h2l2-3 3 1 3-2c3 0 5 2 6 4l1 3H3z", items: [
+      { id: "dp_walking_shoes", label: "Walking shoes" }, { id: "dp_sandals", label: "Sandals" }, { id: "dp_dress_shoes", label: "Dress shoes (maybe)" },
+    ]},
+    toiletries: { title: "Toiletries", icon: "M9 2h6v4H9z M6 6h12v16H6V6z M9 11h6 M9 15h4", items: [
+      { id: "dp_toothbrush", label: "Toothbrush + toothpaste" }, { id: "dp_deodorant", label: "Deodorant" }, { id: "dp_shampoo", label: "Shampoo" },
+      { id: "dp_skincare", label: "Skincare" }, { id: "dp_razor", label: "Razor" }, { id: "dp_sunscreen", label: "Sunscreen" }, { id: "dp_lip_balm", label: "Lip balm" },
+    ]},
+    tech: { title: "Technology", icon: "M2 4h20v14H2z M8 21h8 M12 17v4", items: [
+      { id: "dp_phone", label: "Phone + charger" }, { id: "dp_adapter", label: "Universal adapter" }, { id: "dp_headphones", label: "Headphones" },
+      { id: "dp_powerbank", label: "Portable battery" }, { id: "dp_laptop", label: "Laptop + charger" }, { id: "dp_camera", label: "Camera" },
+    ]},
+    health: { title: "Health & Meds", icon: "M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z", items: [
+      { id: "dp_medications", label: "Prescriptions" }, { id: "dp_painrelief", label: "Pain reliever" }, { id: "dp_bandaids", label: "Band-aids" },
+      { id: "dp_vitamins", label: "Vitamins" }, { id: "dp_melatonin", label: "Melatonin" },
+    ]},
+    accessories: { title: "Accessories", icon: "M12 2a10 10 0 100 20 10 10 0 000-20z M12 2v4 M12 18v4 M2 12h4 M18 12h4", items: [
+      { id: "dp_sunglasses", label: "Sunglasses" }, { id: "dp_hat", label: "Hat" }, { id: "dp_watch", label: "Watch" },
+      { id: "dp_water_bottle", label: "Reusable water bottle" }, { id: "dp_luggage_lock", label: "Luggage lock" }, { id: "dp_travel_pillow", label: "Travel pillow / eye mask" },
+    ]},
+    work: { title: "Work Essentials", icon: "M2 7h20v14H2z M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2 M2 13h20", items: [
+      { id: "dp_laptop_stand", label: "Laptop stand" }, { id: "dp_notebook", label: "Notebook + pen" }, { id: "dp_usb", label: "USB drive" }, { id: "dp_biz_cards", label: "Business cards" },
+    ]},
   };
-  const getPackingItems = (trip) => {
-    const segs = (trip.segments || []).filter(s => !s._isMeta);
-    const hasFlight = segs.some(s => s.type === "flight");
-    const hasHotel = segs.some(s => s.type === "hotel" || s.type === "accommodation");
-    const isBusiness = (trip.tripName || "").toLowerCase().includes("business");
-    const locations = (trip.location || "").toLowerCase();
-    const isIntl = segs.some(s => s.type === "flight" && s.fareClass && s.fareClass !== "domestic") || !/usa|united states|domestic/i.test(locations);
-    // Estimate weather from destination
-    const beachKeywords = /bermuda|hawaii|cancun|bahamas|caribbean|maldives|bali|phuket|fiji|tahiti|beach/i;
-    const coldKeywords = /iceland|norway|finland|sweden|alaska|hokkaido|switzerland|aspen|whistler|ski/i;
-    const isBeach = beachKeywords.test(locations) || beachKeywords.test(trip.tripName || "");
-    const isCold = coldKeywords.test(locations) || coldKeywords.test(trip.tripName || "");
-    const isWarm = isBeach || /dubai|singapore|bangkok|miami|mexico|brazil|india|thailand|vietnam/i.test(locations);
-    const tripDays = (() => {
-      const dates = segs.map(s => s.date).filter(Boolean).sort();
-      if (dates.length < 2) return 5;
-      return Math.max(1, Math.ceil((new Date(dates[dates.length - 1]) - new Date(dates[0])) / 86400000)) + 1;
-    })();
-
-    const result = {};
-    Object.entries(PACKING_TEMPLATES).forEach(([catKey, cat]) => {
-      const filtered = cat.items.filter(item => {
-        if (item.intl && !isIntl) return false;
-        if (item.flight && !hasFlight) return false;
-        if (item.hotel && !hasHotel) return false;
-        if (item.business && !isBusiness) return false;
-        if (item.beach && !isBeach) return false;
-        if (item.cold && !isCold) return false;
-        if (item.warm && !isWarm) return false;
-        if (item.rain && isCold) return true;
-        if (item.rain && !isWarm) return true;
-        return item.always || !item.intl;
-      });
-      if (filtered.length > 0) {
-        result[catKey] = {
-          label: cat.label,
-          icon: cat.icon,
-          items: filtered.map(item => ({
-            ...item,
-            label: item.perDay ? `${item.label} (${tripDays} days)` : item.label,
-          })),
-        };
-      }
-    });
-    return result;
-  };
+  // Flat list for backward compat
+  const getPackingItems = () => Object.values(PACK_CATEGORIES).flatMap(c => c.items);
   const flightStatusFetchedRef = useRef(new Set());
   const pushSubRef = useRef(null); // current push subscription
   const prevFlightStatusRef = useRef({}); // previous status for change detection
@@ -839,7 +1443,7 @@ export default function EliteStatusTracker() {
   const [shareEmail, setShareEmail] = useState("");
   const [sharePermission, setSharePermission] = useState("read"); // "read" | "edit"
   const [shareStatus, setShareStatus] = useState(""); // "sent" | "error" | "already" | ""
-  const [dashSubTab, setDashSubTab] = useState("overview"); // overview | timeline | reports | activity
+  const [dashSubTab, setDashSubTab] = useState("overview"); // overview | reports | packing | inbox
   const [landmarkPhotos, setLandmarkPhotos] = useState({}); // cache: "Landmark, City" -> photoUrl
   const landmarkFetchedRef = useRef(new Set()); // track which landmarks we've already tried to fetch
 
@@ -926,6 +1530,9 @@ export default function EliteStatusTracker() {
   const [loungeFlightAirline, setLoungeFlightAirline] = useState("");
   const [loungeFlightClass, setLoungeFlightClass] = useState("economy");
   const [loungeAccessRoute, setLoungeAccessRoute] = useState("domestic");
+  // When false (default), Lounges page filters to terminals the user actually
+  // departs from. User can flip on to override and browse the whole airport.
+  const [loungeShowAllTerminals, setLoungeShowAllTerminals] = useState(false);
   const loungePhotoFetched = useRef(new Set());
   const landmarkPhotosFetchedOnce = useRef(false);
 
@@ -934,9 +1541,9 @@ export default function EliteStatusTracker() {
     const key = `${landmarkName}, ${city}`;
     if (landmarkFetchedRef.current.has(key)) return;
     landmarkFetchedRef.current.add(key);
-    loadGoogleMaps().then(() => {
-      if (!window.google?.maps?.places) return;
-      const svc = new window.google.maps.places.PlacesService(document.createElement("div"));
+    loadGooglePlaces().then((places) => {
+      if (!places?.PlacesService) return;
+      const svc = new places.PlacesService(document.createElement("div"));
       svc.findPlaceFromQuery({ query: `${landmarkName} ${city}`, fields: ["photos"] }, (results, status) => {
         if (status === "OK" && results?.[0]?.photos?.[0]) {
           const url = results[0].photos[0].getUrl({ maxWidth: 600 });
@@ -985,7 +1592,7 @@ export default function EliteStatusTracker() {
     { id: "accommodation", label: "Accommodation", color: "#8b5cf6" },
     { id: "activity", label: "Activity", color: "#22c55e" },
     { id: "train", label: "Train", color: "#f59e0b" },
-    { id: "rental", label: "Rental Car", color: "#ef4444" },
+    { id: "rental", label: "Rental Car", color: "#C8553D" },
     { id: "cruise", label: "Cruise", color: "#06b6d4" },
     { id: "ferry", label: "Ferry", color: "#0ea5e9" },
     { id: "restaurant", label: "Restaurant", color: "#f97316" },
@@ -1110,6 +1717,15 @@ export default function EliteStatusTracker() {
   };
   const [trips, setTrips] = useState([]);
   const [linkedAccounts, setLinkedAccounts] = useState({});
+  const transferBonuses = useTransferBonuses(supabase);
+  const userPointCurrencies = useMemo(() => {
+    const set = new Set();
+    Object.keys(linkedAccounts || {}).forEach(id => {
+      const cur = CARD_TO_CURRENCY[id];
+      if (cur) set.add(cur);
+    });
+    return [...set];
+  }, [linkedAccounts]);
   const [cardBenefitValues, setCardBenefitValues] = useState(() => {
     try { return JSON.parse(localStorage.getItem("continuum_card_benefit_values") || "{}"); } catch { return {}; }
   });
@@ -1117,6 +1733,75 @@ export default function EliteStatusTracker() {
     try { return JSON.parse(localStorage.getItem("continuum_card_custom_benefits") || "{}"); } catch { return {}; }
   });
   const [expandedCardId, setExpandedCardId] = useState(null);
+  // Trip-detail segment expansion: key = `${tripId}|${segIdx}` so the panel
+  // remembers which row a user toggled open. Reset when the trip detail closes.
+  const [expandedSegmentKey, setExpandedSegmentKey] = useState(null);
+  // Pending "jump-to-segment" — set by Dashboard rail / smart prompts. Resolved
+  // by a useEffect below that translates the date+seg matcher into the right
+  // day-pill index and expanded card key once the trip data is loaded.
+  const [pendingTripJump, setPendingTripJump] = useState(null);
+
+  // ── Vouchers & Free Nights ──
+  // Card-issued companion vouchers, hotel free nights, upgrade certs, etc.
+  // Persisted to user_vouchers table; localStorage cache for instant load.
+  const [vouchers, setVouchers] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("continuum_vouchers") || "[]"); } catch { return []; }
+  });
+  const [showVoucherModal, setShowVoucherModal] = useState(null); // null | "new" | voucher object
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase.from("user_vouchers").select("*").eq("user_id", user.id).order("expiry_date", { ascending: true });
+      if (cancelled || error) return;
+      const list = data || [];
+      setVouchers(list);
+      try { localStorage.setItem("continuum_vouchers", JSON.stringify(list)); } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
+  const persistVouchers = (next) => {
+    setVouchers(next);
+    try { localStorage.setItem("continuum_vouchers", JSON.stringify(next)); } catch {}
+  };
+  const saveVoucher = async (voucher) => {
+    if (!user) return null;
+    const payload = {
+      user_id: user.id,
+      kind: voucher.kind || "other",
+      title: voucher.title || "Voucher",
+      source_card_id: voucher.source_card_id || null,
+      source_program_id: voucher.source_program_id || null,
+      source_benefit_id: voucher.source_benefit_id || null,
+      issued_date: voucher.issued_date || null,
+      expiry_date: voucher.expiry_date || null,
+      value_estimate: voucher.value_estimate ? Number(voucher.value_estimate) : null,
+      status: voucher.status || "active",
+      notes: voucher.notes || null,
+      updated_at: new Date().toISOString(),
+    };
+    if (voucher.id) {
+      const { data, error } = await supabase.from("user_vouchers").update(payload).eq("id", voucher.id).eq("user_id", user.id).select().single();
+      if (error) return null;
+      persistVouchers(vouchers.map(v => v.id === voucher.id ? data : v));
+      return data;
+    } else {
+      const { data, error } = await supabase.from("user_vouchers").insert(payload).select().single();
+      if (error) return null;
+      persistVouchers([...vouchers, data].sort((a, b) => (a.expiry_date || "").localeCompare(b.expiry_date || "")));
+      return data;
+    }
+  };
+  const deleteVoucher = async (id) => {
+    if (!user) return;
+    await supabase.from("user_vouchers").delete().eq("id", id).eq("user_id", user.id);
+    persistVouchers(vouchers.filter(v => v.id !== id));
+  };
+  const markVoucherRedeemed = async (id) => {
+    if (!user) return;
+    const { data } = await supabase.from("user_vouchers").update({ status: "redeemed", updated_at: new Date().toISOString() }).eq("id", id).eq("user_id", user.id).select().single();
+    if (data) persistVouchers(vouchers.map(v => v.id === id ? data : v));
+  };
 
   // Sync benefit data to Supabase via linked_accounts.member_id (credit cards don't use member IDs)
   const benefitSyncTimers = useRef({});
@@ -1176,11 +1861,40 @@ export default function EliteStatusTracker() {
     const fee = card.annualFee || 0;
     return { total, fee, net: total - fee };
   };
+  // Summary across all linked cards: how much benefit value is on the table,
+  // how much you've actually claimed, and the gap. Used by Wallet + Dashboard.
+  const benefitsSummary = useMemo(() => {
+    const linked = LOYALTY_PROGRAMS.creditCards.filter(c => linkedAccounts?.[c.id]);
+    let totalMax = 0, totalClaimed = 0, totalFees = 0;
+    const perCard = linked.map(card => {
+      const values = cardBenefitValues[card.id] || {};
+      const max = (card.benefits || []).reduce((s, b) => s + (Number(b.maxValue) || 0), 0);
+      const claimed = (card.benefits || []).reduce((s, b) => s + (Number(values[b.id]) || 0), 0);
+      const customClaimed = (cardCustomBenefits[card.id] || []).reduce((s, b) => s + (Number(b.value) || 0), 0);
+      const fee = card.annualFee || 0;
+      totalMax += max;
+      totalClaimed += claimed + customClaimed;
+      totalFees += fee;
+      return { cardId: card.id, name: card.name, max, claimed: claimed + customClaimed, remaining: Math.max(0, max - claimed - customClaimed), fee };
+    });
+    return {
+      totalMax, totalClaimed, totalFees,
+      totalRemaining: Math.max(0, totalMax - totalClaimed),
+      pctClaimed: totalMax > 0 ? Math.min(100, Math.round((totalClaimed / totalMax) * 100)) : 0,
+      perCard: perCard.sort((a, b) => b.remaining - a.remaining),
+      hasLinkedCards: linked.length > 0,
+    };
+  }, [linkedAccounts, cardBenefitValues, cardCustomBenefits]);
   const [showLinkModal, setShowLinkModal] = useState(null);
   const [linkForm, setLinkForm] = useState({ memberId: "", pointsBalance: "", tierCredits: "", currentNights: "", currentRentals: "", currentTier: "" });
   const [linkLoading, setLinkLoading] = useState(false);
   const [linkError, setLinkError] = useState("");
-  const [showUpgrade, setShowUpgrade] = useState(false);
+  // (showTour + showOnboarding are declared earlier, near their useEffects)
+  // Bumped every time the user taps a bottom-nav button. Components with
+  // internal sub-view state (e.g. ExpenseSplit's selectedGroup) watch this
+  // and reset themselves so nav clicks always land on the section's main view.
+  const [navResetTimestamp, setNavResetTimestamp] = useState(0);
+
   const [selectedProgram, setSelectedProgram] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -1195,14 +1909,17 @@ export default function EliteStatusTracker() {
     }
   }, [expenses, user?.id]);
 
+
   const [showAddExpense, setShowAddExpense] = useState(null); // null or tripId
   const [editExpenseId, setEditExpenseId] = useState(null); // null or expense id being edited
-  const [newExpense, setNewExpense] = useState({ category: "flight", description: "", amount: "", currency: "USD", fxRate: 1, date: "", paymentMethod: "", receipt: false, receiptImage: null, notes: "" });
+  const [newExpense, setNewExpense] = useState({ category: "flight", description: "", amount: "", currency: "USD", fxRate: 1, fxMode: "direct", date: "", paymentMethod: "", receipt: false, receiptImage: null, notes: "" });
   const [expenseViewTrip, setExpenseViewTrip] = useState(null); // null = overview, tripId = detail
   const [showExpenseReport, setShowExpenseReport] = useState(null); // tripId for report modal
+  const [inlineReportHtml, setInlineReportHtml] = useState(null); // { html, autoPrint } for in-app overlay (mobile/PWA — desktop opens new tab)
   const [forwardReportId, setForwardReportId] = useState(null); // report id to forward
   const [forwardEmail, setForwardEmail] = useState("");
   const [forwardStatus, setForwardStatus] = useState(""); // "" | "sending" | "sent" | "error"
+  const [forwardError, setForwardError] = useState("");
   const [allianceMyProgram, setAllianceMyProgram] = useState("aa");
   const [allianceMyTierOverride, setAllianceMyTierOverride] = useState(null);
   const [allianceCompare, setAllianceCompare] = useState("ua");
@@ -1229,7 +1946,7 @@ export default function EliteStatusTracker() {
   const [ccBookingMode, setCcBookingMode] = useState("direct"); // "direct" | "portal"
   const [customPrograms, setCustomPrograms] = useState([]);
   const [showAddProgram, setShowAddProgram] = useState(false);
-  const [newProgram, setNewProgram] = useState({ name: "", category: "airline", logo: "—", color: "#0EA5A0", memberId: "", unit: "Points", tiers: "", selectedId: "", search: "" });
+  const [newProgram, setNewProgram] = useState({ name: "", category: "airline", logo: "—", color: "#0EA5A0", memberId: "", unit: "Points", tiers: "", selectedId: "", search: "", expandedRegions: ["us"] });
   const [conciergeProgram, setConciergeProgram] = useState(null); // program object for AI concierge
   const [conciergeMessages, setConciergeMessages] = useState([]); // { role, content }
   const [conciergeInput, setConciergeInput] = useState("");
@@ -1262,6 +1979,22 @@ export default function EliteStatusTracker() {
 
   // ── Settings state ──
   const [showSettings, setShowSettings] = useState(false);
+  const [demoMode, setDemoMode] = useState(() => readDemoMode());
+  // Global "hide shared trips" preference — applies wherever trips are listed
+  // (Dashboard chronicle, 30-day rail, featured trip, Trips upcoming/past).
+  // Shared trips remain reachable via direct link / share modal — only the
+  // visible lists are filtered.
+  const [hideShared, setHideShared] = useState(() => {
+    try {
+      // Check both old and new keys for backward compat with the rail-only toggle.
+      const newVal = localStorage.getItem("continuum:hideShared");
+      if (newVal !== null) return newVal === "true";
+      return localStorage.getItem("continuum:dashRailHideShared") === "true";
+    } catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("continuum:hideShared", String(hideShared)); } catch {}
+  }, [hideShared]);
   const [settingsTab, setSettingsTab] = useState("profile");
   const [settingsForm, setSettingsForm] = useState({ firstName: "", lastName: "", email: "", currentPassword: "", newPassword: "", confirmPassword: "", homeAirport: "", passportCountry: "", defaultCurrency: "USD", notifications: { statusMilestones: true, expiringMiles: true, newPrograms: false } });
   const [settingsSaving, setSettingsSaving] = useState(false);
@@ -1299,9 +2032,130 @@ export default function EliteStatusTracker() {
       window.history.replaceState({}, "", "/");
     }
   }, []);
-  const [tripDetailId, setTripDetailId] = useState(null); // trip id to show detail view
+  const [tripDetailId, setTripDetailId] = useState(() => {
+    // Restore open trip detail through a manual refresh (hash-encoded).
+    try {
+      const hash = (typeof window !== "undefined" && window.location.hash) || "";
+      const m = hash.match(/[#&]t=([^&]+)/);
+      if (m) return decodeURIComponent(m[1]);
+    } catch {}
+    return null;
+  }); // trip id to show detail view
   useEffect(() => { if (tripDetailId && ![...trips, ...sharedTrips].find(t => t.id === tripDetailId)) setTripDetailId(null); }, [tripDetailId, trips, sharedTrips]);
+  // Scroll-to-top whenever the user opens a new trip detail or packing view —
+  // catches every entry point (smart prompts, rail clicks, trip cards, packing
+  // tab) without each click handler having to remember to scroll.
+  useEffect(() => {
+    if (!tripDetailId) return;
+    const id = setTimeout(() => {
+      const m = document.querySelector("main");
+      if (m) m.scrollTo({ top: 0, behavior: "smooth" });
+      else window.scrollTo({ top: 0, behavior: "smooth" });
+    }, 0);
+    return () => clearTimeout(id);
+  }, [tripDetailId]);
+  useEffect(() => {
+    if (!packingViewTripId) return;
+    const id = setTimeout(() => {
+      const m = document.querySelector("main");
+      if (m) m.scrollTo({ top: 0, behavior: "smooth" });
+      else window.scrollTo({ top: 0, behavior: "smooth" });
+    }, 0);
+    return () => clearTimeout(id);
+  }, [packingViewTripId]);
+
+  // Resolver for jump-to-segment requests. When pendingTripJump is set + the
+  // target trip is loaded + we're on the trips view, compute the day-pill
+  // index from the trip's actual date range and expand the matching segment.
+  // Then clear the pending flag so it doesn't re-fire.
+  useEffect(() => {
+    if (!pendingTripJump || !tripDetailId) return;
+    if (pendingTripJump.tripId !== tripDetailId) return;
+    const trip = [...trips, ...sharedTrips].find(t => t.id === pendingTripJump.tripId);
+    if (!trip) return;
+    const realSegs = (trip.segments || []).filter(s => !s._isMeta);
+    const allSegDates = realSegs.map(s => s.date).filter(Boolean).sort();
+    const tripStartDate = trip.date || allSegDates[0];
+    const tripEndDate = (typeof getTripEndDate === "function" ? getTripEndDate(trip) : null) || allSegDates[allSegDates.length - 1] || tripStartDate;
+    if (!tripStartDate) { setPendingTripJump(null); return; }
+    // Build sortedDates the same way Trips.jsx does — every calendar day from start to end inclusive.
+    const sortedDates = [];
+    const d = new Date(tripStartDate + "T12:00:00");
+    const end = new Date(tripEndDate + "T12:00:00");
+    while (d <= end) {
+      sortedDates.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`);
+      d.setDate(d.getDate() + 1);
+    }
+    const dayIdx = sortedDates.indexOf(pendingTripJump.segDate);
+    if (dayIdx >= 0) setTripDetailSegIdx(dayIdx);
+    // Find the segment in realSegs by matching the keys we passed
+    const m = pendingTripJump.match || {};
+    const segIdx = realSegs.findIndex(s =>
+      (s.type || "") === (m.type || (s.type || "")) &&
+      (s.date || "") === (m.date || (s.date || "")) &&
+      (s.flightNumber || "") === (m.flightNumber || "") &&
+      (s.route || "") === (m.route || "")
+    );
+    if (segIdx >= 0) setExpandedSegmentKey(`${trip.id}|${segIdx}`);
+    // Smooth-scroll to the expanded card after Trips re-renders the new day
+    setTimeout(() => {
+      if (segIdx >= 0) {
+        const card = document.getElementById(`seg-card-${trip.id}-${segIdx}`);
+        if (card) card.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 200);
+    setPendingTripJump(null);
+  }, [pendingTripJump, tripDetailId, trips, sharedTrips]);
+
+  // ── Auto-convert PDF receipts to PNG on first view ──
+  // PDF receipts arrive via the inbound-email pipeline. They render fine in
+  // an iframe but can't be cropped or thumbnailed. On first view, render page 1
+  // to a canvas → PNG → save back, so future views treat it as a regular image.
+  useEffect(() => {
+    if (!viewExpenseId) return;
+    const exp = expenses.find(e => e.id === viewExpenseId);
+    if (!exp?.receiptImage || exp.receiptImage.type !== "application/pdf") return;
+    let cancelled = false;
+    (async () => {
+      try {
+        // Stitch ALL pages into a single tall PNG so multi-page receipts
+        // (hotel folios, Uber statements) don't lose pages 2+.
+        const dataUrl = await renderPdfToStitchedImage(exp.receiptImage.data);
+        if (cancelled) return;
+        const newImg = { name: (exp.receiptImage.name || "receipt").replace(/\.pdf$/i, "") + ".png", size: dataUrl.length, type: "image/png", data: dataUrl };
+        setExpenses(prev => prev.map(ex => ex.id === exp.id ? { ...ex, receiptImage: newImg } : ex));
+        if (user) supabase.from("expenses").update({ receipt_image: newImg }).eq("id", exp.id).eq("user_id", user.id);
+      } catch (e) {
+        // Silent — user can still use the inline iframe view + manual Convert button
+        console.warn("Auto PDF→image conversion failed:", e?.message);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [viewExpenseId, expenses, user]);
+  // Also scroll on top-level view changes (when not driven by the bottom nav,
+  // which already scrolls). Smart prompts that switch activeView land at top.
+  useEffect(() => {
+    const id = setTimeout(() => {
+      const m = document.querySelector("main");
+      if (m) m.scrollTo({ top: 0, behavior: "smooth" });
+      else window.scrollTo({ top: 0, behavior: "smooth" });
+    }, 0);
+    return () => clearTimeout(id);
+  }, [activeView]);
+
+  // One-shot: strip the refresh-restore hash (#v=…&t=…) once we've consumed it
+  // via the state initializers above. Without this the hash would linger in
+  // the URL bar until the next manual navigation.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (/[#&](v|t)=/.test(window.location.hash || "")) {
+      try {
+        history.replaceState(null, "", window.location.pathname + window.location.search);
+      } catch {}
+    }
+  }, []);
   const [tripDetailSegIdx, setTripDetailSegIdx] = useState(0); // which segment is active in detail view
+  const [tripDetailFullView, setTripDetailFullView] = useState(false); // false = paginate one day at a time, true = render all days at once
   const [tripSummaryId, setTripSummaryId] = useState(null); // trip summary popup from dashboard
 
   // Fetch weather for all days when trip detail opens — uses server-side API
@@ -1344,11 +2198,47 @@ export default function EliteStatusTracker() {
   const [standaloneReports, setStandaloneReports] = useState([]);
   const [showReportBuilder, setShowReportBuilder] = useState(false);
   const [editingReportId, setEditingReportId] = useState(null);
+  // Reverse index: which reports each expense appears in. Drives the
+  // <ReportedBadge> on every expense row so users can spot already-submitted
+  // expenses (and duplicate submissions) at a glance.
+  const expenseReportMembership = useMemo(
+    () => buildExpenseReportMembership(standaloneReports, expenses),
+    [standaloneReports, expenses]
+  );
   const [reportBuilder, setReportBuilder] = useState({
     title: "", selectedTripIds: [], excludedExpenseIds: [], customExpenses: [],
   });
   const [reportBuilderCustom, setReportBuilderCustom] = useState({ category: "flight", description: "", amount: "", currency: "USD", fxRate: 1, date: "", paymentMethod: "", notes: "" });
   const [showReportCustomExpense, setShowReportCustomExpense] = useState(false);
+
+  // Android hardware back-button: close the topmost open overlay/modal
+  // before exiting the app. No-op on web. Order matters — close most-modal
+  // things first, then drop back to Dashboard before letting the OS exit.
+  useEffect(() => {
+    if (!isNative()) return;
+    let listenerHandle;
+    (async () => {
+      const { App: CapacitorApp } = await import("@capacitor/app");
+      listenerHandle = await CapacitorApp.addListener("backButton", () => {
+        if (inlineReportHtml) { setInlineReportHtml(null); return; }
+        if (showVoucherModal) { setShowVoucherModal(null); return; }
+        if (showAddProgram) { setShowAddProgram(false); return; }
+        if (showLinkModal) { setShowLinkModal(null); return; }
+        if (showCreateTrip) { setShowCreateTrip(false); return; }
+        if (showAddExpense) { setShowAddExpense(null); return; }
+        if (showExpenseReport) { setShowExpenseReport(null); return; }
+        if (showReportBuilder) { setShowReportBuilder(false); return; }
+        if (forwardReportId) { setForwardReportId(null); return; }
+        if (viewExpenseId) { setViewExpenseId(null); return; }
+        if (tripSummaryId) { setTripSummaryId(null); return; }
+        if (tripDetailId) { setTripDetailId(null); return; }
+        if (activeView !== "dashboard") { setActiveView("dashboard"); return; }
+        CapacitorApp.exitApp();
+      });
+    })();
+    return () => { listenerHandle?.remove?.(); };
+  }, [activeView, inlineReportHtml, showVoucherModal, showAddProgram, showLinkModal, showCreateTrip, showAddExpense, showExpenseReport, showReportBuilder, forwardReportId, viewExpenseId, tripSummaryId, tripDetailId]);
+
   const [newsArticles, setNewsArticles] = useState([]);
   const [newsLoading, setNewsLoading] = useState(false);
   const [newsFetched, setNewsFetched] = useState(false);
@@ -1494,6 +2384,13 @@ export default function EliteStatusTracker() {
       if (session?.user) {
         setUser(session.user);
         setIsLoggedIn(true);
+        // Identify user in PostHog so funnels are per-user instead of anonymous
+        if (window.posthog) {
+          window.posthog.identify(session.user.id, {
+            email: session.user.email,
+            name: session.user.user_metadata?.first_name,
+          });
+        }
         // Only reload data on SIGNED_IN, not on TOKEN_REFRESHED (avoids unnecessary refetches)
         if (event === "SIGNED_IN") {
           loadTrips(session.user.id);
@@ -1506,6 +2403,7 @@ export default function EliteStatusTracker() {
           if (!session.user.user_metadata?.first_name) setShowProfileSetup(true);
         }
       } else if (event === "SIGNED_OUT") {
+        if (window.posthog) window.posthog.reset();
         setUser(null);
         setIsLoggedIn(false);
         setTrips([]);
@@ -1572,6 +2470,12 @@ export default function EliteStatusTracker() {
   };
 
   const loadTrips = async (userId) => {
+    // Landing-demo mode: skip Supabase entirely and show one randomized
+    // trip so the marketing screenshots don't leak real itinerary data.
+    if (isLandingDemo()) {
+      setTrips([getDemoTrip()]);
+      return;
+    }
     const { data, error } = await supabase
       .from("trips")
       .select("*")
@@ -1679,7 +2583,13 @@ export default function EliteStatusTracker() {
         title: row.title,
         selectedTripIds: row.selected_trip_ids || [],
         excludedExpenseIds: row.excluded_expense_ids || [],
+        includedUnassignedIds: row.included_unassigned_expense_ids || [],
+        // Snapshot of resolved expense IDs at save time. NULL on rows
+        // created before the snapshot migration — getReportExpenses falls
+        // back to the legacy live-filter logic when this is missing.
+        includedExpenseIds: row.included_expense_ids || null,
         customExpenses: row.custom_expenses || [],
+        reportType: row.report_type || "reimbursement",
         createdAt: row.created_at?.slice(0, 10),
       })));
     }
@@ -1940,7 +2850,7 @@ Start by introducing yourself briefly in-character with personality, and give an
     { id: "flight", label: "Flights", icon: "—", color: "#3b82f6" },
     { id: "lodging", label: "Lodging", icon: "—", color: "#8b5cf6" },
     { id: "taxi", label: "Taxi", icon: "—", color: "#f59e0b" },
-    { id: "biz_meals", label: "Biz Dev Meals", icon: "—", color: "#ef4444" },
+    { id: "biz_meals", label: "Biz Dev Meals", icon: "—", color: "#C8553D" },
     { id: "meals", label: "Meals", icon: "—", color: "#f97316" },
     { id: "conferences", label: "Conferences", icon: "—", color: "#0EA5A0" },
     { id: "supplies", label: "Supplies", icon: "—", color: "#10b981" },
@@ -1950,6 +2860,30 @@ Start by introducing yourself briefly in-character with personality, and give an
     { id: "travel_fees", label: "Travel Fees", icon: "—", color: "#06b6d4" },
     { id: "other", label: "Other", icon: "—", color: "#6b7280" },
   ];
+
+  // Open a report by ID — used by the <ReportedBadge> on every expense row
+  // so users can jump from an expense back to the report it was filed in.
+  // Mirrors openReportWindow inside ExpenseReports.jsx but works from any
+  // page (we extracted buildPrintReport / getReportExpenses to utils).
+  const openReport = useCallback(async (reportId) => {
+    const report = standaloneReports.find(r => r.id === reportId);
+    if (!report) return;
+    const exps = getReportExpenses(report, trips, expenses);
+    const html = await buildPrintReport({ title: report.title, expsForReport: exps, trips, EXPENSE_CATEGORIES });
+    const isStandalonePWA = typeof window !== "undefined" && (
+      window.matchMedia?.("(display-mode: standalone)")?.matches ||
+      window.navigator?.standalone === true
+    );
+    if ((isMobile || isStandalonePWA) && setInlineReportHtml) {
+      const stripped = html.replace(/<div [^>]*data-report-toolbar="true"[^>]*>[\s\S]*?<\/div>/, "");
+      setInlineReportHtml({ html: stripped, autoPrint: false });
+      return;
+    }
+    const w = window.open("", "_blank");
+    if (!w) return;
+    w.document.write(html);
+    w.document.close();
+  }, [standaloneReports, trips, expenses, isMobile, setInlineReportHtml]);
 
   const SAMPLE_EXPENSES = [
     { id: 101, tripId: 1, category: "flight", description: "JFK→LAX Business Class", amount: 1850, currency: "USD", date: "2026-03-15", paymentMethod: "Amex Platinum", receipt: true, notes: "" },
@@ -2028,6 +2962,49 @@ Start by introducing yourself briefly in-character with personality, and give an
     setActiveView("dashboard");
     setPublicPage("login");
     await supabase.auth.signOut();
+  };
+
+  // Account deletion — required by Apple App Store Review Guideline 5.1.1(v).
+  // Two-step in the UI (modal with typed confirmation) → POSTs to
+  // /api/delete-account with the current access token → server scrubs all
+  // user-owned rows and removes the auth user → local sign-out.
+  const [showDeleteAccount, setShowDeleteAccount] = useState(false);
+  const [deleteAccountTyped, setDeleteAccountTyped] = useState("");
+  const [deleteAccountBusy, setDeleteAccountBusy] = useState(false);
+  const [deleteAccountError, setDeleteAccountError] = useState("");
+  const handleDeleteAccount = async () => {
+    setDeleteAccountBusy(true);
+    setDeleteAccountError("");
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      if (!token) {
+        setDeleteAccountError("Your session has expired. Sign out and sign back in, then try again.");
+        setDeleteAccountBusy(false);
+        return;
+      }
+      const resp = await fetch("/api/delete-account", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok || !data?.ok) {
+        setDeleteAccountError(data?.error || `Deletion failed (${resp.status}). Contact support if this persists.`);
+        setDeleteAccountBusy(false);
+        return;
+      }
+      // Server succeeded — local sign-out to clear cached state.
+      setShowDeleteAccount(false);
+      setDeleteAccountTyped("");
+      await handleLogout();
+    } catch (e) {
+      setDeleteAccountError(e?.message || "Network error during deletion.");
+    } finally {
+      setDeleteAccountBusy(false);
+    }
   };
 
   const openSettings = async () => {
@@ -2215,11 +3192,38 @@ Start by introducing yourself briefly in-character with personality, and give an
 
   // Resolve the effective arrival date for a flight leg.
   // Uses explicit arrivalDate if set (from API or manual entry).
-  // Otherwise infers: if arrivalTime < departureTime, assume +1 day arrival.
+  // Otherwise infers: if arrivalTime < departureTime in 24h, assume +1 day arrival.
   const resolveArrivalDate = (leg) => {
     if (leg.arrivalDate) return leg.arrivalDate;
     if (!leg.date) return "";
-    if (leg.departureTime && leg.arrivalTime && leg.arrivalTime < leg.departureTime) {
+    if (!leg.departureTime || !leg.arrivalTime) return leg.date;
+
+    // Convert time strings to 24h minutes for proper comparison
+    const toMinutes = (t) => {
+      if (!t) return null;
+      const clean = t.trim().toLowerCase();
+      // Handle 24h format "14:30" or "1430"
+      const m24 = clean.match(/^(\d{1,2}):?(\d{2})$/);
+      if (m24 && !clean.includes("am") && !clean.includes("pm")) {
+        return parseInt(m24[1]) * 60 + parseInt(m24[2]);
+      }
+      // Handle 12h format "2:30 pm", "2:30pm", "2:30 PM"
+      const m12 = clean.match(/(\d{1,2}):(\d{2})\s*(am|pm)/i);
+      if (m12) {
+        let h = parseInt(m12[1]);
+        const min = parseInt(m12[2]);
+        const isPM = m12[3].toLowerCase() === "pm";
+        if (isPM && h !== 12) h += 12;
+        if (!isPM && h === 12) h = 0;
+        return h * 60 + min;
+      }
+      return null;
+    };
+
+    const depMin = toMinutes(leg.departureTime);
+    const arrMin = toMinutes(leg.arrivalTime);
+
+    if (depMin !== null && arrMin !== null && arrMin < depMin) {
       // Arrival time is before departure time → next-day arrival
       const d = new Date(leg.date + "T12:00:00");
       d.setDate(d.getDate() + 1);
@@ -2594,6 +3598,9 @@ Start by introducing yourself briefly in-character with personality, and give an
   // ── New simplified trip creation ──
   const handleCreateTrip = async () => {
     if (!createTripForm.name.trim()) return;
+    if (createTripSaving) return;
+    setCreateTripError("");
+    setCreateTripSaving(true);
     const payload = {
       trip_name: createTripForm.name.trim(),
       status: createTripForm.status || "planned",
@@ -2604,6 +3611,11 @@ Start by introducing yourself briefly in-character with personality, and give an
     // Store end_date in segments metadata
     const tripMeta = { _endDate: createTripForm.endDate || "" };
 
+    // If newTrip has imported segments (from inbox parse), carry them through
+    // so the hotel checkout date, confirmation code, flight details, etc.
+    // don't get dropped on save.
+    const importedSegs = (newTrip.segments || []).filter(s => !s._isMeta && (s.date || s.flightNumber || s.property || s.confirmationCode));
+
     if (user && editingTripId) {
       // EDIT existing trip — preserve existing segments, add/update metadata
       const existingTrip = trips.find(t => t.id === editingTripId);
@@ -2613,35 +3625,93 @@ Start by introducing yourself briefly in-character with personality, and give an
       console.log("[EditTrip] Updating trip:", editingTripId, "payload:", payload, "segs:", updatedSegs.length);
       const { error, data: updateData } = await supabase.from("trips").update({ ...payload, segments: updatedSegs }).eq("id", editingTripId).eq("user_id", user.id).select();
       console.log("[EditTrip] Result:", error, updateData);
-      if (!error) {
-        setTrips(prev => prev.map(t => t.id === editingTripId ? { ...t, tripName: payload.trip_name, status: payload.status, date: payload.date, location: payload.location, segments: updatedSegs, _endDate: createTripForm.endDate } : t));
-        setShowCreateTrip(false);
-        setEditingTripId(null);
-        setCreateTripForm({ name: "", destination: "", startDate: "", endDate: "", status: "planned" });
-      }
-    } else if (user) {
-      // CREATE new trip
-      const { data, error } = await supabase.from("trips").insert({ user_id: user.id, type: "flight", program: "aa", route: payload.location, segments: [{ _isMeta: true, ...tripMeta }], estimated_points: 0, ...payload }).select().single();
-      if (error) console.error("Create trip error:", error);
-      if (!error && data) {
-        const trip = { id: data.id, tripName: data.trip_name, status: data.status, date: data.date, type: data.type, program: data.program, route: data.route, location: data.location, segments: data.segments || [], estimatedPoints: data.estimated_points || 0 };
-        setTrips(prev => [...prev, trip]);
-        setShowCreateTrip(false);
-        setEditingTripId(null);
-        setCreateTripForm({ name: "", destination: "", startDate: "", endDate: "", status: "planned" });
-        setTripDetailId(data.id);
-        setTripDetailSegIdx(0);
-        setActiveView("trips");
-      }
-    } else {
-      const localTrip = { id: crypto.randomUUID(), tripName: createTripForm.name.trim(), status: createTripForm.status, date: createTripForm.startDate || new Date().toISOString().slice(0, 10), location: createTripForm.destination, segments: [] };
-      setTrips(prev => [...prev, localTrip]);
+      setCreateTripSaving(false);
+      if (error) { setCreateTripError(error.message || "Couldn't save changes. Please try again."); return; }
+      setTrips(prev => prev.map(t => t.id === editingTripId ? { ...t, tripName: payload.trip_name, status: payload.status, date: payload.date, location: payload.location, segments: updatedSegs, _endDate: createTripForm.endDate } : t));
       setShowCreateTrip(false);
       setEditingTripId(null);
       setCreateTripForm({ name: "", destination: "", startDate: "", endDate: "", status: "planned" });
+    } else if (user) {
+      // CREATE new trip — include any imported segments
+      const segments = [{ _isMeta: true, ...tripMeta }, ...importedSegs];
+      const tripConfCode = importedSegs.find(s => s.confirmationCode)?.confirmationCode || "";
+      const { data, error } = await supabase.from("trips").insert({ user_id: user.id, type: "flight", program: "aa", route: payload.location, segments, confirmation_code: tripConfCode, estimated_points: 0, ...payload }).select().single();
+      setCreateTripSaving(false);
+      if (error) { console.error("Create trip error:", error); setCreateTripError(error.message || "Couldn't create the trip. Please try again."); return; }
+      if (!data) { setCreateTripError("Trip didn't save — no data returned. Please try again."); return; }
+      const trip = { id: data.id, tripName: data.trip_name, status: data.status, date: data.date, type: data.type, program: data.program, route: data.route, location: data.location, segments: data.segments || [], confirmationCode: data.confirmation_code || tripConfCode, estimatedPoints: data.estimated_points || 0 };
+      setTrips(prev => [...prev, trip]);
+      setShowCreateTrip(false);
+      setEditingTripId(null);
+      setCreateTripForm({ name: "", destination: "", startDate: "", endDate: "", status: "planned" });
+      setNewTrip({ tripName: "", status: "planned", segments: [defaultSegment()] });
+      setTripDetailId(data.id);
+      setTripDetailSegIdx(0);
+      setActiveView("trips");
+    } else {
+      const segments = [{ _isMeta: true, ...tripMeta }, ...importedSegs];
+      const localTrip = { id: crypto.randomUUID(), tripName: createTripForm.name.trim(), status: createTripForm.status, date: createTripForm.startDate || new Date().toISOString().slice(0, 10), location: createTripForm.destination, segments, confirmationCode: importedSegs.find(s => s.confirmationCode)?.confirmationCode || "" };
+      setTrips(prev => [...prev, localTrip]);
+      setCreateTripSaving(false);
+      setShowCreateTrip(false);
+      setEditingTripId(null);
+      setCreateTripForm({ name: "", destination: "", startDate: "", endDate: "", status: "planned" });
+      setNewTrip({ tripName: "", status: "planned", segments: [defaultSegment()] });
       setTripDetailId(localTrip.id);
       setActiveView("trips");
     }
+  };
+
+  // ── Prefill the add-segment modal from a parsed attachment (drag-and-drop) ──
+  // Called by SegmentDropZone after the API returns parsed segments. Maps the
+  // parsed shape into either flightLegs (for flights) or segmentForm (everything
+  // else), then opens the existing add-segment modal pre-filled for review.
+  const prefillSegmentFromAttachment = (tripId, parsed) => {
+    const { segments = [], segmentType, confirmationCode, passengerName } = parsed || {};
+    if (!tripId || segments.length === 0) return;
+    if (segmentType === "flight") {
+      // Each parsed segment becomes a flight leg.
+      const legs = segments.map((s, i) => ({
+        id: i + 1,
+        flightNumber: s.flightNumber || "",
+        date: s.date || "",
+        arrivalDate: s.arrivalDate || s.date || "",
+        departureTime: s.departureTime || "",
+        arrivalTime: s.arrivalTime || "",
+        departureAirport: s.departureAirport || "",
+        arrivalAirport: s.arrivalAirport || "",
+        departureTerminal: s.departureTerminal || "",
+        arrivalTerminal: s.arrivalTerminal || "",
+        airline: s.airline || "",
+        aircraft: s.aircraft || "",
+        lookupMsg: "",
+      }));
+      setFlightLegs(legs.length > 0 ? legs : [{ id: 1, flightNumber: "", date: "", arrivalDate: "", departureTime: "", arrivalTime: "", departureAirport: "", arrivalAirport: "", departureTerminal: "", arrivalTerminal: "", airline: "", aircraft: "", lookupMsg: "" }]);
+      setFlightType(legs.length > 1 ? "multicity" : "oneway");
+      // Shared fields go on segmentForm so they apply to every leg
+      const first = segments[0] || {};
+      setSegmentForm({
+        confirmationCode: confirmationCode || first.confirmationCode || "",
+        fareClass: first.fareClass || "",
+        bookingClass: first.bookingClass || "",
+        seat: first.seat || "",
+        ticketPrice: first.ticketPrice ? String(first.ticketPrice) : "",
+        currency: first.currency || "USD",
+        notes: passengerName ? `Passenger: ${passengerName}` : "",
+      });
+      setAddSegmentType("flight");
+    } else {
+      // Non-flight: use the first parsed segment to populate segmentForm.
+      const s = segments[0] || {};
+      const formType = segmentType === "hotel" ? "accommodation" : segmentType;
+      setSegmentForm({
+        ...s,
+        confirmationCode: confirmationCode || s.confirmationCode || "",
+        notes: passengerName ? `Guest: ${passengerName}` : (s.notes || ""),
+      });
+      setAddSegmentType(formType);
+    }
+    setShowAddSegment(tripId);
   };
 
   // ── Add segment to existing trip ──
@@ -2812,6 +3882,37 @@ Start by introducing yourself briefly in-character with personality, and give an
     }
   };
 
+  // Move a segment from one trip to another. Removes from source trip, appends
+  // to destination trip's segments, persists both. Sorting on the destination
+  // happens naturally when the trip detail page renders (it sorts by date).
+  const moveSegment = async (sourceTripId, segIdx, destTripId) => {
+    if (!user || sourceTripId === destTripId) return;
+    const sourceTrip = trips.find(t => t.id === sourceTripId);
+    const destTrip = trips.find(t => t.id === destTripId);
+    if (!sourceTrip || !destTrip) return;
+    const sourceReal = (sourceTrip.segments || []).filter(s => !s._isMeta);
+    const sourceMeta = (sourceTrip.segments || []).filter(s => s._isMeta);
+    const movingSeg = sourceReal[segIdx];
+    if (!movingSeg) return;
+    const newSourceSegs = [...sourceMeta, ...sourceReal.filter((_, i) => i !== segIdx)];
+    const destReal = (destTrip.segments || []).filter(s => !s._isMeta);
+    const destMeta = (destTrip.segments || []).filter(s => s._isMeta);
+    const newDestSegs = [...destMeta, ...destReal, movingSeg].sort((a, b) => {
+      if (a._isMeta && !b._isMeta) return -1;
+      if (!a._isMeta && b._isMeta) return 1;
+      return (a.date || "9999").localeCompare(b.date || "9999");
+    });
+    setTrips(prev => prev.map(t => {
+      if (t.id === sourceTripId) return { ...t, segments: newSourceSegs };
+      if (t.id === destTripId) return { ...t, segments: newDestSegs };
+      return t;
+    }));
+    await Promise.all([
+      supabase.from("trips").update({ segments: newSourceSegs }).eq("id", sourceTripId).eq("user_id", user.id),
+      supabase.from("trips").update({ segments: newDestSegs }).eq("id", destTripId).eq("user_id", user.id),
+    ]);
+  };
+
   const handleAddTrip = async () => {
     setAddTripError("");
     const segments = newTrip.segments.map(seg => {
@@ -2880,7 +3981,53 @@ Start by introducing yourself briefly in-character with personality, and give an
     resetTripModal();
   };
 
-  const removeTrip = (id) => {
+  const removeTrip = (idOrTrip) => {
+    // Accept either an id (legacy callers) or the trip object itself (preferred —
+    // lets us read trip._shared directly without relying on sharedTrips state lookup).
+    const isTripObj = idOrTrip && typeof idOrTrip === "object";
+    const id = isTripObj ? idOrTrip.id : idOrTrip;
+    // Demo trips are read-only — toggling demo mode off in Settings hides them.
+    if (typeof id === "string" && id.startsWith("demo_")) {
+      showConfirm("This is sample data. Turn off \"Show sample data\" in Settings to hide it.", () => {});
+      return;
+    }
+    // Shared-trip detection: prefer the passed object's _shared flag (the source
+    // of truth for which trip the user clicked on), then fall back to looking up
+    // in sharedTrips state. Either path triggers the share-row delete instead of
+    // attempting to delete the underlying trip we don't own.
+    const passedShared = isTripObj && idOrTrip._shared;
+    const sharedTrip = passedShared ? idOrTrip : sharedTrips.find(t => t.id === id);
+    console.log("[removeTrip] id=", id, "isTripObj=", isTripObj, "passedShared=", passedShared, "foundInSharedTrips=", !!sharedTrip, "sharedTripsCount=", sharedTrips.length);
+    if (sharedTrip) {
+      showConfirm("Remove this shared trip from your dashboard? The trip stays with the person who shared it.", async () => {
+        if (!user) return;
+        const prevSharedTrips = sharedTrips;
+        // Optimistic UI removal
+        setSharedTrips(prev => prev.filter(t => t.id !== id));
+        try {
+          const resp = await fetch("/api/shared-trips", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ tripId: id, userId: user.id, userEmail: user.email }),
+          });
+          const data = await resp.json().catch(() => ({}));
+          console.log("[removeSharedTrip] result:", resp.status, data);
+          if (!resp.ok || data?.error) {
+            // Roll back the optimistic removal so the user sees the trip again
+            setSharedTrips(prevSharedTrips);
+            const msg = data?.debug
+              ? `Couldn't remove: ${data.error}. Sent userId=${user.id?.slice(0,8)}…, email=${user.email}. Trip has ${data.debug.row_count_for_trip} share row(s). Sample emails: ${(data.debug.sample_emails || []).join(", ") || "none"}.`
+              : `Couldn't remove the shared trip: ${data?.error || `HTTP ${resp.status}`}.`;
+            showConfirm(msg, () => {});
+          }
+        } catch (err) {
+          console.error("[removeSharedTrip] Network error:", err);
+          setSharedTrips(prevSharedTrips);
+          showConfirm("Couldn't reach the server. The trip stays on your dashboard. Check your connection and try again.", () => {});
+        }
+      });
+      return;
+    }
     showConfirm("Are you sure you want to delete this trip? This cannot be undone.", async () => {
       setTrips(prev => prev.filter(t => t.id !== id));
       if (user) await supabase.from("trips").delete().eq("id", id).eq("user_id", user.id);
@@ -3370,7 +4517,7 @@ Start by introducing yourself briefly in-character with personality, and give an
       arrivalDate: s.arrivalDate || "",
       fareClass: s.fareClass || "economy",
       bookingClass: s.bookingClass || "",
-      confirmationCode: s.confirmationCode || "",
+      confirmationCode: s.confirmationCode || itinerary.confirmation_code || "",
       seat: s.seat || "",
       airline: s.airline || "",
       aircraft: s.aircraft || "",
@@ -3380,12 +4527,40 @@ Start by introducing yourself briefly in-character with personality, and give an
       // Hotel
       property: s.property || "",
       location: s.location || "",
+      checkoutDate: s.checkoutDate || "",
       nights: s.nights || 1,
+      roomType: s.roomType || "",
+      totalCost: s.totalCost || "",
     }));
+
+    // Derive trip-level fields from the parsed segments so the simplified
+    // Create Trip modal shows the right defaults (and so handleCreateTrip
+    // can carry the segments through on save).
+    const allDates = segs.flatMap(s => [s.date, s.arrivalDate, s.checkoutDate].filter(Boolean)).sort();
+    const startDate = allDates[0] || "";
+    const endDate = allDates[allDates.length - 1] || "";
+    const firstHotel = segs.find(s => s.type === "hotel" || s.type === "accommodation");
+    const firstFlight = segs.find(s => s.type === "flight");
+    const destination = firstHotel?.location || firstHotel?.property
+      || (firstFlight?.arrivalAirport ? (AIRPORT_CITY[firstFlight.arrivalAirport] || firstFlight.arrivalAirport) : "")
+      || itinerary.subject || "";
+    const tripName = itinerary.subject
+      || (firstHotel ? `${firstHotel.property || "Hotel stay"}` : "")
+      || (firstFlight ? `${firstFlight.departureAirport || ""} → ${firstFlight.arrivalAirport || ""}`.trim() : "")
+      || itinerary.confirmation_code
+      || "Imported Trip";
+
     setNewTrip({
-      tripName: itinerary.subject || itinerary.confirmation_code || "Imported Trip",
+      tripName,
       status: "confirmed",
       segments: segs.length > 0 ? segs : [defaultSegment()],
+    });
+    setCreateTripForm({
+      name: tripName,
+      destination,
+      startDate,
+      endDate,
+      status: "confirmed",
     });
     setShowCreateTrip(true);
     // Mark itinerary as added
@@ -3415,7 +4590,7 @@ Start by introducing yourself briefly in-character with personality, and give an
     setItineraryText("");
   };
 
-  const BLANK_EXPENSE = { category: "flight", description: "", amount: "", currency: "USD", usdReimbursement: "", individuals: "Self", date: "", paymentMethod: "", receipt: false, receiptImage: null, notes: "" };
+  const BLANK_EXPENSE = { category: "flight", description: "", amount: "", currency: "USD", usdReimbursement: "", fxRate: 1, fxMode: "direct", individuals: "Self", date: "", paymentMethod: "", receipt: false, receiptImage: null, notes: "" };
 
   const handleAddExpense = () => {
     const parsed = {
@@ -3454,14 +4629,21 @@ Start by introducing yourself briefly in-character with personality, and give an
   };
 
   const removeExpense = (id) => {
+    if (typeof id === "string" && id.startsWith("demo_")) {
+      showConfirm("This is sample data. Turn off \"Show sample data\" in Settings to hide it.", () => {});
+      return;
+    }
     showConfirm("Are you sure you want to delete this expense?", async () => {
       setExpenses(prev => prev.filter(e => e.id !== id));
       if (user) await supabase.from("expenses").delete().eq("id", id).eq("user_id", user.id);
     });
   };
 
-  const getTripExpenses = (tripId) => expenses.filter(e => e.tripId === tripId);
-  const getTripTotal = (tripId) => getTripExpenses(tripId).reduce((sum, e) => sum + e.amount * (e.fxRate || 1), 0);
+  // Effective expense list — when demo mode is on, layer in sample expenses
+  // alongside the user's real ones (sample items carry _demo: true).
+  const effectiveExpenses = demoMode ? [...DEMO_EXPENSES, ...expenses] : expenses;
+  const getTripExpenses = (tripId) => effectiveExpenses.filter(e => e.tripId === tripId);
+  const getTripTotal = (tripId) => getTripExpenses(tripId).reduce((sum, e) => sum + expenseUSD(e), 0);
   const getTripName = (trip) => trip.tripName || trip.route || trip.property || trip.location || "Trip";
 
   const handleShareTrip = async () => {
@@ -3771,17 +4953,19 @@ Start by introducing yourself briefly in-character with personality, and give an
     if (!program) return null;
 
     let current = account.currentPoints || account.tierCredits || account.currentNights || account.currentRentals || 0;
-    const tripBoosts = trips.filter(t => t.program === programId).reduce((sum, t) => sum + (t.estimatedPoints || t.estimatedNights || t.estimatedRentals || 0), 0);
-    const projected = current + tripBoosts;
-
-    let currentTier = null, nextTier = null, projectedTier = null;
+    let currentTier = null, nextTier = null;
     for (const tier of program.tiers) {
       if (current >= tier.threshold) currentTier = tier;
-      if (projected >= tier.threshold) projectedTier = tier;
     }
     nextTier = program.tiers.find(t => t.threshold > current) || program.tiers[program.tiers.length - 1];
-    if (!projectedTier) projectedTier = currentTier;
 
+    // Projection (trip boosts → projected tier) is available to every user.
+    const tripBoosts = trips.filter(t => t.program === programId).reduce((sum, t) => sum + (t.estimatedPoints || t.estimatedNights || t.estimatedRentals || 0), 0);
+    const projected = current + tripBoosts;
+    let projectedTier = currentTier;
+    for (const tier of program.tiers) {
+      if (projected >= tier.threshold) projectedTier = tier;
+    }
     return { current, projected, tripBoosts, currentTier, nextTier, projectedTier, program, willAdvance: projectedTier && currentTier && projectedTier.name !== currentTier?.name };
   }, [linkedAccounts, trips]);
 
@@ -3813,28 +4997,41 @@ Start by introducing yourself briefly in-character with personality, and give an
     checkPush();
   }, [isLoggedIn]);
 
+  const [pushStatus, setPushStatus] = useState(null);
   const enablePushNotifications = async () => {
-    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+      setPushStatus("Push notifications are not supported in this browser.");
+      return;
+    }
     try {
+      setPushStatus("Requesting permission...");
       const perm = await Notification.requestPermission();
-      if (perm !== "granted") return;
+      if (perm !== "granted") {
+        setPushStatus(perm === "denied" ? "Notifications were blocked. Enable them in your browser settings." : "Permission not granted.");
+        return;
+      }
+      setPushStatus("Setting up alerts...");
       const reg = await navigator.serviceWorker.ready;
       const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
-      if (!vapidKey) return;
+      if (!vapidKey) {
+        setPushStatus("Push not configured. Missing VAPID key.");
+        return;
+      }
       let sub = await reg.pushManager.getSubscription();
       if (!sub) {
         sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: vapidKey });
       }
       pushSubRef.current = sub.toJSON();
       setPushEnabled(true);
+      setPushStatus(null);
       if (user) {
-        fetch("/api/push-subscribe", {
+        fetch("/api/push-notify?action=subscribe", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId: user.id, subscription: sub.toJSON() }),
         }).catch(() => {});
       }
     } catch (e) {
-      console.log("Push subscribe error:", e.message);
+      setPushStatus("Error: " + e.message);
     }
   };
 
@@ -3990,9 +5187,9 @@ Start by introducing yourself briefly in-character with personality, and give an
   const fetchLoungePhoto = useCallback((loungeId, placeQuery) => {
     if (loungePhotoFetched.current.has(loungeId)) return;
     loungePhotoFetched.current.add(loungeId);
-    loadGoogleMaps().then(() => {
-      if (!window.google?.maps?.places) return;
-      const svc = new window.google.maps.places.PlacesService(document.createElement("div"));
+    loadGooglePlaces().then((places) => {
+      if (!places?.PlacesService) return;
+      const svc = new places.PlacesService(document.createElement("div"));
       svc.findPlaceFromQuery({ query: placeQuery, fields: ["photos"] }, (results, status) => {
         if (status === "OK" && results?.[0]?.photos?.[0]) {
           const url = results[0].photos[0].getUrl({ maxWidth: 600 });
@@ -4015,15 +5212,20 @@ Start by introducing yourself briefly in-character with personality, and give an
     const flyingAlliance = loungeFlightAirline ? AIRLINE_ALLIANCE[loungeFlightAirline] : null;
     const flyingClass = loungeFlightClass || "economy";
 
-    // 1. Card-based access — always available regardless of flight
+    // 1. Card-based access — most cards open lounges regardless of flight,
+    //    but some entitlements are flight-conditional (e.g., Amex Plat → Delta
+    //    Sky Club only when flying Delta). Honor those conditions.
     Object.keys(linkedAccounts).forEach(cardId => {
       const rules = CARD_LOUNGE_ACCESS[cardId];
       if (!rules) return;
       rules.forEach(rule => {
-        if (rule.network === network) {
-          const cardMeta = LOYALTY_PROGRAMS.creditCards.find(c => c.id === cardId);
-          results.push({ source: "card", cardId, cardName: cardMeta?.name || cardId, guests: rule.guests, guestNote: rule.guestNote, condition: rule.condition });
-        }
+        if (rule.network !== network) return;
+        // Card-level conditions
+        if (rule.condition === "flying_delta" && loungeFlightAirline !== "dl") return;
+        if (rule.condition === "flying_united" && loungeFlightAirline !== "ua") return;
+        if (rule.condition === "flying_aa" && loungeFlightAirline !== "aa") return;
+        const cardMeta = LOYALTY_PROGRAMS.creditCards.find(c => c.id === cardId);
+        results.push({ source: "card", cardId, cardName: cardMeta?.name || cardId, guests: rule.guests, guestNote: rule.guestNote, condition: rule.condition });
       });
     });
 
@@ -4074,8 +5276,17 @@ Start by introducing yourself briefly in-character with personality, and give an
         if (!allianceRules) return;
         allianceRules.lounges.forEach(rule => {
           if (!rule.networkTypes.includes(network)) return;
-          // Only match if the lounge belongs to the same alliance
-          if (lounge?.alliance && lounge.alliance !== "none" && lounge.alliance !== mapping.alliance) return;
+          // Only match if the lounge belongs to the same alliance.
+          // CRITICAL: lounges tagged alliance:"none" (Virgin Clubhouse, etc.)
+          // must NOT fall through — they're standalone and should never be
+          // granted via alliance status from another carrier.
+          if (!lounge?.alliance || lounge.alliance === "none") return;
+          if (lounge.alliance !== mapping.alliance) return;
+          // First-tier restriction applies only to oneworld Sapphire
+          // (Sapphire = Business only). All other top-tier statuses
+          // (oneworld Emerald, Star Gold, SkyTeam Elite Plus) get
+          // both Business AND First lounges in their alliance.
+          if (lounge?.tier === "first" && mapping.alliance === "oneworld" && allianceLevel === "Sapphire") return;
           // Check cabin class requirement
           if (rule.class === "first_and_business" || rule.class === "business") {
             // Emerald gets first+business regardless of cabin; Sapphire/Gold need to be checked
@@ -4100,8 +5311,10 @@ Start by introducing yourself briefly in-character with personality, and give an
       };
       const operatingNetwork = airlineNetworks[loungeFlightAirline];
       if (operatingNetwork === network) {
+        // Business cabin can't open the operating carrier's First-tier lounge.
+        const blockedFirstTier = lounge?.tier === "first" && flyingClass !== "first";
         const alreadyHasAccess = results.length > 0;
-        if (!alreadyHasAccess) {
+        if (!blockedFirstTier && !alreadyHasAccess) {
           results.push({ source: "cabin", airlineName, tier: flyingClass === "first" ? "First Class ticket" : "Business Class ticket", guests: 0, guestNote: "Ticketed cabin access only" });
         }
       }
@@ -4113,6 +5326,12 @@ Start by introducing yourself briefly in-character with personality, and give an
         if (network === "flagship" || network === "chelsea_lounge") {
           results.push({ source: "cabin", airlineName, tier: "First Class ticket", guests: 0, guestNote: `${network === "flagship" ? "Flagship First Dining" : "Chelsea Lounge"}: ticketed in int'l First Class on ${airlineName}` });
         }
+      }
+
+      // BA Concorde Room — restricted to BA First Class long-haul only.
+      // Even oneworld Emerald does NOT get access via status alone.
+      if (network === "ba_concorde" && isIntl && flyingClass === "first" && loungeFlightAirline === "ba_avios") {
+        results.push({ source: "cabin", airlineName, tier: "First Class ticket", guests: 1, guestNote: "Concorde Room: ticketed in BA First Class on a long-haul flight" });
       }
 
       // oneworld: Greenwich / Soho Lounge — AA/BA int'l premium cabin
@@ -4142,6 +5361,36 @@ Start by introducing yourself briefly in-character with personality, and give an
       if (isIntl && flyingClass === "first" && loungeFlightAirline === "flying_blue" && network === "af_la_premiere") {
         results.push({ source: "cabin", airlineName, tier: "La Premiere ticket", guests: 0, guestNote: `La Premiere: ticketed La Premiere on Air France int'l` });
       }
+
+      // ── Cross-alliance cabin entitlement ──
+      // A premium-cabin ticket on any alliance carrier opens partner Business
+      // lounges. First-class tickets additionally open First-tier lounges
+      // within the same alliance. Skip if status already granted access.
+      if (isIntl && flyingAlliance && lounge?.alliance === flyingAlliance && results.length === 0) {
+        // Business cabin never opens First-tier lounges via cabin alone.
+        const blockedFirstTier = lounge?.tier === "first" && flyingClass !== "first";
+        if (!blockedFirstTier) {
+          const allianceTier = flyingAlliance === "oneworld"
+            ? (flyingClass === "first" ? "Emerald" : "Sapphire")
+            : flyingAlliance === "star" ? "Gold"
+            : "Elite Plus"; // SkyTeam
+          const tierRules = ALLIANCE_LOUNGE_ACCESS[flyingAlliance]?.[allianceTier]?.lounges || [];
+          for (const rule of tierRules) {
+            if (rule.networkTypes.includes(network)) {
+              const allianceLabel = flyingAlliance === "oneworld" ? "oneworld" : flyingAlliance === "star" ? "Star Alliance" : "SkyTeam";
+              const tierLabel = flyingClass === "first" ? "First & Business" : "Business";
+              results.push({
+                source: "cabin",
+                airlineName,
+                tier: cabinLabel,
+                guests: 1,
+                guestNote: `${allianceLabel} ${tierLabel} lounges + 1 guest — ticketed in int'l ${flyingClass} on ${airlineName}`,
+              });
+              break;
+            }
+          }
+        }
+      }
     }
 
     // 5. Final guard: premium cabin-gated lounges must never be granted by status alone.
@@ -4153,6 +5402,18 @@ Start by introducing yourself briefly in-character with personality, and give an
 
     return results;
   }, [linkedAccounts, loungeFlightAirline, loungeFlightClass, loungeAccessRoute]);
+
+  const saveLoungeVisit = (visit) => {
+    const updated = [visit, ...loungeVisits];
+    setLoungeVisits(updated);
+    localStorage.setItem("continuum_lounge_visits", JSON.stringify(updated));
+  };
+
+  const removeLoungeVisit = (idx) => {
+    const updated = loungeVisits.filter((_, i) => i !== idx);
+    setLoungeVisits(updated);
+    localStorage.setItem("continuum_lounge_visits", JSON.stringify(updated));
+  };
 
   // ============================================================
   // PUBLIC SITE — Landing, Content Pages, Login
@@ -4210,19 +5471,19 @@ Start by introducing yourself briefly in-character with personality, and give an
           </div>
           <div style={{ display: "flex", gap: 56, flexWrap: "wrap" }}>
             <div>
-              <h4 style={{ fontSize: 9, fontWeight: 700, color: "#0EA5A0", textTransform: "uppercase", letterSpacing: 2, fontFamily: "Space Mono, monospace", marginBottom: 14 }}>Product</h4>
+              <h4 style={{ fontSize: 11, fontWeight: 700, color: "#0EA5A0", textTransform: "uppercase", letterSpacing: 2, fontFamily: "Space Mono, monospace", marginBottom: 14 }}>Product</h4>
               {["Features", "Pricing", "How It Works"].map(l => (
                 <button key={l} onClick={() => scrollTo(l.toLowerCase().replace(/ /g, "-"))} style={{ display: "block", background: "none", border: "none", color: "#62666d", fontSize: 12, fontFamily: "DM Sans, sans-serif", cursor: "pointer", padding: "4px 0", fontWeight: 400 }}>{l}</button>
               ))}
             </div>
             <div>
-              <h4 style={{ fontSize: 9, fontWeight: 700, color: "#0EA5A0", textTransform: "uppercase", letterSpacing: 2, fontFamily: "Space Mono, monospace", marginBottom: 14 }}>Company</h4>
+              <h4 style={{ fontSize: 11, fontWeight: 700, color: "#0EA5A0", textTransform: "uppercase", letterSpacing: 2, fontFamily: "Space Mono, monospace", marginBottom: 14 }}>Company</h4>
               {["About", "Contact", "Privacy"].map(l => (
                 <button key={l} onClick={() => scrollTo("about")} style={{ display: "block", background: "none", border: "none", color: "#62666d", fontSize: 12, fontFamily: "DM Sans, sans-serif", cursor: "pointer", padding: "4px 0", fontWeight: 400 }}>{l}</button>
               ))}
             </div>
             <div>
-              <h4 style={{ fontSize: 9, fontWeight: 700, color: "#0EA5A0", textTransform: "uppercase", letterSpacing: 2, fontFamily: "Space Mono, monospace", marginBottom: 14 }}>Connect</h4>
+              <h4 style={{ fontSize: 11, fontWeight: 700, color: "#0EA5A0", textTransform: "uppercase", letterSpacing: 2, fontFamily: "Space Mono, monospace", marginBottom: 14 }}>Connect</h4>
               {["Twitter / X", "LinkedIn", "Email Us"].map(l => (
                 <span key={l} style={{ display: "block", color: "#62666d", fontSize: 12, fontFamily: "Inter, sans-serif", padding: "4px 0", fontWeight: 400, cursor: "pointer" }}>{l}</span>
               ))}
@@ -4251,7 +5512,7 @@ Start by introducing yourself briefly in-character with personality, and give an
     const SectionLabel = ({ label }) => (
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 32 }}>
         <div style={{ width: 24, height: 2, background: "#0EA5A0" }} />
-        <span style={{ fontSize: 9, fontFamily: "Space Mono, monospace", color: "#8a8f98", letterSpacing: 2, textTransform: "uppercase", fontWeight: 700 }}>( {label} )</span>
+        <span style={{ fontSize: 11, fontFamily: "Space Mono, monospace", color: "#8a8f98", letterSpacing: 2, textTransform: "uppercase", fontWeight: 700 }}>( {label} )</span>
       </div>
     );
 
@@ -4376,7 +5637,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                         <PartnerLogo item={selectedPartner} size={48} />
                       </div>
                       <div>
-                        <div style={{ fontSize: 9, fontFamily: "Space Mono, monospace", color: "#0EA5A0", letterSpacing: 2, textTransform: "uppercase", marginBottom: 4 }}>{selectedPartner.cat}</div>
+                        <div style={{ fontSize: 11, fontFamily: "Space Mono, monospace", color: "#0EA5A0", letterSpacing: 2, textTransform: "uppercase", marginBottom: 4 }}>{selectedPartner.cat}</div>
                         <h2 style={{ fontSize: 20, fontWeight: 700, color: "#f7f8f8", margin: 0, lineHeight: 1.2 }}>{selectedPartner.n}</h2>
                       </div>
                     </div>
@@ -4414,7 +5675,7 @@ Start by introducing yourself briefly in-character with personality, and give an
               style={{ position: "fixed", bottom: 24, right: 24, zIndex: 9999, background: "rgba(8,8,12,0.88)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 10, padding: "10px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, backdropFilter: "blur(12px)", boxShadow: "0 4px 24px rgba(0,0,0,0.5)" }}
             >
               <span style={{ fontSize: 15 }}>{paMuted ? "🔊" : "🔇"}</span>
-              <span style={{ fontSize: 9, fontFamily: "Space Mono, monospace", color: "#8a8f98", letterSpacing: 1 }}>{paMuted ? "RESUME PA" : "MUTE PA"}</span>
+              <span style={{ fontSize: 11, fontFamily: "Space Mono, monospace", color: "#8a8f98", letterSpacing: 1 }}>{paMuted ? "RESUME PA" : "MUTE PA"}</span>
             </button>
           )}
 
@@ -4476,10 +5737,10 @@ Start by introducing yourself briefly in-character with personality, and give an
 
               {/* Top-right: flight code + log in */}
               <div style={{ position: "absolute", top: 16, right: 20, zIndex: 20, display: "flex", alignItems: "center", gap: 16 }}>
-                <span style={{ fontSize: 9, fontFamily: "Space Mono, monospace", color: "#0EA5A0", letterSpacing: 2 }}>CTM-2026</span>
+                <span style={{ fontSize: 11, fontFamily: "Space Mono, monospace", color: "#0EA5A0", letterSpacing: 2 }}>CTM-2026</span>
                 <button onClick={() => goTo("login")} style={{
                   background: "none", border: "none", cursor: "pointer",
-                  fontSize: 9, fontFamily: "Space Mono, monospace", color: "rgba(255,255,255,0.6)",
+                  fontSize: 11, fontFamily: "Space Mono, monospace", color: "rgba(255,255,255,0.6)",
                   letterSpacing: 2, textTransform: "uppercase", padding: 0,
                   transition: "color 0.15s",
                 }}
@@ -4546,209 +5807,312 @@ Start by introducing yourself briefly in-character with personality, and give an
       >
         {icon}
         <span>{label}</span>
-        {disabled && <span style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", marginLeft: 2 }}>coming soon</span>}
+        {disabled && <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginLeft: 2 }}>coming soon</span>}
       </button>
     );
 
+    // ============================================================
+    // EAST-LETTER-INSPIRED LANDING / LOGIN
+    // ------------------------------------------------------------
+    // Editorial dark hero with massive typography + 2 app feature
+    // panels below, and a compact modal for the actual sign-in flow.
+    // Replaces the previous always-visible login card which was
+    // criticized as confusing + too large on PWA.
+    // ============================================================
+
+    // Cream-on-black palette borrowed from theeastletter.com, with
+    // Continuum's orange (#D4742D) used sparingly for the asterisk
+    // accent so the page still says "Continuum" not "East Letter".
+    const elBg = "#000";
+    const elCream = "#E1E0CC";
+    const elCreamSoft = "rgba(225,224,204,0.85)";
+    const elCreamFaded = "rgba(225,224,204,0.55)";
+    const elAccent = "#D4742D";
+
+    // Upper cap on phone width — the carousel itself measures the available
+    // space via ResizeObserver and shrinks below this as needed so the page
+    // never scrolls. Slightly smaller cap on PWA phone keeps the screens
+    // present without overwhelming the description + CTA.
+    const phoneMaxW = isPwaStandalone && isMobile
+      ? 150                       // PWA on phone: visible but not dominant
+      : (isMobile ? 200 : 300);   // mobile web / desktop web
+
+    // ?v= bumped whenever the JPEGs are replaced in /public so phones don't
+    // serve the stale cached version after a re-screenshot session.
+    const _imgV = "3";
+    const LANDING_SCREENS = [
+      { src: `/Platform5.jpeg?v=${_imgV}`,    alt: "Dashboard" },
+      { src: `/Platform3.jpeg?v=${_imgV}`,    alt: "Trips" },
+      { src: `/Platform%204.jpeg?v=${_imgV}`, alt: "Forwarding Desk" },
+      { src: `/Platform2.jpeg?v=${_imgV}`,    alt: "Expense Split" },
+      { src: `/Platform7.jpeg?v=${_imgV}`,    alt: "Expense Split detail" },
+      { src: `/Platform1.jpeg?v=${_imgV}`,    alt: "Lounges" },
+      { src: `/Platform6.jpeg?v=${_imgV}`,    alt: "Alliances" },
+    ];
+
     return (
-      <div style={{ position: "fixed", inset: 0, overflow: "hidden", fontFamily: "Inter, DM Sans, sans-serif" }}>
+      <div
+        className="continuum-landing-shell"
+        style={{ background: elBg, color: elCream, fontFamily: "'Space Grotesk', Inter, -apple-system, BlinkMacSystemFont, sans-serif" }}
+      >
+        {/* The shell escapes the #root padding stack (body + #root both add
+            env(safe-area-inset-top) on iOS, which together push 100vh layouts
+            below the visible viewport on PWA). position:fixed + inset:0 +
+            100dvh anchors us to the actual viewport; safe-area padding then
+            keeps content out of the notch and home indicator. */}
+        <style>{`
+          .continuum-landing-shell {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+            padding-left: env(safe-area-inset-left, 0px);
+            padding-right: env(safe-area-inset-right, 0px);
+            box-sizing: border-box;
+            z-index: 1;
+          }
+        `}</style>
         {fontLink}
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Space+Grotesk:wght@400;500;600;700&display=swap" />
 
-        {/* Full-bleed cockpit background */}
-        <img
-          src="/cockpit.jpg"
-          alt=""
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: isMobile ? "center 30%" : "center", filter: isMobile ? "brightness(0.7) saturate(1.1) contrast(1.1)" : "brightness(0.55) saturate(1.05) contrast(1.05)" }}
-        />
-        {/* Vignette — on mobile, gradient from bottom to let cockpit show up top */}
-        <div style={{ position: "absolute", inset: 0, background: isMobile
-          ? "linear-gradient(to bottom, transparent 20%, rgba(0,0,0,0.15) 45%, rgba(0,0,0,0.7) 68%, rgba(8,9,10,0.95) 85%)"
-          : "radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.45) 100%)"
-        }} />
+        {/* ============================================================ */}
+        {/* SINGLE-SCREEN HERO — video bg, phone carousel layered on top */}
+        {/* ============================================================ */}
+        <section style={{ padding: isMobile ? 12 : 20, height: "100%", display: "flex", boxSizing: "border-box" }}>
+          <div style={{ flex: 1, position: "relative", background: "#0a0a0a", borderRadius: isMobile ? 16 : 28, overflow: "hidden", display: "flex", flexDirection: "column" }}>
 
-        {/* PA mute button */}
-        {audioPlayed && !paEnded && (
-          <button
-            onClick={() => { if (paMuted) { window.speechSynthesis?.resume(); setPaMuted(false); } else { window.speechSynthesis?.pause(); setPaMuted(true); } }}
-            style={{ position: "fixed", bottom: 24, right: 24, zIndex: 9999, background: "rgba(8,8,12,0.88)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 10, padding: "10px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, backdropFilter: "blur(12px)", boxShadow: "0 4px 24px rgba(0,0,0,0.5)" }}
-          >
-            <span style={{ fontSize: 15 }}>{paMuted ? "🔊" : "🔇"}</span>
-            <span style={{ fontSize: 9, fontFamily: "Space Mono, monospace", color: "#8a8f98", letterSpacing: 1 }}>{paMuted ? "RESUME PA" : "MUTE PA"}</span>
-          </button>
-        )}
-
-
-        {/* Centered logo at top */}
-        <div style={{
-          position: "absolute", top: isMobile ? 32 : 40, left: 0, right: 0, zIndex: 5,
-          display: "flex", justifyContent: "center", pointerEvents: "none",
-        }}>
-          <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: isMobile ? 120 : 150, filter: "drop-shadow(0 4px 20px rgba(0,0,0,0.6))" }} />
-        </div>
-
-        {/* Login card */}
-        <div style={{
-          position: "absolute", inset: 0, display: "flex",
-          alignItems: isMobile ? "flex-end" : "center",
-          justifyContent: isMobile ? "center" : "flex-start",
-          padding: isMobile ? "20px 20px calc(env(safe-area-inset-bottom, 0px) + 24px)" : "0 0 0 60px",
-          overflowY: "auto",
-        }}>
-          <div style={{
-            width: "100%", maxWidth: isMobile ? "100%" : 360,
-            opacity: animateIn ? 1 : 0, transform: animateIn ? "translateY(0)" : "translateY(20px)",
-            transition: "all 0.7s cubic-bezier(0.16,1,0.3,1)",
-          }}>
-
-            {/* Card */}
+            <video
+              src="/hawaiiVideo.mp4"
+              poster="/hawaiiVideo.jpg"
+              autoPlay loop muted playsInline
+              // preload=metadata defers the actual video bytes until after the
+              // page renders; the poster image fills in instantly so the hero
+              // never shows a flat black placeholder.
+              preload="metadata"
+              aria-hidden="true"
+              style={{
+                position: "absolute", inset: 0, width: "100%", height: "100%",
+                objectFit: "cover",
+                // Phone gets a brighter, more visible video; desktop stays darker
+                // so the headline reads cleanly against the moving footage.
+                filter: isMobile ? "brightness(0.75) saturate(1.1)" : "brightness(0.5) saturate(1.05)",
+              }}
+            />
             <div style={{
-              background: "rgba(12,13,16,0.76)",
-              backdropFilter: "blur(32px)", WebkitBackdropFilter: "blur(32px)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              borderRadius: isMobile ? 14 : 16,
-              padding: isMobile ? "14px 16px 12px" : "22px 24px 20px",
-              boxShadow: "0 24px 64px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06)",
+              position: "absolute", inset: 0,
+              backgroundImage: "url(\"data:image/svg+xml;utf8,%3Csvg viewBox='0 0 240 240' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E\")",
+              opacity: isMobile ? 0.05 : 0.08, mixBlendMode: "overlay", pointerEvents: "none",
+            }} />
+            {/* Stronger top + bottom darken on mobile keeps the brighter video
+                from washing out the description and the CTA + footer text. */}
+            <div style={{ position: "absolute", inset: 0, background: isMobile
+              ? "linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.15) 28%, rgba(0,0,0,0.15) 65%, rgba(0,0,0,0.8) 100%)"
+              : "linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.2) 30%, rgba(0,0,0,0.3) 70%, rgba(0,0,0,0.75) 100%)" }} />
+
+            {/* TOP BAR */}
+            <div style={{ position: "relative", zIndex: 3, padding: isMobile ? "14px 18px" : "22px 32px", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
+              <a href="/" style={{ color: elCream, fontSize: isMobile ? 13 : 14, fontWeight: 600, letterSpacing: "0.01em", textDecoration: "none", fontFamily: "'Space Grotesk', sans-serif" }}>
+                Continuum
+              </a>
+              <button
+                onClick={() => setLoginModalOpen(true)}
+                onMouseEnter={e => { e.currentTarget.style.background = "#f0eedd"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = elCream; }}
+                style={{ padding: "6px 16px", background: elCream, color: "#000", border: "none", borderRadius: 99, cursor: "pointer", fontFamily: "'Space Grotesk', sans-serif", fontSize: 11, fontWeight: 600, letterSpacing: "0.02em", transition: "background 0.2s" }}
+              >
+                Sign in
+              </button>
+            </div>
+
+            {/* PITCH — replaces the old "every trip" headline */}
+            <div style={{ position: "relative", zIndex: 3, padding: isMobile ? "6px 20px 0" : "10px 36px 0", textAlign: "center", flexShrink: 0 }}>
+              <p style={{
+                margin: "0 auto",
+                maxWidth: isMobile ? 360 : 760,
+                fontFamily: "'Fraunces', 'Instrument Serif', Georgia, serif",
+                fontSize: isMobile ? 17 : 28,
+                fontWeight: 400,
+                lineHeight: 1.25,
+                letterSpacing: "-0.015em",
+                color: elCream,
+              }}>
+                Trips, status, lounges, and shared expenses — <em style={{ fontStyle: "italic", color: elAccent }}>quietly tracked across every program.</em>
+              </p>
+            </div>
+
+            {/* PHONE CAROUSEL — fills the remaining vertical space.
+                On mobile, the phones drop to the bottom of their flex slot
+                with explicit breathing room before the CTA so they read as
+                "sitting on" the page instead of floating in the middle. */}
+            <div style={{
+              position: "relative", zIndex: 3, flex: 1,
+              display: "flex",
+              alignItems: isMobile ? "flex-end" : "center",
+              justifyContent: "center",
+              minHeight: 0,
+              padding: isMobile ? "8px 0 32px" : "16px 0",
             }}>
-              {/* Heading */}
-              <div style={{ marginBottom: isMobile ? 10 : 14 }}>
-                <h1 style={{ fontSize: isMobile ? 15 : 18, fontWeight: 700, color: "#f7f8f8", margin: "0 0 2px", letterSpacing: -0.3, lineHeight: 1.2 }}>
-                  {isRegistering ? "Create your account" : "Welcome back"}
-                </h1>
-                <p style={{ color: "rgba(255,255,255,0.4)", fontSize: isMobile ? 11 : 12, margin: 0 }}>
-                  {isRegistering ? "Start tracking your elite status today" : "Sign in to continue your journey"}
-                </p>
+              <LandingPhoneCarousel
+                images={LANDING_SCREENS}
+                maxPhoneWidth={phoneMaxW}
+                accent={elCream}
+              />
+            </div>
+
+            {/* CTA + COMPACT FOOTER */}
+            <div style={{ position: "relative", zIndex: 3, padding: isMobile ? "0 18px 14px" : "0 32px 22px", display: "flex", flexDirection: "column", alignItems: "center", gap: isMobile ? 10 : 14, flexShrink: 0 }}>
+              <button
+                onClick={() => setLoginModalOpen(true)}
+                onMouseEnter={e => { e.currentTarget.style.background = "#f0eedd"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = elCream; }}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 10,
+                  padding: "8px 8px 8px 22px",
+                  background: elCream, color: "#000", border: "none", borderRadius: 99,
+                  fontFamily: "'Space Grotesk', sans-serif", fontSize: isMobile ? 13 : 14, fontWeight: 600,
+                  cursor: "pointer", letterSpacing: "0.01em",
+                  transition: "background 0.2s",
+                }}
+              >
+                <span>Sign in to Continuum</span>
+                <span style={{ width: 30, height: 30, borderRadius: "50%", background: "#000", color: elCream, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                </span>
+              </button>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", fontFamily: "'Space Grotesk', sans-serif", fontSize: 10, color: elCreamFaded, letterSpacing: "0.12em" }}>
+                <span>© 2026 Continuum</span>
+                <span>Hamilton, Bermuda</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ============================================================ */}
+        {/* LOGIN MODAL — opened by hero CTAs and nav pill */}
+        {/* ============================================================ */}
+        {loginModalOpen && (
+          <div
+            onClick={() => setLoginModalOpen(false)}
+            style={{
+              position: "fixed", inset: 0, zIndex: 10000,
+              background: "rgba(0,0,0,0.7)",
+              backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
+              display: "flex",
+              alignItems: isMobile ? "flex-end" : "center",
+              justifyContent: "center",
+              padding: isMobile ? 0 : 24,
+              animation: "fade-in 0.2s ease-out",
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: "100%", maxWidth: 380,
+                background: "#0a0a0a", color: elCream,
+                border: `1px solid rgba(225,224,204,0.12)`,
+                borderRadius: isMobile ? "20px 20px 0 0" : 18,
+                padding: isMobile ? "22px 22px calc(env(safe-area-inset-bottom, 0px) + 22px)" : "26px 26px 22px",
+                boxShadow: "0 24px 80px rgba(0,0,0,0.7)",
+                fontFamily: "'Space Grotesk', Inter, sans-serif",
+              }}
+            >
+              {/* Close button */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+                <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: 22, fontWeight: 400, letterSpacing: "-0.02em", color: elCream, margin: 0 }}>
+                  {isRegistering ? "Create account" : "Sign in"}
+                </h2>
+                <button
+                  onClick={() => setLoginModalOpen(false)}
+                  style={{ width: 28, height: 28, borderRadius: 99, background: "transparent", border: `1px solid rgba(225,224,204,0.15)`, color: elCreamFaded, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, lineHeight: 1, padding: 0 }}
+                  aria-label="Close"
+                >×</button>
               </div>
 
-              {/* Social login buttons */}
-              <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 5 : 7, marginBottom: isMobile ? 10 : 14 }}>
+              {/* Social buttons */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 7, marginBottom: 14 }}>
+                {socialBtn(
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>,
+                  "Continue with Apple",
+                  () => supabase.auth.signInWithOAuth({ provider: "apple", options: { redirectTo: "https://gocontinuum.app" } })
+                )}
                 {socialBtn(
                   <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>,
                   "Continue with Google",
                   () => supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: "https://gocontinuum.app" } })
                 )}
                 {socialBtn(
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="rgba(255,255,255,0.25)"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>,
-                  "Continue with Apple",
-                  null, true
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,
+                  "Continue with Magic Link",
+                  async () => {
+                    const email = (loginForm.email || registerForm.email || "").trim();
+                    if (!email) { setAuthError("Enter your email below first, then tap Magic Link."); setAuthInfo(""); return; }
+                    setAuthError(""); setAuthInfo(""); setAuthLoading(true);
+                    const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: "https://gocontinuum.app" } });
+                    setAuthLoading(false);
+                    if (error) { setAuthError(error.message); return; }
+                    setAuthInfo(`Check ${email} — we sent you a one-tap sign-in link.`);
+                  }
                 )}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                  {socialBtn(
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="rgba(255,255,255,0.25)"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>,
-                    "GitHub",
-                    null, true
-                  )}
-                  {socialBtn(
-                    <svg width="18" height="18" viewBox="0 0 24 24"><path d="M21.35 11.1H12.18V13.83H18.69C18.36 17.64 15.19 19.27 12.19 19.27C8.36 19.27 5 16.25 5 12C5 7.9 8.2 4.73 12.2 4.73C15.29 4.73 17.1 6.7 17.1 6.7L19 4.72C19 4.72 16.56 2 12.1 2C6.42 2 2.03 6.8 2.03 12C2.03 17.05 6.16 22 12.25 22C17.6 22 21.5 18.33 21.5 12.91C21.5 11.76 21.35 11.1 21.35 11.1Z" fill="rgba(66,133,244,0.4)"/></svg>,
-                    "Microsoft",
-                    null, true
-                  )}
-                </div>
               </div>
 
               {/* Divider */}
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: isMobile ? 8 : 14 }}>
-                <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.1)" }} />
-                <span style={{ fontSize: isMobile ? 9 : 10, color: "rgba(255,255,255,0.35)", fontWeight: 500, letterSpacing: "0.05em" }}>or continue with email</span>
-                <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.1)" }} />
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                <div style={{ flex: 1, height: 1, background: "rgba(225,224,204,0.1)" }} />
+                <span style={{ fontSize: 10, color: elCreamFaded, letterSpacing: "0.06em" }}>or email</span>
+                <div style={{ flex: 1, height: 1, background: "rgba(225,224,204,0.1)" }} />
               </div>
 
               {/* Form */}
               {!isRegistering ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 6 : 8 }}>
-                  <input
-                    type="email" placeholder="Email address"
-                    value={loginForm.email} onChange={e => setLoginForm(p => ({ ...p, email: e.target.value }))}
-                    onFocus={e => e.target.style.borderColor = "rgba(14,165,160,0.6)"}
-                    onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.12)"}
-                    style={inputStyle}
-                  />
-                  <div>
-                    <input
-                      type="password" placeholder="Password"
-                      value={loginForm.password} onChange={e => setLoginForm(p => ({ ...p, password: e.target.value }))}
-                      onFocus={e => e.target.style.borderColor = "rgba(14,165,160,0.6)"}
-                      onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.12)"}
-                      style={inputStyle}
-                    />
-                    <div style={{ textAlign: "right", marginTop: 6 }}>
-                      <button style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", background: "none", border: "none", cursor: "pointer", fontFamily: "Inter, sans-serif", padding: 0 }}>Forgot password?</button>
-                    </div>
-                  </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <input type="email" placeholder="Email address" value={loginForm.email} onChange={e => setLoginForm(p => ({ ...p, email: e.target.value }))} style={inputStyle} />
+                  <input type="password" placeholder="Password" value={loginForm.password} onChange={e => setLoginForm(p => ({ ...p, password: e.target.value }))} style={inputStyle} />
                   {authError && !isRegistering && (
-                    <div style={{ fontSize: 11, color: "#f87171", background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.25)", borderRadius: 6, padding: "8px 12px", fontFamily: "Inter, sans-serif" }}>{authError}</div>
+                    <div style={{ fontSize: 11, color: "#f87171", background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.25)", borderRadius: 6, padding: "8px 12px" }}>{authError}</div>
                   )}
-                  <button
-                    onClick={handleLogin}
-                    disabled={authLoading}
-                    onMouseEnter={e => e.currentTarget.style.background = "#0cb8b2"}
-                    onMouseLeave={e => e.currentTarget.style.background = "#0EA5A0"}
-                    style={{ width: "100%", padding: isMobile ? "8px 0" : "10px 0", border: "none", borderRadius: 8, cursor: authLoading ? "default" : "pointer", fontSize: isMobile ? 12 : 13, fontWeight: 600, fontFamily: "Inter, sans-serif", background: "#0EA5A0", color: "#fff", letterSpacing: 0.2, boxShadow: "0 4px 16px rgba(14,165,160,0.35)", transition: "background 0.2s", opacity: authLoading ? 0.7 : 1 }}
-                  >
+                  {authInfo && !isRegistering && (
+                    <div style={{ fontSize: 11, color: "#67e8f9", background: "rgba(103,232,249,0.08)", border: "1px solid rgba(103,232,249,0.25)", borderRadius: 6, padding: "8px 12px" }}>{authInfo}</div>
+                  )}
+                  <button onClick={handleLogin} disabled={authLoading} style={{ width: "100%", padding: "10px 0", border: "none", borderRadius: 99, cursor: authLoading ? "default" : "pointer", fontSize: 13, fontWeight: 600, fontFamily: "'Space Grotesk', sans-serif", background: elCream, color: "#000", letterSpacing: 0.2, opacity: authLoading ? 0.7 : 1 }}>
                     {authLoading ? "Signing in…" : "Sign in"}
                   </button>
                 </div>
               ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 6 : 8 }}>
-                  <input
-                    placeholder="Full name"
-                    value={registerForm.name} onChange={e => setRegisterForm(p => ({ ...p, name: e.target.value }))}
-                    onFocus={e => e.target.style.borderColor = "rgba(14,165,160,0.6)"}
-                    onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.12)"}
-                    style={inputStyle}
-                  />
-                  <input
-                    type="email" placeholder="Email address"
-                    value={registerForm.email} onChange={e => setRegisterForm(p => ({ ...p, email: e.target.value }))}
-                    onFocus={e => e.target.style.borderColor = "rgba(14,165,160,0.6)"}
-                    onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.12)"}
-                    style={inputStyle}
-                  />
-                  <input
-                    type="password" placeholder="Create a password"
-                    value={registerForm.password} onChange={e => setRegisterForm(p => ({ ...p, password: e.target.value }))}
-                    onFocus={e => e.target.style.borderColor = "rgba(14,165,160,0.6)"}
-                    onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.12)"}
-                    style={inputStyle}
-                  />
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <input placeholder="Full name" value={registerForm.name} onChange={e => setRegisterForm(p => ({ ...p, name: e.target.value }))} style={inputStyle} />
+                  <input type="email" placeholder="Email address" value={registerForm.email} onChange={e => setRegisterForm(p => ({ ...p, email: e.target.value }))} style={inputStyle} />
+                  <input type="password" placeholder="Create a password" value={registerForm.password} onChange={e => setRegisterForm(p => ({ ...p, password: e.target.value }))} style={inputStyle} />
                   {authError && isRegistering && (
-                    <div style={{ fontSize: 11, color: authError.startsWith("Check") ? "#34d399" : "#f87171", background: authError.startsWith("Check") ? "rgba(52,211,153,0.1)" : "rgba(248,113,113,0.1)", border: `1px solid ${authError.startsWith("Check") ? "rgba(52,211,153,0.25)" : "rgba(248,113,113,0.25)"}`, borderRadius: 6, padding: "8px 12px", fontFamily: "Inter, sans-serif" }}>{authError}</div>
+                    <div style={{ fontSize: 11, color: authError.startsWith("Check") ? "#34d399" : "#f87171", background: authError.startsWith("Check") ? "rgba(52,211,153,0.1)" : "rgba(248,113,113,0.1)", border: `1px solid ${authError.startsWith("Check") ? "rgba(52,211,153,0.25)" : "rgba(248,113,113,0.25)"}`, borderRadius: 6, padding: "8px 12px" }}>{authError}</div>
                   )}
-                  <button
-                    onClick={handleRegister}
-                    disabled={authLoading}
-                    onMouseEnter={e => e.currentTarget.style.background = "#0cb8b2"}
-                    onMouseLeave={e => e.currentTarget.style.background = "#0EA5A0"}
-                    style={{ width: "100%", padding: isMobile ? "8px 0" : "10px 0", border: "none", borderRadius: 8, cursor: authLoading ? "default" : "pointer", fontSize: isMobile ? 12 : 13, fontWeight: 600, fontFamily: "Inter, sans-serif", background: "#0EA5A0", color: "#fff", letterSpacing: 0.2, boxShadow: "0 4px 16px rgba(14,165,160,0.35)", transition: "background 0.2s", opacity: authLoading ? 0.7 : 1 }}
-                  >
+                  <button onClick={handleRegister} disabled={authLoading} style={{ width: "100%", padding: "10px 0", border: "none", borderRadius: 99, cursor: authLoading ? "default" : "pointer", fontSize: 13, fontWeight: 600, fontFamily: "'Space Grotesk', sans-serif", background: elCream, color: "#000", letterSpacing: 0.2, opacity: authLoading ? 0.7 : 1 }}>
                     {authLoading ? "Creating account…" : "Create account"}
                   </button>
                 </div>
               )}
 
-              {/* Toggle sign in / register */}
-              <p style={{ textAlign: "center", marginTop: isMobile ? 8 : 12, marginBottom: 0, fontSize: isMobile ? 10 : 11, color: "rgba(255,255,255,0.35)", fontFamily: "Inter, sans-serif" }}>
+              {/* Toggle */}
+              <p style={{ textAlign: "center", marginTop: 12, marginBottom: 0, fontSize: 11, color: elCreamFaded }}>
                 {isRegistering ? "Already have an account? " : "Don't have an account? "}
-                <button
-                  onClick={() => { setIsRegistering(r => !r); setAuthError(""); }}
-                  style={{ background: "none", border: "none", cursor: "pointer", color: "#0EA5A0", fontWeight: 600, fontSize: isMobile ? 11 : 12, fontFamily: "Inter, sans-serif", padding: 0 }}
-                >
+                <button onClick={() => { setIsRegistering(r => !r); setAuthError(""); }} style={{ background: "none", border: "none", cursor: "pointer", color: elAccent, fontWeight: 600, fontSize: 12, fontFamily: "'Space Grotesk', sans-serif", padding: 0 }}>
                   {isRegistering ? "Sign in" : "Sign up"}
                 </button>
               </p>
-            </div>
 
-            {/* Terms */}
-            <p style={{ textAlign: "center", marginTop: isMobile ? 6 : 10, fontSize: isMobile ? 9 : 10, color: "rgba(255,255,255,0.25)", fontFamily: "Inter, sans-serif", lineHeight: 1.5 }}>
-              By continuing, you agree to our{" "}
-              <span style={{ color: "rgba(255,255,255,0.4)", cursor: "pointer" }}>Terms of Service</span>
-              {" "}and{" "}
-              <span style={{ color: "rgba(255,255,255,0.4)", cursor: "pointer" }}>Privacy Policy</span>
-            </p>
+              <p style={{ textAlign: "center", marginTop: 10, marginBottom: 0, fontSize: 10, color: "rgba(225,224,204,0.25)", lineHeight: 1.5 }}>
+                By continuing, you agree to our Terms of Service and{" "}
+                <a href="/privacy" style={{ color: "rgba(225,224,204,0.4)" }}>Privacy Policy</a>.
+              </p>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     );
   }
+
 
   // ============================================================
   // VIEWS
@@ -4794,8 +6158,14 @@ Start by introducing yourself briefly in-character with personality, and give an
     return fmt(start);
   };
 
-  const allTripsWithShared = [...trips, ...sharedTrips];
+  // When demo mode is on, mix in sample trips so a brand-new user can
+  // explore the app populated. Sample items are read-only (writes filter
+  // them out by checking _demo).
+  const allTripsWithShared = demoMode
+    ? [...DEMO_TRIPS, ...trips, ...sharedTrips]
+    : [...trips, ...sharedTrips];
   const filteredTrips = allTripsWithShared.filter(t => {
+    if (hideShared && t._shared) return false;
     if (filterStatus !== "all" && t.status !== filterStatus) return false;
     if (searchQuery && !JSON.stringify(t).toLowerCase().includes(searchQuery.toLowerCase())) return false;
     return true;
@@ -4804,29 +6174,70 @@ Start by introducing yourself briefly in-character with personality, and give an
 
   const pastTripsFiltered = filteredTrips.filter(t => { const end = getTripEndDate(t); return end && end < todayStr; }).sort((a, b) => (b.date || "").localeCompare(a.date || ""));
 
-  const renderDashboard = () => {
+  const nextTrip = upcomingTripsFiltered[0] || null;
+
   const renderDashboard = () => renderDashboardPage({
-    css, isMobile, user, trips, expenses, sharedTrips, darkMode,
+    css, isMobile, user, trips: (demoMode ? [...DEMO_TRIPS, ...trips] : trips), expenses: effectiveExpenses, sharedTrips, darkMode,
     dashSubTab, setDashSubTab, savedItineraries, setSavedItineraries,
     setActiveView, setTripDetailId, setTripDetailSegIdx,
+    openEditTrip, removeTrip,
     setShowCreateTrip, setShowAddExpense, setNewExpense, setEditExpenseId,
     setShowReceiptQR, setShowPasteItinerary, setViewExpenseId,
     setExpandedItinId, expandedItinId,
     landmarkPhotos, userForwardingAddress,
     formatTripDates, getTripExpenses, getTripTotal, getTripName,
-    getFlightLiveStatus, getPackingItems, packingLists, customPackItems,
-    EXPENSE_CATEGORIES, SegIcon, SectionLabel,
+    getFlightLiveStatus, getPackingItems, PACK_CATEGORIES, packingLists, customPackItems, packingViewTripId, setPackingViewTripId, setCustomPackItems, togglePackItem, savePackingLists, timelineDate, setTimelineDate, railActive, setRailActive, renderReports,
+    EXPENSE_CATEGORIES, SegIcon,
     nextTrip, upcomingTripsFiltered, allTripsWithShared,
-    pushSupported, pushEnabled, enablePushNotifications,
+    pushSupported, pushEnabled, enablePushNotifications, pushStatus,
     addTripFromItinerary, dismissItinerary, updateItinSeg: (itinId, segIdx, updates) => {
       setSavedItineraries(prev => prev.map(it => it.id !== itinId ? it : { ...it, parsed_segments: it.parsed_segments.map((s, i) => i === segIdx ? { ...s, ...updates } : s) }));
     },
     snapReceiptProcessing, handleSnapReceipt, snapReceiptInputRef,
     BLANK_EXPENSE, AIRPORT_CITY,
-    lp: { ...css, bg: css.bg, surface: css.surface, surface2: css.surface2, border: css.border, border2: darkMode ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.12)", text: css.text, text2: css.text2, dim: css.text3, teal: css.accent, tealDim: css.accentBg, tealBord: css.accentBorder, red: darkMode ? "#ef4444" : "#dc2626", green: css.success, mono: "'Geist Mono', 'JetBrains Mono', ui-monospace, monospace", sans: "'Instrument Sans', 'Outfit', sans-serif" },
+    getProjectedStatus, linkedAccounts, LOYALTY_PROGRAMS, defaultSegment, supabase, loadTrips, setExpenses, removeExpense, pastTripsFiltered, getTripEndDate, todayStr, showConfirm,
+    transferBonuses, userPointCurrencies,
+    benefitsSummary,
+    hideShared, setHideShared,
+    setPendingTripJump,
+    renderExpenseReports,
+    vouchers, setShowVoucherModal, markVoucherRedeemed,
+    expenseReportMembership, openReport,
+    lp: { ...css, bg: css.bg, surface: css.surface, surface2: css.surface2, border: css.border, border2: darkMode ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.12)", text: css.text, text2: css.text2, dim: css.text3, teal: css.accent, tealDim: css.accentBg, tealBord: css.accentBorder, red: darkMode ? "#C8553D" : "#C8553D", green: css.success, mono: "'Geist Mono', 'JetBrains Mono', ui-monospace, monospace", sans: "'Instrument Sans', 'Outfit', sans-serif" },
   });
 
   const renderPrograms = (_previewSub = null) => renderProgramsPage({ css, isMobile, darkMode, user, linkedAccounts, setLinkedAccounts, supabase, progAddType, setProgAddType, progAddId, setProgAddId, progAddTier, setProgAddTier, ProgramLogo, expandedCardId, setExpandedCardId, cardBenefitValues, setCardBenefitValue, cardCustomBenefits, addCustomBenefit, updateCustomBenefit, removeCustomBenefit, getCardNetValue, showConfirm }, _previewSub);
+  const renderTrips = () => renderTripsPage({
+    css, isMobile, user, trips: (demoMode ? [...DEMO_TRIPS, ...trips] : trips), expenses: effectiveExpenses, sharedTrips, linkedAccounts, allPrograms,
+    darkMode, tripDetailId, setTripDetailId, tripDetailSegIdx, setTripDetailSegIdx, tripDetailFullView, setTripDetailFullView,
+    expenseViewTrip, setExpenseViewTrip, expandedCardId, setExpandedCardId,
+    expandedSegmentKey, setExpandedSegmentKey,
+    hideShared, setHideShared,
+    calendarPopover, setCalendarPopover,
+    setShowAddExpense, setNewExpense, setEditExpenseId, setShowAddSegment, setShowCreateTrip,
+    setShowExpenseReport, setShowShareModal, setShareEmail, setShareStatus, setSharePermission,
+    openEditTrip, removeTrip, removeExpense, editSegment, deleteSegment, moveSegment, showMoveSegment, setShowMoveSegment, prefillSegmentFromAttachment, showConfirm,
+    getTripExpenses, getTripTotal, getTripName, formatTripDates,
+    getTripGoogleCalUrl, getTripOutlookUrl, downloadTripICS,
+    EXPENSE_CATEGORIES, SegIcon,
+    getFlightLiveStatus, weatherCache, tempUnit, setTempUnit,
+    checkVisa, visaCache, visaLoading, packingLists, savePackingLists,
+    packExpanded, setPackExpanded, customPackItems, setCustomPackItems, getPackingItems,
+    lastDateRef, settingsForm, BLANK_EXPENSE,
+    searchQuery, setSearchQuery, filterStatus, setFilterStatus, tripsView, setTripsView,
+    pastTripsExpanded, setPastTripsExpanded, hotelSectionOpen, setHotelSectionOpen,
+    tripSummaryId, setTripSummaryId, showImportItinerary, setShowImportItinerary,
+    cropExpenseId, setCropExpenseId, cropRect, setCropRect, cropStartRef, cropEndRef,
+    setViewExpenseId, setActiveView,
+    AIRPORT_CITY, AIRLINE_CS, HOTEL_CS, OTA_CS,
+    calViewMonth, setCalViewMonth,
+    layoverMap: new Map(), flightType, setFlightType,
+    generateFlightyICS, togglePackItem,
+    supabase, setExpenses, upcomingTripsFiltered, pastTripsFiltered,
+    resolveArrivalDate, resolveCityForDate, resolveHotelForDate, weatherIcon, exportMonthPDF,
+    expenseReportMembership, openReport,
+  });
+
   const renderExpenses = () => {
     // Redirect handled by navItem click
     return null;
@@ -4841,16 +6252,71 @@ Start by introducing yourself briefly in-character with personality, and give an
     optimizerTab, setOptimizerTab, optimizerTripId, setOptimizerTripId,
     ccOptTarget, setCcOptTarget, ccOptAmount, setCcOptAmount, ccBookingMode, setCcBookingMode,
     allianceGoal, setAllianceGoal, setActiveView, AIRPORT_COORDS, AIRPORT_CITY,
-    formatTripDates,
+    formatTripDates, ProgramLogo, ALLIANCE_MBR, darkMode, EXPENSE_CATEGORIES,
   }, _previewTab);
 
-  const renderExpenseReports = () => renderExpenseReportsPage({ css, isMobile, darkMode, user, trips, expenses, allPrograms, supabase, standaloneReports, setStandaloneReports, showReportBuilder, setShowReportBuilder, reportBuilder, setReportBuilder, editingReportId, setEditingReportId, reportBuilderCustom, setReportBuilderCustom, forwardReportId, setForwardReportId, forwardEmail, setForwardEmail, forwardStatus, setForwardStatus, EXPENSE_CATEGORIES, showConfirm, getTripExpenses, getTripTotal, getTripName, formatTripDates, getReportExpenses, buildPrintReport, openReportWindow });
-  const renderReports = () => renderReportsPage({ css, isMobile, darkMode, user, trips, expenses, linkedAccounts, allPrograms, EXPENSE_CATEGORIES, AIRPORT_COORDS, AIRPORT_CITY, getTripExpenses, getTripTotal, getTripName, formatTripDates, haversineDistance, parseRoute, greatCircleMiles });
-  const renderAlliances = () => renderAlliancesPage({ css, isMobile, darkMode, user, linkedAccounts, allPrograms, ProgramLogo });
-  const renderInsights = (_previewTab = null) => renderInsightsPage({ css, isMobile, darkMode, user, trips, expenses, linkedAccounts, allPrograms, insightsTab, setInsightsTab, EXPENSE_CATEGORIES, formatTripDates, getTripExpenses, getTripTotal, getTripName, AIRPORT_CITY, setActiveView }, _previewTab);
-  const renderPremium = () => renderPremiumPage({ css, isMobile, darkMode });
-  const renderNews = () => renderNewsPage({ css, isMobile, darkMode, newsItems, newsLoading, newsError, fetchNews, NEWS_SOURCES });
-  const renderLounges = () => renderLoungesPage({ css, isMobile, darkMode, user, linkedAccounts, loungeAirport, setLoungeAirport, loungeSearchCode, setLoungeSearchCode, loungeDropdownOpen, setLoungeDropdownOpen, loungeExpandedId, setLoungeExpandedId, loungeFlightAirline, setLoungeFlightAirline, loungeFlightClass, setLoungeFlightClass, loungeAccessRoute, setLoungeAccessRoute, loungePhotos, loungeVisits, setLoungeVisits, getLoungeAccess, saveLoungeVisit, removeLoungeVisit, fetchLoungePhoto, AIRPORT_CITY, showConfirm });
+  const renderExpenseReports = () => renderExpenseReportsPage({ css, isMobile, darkMode, user, trips, expenses, setExpenses, allPrograms, supabase, standaloneReports, setStandaloneReports, showReportBuilder, setShowReportBuilder, reportBuilder, setReportBuilder, editingReportId, setEditingReportId, reportBuilderCustom, setReportBuilderCustom, forwardReportId, setForwardReportId, forwardEmail, setForwardEmail, forwardStatus, setForwardStatus, forwardError, setForwardError, EXPENSE_CATEGORIES, showConfirm, getTripExpenses, getTripTotal, getTripName, formatTripDates, showReportCustomExpense, setShowReportCustomExpense, setInlineReportHtml, expenseReportMembership, openReport });
+  const renderReports = () => renderReportsPage({ css, isMobile, darkMode, user, trips, expenses, linkedAccounts, allPrograms, EXPENSE_CATEGORIES, AIRPORT_COORDS, AIRPORT_CITY, getTripExpenses, getTripTotal, getTripName, formatTripDates, haversineDistance, parseRoute, greatCircleMiles, getProjectedStatus, ProgramLogo, ComposableMap, Geographies, Geography, Marker, Line, landmarkPhotos });
+  const renderAlliances = () => renderAlliancesPage({ css, isMobile, darkMode, user, linkedAccounts, allPrograms, ProgramLogo, getProjectedStatus, allianceMyProgram, setAllianceMyProgram, allianceMyTierOverride, setAllianceMyTierOverride, allianceCompare, setAllianceCompare, setActiveView });
+  const renderInsights = (_previewTab = null) => renderInsightsPage({ css, isMobile, darkMode, user, trips, expenses, linkedAccounts, allPrograms, EXPENSE_CATEGORIES, formatTripDates, getTripExpenses, getTripTotal, getTripName, AIRPORT_CITY, setActiveView, ProgramLogo, transferGoal, setTransferGoal, EXPIRATION_RULES, REDEMPTION_VALUES, CC_TRANSFER_PARTNERS, motion, CARD_BENEFITS_DATA }, _previewTab);
+  const renderNews = () => renderNewsPage({ css, isMobile, darkMode, newsLoading, fetchNews, NEWS_SOURCES, newsArticles, newsSourceFilter, setNewsSourceFilter, newsFetched });
+  const renderLounges = () => renderLoungesPage({ css, isMobile, darkMode, user, linkedAccounts, loungeAirport, setLoungeAirport, loungeSearchCode, setLoungeSearchCode, loungeDropdownOpen, setLoungeDropdownOpen, loungeExpandedId, setLoungeExpandedId, loungeFlightAirline, setLoungeFlightAirline, loungeFlightClass, setLoungeFlightClass, loungeAccessRoute, setLoungeAccessRoute, loungePhotos, loungeVisits, setLoungeVisits, getLoungeAccess, saveLoungeVisit, removeLoungeVisit, fetchLoungePhoto, AIRPORT_CITY, showConfirm, trips, sharedTrips, loungeShowAllTerminals, setLoungeShowAllTerminals });
+  const renderExpenseSplit = () => renderExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTimestamp });
+  const renderWallet = () => renderWalletPage({ css, isMobile, darkMode, linkedAccounts, ProgramLogo, setActiveView, transferBonuses, userPointCurrencies, benefitsSummary, allCreditCards: LOYALTY_PROGRAMS.creditCards, onEditCardBenefits: (cardId) => { setActiveView("programs"); setExpandedCardId(cardId); }, vouchers, setShowVoucherModal, markVoucherRedeemed });
+  const renderAwardSweetSpots = () => renderAwardSweetSpotsPage({ css, isMobile, darkMode, userPointCurrencies });
+
+  // Loyalty wrapper: shared sticky pill for Programs / Alliances / Wallet.
+  // The sub-tab IS the activeView, so all existing setActiveView("programs"
+  // | "alliances" | "wallet") calls keep working — they just switch the pill.
+  const LOYALTY_SUBTABS = [
+    { id: "programs", label: "Programs", hoverColor: "#9333ea" },
+    { id: "alliances", label: "Alliances", hoverColor: "#B8924A" },
+    { id: "wallet", label: "Wallet", hoverColor: "#6B7A5A" },
+    { id: "awards", label: "Awards", hoverColor: "#C8553D" },
+  ];
+  const renderLoyalty = () => {
+    const subActive = activeView === "alliances" ? "alliances" : activeView === "wallet" ? "wallet" : activeView === "awards" ? "awards" : "programs";
+    return (
+      <>
+        <div style={{
+          position: "sticky", top: 0, zIndex: 100,
+          display: "flex", alignItems: "stretch", justifyContent: "center",
+          marginBottom: 24, marginTop: -8,
+          borderTop: `1px solid ${css.border}`, borderBottom: `1px solid ${css.border}`,
+          background: D ? "rgba(15,15,15,0.92)" : "rgba(255,255,255,0.92)",
+          backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+        }}>
+          {LOYALTY_SUBTABS.map((tab, ti) => {
+            const isOn = subActive === tab.id;
+            return (
+              <button key={tab.id}
+                onClick={() => { setActiveView(tab.id); const m = document.querySelector("main"); if (m) m.scrollTo({ top: 0, behavior: "smooth" }); }}
+                onMouseEnter={e => { if (!isOn) { e.currentTarget.style.color = tab.hoverColor; e.currentTarget.style.background = D ? "rgba(255,255,255,0.04)" : css.surface; } }}
+                onMouseLeave={e => { if (!isOn) { e.currentTarget.style.color = css.text3; e.currentTarget.style.background = "transparent"; } }}
+                style={{
+                  padding: "16px 28px", border: "none",
+                  borderRight: ti < LOYALTY_SUBTABS.length - 1 ? `1px solid ${css.border}` : "none",
+                  borderLeft: ti === 0 ? `1px solid ${css.border}` : "none",
+                  background: isOn ? (D ? "rgba(255,255,255,0.04)" : css.surface) : "transparent",
+                  fontFamily: "'JetBrains Mono', 'Geist Mono', monospace",
+                  fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase",
+                  color: isOn ? css.text : css.text3,
+                  transition: "all 0.3s", position: "relative", cursor: "pointer",
+                }}>
+                {isOn && <div style={{ position: "absolute", left: 0, top: -1, right: 0, height: 2, background: tab.hoverColor }} />}
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+        {subActive === "programs" && renderPrograms()}
+        {subActive === "alliances" && renderAlliances()}
+        {subActive === "wallet" && renderWallet()}
+        {subActive === "awards" && renderAwardSweetSpots()}
+      </>
+    );
+  };
+
   // NAV CONFIG
   // ============================================================
   // SVG icon components for sidebar — clean, minimal stroke icons
@@ -4858,14 +6324,20 @@ Start by introducing yourself briefly in-character with personality, and give an
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{typeof d === "string" ? <path d={d} /> : d}</svg>
   );
   const navItems = [
-    { id: "dashboard", label: "Dashboard", icon: <NavIcon d={<><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="4" rx="1"/><rect x="14" y="11" width="7" height="10" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></>} /> },
-    { id: "trips", label: "Trips", icon: <NavIcon d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1L11 12l-2 3H6l-2 2 4-1 4-1 2 7.5 2-2v-3l-3-2 4.8-7.3" /> },
-    { id: "expensereports", label: "Expenses", icon: <NavIcon d={<><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></>} /> },
-    { id: "programs", label: "Programs", icon: <NavIcon d={<><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></>} /> },
-    { id: "lounges", label: "Lounges", icon: <NavIcon d={<><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></>} /> },
+    { id: "dashboard", label: "Dashboard", icon: <NavIcon d={<><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="4" rx="1"/><rect x="14" y="11" width="7" height="10" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></>} />, gradient: "radial-gradient(circle, rgba(212,116,45,0.18) 0%, rgba(212,116,45,0.06) 50%, transparent 100%)", hoverColor: "#D4742D" },
+    { id: "trips", label: "Trips", icon: <NavIcon d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1L11 12l-2 3H6l-2 2 4-1 4-1 2 7.5 2-2v-3l-3-2 4.8-7.3" />, gradient: "radial-gradient(circle, rgba(59,130,246,0.18) 0%, rgba(59,130,246,0.06) 50%, transparent 100%)", hoverColor: "#3b82f6" },
+    { id: "lounges", label: "Lounges", icon: <NavIcon d={<><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></>} />, gradient: "radial-gradient(circle, rgba(20,184,166,0.18) 0%, rgba(20,184,166,0.06) 50%, transparent 100%)", hoverColor: "#14b8a6" },
+    // "Loyalty" bundles Programs / Alliances / Wallet — they all answer
+    // "what do I get for being loyal?" Tapping the nav defaults to Programs;
+    // the page renders a sticky sub-tab pill to switch between them.
+    { id: "loyalty", label: "Loyalty", icon: <NavIcon d={<><circle cx="12" cy="12" r="3"/><path d="M12 2a10 10 0 0 1 10 10"/><path d="M22 12a10 10 0 0 1-10 10"/><path d="M12 22A10 10 0 0 1 2 12"/><path d="M2 12A10 10 0 0 1 12 2"/></>} />, gradient: "radial-gradient(circle, rgba(184,146,74,0.18) 0%, rgba(184,146,74,0.06) 50%, transparent 100%)", hoverColor: "#B8924A", subViews: ["programs", "alliances", "wallet", "awards"], defaultSubView: "programs" },
+    { id: "expensesplit", label: "Expense Split", icon: <NavIcon d={<><path d="M16 3h5v5"/><line x1="21" y1="3" x2="14" y2="10"/><path d="M8 21H3v-5"/><line x1="3" y1="21" x2="10" y2="14"/><line x1="12" y1="2" x2="12" y2="22"/></>} />, gradient: "radial-gradient(circle, rgba(200,85,61,0.18) 0%, rgba(200,85,61,0.06) 50%, transparent 100%)", hoverColor: "#C8553D" },
   ];
 
-  const viewRenderers = { dashboard: renderDashboard, programs: renderPrograms, trips: renderTrips, expensereports: renderExpenseReports, expenses: renderExpenses, optimizer: renderOptimizer, insights: renderInsights, reports: renderReports, alliances: renderAlliances, news: renderNews, premium: renderPremium, lounges: renderLounges };
+  // Programs / Alliances / Wallet share the Loyalty wrapper so the sub-tab
+  // pill always sits above whichever sub-page is active. The wrapper picks
+  // which sub-page to render based on activeView itself.
+  const viewRenderers = { dashboard: renderDashboard, programs: renderLoyalty, trips: renderTrips, expensereports: renderExpenseReports, expenses: renderExpenses, optimizer: renderOptimizer, insights: renderInsights, reports: renderReports, alliances: renderLoyalty, wallet: renderLoyalty, awards: renderLoyalty, loyalty: renderLoyalty, news: renderNews, lounges: renderLounges, expensesplit: renderExpenseSplit };
 
   // ============================================================
   // MAIN LAYOUT — Warm Editorial Design System
@@ -5025,25 +6497,68 @@ Start by introducing yourself briefly in-character with personality, and give an
         boxShadow: D ? "none" : "0 1px 0 rgba(0,0,0,0.06)",
       }}>
         <div style={{
-          maxWidth: 1600, margin: "0 auto",
+          maxWidth: 2200, margin: "0 auto",
           display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: isMobile ? "0 16px" : "0 32px",
+          padding: isMobile ? "0 16px" : "0 40px",
           height: isMobile ? 56 : 64,
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0, cursor: "pointer" }} onClick={() => { setActiveView("dashboard"); setDashSubTab("overview"); setTripDetailId(null); }}>
             <img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: isMobile ? 50 : 80, display: "block", filter: D ? "brightness(0.85)" : "brightness(0.55) sepia(1) hue-rotate(-15deg) saturate(3)" }} />
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-            <button onClick={async () => { if ('serviceWorker' in navigator) { const regs = await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map(r => r.unregister())); } if ('caches' in window) { const keys = await caches.keys(); await Promise.all(keys.map(k => caches.delete(k))); } window.location.reload(true); }} title="Refresh" style={{ width: 34, height: 34, borderRadius: "50%", border: `1px solid ${css.border}`, background: "transparent", color: css.text3, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <NavIcon d={<><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></>} size={16} />
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+            {/* Shared trips toggle — global, mouse-tracked glow. Only shown if user has any shared trips. */}
+            {sharedTrips.length > 0 && (
+              <HoverGlowButton
+                onClick={() => setHideShared(v => !v)}
+                title={hideShared ? "Currently hiding shared trips · click to show them everywhere" : "Currently showing shared trips · click to hide them everywhere"}
+                active={!hideShared}
+                glowColor={hideShared ? (D ? "#666" : "#B8AE9C") : "#3b82f6"}
+                backgroundColor={D ? "#15130F" : "#15130F"}
+                textColor="#F4F1EC"
+                hoverTextColor="#F4F1EC"
+                style={{
+                  fontFamily: "'JetBrains Mono', 'Geist Mono', monospace",
+                  fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 500,
+                }}
+              >
+                {hideShared ? "Shared Off" : "Shared On"}
+              </HoverGlowButton>
+            )}
+            {/* Refresh — spins on click */}
+            <button id="refreshBtn" onClick={async (e) => { const btn = e.currentTarget; btn.style.transition = "transform 0.6s ease"; btn.style.transform = "rotate(360deg)"; setTimeout(() => { btn.style.transition = "none"; btn.style.transform = ""; }, 650); try { const v = activeView || "dashboard"; const t = tripDetailId ? `&t=${encodeURIComponent(String(tripDetailId))}` : ""; history.replaceState(null, "", `${window.location.pathname}${window.location.search}#v=${v}${t}`); } catch {} if ('serviceWorker' in navigator) { const regs = await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map(r => r.unregister())); } if ('caches' in window) { const keys = await caches.keys(); await Promise.all(keys.map(k => caches.delete(k))); } setTimeout(() => window.location.reload(true), 700); }} title="Refresh"
+              style={{ width: 34, height: 34, border: `1px solid ${D ? "rgba(255,255,255,0.08)" : "#E2DCCE"}`, background: "transparent", color: D ? "#666" : "#6B6458", cursor: "pointer", display: "grid", placeItems: "center", transition: "all 0.25s" }}
+              onMouseEnter={e => { e.currentTarget.style.color = css.accent; e.currentTarget.style.borderColor = css.accent; e.currentTarget.style.background = css.surface; }}
+              onMouseLeave={e => { e.currentTarget.style.color = D ? "#666" : "#6B6458"; e.currentTarget.style.borderColor = D ? "rgba(255,255,255,0.08)" : "#E2DCCE"; e.currentTarget.style.background = "transparent"; }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>
             </button>
-            <button onClick={() => setDarkMode(m => !m)} style={{ width: 34, height: 34, borderRadius: "50%", border: `1px solid ${css.border}`, background: "transparent", color: css.text3, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <NavIcon d={D ? <><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></> : <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>} size={16} />
+            {/* Snap Receipt — native camera on Android/iOS via Capacitor, falls back to hidden file input on web */}
+            <button data-tour="snap-receipt" onClick={async () => {
+              if (isNative()) {
+                const file = await snapReceiptNative();
+                if (file) handleSnapReceipt(file);
+                return;
+              }
+              snapReceiptInputRef.current?.click();
+            }} title="Snap Receipt"
+              style={{ width: 34, height: 34, border: `1px solid ${D ? "rgba(255,255,255,0.08)" : "#E2DCCE"}`, background: snapReceiptProcessing ? css.accentBg : "transparent", color: snapReceiptProcessing ? css.accent : (D ? "#666" : "#6B6458"), cursor: "pointer", display: "grid", placeItems: "center", position: "relative", transition: "all 0.25s" }}
+              onMouseEnter={e => { e.currentTarget.style.color = css.accent; e.currentTarget.style.borderColor = css.accent; e.currentTarget.style.background = css.surface; }}
+              onMouseLeave={e => { e.currentTarget.style.color = snapReceiptProcessing ? css.accent : (D ? "#666" : "#6B6458"); e.currentTarget.style.borderColor = D ? "rgba(255,255,255,0.08)" : "#E2DCCE"; e.currentTarget.style.background = snapReceiptProcessing ? css.accentBg : "transparent"; }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 00-2 2v9a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+              {snapReceiptProcessing && <span style={{ position: "absolute", top: -2, right: -2, width: 8, height: 8, borderRadius: "50%", background: css.accent, border: `2px solid ${css.bg}` }} />}
             </button>
-            <button onClick={openSettings} style={{ width: 34, height: 34, borderRadius: "50%", border: `1px solid ${css.border}`, background: "transparent", color: css.text3, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <NavIcon d={<><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></>} size={16} />
+            <input ref={snapReceiptInputRef} type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={e => { if (e.target.files?.[0]) handleSnapReceipt(e.target.files[0]); }} />
+            {/* Theme toggle */}
+            <button onClick={() => setDarkMode(m => !m)} title="Theme"
+              style={{ width: 34, height: 34, border: `1px solid ${D ? "rgba(255,255,255,0.08)" : "#E2DCCE"}`, background: "transparent", color: D ? "#666" : "#6B6458", cursor: "pointer", display: "grid", placeItems: "center", transition: "all 0.25s" }}
+              onMouseEnter={e => { e.currentTarget.style.color = css.accent; e.currentTarget.style.borderColor = css.accent; e.currentTarget.style.background = css.surface; }}
+              onMouseLeave={e => { e.currentTarget.style.color = D ? "#666" : "#6B6458"; e.currentTarget.style.borderColor = D ? "rgba(255,255,255,0.08)" : "#E2DCCE"; e.currentTarget.style.background = "transparent"; }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
             </button>
-            <div onClick={openSettings} title="Settings" style={{ width: 34, height: 34, borderRadius: "50%", flexShrink: 0, cursor: "pointer", background: `linear-gradient(135deg, ${css.accent}, #C9A84C)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff" }}>
+            {/* Avatar — opens Settings */}
+            <div onClick={openSettings} title="Profile & Settings"
+              style={{ width: 34, height: 34, flexShrink: 0, cursor: "pointer", background: D ? "#15130F" : "#15130F", color: "#F4F1EC", display: "grid", placeItems: "center", fontFamily: "'Fraunces', serif", fontSize: 15, fontWeight: 500, fontStyle: "italic", transition: "all 0.25s", position: "relative" }}
+              onMouseEnter={e => e.currentTarget.style.background = css.accent}
+              onMouseLeave={e => e.currentTarget.style.background = "#15130F"}>
               {(user?.user_metadata?.first_name?.[0] || user?.user_metadata?.name?.[0] || "U").toUpperCase()}
             </div>
           </div>
@@ -5055,39 +6570,109 @@ Start by introducing yourself briefly in-character with personality, and give an
       {/* Sub-nav tabs moved into dashboard content area */}
 
       {/* ── Main Content ── */}
-      <main style={{ flex: 1, overflowY: "auto", position: "relative" }}>
-        <div style={{ maxWidth: 1400, margin: "0 auto", padding: isMobile ? "20px 16px calc(90px + env(safe-area-inset-bottom))" : "32px 48px calc(90px + env(safe-area-inset-bottom))" }}>
+      {/* overflow-x: hidden so a single wide element can't pan the whole page
+          sideways. Inner sections that need horizontal scrolling (e.g. the
+          Trip Highlights rail) declare their own overflowX inside themselves. */}
+      <main style={{ flex: 1, overflowY: "auto", overflowX: "hidden", position: "relative" }}>
+        <div style={{ maxWidth: 2200, margin: "0 auto", padding: isMobile ? "20px 16px calc(90px + env(safe-area-inset-bottom))" : "32px 40px calc(90px + env(safe-area-inset-bottom))", overflowX: tripDetailId ? "visible" : "clip" }}>
           {viewRenderers[activeView]?.()}
         </div>
       </main>
 
-      {/* ── Bottom Navigation Bar (full-width) ── */}
-      <div style={{
+      {/* ── Bottom Navigation Bar — Editorial Style ── */}
+      <nav style={{
         position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 150,
-        background: D ? "rgba(20,20,20,0.97)" : "rgba(255,255,255,0.97)",
-        backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
-        borderTop: `1px solid ${css.border}`,
-        display: "flex", alignItems: "stretch", justifyContent: "center",
-        paddingBottom: "env(safe-area-inset-bottom)",
+        background: D ? "rgba(18,18,18,0.92)" : "rgba(255,255,255,0.92)",
+        backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
+        borderTop: `1px solid ${D ? "rgba(255,255,255,0.08)" : "rgba(200,200,200,0.6)"}`,
+        boxShadow: D ? "none" : "0 -2px 20px rgba(0,0,0,0.04)",
       }}>
-        {navItems.map(item => {
-          const isActive = activeView === item.id;
-          return (
-            <button key={item.id} onClick={() => { setActiveView(item.id); if (item.id === "dashboard") setDashSubTab("overview"); }} style={{
-              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-              gap: 2, padding: isMobile ? "8px 0" : "10px 0", border: "none", cursor: "pointer",
-              background: "transparent", flex: 1, maxWidth: 120,
-              color: isActive ? css.accent : css.text3,
-              transition: "all 0.15s", fontFamily: "inherit",
-            }}>
-              <span style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>{item.icon}</span>
-              <span style={{ fontSize: 10, fontWeight: isActive ? 600 : 400 }}>
-                {item.label === "Expense Reports" ? "Expenses" : item.label}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+        <div style={{
+          maxWidth: 2200, margin: "0 auto",
+          padding: isMobile ? "10px 8px" : "12px 48px 14px",
+          paddingBottom: isMobile ? "calc(10px + env(safe-area-inset-bottom))" : "calc(14px + env(safe-area-inset-bottom))",
+          display: "flex", justifyContent: "center", gap: isMobile ? 0 : 48,
+        }}>
+          {navItems.map(item => {
+            // For grouped tabs (Loyalty), highlight when ANY of its sub-views are active.
+            const isActive = item.subViews
+              ? (item.subViews.includes(activeView) || activeView === item.id)
+              : activeView === item.id;
+            return (
+              <motion.button key={item.id}
+                data-tour={`nav-${item.id === "expensesplit" ? "split" : item.id}`}
+                onClick={() => {
+                  // Grouped tab → land on its default sub-view (e.g. Loyalty → Programs).
+                  const target = item.defaultSubView || item.id;
+                  setActiveView(target);
+                  // Always pop back to the main view of each section
+                  setDashSubTab("overview");
+                  setTripDetailId(null);
+                  setTripDetailSegIdx(0);
+                  setExpenseViewTrip(null);
+                  setTripSummaryId(null);
+                  setPackingViewTripId(null);
+                  setExpandedCardId(null);
+                  setLoungeAirport(null);
+                  setLoungeExpandedId(null);
+                  setLoungeSearchCode("");
+                  setLoungeDropdownOpen(false);
+                  // Tell child components with internal sub-view state to reset.
+                  setNavResetTimestamp(Date.now());
+                  // Scroll the main scroll container back to the top
+                  setTimeout(() => {
+                    const main = document.querySelector("main");
+                    if (main) main.scrollTo({ top: 0, behavior: "smooth" });
+                    else window.scrollTo({ top: 0, behavior: "smooth" });
+                  }, 0);
+                }}
+                whileHover="hover"
+                initial="initial"
+                animate="initial"
+                style={{
+                  display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
+                  color: isActive ? item.hoverColor : (D ? "#666" : "#6B6458"),
+                  cursor: "pointer", transition: "color 0.25s",
+                  padding: isMobile ? "4px 6px" : "4px 12px",
+                  position: "relative", background: "none", border: "none",
+                  flex: isMobile ? 1 : "none",
+                  perspective: "600px",
+                }}>
+                {/* Glow effect behind item */}
+                <motion.div
+                  variants={{
+                    initial: { opacity: 0, scale: 0.6 },
+                    hover: { opacity: 1, scale: 1.1, transition: { opacity: { duration: 0.4, ease: [0.4, 0, 0.2, 1] }, scale: { duration: 0.4, type: "spring", stiffness: 300, damping: 30 } } },
+                  }}
+                  style={{
+                    position: "absolute", inset: 0, borderRadius: 10, zIndex: 0, pointerEvents: "none",
+                    background: item.gradient,
+                    opacity: isActive ? 0.6 : 0,
+                  }}
+                />
+                {/* Active dot */}
+                {isActive && <div style={{ position: "absolute", top: -12, left: "50%", transform: "translateX(-50%)", width: 3, height: 3, borderRadius: "50%", background: item.hoverColor, zIndex: 2 }} />}
+                {/* Front face */}
+                <motion.span
+                  variants={{ initial: { rotateX: 0, opacity: 1 }, hover: { rotateX: -90, opacity: 0 } }}
+                  transition={{ type: "spring", stiffness: 100, damping: 20, duration: 0.5 }}
+                  style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, transformStyle: "preserve-3d", transformOrigin: "center bottom", position: "relative", zIndex: 1 }}>
+                  <span style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>{item.icon}</span>
+                  <span style={{ fontFamily: "'JetBrains Mono', 'Geist Mono', monospace", fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 500 }}>{item.label}</span>
+                </motion.span>
+                {/* Back face (flips in) */}
+                <motion.span
+                  variants={{ initial: { rotateX: 90, opacity: 0 }, hover: { rotateX: 0, opacity: 1 } }}
+                  transition={{ type: "spring", stiffness: 100, damping: 20, duration: 0.5 }}
+                  style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, transformStyle: "preserve-3d", transformOrigin: "center top", position: "absolute", inset: 0, zIndex: 1, justifyContent: "center", color: item.hoverColor }}>
+                  <span style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>{item.icon}</span>
+                  <span style={{ fontFamily: "'JetBrains Mono', 'Geist Mono', monospace", fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", fontWeight: 500 }}>{item.label}</span>
+                </motion.span>
+              </motion.button>
+            );
+          })}
+        </div>
+      </nav>
 
             {/* ============================================================ */}
       {/* MODALS */}
@@ -5298,7 +6883,7 @@ Start by introducing yourself briefly in-character with personality, and give an
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28 }}>
               <h2 style={{ fontSize: 22, fontWeight: 800, color: css.text, margin: 0, letterSpacing: "-0.02em" }}>{editingTripId ? "Edit Trip" : "Create Trip"}</h2>
-              <button onClick={() => { setShowCreateTrip(false); setEditingTripId(null); setCreateTripForm({ name: "", destination: "", startDate: "", endDate: "", status: "planned" }); }} style={{ width: 36, height: 36, border: `1px solid ${css.border}`, background: "transparent", color: css.text3, fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+              <button onClick={() => { setShowCreateTrip(false); setEditingTripId(null); setCreateTripForm({ name: "", destination: "", startDate: "", endDate: "", status: "planned" }); setCreateTripError(""); setCreateTripSaving(false); }} style={{ width: 36, height: 36, border: `1px solid ${css.border}`, background: "transparent", color: css.text3, fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
             </div>
 
             {/* Trip Name */}
@@ -5350,15 +6935,22 @@ Start by introducing yourself briefly in-character with personality, and give an
               </div>
             </div>
 
+            {/* Error message */}
+            {createTripError && (
+              <div style={{ padding: "12px 14px", background: "rgba(200,85,61,0.08)", border: `1px solid ${css.accent}`, color: css.accent, fontSize: 13, fontFamily: "inherit", marginBottom: 14, lineHeight: 1.4 }}>
+                {createTripError}
+              </div>
+            )}
+
             {/* Create button */}
-            <button onClick={handleCreateTrip} disabled={!createTripForm.name.trim()} style={{
+            <button onClick={handleCreateTrip} disabled={!createTripForm.name.trim() || createTripSaving} style={{
               width: "100%", padding: "14px 0", border: "none",
-              background: createTripForm.name.trim() ? css.accent : css.surface2,
-              color: createTripForm.name.trim() ? "#fff" : css.text3,
-              fontSize: 14, fontWeight: 800, cursor: createTripForm.name.trim() ? "pointer" : "default",
+              background: createTripForm.name.trim() && !createTripSaving ? css.accent : css.surface2,
+              color: createTripForm.name.trim() && !createTripSaving ? "#fff" : css.text3,
+              fontSize: 14, fontWeight: 800, cursor: createTripForm.name.trim() && !createTripSaving ? "pointer" : "default",
               fontFamily: "inherit", textTransform: "uppercase", letterSpacing: "0.06em",
               transition: "all 0.12s",
-            }}>{editingTripId ? "Save Changes" : "Create Trip"}</button>
+            }}>{createTripSaving ? "Saving…" : (editingTripId ? "Save Changes" : "Create Trip")}</button>
           </div>
         </div>
       )}
@@ -5442,7 +7034,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                         <span style={{ fontSize: 11, fontWeight: 800, color: css.text, textTransform: "uppercase", letterSpacing: "0.06em" }}>{legLabel}</span>
                         {flightType === "multicity" && flightLegs.length > 1 && (
-                          <button onClick={() => setFlightLegs(l => l.filter((_, i) => i !== legIdx))} style={{ border: `1px solid rgba(239,68,68,0.3)`, background: "transparent", color: "#ef4444", fontSize: 10, fontWeight: 700, cursor: "pointer", padding: "3px 8px" }}>Remove</button>
+                          <button onClick={() => setFlightLegs(l => l.filter((_, i) => i !== legIdx))} style={{ border: `1px solid rgba(200,85,61,0.3)`, background: "transparent", color: "#C8553D", fontSize: 10, fontWeight: 700, cursor: "pointer", padding: "3px 8px" }}>Remove</button>
                         )}
                       </div>
                       {/* From / To + Date */}
@@ -5505,27 +7097,27 @@ Start by introducing yourself briefly in-character with personality, and give an
                           { key: "arrivalTerminal", label: "Terminal", placeholder: "T3" },
                         ].map(f => (
                           <div key={f.key}>
-                            <label style={{ fontSize: 9, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 3 }}>{f.label}</label>
+                            <label style={{ fontSize: 11, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 3 }}>{f.label}</label>
                             <input type={f.type || "text"} value={leg[f.key] || ""} onChange={e => updateLeg({ [f.key]: e.target.value })} placeholder={f.placeholder || ""} style={{ display: "block", width: "100%", padding: "8px 6px", background: css.surface2, border: `1px solid ${css.border}`, color: css.text, fontSize: 12, fontFamily: "'Geist Mono', monospace", outline: "none", boxSizing: "border-box" }} />
                           </div>
                         ))}
                       </div>
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 8 }}>
                         <div>
-                          <label style={{ fontSize: 9, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 3 }}>Arrival Date</label>
+                          <label style={{ fontSize: 11, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 3 }}>Arrival Date</label>
                           <input type="date" value={leg.arrivalDate || ""} onChange={e => updateLeg({ arrivalDate: e.target.value })} style={{ display: "block", width: "100%", padding: "8px 6px", background: css.surface2, border: `1px solid ${css.border}`, color: leg.arrivalDate && leg.arrivalDate !== leg.date ? css.warning : css.text, fontSize: 12, fontFamily: "'Geist Mono', monospace", outline: "none", boxSizing: "border-box" }} />
-                          {leg.arrivalDate && leg.arrivalDate !== leg.date && <span style={{ fontSize: 9, color: css.warning, fontWeight: 600 }}>+{Math.round((new Date(leg.arrivalDate) - new Date(leg.date)) / 86400000)}d next day</span>}
+                          {leg.arrivalDate && leg.arrivalDate !== leg.date && <span style={{ fontSize: 11, color: css.warning, fontWeight: 600 }}>+{Math.round((new Date(leg.arrivalDate) - new Date(leg.date)) / 86400000)}d next day</span>}
                         </div>
                         <div />
                       </div>
                       {/* Airline + Aircraft (compact) */}
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
                         <div>
-                          <label style={{ fontSize: 9, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 3 }}>Airline</label>
+                          <label style={{ fontSize: 11, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 3 }}>Airline</label>
                           <input value={leg.airline} onChange={e => updateLeg({ airline: e.target.value })} placeholder="Auto-filled" style={{ display: "block", width: "100%", padding: "8px 10px", background: css.surface2, border: `1px solid ${css.border}`, color: css.text, fontSize: 12, outline: "none", boxSizing: "border-box" }} />
                         </div>
                         <div>
-                          <label style={{ fontSize: 9, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 3 }}>Aircraft</label>
+                          <label style={{ fontSize: 11, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 3 }}>Aircraft</label>
                           <input value={leg.aircraft} onChange={e => updateLeg({ aircraft: e.target.value })} placeholder="Auto-filled" style={{ display: "block", width: "100%", padding: "8px 10px", background: css.surface2, border: `1px solid ${css.border}`, color: css.text, fontSize: 12, outline: "none", boxSizing: "border-box" }} />
                         </div>
                       </div>
@@ -5554,7 +7146,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 10 }}>
                   <div>
-                    <label style={{ fontSize: 9, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 3 }}>Class</label>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 3 }}>Class</label>
                     <select value={segmentForm.fareClass || ""} onChange={e => setSegmentForm(f => ({ ...f, fareClass: e.target.value }))} style={{ display: "block", width: "100%", padding: "10px 8px", background: css.surface2, border: `1px solid ${css.border}`, color: css.text, fontSize: 12, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}>
                       <option value="">Select</option>
                       <option value="economy">Economy</option>
@@ -5563,27 +7155,27 @@ Start by introducing yourself briefly in-character with personality, and give an
                     </select>
                   </div>
                   <div>
-                    <label style={{ fontSize: 9, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 3 }}>Booking Code</label>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 3 }}>Booking Code</label>
                     <input value={segmentForm.bookingClass || ""} onChange={e => setSegmentForm(f => ({ ...f, bookingClass: e.target.value.toUpperCase().slice(0, 1) }))} placeholder="J" maxLength={1} style={{ display: "block", width: "100%", padding: "10px 8px", background: css.surface2, border: `1px solid ${css.border}`, color: css.text, fontSize: 13, fontFamily: "'Geist Mono', monospace", outline: "none", boxSizing: "border-box", textAlign: "center" }} />
                   </div>
                   <div>
-                    <label style={{ fontSize: 9, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 3 }}>Confirmation</label>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 3 }}>Confirmation</label>
                     <input value={segmentForm.confirmationCode || ""} onChange={e => setSegmentForm(f => ({ ...f, confirmationCode: e.target.value.toUpperCase() }))} placeholder="ABC123" style={{ display: "block", width: "100%", padding: "10px 8px", background: css.surface2, border: `1px solid ${css.border}`, color: css.text, fontSize: 12, fontFamily: "'Geist Mono', monospace", outline: "none", boxSizing: "border-box" }} />
                   </div>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 8, marginBottom: 10 }}>
                   <div>
-                    <label style={{ fontSize: 9, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 3 }}>Total Cost</label>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 3 }}>Total Cost</label>
                     <input type="number" value={segmentForm.ticketPrice || ""} onChange={e => setSegmentForm(f => ({ ...f, ticketPrice: e.target.value }))} placeholder="0.00" style={{ display: "block", width: "100%", padding: "10px 8px", background: css.surface2, border: `1px solid ${css.border}`, color: css.text, fontSize: 12, fontFamily: "'Geist Mono', monospace", outline: "none", boxSizing: "border-box" }} />
                   </div>
                   <div>
-                    <label style={{ fontSize: 9, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 3 }}>Currency</label>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 3 }}>Currency</label>
                     <select value={segmentForm.currency || "USD"} onChange={e => setSegmentForm(f => ({ ...f, currency: e.target.value }))} style={{ display: "block", width: "100%", padding: "10px 8px", background: css.surface2, border: `1px solid ${css.border}`, color: css.text, fontSize: 12, fontFamily: "'Geist Mono', monospace", outline: "none", boxSizing: "border-box" }}>
                       {CURRENCIES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label style={{ fontSize: 9, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 3 }}>Seat</label>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 3 }}>Seat</label>
                     <input value={segmentForm.seat || ""} onChange={e => setSegmentForm(f => ({ ...f, seat: e.target.value.toUpperCase() }))} placeholder="14A" style={{ display: "block", width: "100%", padding: "10px 8px", background: css.surface2, border: `1px solid ${css.border}`, color: css.text, fontSize: 12, fontFamily: "'Geist Mono', monospace", outline: "none", boxSizing: "border-box" }} />
                   </div>
                 </div>
@@ -5962,10 +7554,8 @@ Start by introducing yourself briefly in-character with personality, and give an
           { id: "profile", label: "Profile", icon: "👤" },
           { id: "security", label: "Security", icon: "🔒" },
           { id: "preferences", label: "Preferences", icon: "🎛" },
-          { id: "subscription", label: "Subscription", icon: "⭐" },
           { id: "account", label: "Account", icon: "⚠️" },
         ];
-        const isPremium = user?.user_metadata?.subscription === "premium";
         return (
           <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000, padding: 20 }}>
             <div style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 12, width: "100%", maxWidth: 620, maxHeight: "88vh", display: "flex", overflow: "hidden", position: "relative" }}>
@@ -5990,7 +7580,7 @@ Start by introducing yourself briefly in-character with personality, and give an
               {/* Content */}
               <div style={{ flex: 1, padding: 28, overflowY: "auto" }}>
                 {settingsMsg.text && (
-                  <div style={{ padding: "9px 12px", borderRadius: 6, marginBottom: 18, fontSize: 12, fontFamily: "Inter, sans-serif", background: settingsMsg.type === "success" ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)", color: settingsMsg.type === "success" ? "#10b981" : "#ef4444", border: `1px solid ${settingsMsg.type === "success" ? "#10b98130" : "#ef444430"}` }}>
+                  <div style={{ padding: "9px 12px", borderRadius: 6, marginBottom: 18, fontSize: 12, fontFamily: "Inter, sans-serif", background: settingsMsg.type === "success" ? "rgba(16,185,129,0.1)" : "rgba(200,85,61,0.1)", color: settingsMsg.type === "success" ? "#10b981" : "#C8553D", border: `1px solid ${settingsMsg.type === "success" ? "#10b98130" : "#C8553D30"}` }}>
                     {settingsMsg.text}
                   </div>
                 )}
@@ -6015,7 +7605,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                     <div style={{ marginBottom: 12 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", background: D ? "#13111C" : "#f4f4f8", borderRadius: 6, marginBottom: 6 }}>
                         <span style={{ fontSize: 12, color: css.text, fontFamily: "Inter, sans-serif", flex: 1 }}>{user?.email}</span>
-                        <span style={{ fontSize: 9, color: css.success, fontWeight: 700, textTransform: "uppercase" }}>Primary</span>
+                        <span style={{ fontSize: 11, color: css.success, fontWeight: 700, textTransform: "uppercase" }}>Primary</span>
                       </div>
                       {(settingsForm.additionalEmails || []).map((email, idx) => (
                         <div key={idx} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", background: D ? "#13111C" : "#f4f4f8", borderRadius: 6, marginBottom: 6 }}>
@@ -6034,7 +7624,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                               }
                             }
                             setSettingsMsg({ type: "success", text: `Removed ${email}` });
-                          }} style={{ border: "none", background: "transparent", color: "#ef4444", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>Remove</button>
+                          }} style={{ border: "none", background: "transparent", color: "#C8553D", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>Remove</button>
                         </div>
                       ))}
                     </div>
@@ -6131,37 +7721,42 @@ Start by introducing yourself briefly in-character with personality, and give an
                     <button onClick={savePreferences} disabled={settingsSaving} style={{ marginTop: 20, padding: "9px 20px", borderRadius: 6, border: "none", background: css.accent, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", opacity: settingsSaving ? 0.7 : 1, fontFamily: "Inter, sans-serif" }}>
                       {settingsSaving ? "Saving..." : "Save Preferences"}
                     </button>
+
+                    <div style={{ ...sectionHead, marginTop: 28 }}>Help & Setup</div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: `1px solid ${css.border}` }}>
+                      <div>
+                        <div style={{ fontSize: 13, color: css.text, fontFamily: "Inter, sans-serif", fontWeight: 500 }}>Re-run setup wizard</div>
+                        <div style={{ fontSize: 11, color: css.text3, fontFamily: "Inter, sans-serif", marginTop: 2 }}>Five-step setup: home airport, programs, cards</div>
+                      </div>
+                      <button onClick={() => { setShowSettings(false); setTimeout(() => setShowOnboarding(true), 250); }} style={{
+                        padding: "8px 14px", border: `1px solid ${css.accent}`, background: "transparent", color: css.accent,
+                        fontFamily: "'JetBrains Mono', monospace", fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase",
+                        cursor: "pointer", transition: "all 0.2s",
+                      }}
+                        onMouseEnter={e => { e.currentTarget.style.background = css.accent; e.currentTarget.style.color = "#F4F1EC"; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = css.accent; }}>
+                        Start Setup
+                      </button>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: `1px solid ${css.border}` }}>
+                      <div>
+                        <div style={{ fontSize: 13, color: css.text, fontFamily: "Inter, sans-serif", fontWeight: 500 }}>Re-run product tour</div>
+                        <div style={{ fontSize: 11, color: css.text3, fontFamily: "Inter, sans-serif", marginTop: 2 }}>Eight-step walkthrough of the app's main features</div>
+                      </div>
+                      <button onClick={() => { setShowSettings(false); setActiveView("dashboard"); setDashSubTab("overview"); setTripDetailId(null); setTimeout(() => setShowTour(true), 250); }} style={{
+                        padding: "8px 14px", border: `1px solid ${css.accent}`, background: "transparent", color: css.accent,
+                        fontFamily: "'JetBrains Mono', monospace", fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase",
+                        cursor: "pointer", transition: "all 0.2s",
+                      }}
+                        onMouseEnter={e => { e.currentTarget.style.background = css.accent; e.currentTarget.style.color = "#F4F1EC"; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = css.accent; }}>
+                        Start Tour
+                      </button>
+                    </div>
                   </div>
                 )}
 
-                {/* SUBSCRIPTION */}
-                {settingsTab === "subscription" && (
-                  <div>
-                    <div style={sectionHead}>Subscription</div>
-                    <div style={{ padding: "16px", borderRadius: 8, border: `1px solid ${isPremium ? css.accentBorder : css.border}`, background: isPremium ? css.accentBg : css.surface2, marginBottom: 20 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: isPremium ? css.accent : css.text3, textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif", marginBottom: 4 }}>Current Plan</div>
-                      <div style={{ fontSize: 22, fontWeight: 700, color: css.text, fontFamily: "'Inter Tight', Inter, sans-serif" }}>{isPremium ? "Premium" : "Free"}</div>
-                      {!isPremium && <div style={{ fontSize: 12, color: css.text3, marginTop: 4, fontFamily: "Inter, sans-serif" }}>Upgrade to unlock unlimited programs, AI concierge, and advanced insights.</div>}
-                    </div>
-                    {[
-                      { label: "Linked Programs", free: "Up to 3", premium: "Unlimited" },
-                      { label: "AI Travel Concierge", free: "—", premium: "✓" },
-                      { label: "Status Optimizer", free: "Basic", premium: "Advanced" },
-                      { label: "Expense Tracking", free: "✓", premium: "✓ + Export" },
-                      { label: "Calendar Sync", free: "—", premium: "✓" },
-                    ].map(r => (
-                      <div key={r.label} style={{ display: "flex", justifyContent: "space-between", padding: "9px 0", borderBottom: `1px solid ${css.border}`, fontSize: 12, fontFamily: "Inter, sans-serif" }}>
-                        <span style={{ color: css.text2 }}>{r.label}</span>
-                        <span style={{ color: isPremium ? css.accent : css.text3, fontWeight: 600 }}>{isPremium ? r.premium : r.free}</span>
-                      </div>
-                    ))}
-                    {!isPremium && (
-                      <button onClick={() => { setShowSettings(false); setShowUpgrade(true); }} style={{ marginTop: 20, width: "100%", padding: "11px 0", borderRadius: 8, border: "none", background: css.accent, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "'Inter Tight', Inter, sans-serif" }}>
-                        Upgrade to Premium →
-                      </button>
-                    )}
-                  </div>
-                )}
+                {/* SUBSCRIPTION tab removed — there are no tiers. */}
 
                 {/* ACCOUNT */}
                 {settingsTab === "account" && (
@@ -6184,12 +7779,41 @@ Start by introducing yourself briefly in-character with personality, and give an
                       </button>
                     </div>
 
-                    <div style={{ marginTop: 28, padding: "16px", borderRadius: 8, border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.05)" }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#ef4444", fontFamily: "Inter, sans-serif", marginBottom: 4 }}>Danger Zone</div>
-                      <div style={{ fontSize: 12, color: css.text3, fontFamily: "Inter, sans-serif", marginBottom: 12 }}>Signing out will clear your local session. Your data stays safe in your account.</div>
-                      <button onClick={() => { setShowSettings(false); handleLogout(); }} style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid rgba(239,68,68,0.4)", background: "transparent", color: "#ef4444", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>
-                        Sign Out
-                      </button>
+                    {/* Demo mode toggle — populates the app with sample trips/expenses
+                         so a brand-new user can explore everything without entering data */}
+                    <div style={{ marginTop: 28, padding: "16px", borderRadius: 8, border: `1px solid ${css.border}`, background: css.surface2 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: css.text, fontFamily: "Inter, sans-serif", marginBottom: 4 }}>Show sample data</div>
+                          <div style={{ fontSize: 12, color: css.text3, fontFamily: "Inter, sans-serif" }}>
+                            Layer in two example trips, a few expenses, and a split group so you can see what a populated app looks like. Nothing is saved to your account.
+                          </div>
+                        </div>
+                        <button onClick={() => { const next = !demoMode; setDemoMode(next); writeDemoMode(next); }} style={{
+                          flexShrink: 0, width: 44, height: 24, borderRadius: 12, border: "none",
+                          background: demoMode ? css.accent : css.border,
+                          position: "relative", cursor: "pointer", transition: "background 0.2s",
+                        }}>
+                          <span style={{
+                            position: "absolute", top: 2, left: demoMode ? 22 : 2,
+                            width: 20, height: 20, borderRadius: "50%", background: "#fff",
+                            transition: "left 0.2s",
+                          }} />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div style={{ marginTop: 16, padding: "16px", borderRadius: 8, border: "1px solid rgba(200,85,61,0.3)", background: "rgba(200,85,61,0.05)" }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#C8553D", fontFamily: "Inter, sans-serif", marginBottom: 4 }}>Danger Zone</div>
+                      <div style={{ fontSize: 12, color: css.text3, fontFamily: "Inter, sans-serif", marginBottom: 12 }}>Sign out clears your local session — your data stays. Delete Account is permanent.</div>
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        <button onClick={() => { setShowSettings(false); handleLogout(); }} style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid rgba(200,85,61,0.4)", background: "transparent", color: "#C8553D", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>
+                          Sign Out
+                        </button>
+                        <button onClick={() => setShowDeleteAccount(true)} style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid #C8553D", background: "#C8553D", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>
+                          Delete Account
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -6296,7 +7920,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                       ))}
                     </div>
                     {newTrip.segments.length > 1 && (
-                      <button onClick={() => setNewTrip(p => ({ ...p, segments: p.segments.filter((_, i) => i !== segIdx) }))} style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", fontSize: 16, padding: "0 4px", lineHeight: 1 }} title="Remove segment">×</button>
+                      <button onClick={() => setNewTrip(p => ({ ...p, segments: p.segments.filter((_, i) => i !== segIdx) }))} style={{ background: "none", border: "none", color: "#C8553D", cursor: "pointer", fontSize: 16, padding: "0 4px", lineHeight: 1 }} title="Remove segment">×</button>
                     )}
                   </div>
 
@@ -6402,7 +8026,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                             : seg.days || 1;
                           updateSeg({ dropoffDate: dropoff, days });
                         }} style={{ display: "block", width: "100%", marginTop: 4, padding: "8px 10px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 7, color: "#f7f8f8", fontSize: 12, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
-                        {seg.days > 0 && seg.dropoffDate && <div style={{ fontSize: 9, color: "#0EA5A0", marginTop: 3, fontFamily: "Inter, sans-serif" }}>{seg.days} day{seg.days !== 1 ? "s" : ""}</div>}
+                        {seg.days > 0 && seg.dropoffDate && <div style={{ fontSize: 11, color: "#0EA5A0", marginTop: 3, fontFamily: "Inter, sans-serif" }}>{seg.days} day{seg.days !== 1 ? "s" : ""}</div>}
                       </label>
                     </div>
                   ) : (
@@ -6430,7 +8054,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                             : seg.nights || 1;
                           updateSeg({ checkoutDate: checkout, nights });
                         }} style={{ display: "block", width: "100%", marginTop: 4, padding: "8px 10px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 7, color: "#f7f8f8", fontSize: 12, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" }} />
-                        {seg.nights > 0 && seg.checkoutDate && <div style={{ fontSize: 9, color: "#0EA5A0", marginTop: 3, fontFamily: "Inter, sans-serif" }}>{seg.nights} night{seg.nights !== 1 ? "s" : ""}</div>}
+                        {seg.nights > 0 && seg.checkoutDate && <div style={{ fontSize: 11, color: "#0EA5A0", marginTop: 3, fontFamily: "Inter, sans-serif" }}>{seg.nights} night{seg.nights !== 1 ? "s" : ""}</div>}
                       </label>
                     )}
                   </div>
@@ -6445,7 +8069,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                           <input value={seg.bookingClass} onChange={e => { const bc = e.target.value.toUpperCase().slice(0, 1); const cabin = getBookingClassCabin(seg.program, bc) || seg.fareClass; updateSeg({ bookingClass: bc, fareClass: cabin }); }}
                             placeholder="Y, J, W…" maxLength={1}
                             style={{ display: "block", width: "100%", marginTop: 4, padding: "8px 10px", background: "rgba(255,255,255,0.03)", border: "1px solid #2a2640", borderRadius: 7, color: "#f7f8f8", fontSize: 14, fontWeight: 700, fontFamily: "'Geist Mono', monospace", outline: "none", boxSizing: "border-box", textTransform: "uppercase", letterSpacing: 2 }} />
-                          {seg.bookingClass && getBookingClassCabin(seg.program, seg.bookingClass) && <div style={{ fontSize: 9, color: "#0EA5A0", marginTop: 3, fontFamily: "Inter, sans-serif" }}>→ {CABIN_LABELS[getBookingClassCabin(seg.program, seg.bookingClass)]}</div>}
+                          {seg.bookingClass && getBookingClassCabin(seg.program, seg.bookingClass) && <div style={{ fontSize: 11, color: "#0EA5A0", marginTop: 3, fontFamily: "Inter, sans-serif" }}>→ {CABIN_LABELS[getBookingClassCabin(seg.program, seg.bookingClass)]}</div>}
                         </label>
                         <label style={{ flex: 2 }}>
                           <span style={{ fontSize: 10, fontWeight: 600, color: "#8a8f98", textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Cabin Class</span>
@@ -6506,9 +8130,9 @@ Start by introducing yourself briefly in-character with personality, and give an
                         </div>
                         {creditEarning && (
                           <div style={{ padding: "8px 10px", background: `${creditEarning.color}08`, border: `1px solid ${creditEarning.color}25`, borderRadius: 7, fontSize: 11, display: "flex", alignItems: "center", gap: 6 }}>
-                            <span style={{ fontSize: 9, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>Credit to</span>
+                            <span style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>Credit to</span>
                             <span style={{ color: creditEarning.color, fontWeight: 700, fontFamily: "'Geist Mono', monospace" }}>~{creditEarning.credits.toLocaleString()} {creditEarning.unit}</span>
-                            <span style={{ fontSize: 9, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>({creditEarning.name})</span>
+                            <span style={{ fontSize: 11, color: "#8a8f98", fontFamily: "Inter, sans-serif" }}>({creditEarning.name})</span>
                           </div>
                         )}
                       </div>
@@ -6529,7 +8153,7 @@ Start by introducing yourself briefly in-character with personality, and give an
             </div>
 
             {addTripError && (
-              <div style={{ marginBottom: 12, padding: "10px 12px", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, color: "#f87171", fontSize: 12, fontFamily: "Inter, sans-serif" }}>
+              <div style={{ marginBottom: 12, padding: "10px 12px", background: "rgba(200,85,61,0.1)", border: "1px solid rgba(200,85,61,0.3)", borderRadius: 8, color: "#f87171", fontSize: 12, fontFamily: "Inter, sans-serif" }}>
                 {addTripError}
               </div>
             )}
@@ -6706,6 +8330,104 @@ Start by introducing yourself briefly in-character with personality, and give an
         );
       })()}
 
+      {/* Move Segment to Another Trip Modal */}
+      {showMoveSegment && (() => {
+        const sourceTrip = trips.find(t => t.id === showMoveSegment.tripId);
+        if (!sourceTrip) return null;
+        const realSegs = (sourceTrip.segments || []).filter(s => !s._isMeta);
+        const seg = realSegs[showMoveSegment.segIdx];
+        if (!seg) return null;
+        const segLabel = seg.type === "flight"
+          ? `${seg.flightNumber || "Flight"} · ${seg.route || ""}`
+          : seg.type === "hotel" || seg.type === "accommodation"
+          ? seg.property || "Hotel"
+          : (seg.activityName || seg.restaurantName || seg.operator || seg.company || seg.loungeName || seg.type || "Item");
+        const candidates = trips.filter(t => t.id !== sourceTrip.id);
+        return (
+          <div onClick={() => setShowMoveSegment(null)} style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.78)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            zIndex: 1000, padding: 20,
+          }}>
+            <div onClick={e => e.stopPropagation()} style={{
+              background: css.surface, border: `1px solid ${css.border}`, borderRadius: 12,
+              padding: 24, width: "100%", maxWidth: 460, maxHeight: "92vh", overflowY: "auto",
+            }}>
+              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 16 }}>
+                <h3 style={{
+                  fontFamily: "'Fraunces', serif", fontSize: 22, fontWeight: 400,
+                  letterSpacing: "-0.01em", color: css.text, margin: 0,
+                }}>Move to another trip</h3>
+                <button onClick={() => setShowMoveSegment(null)} style={{
+                  background: "transparent", border: "none", color: css.text3,
+                  fontSize: 20, cursor: "pointer", padding: 0, lineHeight: 1,
+                }}>×</button>
+              </div>
+              <div style={{
+                padding: "10px 12px", marginBottom: 16, borderRadius: 8,
+                background: css.surface2, border: `1px solid ${css.border}`,
+              }}>
+                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: css.text3, marginBottom: 4 }}>
+                  Moving from {sourceTrip.tripName || sourceTrip.location || "Trip"}
+                </div>
+                <div style={{ fontFamily: "'Fraunces', serif", fontSize: 15, color: css.text }}>{segLabel}</div>
+                {seg.date && (
+                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: css.text3, marginTop: 4 }}>
+                    {seg.date}
+                  </div>
+                )}
+              </div>
+              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 600, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>
+                Choose destination trip
+              </div>
+              {candidates.length === 0 ? (
+                <div style={{ padding: 20, textAlign: "center", fontFamily: "'Fraunces', serif", fontStyle: "italic", color: css.text3, fontSize: 14, border: `1px dashed ${css.border}`, borderRadius: 8 }}>
+                  No other trips to move to. Create another trip first.
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 320, overflowY: "auto" }}>
+                  {[...candidates].sort((a, b) => (b.date || "").localeCompare(a.date || "")).map(t => (
+                    <button key={t.id} onClick={async () => {
+                      await moveSegment(showMoveSegment.tripId, showMoveSegment.segIdx, t.id);
+                      setShowMoveSegment(null);
+                    }} style={{
+                      textAlign: "left", padding: "12px 14px", borderRadius: 8,
+                      background: css.surface2, border: `1px solid ${css.border}`,
+                      color: css.text, cursor: "pointer", transition: "all 0.15s",
+                      display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10,
+                    }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = css.accent; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = css.border; }}
+                    >
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontFamily: "'Fraunces', serif", fontSize: 14, color: css.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {t.tripName || t.location || "Trip"}
+                        </div>
+                        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: css.text3, letterSpacing: "0.06em", marginTop: 2 }}>
+                          {t.date || "—"} · {(t.segments || []).filter(s => !s._isMeta).length} items
+                        </div>
+                      </div>
+                      <span style={{ color: css.accent, fontSize: 14 }}>→</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Voucher Modal */}
+      {showVoucherModal && <VoucherModal
+        css={css}
+        initial={showVoucherModal === "new" ? null : showVoucherModal}
+        linkedCards={LOYALTY_PROGRAMS.creditCards.filter(c => linkedAccounts?.[c.id])}
+        hotelPrograms={LOYALTY_PROGRAMS.hotels}
+        onClose={() => setShowVoucherModal(null)}
+        onSave={async (v) => { const saved = await saveVoucher(v); if (saved) setShowVoucherModal(null); }}
+        onDelete={async (id) => { await deleteVoucher(id); setShowVoucherModal(null); }}
+      />}
+
       {/* Add Program Modal */}
       {showAddProgram && (() => {
         const cats = { airline: PROGRAM_DIRECTORY.airlines, hotel: PROGRAM_DIRECTORY.hotels, rental: PROGRAM_DIRECTORY.rentals, card: PROGRAM_DIRECTORY.creditCards };
@@ -6754,42 +8476,93 @@ Start by introducing yourself briefly in-character with personality, and give an
             </div>
 
             {/* Program List */}
-            {!selectedProg && (
-              <div style={{ maxHeight: 240, overflowY: "auto", marginBottom: 14, borderRadius: 8, border: "1px solid #2a2640" }}>
-                {filtered.map(prog => {
-                  const isLinked = alreadyLinked.includes(prog.id);
-                  return (
-                    <button key={prog.id} onClick={() => !isLinked && setNewProgram(p => ({ ...p, selectedId: prog.id, search: "" }))}
-                      style={{
-                        display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 14px", background: "rgba(255,255,255,0.03)",
-                        border: "none", borderBottom: "1px solid rgba(0,0,0,0.02)", cursor: isLinked ? "default" : "pointer",
-                        opacity: isLinked ? 0.4 : 1, transition: "background 0.15s", textAlign: "left",
-                      }}
-                      onMouseEnter={e => { if (!isLinked) e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
-                    >
-                      <ProgramLogo prog={prog} size={24} />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: "#f7f8f8", fontFamily: "Inter, sans-serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{prog.name}</div>
-                        <div style={{ fontSize: 10, color: "#62666d", fontFamily: "Inter, sans-serif" }}>
-                          {prog.tiers ? `${prog.tiers.length} tiers · ${prog.unit}` : prog.perks ? prog.perks.substring(0, 50) + "..." : prog.unit}
-                        </div>
+            {!selectedProg && (() => {
+              const renderProgRow = (prog) => {
+                const isLinked = alreadyLinked.includes(prog.id);
+                return (
+                  <button key={prog.id} onClick={() => !isLinked && setNewProgram(p => ({ ...p, selectedId: prog.id, search: "" }))}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 14px", background: "rgba(255,255,255,0.03)",
+                      border: "none", borderBottom: "1px solid rgba(0,0,0,0.02)", cursor: isLinked ? "default" : "pointer",
+                      opacity: isLinked ? 0.4 : 1, transition: "background 0.15s", textAlign: "left",
+                    }}
+                    onMouseEnter={e => { if (!isLinked) e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+                  >
+                    <ProgramLogo prog={prog} size={24} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#f7f8f8", fontFamily: "Inter, sans-serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{prog.name}</div>
+                      <div style={{ fontSize: 10, color: "#62666d", fontFamily: "Inter, sans-serif" }}>
+                        {prog.tiers ? `${prog.tiers.length} tiers · ${prog.unit}` : prog.perks ? prog.perks.substring(0, 50) + "..." : prog.unit}
                       </div>
-                      {isLinked ? (
-                        <span style={{ fontSize: 10, color: "#0EA5A0", fontWeight: 600, fontFamily: "Inter, sans-serif" }}>Linked ✓</span>
-                      ) : (
-                        <span style={{ width: 8, height: 8, borderRadius: "50%", background: prog.color, flexShrink: 0 }} />
-                      )}
-                    </button>
-                  );
-                })}
-                {filtered.length === 0 && (
-                  <div style={{ padding: 20, textAlign: "center", color: "#62666d", fontSize: 13, fontFamily: "Inter, sans-serif" }}>
-                    No programs match your search
+                    </div>
+                    {isLinked ? (
+                      <span style={{ fontSize: 10, color: "#0EA5A0", fontWeight: 600, fontFamily: "Inter, sans-serif" }}>Linked ✓</span>
+                    ) : (
+                      <span style={{ width: 8, height: 8, borderRadius: "50%", background: prog.color, flexShrink: 0 }} />
+                    )}
+                  </button>
+                );
+              };
+
+              if (newProgram.category === "card" && !searchTerm) {
+                const REGIONS = [
+                  { key: "ca", label: "Canada" },
+                  { key: "eu", label: "Europe" },
+                  { key: "uk", label: "United Kingdom" },
+                  { key: "us", label: "United States" },
+                ];
+                const expanded = newProgram.expandedRegions || [];
+                const toggleRegion = (key) => setNewProgram(p => {
+                  const current = p.expandedRegions || [];
+                  const next = current.includes(key) ? current.filter(k => k !== key) : [...current, key];
+                  return { ...p, expandedRegions: next };
+                });
+                return (
+                  <div style={{ maxHeight: 320, overflowY: "auto", marginBottom: 14, borderRadius: 8, border: "1px solid #2a2640" }}>
+                    {REGIONS.map(region => {
+                      const regionCards = filtered.filter(p => (p.country || "us") === region.key);
+                      const isOpen = expanded.includes(region.key);
+                      return (
+                        <div key={region.key}>
+                          <button onClick={() => toggleRegion(region.key)} style={{
+                            display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%",
+                            padding: "12px 14px", background: "rgba(255,255,255,0.04)", border: "none",
+                            borderBottom: "1px solid rgba(255,255,255,0.06)", cursor: "pointer",
+                            fontSize: 12, fontWeight: 700, color: "#f7f8f8", fontFamily: "'Inter Tight', Inter, sans-serif",
+                            letterSpacing: "0.04em", textTransform: "uppercase", textAlign: "left",
+                          }}>
+                            <span>{region.label} <span style={{ color: "#8a8f98", fontWeight: 500 }}>({regionCards.length})</span></span>
+                            <span style={{
+                              display: "inline-flex", alignItems: "center", justifyContent: "center",
+                              width: 18, height: 18, borderRadius: 4, background: "rgba(14,165,160,0.15)",
+                              color: "#0EA5A0", fontSize: 14, fontWeight: 700, lineHeight: 1,
+                            }}>{isOpen ? "−" : "+"}</span>
+                          </button>
+                          {isOpen && regionCards.map(renderProgRow)}
+                          {isOpen && regionCards.length === 0 && (
+                            <div style={{ padding: 16, textAlign: "center", color: "#62666d", fontSize: 12, fontFamily: "Inter, sans-serif" }}>
+                              No cards in this region yet
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
-                )}
-              </div>
-            )}
+                );
+              }
+
+              return (
+                <div style={{ maxHeight: 240, overflowY: "auto", marginBottom: 14, borderRadius: 8, border: "1px solid #2a2640" }}>
+                  {filtered.map(renderProgRow)}
+                  {filtered.length === 0 && (
+                    <div style={{ padding: 20, textAlign: "center", color: "#62666d", fontSize: 13, fontFamily: "Inter, sans-serif" }}>
+                      No programs match your search
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Selected Program Detail */}
             {selectedProg && (
@@ -6895,34 +8668,113 @@ Start by introducing yourself briefly in-character with personality, and give an
         );
       })()}
 
-      {/* Upgrade Modal */}
-      {showUpgrade && (
-        <div style={{
-          position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
-        }}>
-          <div style={{
-            background: "#211e2e", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 8, padding: 32, width: "100%", maxWidth: 400, textAlign: "center",
-          }}>
-            <div style={{ marginBottom: 12, display: "flex", justifyContent: "center" }}><img src="/continuum-travel-logo.svg" alt="Continuum" style={{ height: 220, display: "block" }} /></div>
-            <h3 style={{ fontSize: 20, fontWeight: 700, color: "#fff", margin: "0 0 8px", fontFamily: "'Inter Tight', Inter, sans-serif" }}>Upgrade to Premium</h3>
-            <p style={{ color: "#8a8f98", fontSize: 13, fontFamily: "Inter, sans-serif", marginBottom: 24 }}>
-              Unlock the Trip Optimizer, status match alerts, PDF exports, and more.
-            </p>
-            <div style={{ fontSize: 36, fontWeight: 700, color: "#fff", fontFamily: "'Inter Tight', Inter, sans-serif", marginBottom: 4 }}>$9.99<span style={{ fontSize: 14, color: "#8a8f98" }}>/mo</span></div>
-            <p style={{ fontSize: 11, color: "#62666d", fontFamily: "Inter, sans-serif", marginBottom: 24 }}>Cancel anytime. 7-day free trial.</p>
-            <button onClick={() => { setUser(prev => ({ ...prev, tier: "premium" })); setShowUpgrade(false); }} style={{
-              width: "100%", padding: "13px 0", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "Inter, sans-serif",
-              background: "#f59e0b", color: "#fff", marginBottom: 10,
-            }}>Start Free Trial</button>
-            <button onClick={() => setShowUpgrade(false)} style={{
-              width: "100%", padding: "11px 0", borderRadius: 8, border: "1px solid #2a2640", background: "rgba(255,255,255,0.03)",
-              color: "#8a8f98", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif",
-            }}>Maybe Later</button>
+      {/* First-run onboarding wizard — fires before the tour */}
+      <OnboardingWizard
+        open={showOnboarding}
+        user={user}
+        supabase={supabase}
+        setUser={setUser}
+        LOYALTY_PROGRAMS={LOYALTY_PROGRAMS}
+        linkedAccounts={linkedAccounts}
+        setLinkedAccounts={setLinkedAccounts}
+        darkMode={darkMode}
+        onClose={() => {
+          setShowOnboarding(false);
+          if (window.location.search.includes("onboard=")) {
+            const url = new URL(window.location.href);
+            url.searchParams.delete("onboard");
+            window.history.replaceState({}, "", url.toString());
+          }
+        }}
+        onComplete={() => {/* metadata is already updated inside the wizard */}}
+      />
+
+      {/* First-run product tour */}
+      <Tour
+        open={showTour}
+        steps={TOUR_STEPS}
+        darkMode={darkMode}
+        onClose={() => {
+          setShowTour(false);
+          // Strip ?tour=1 from the URL so refreshes don't re-trigger.
+          if (window.location.search.includes("tour=")) {
+            const url = new URL(window.location.href);
+            url.searchParams.delete("tour");
+            window.history.replaceState({}, "", url.toString());
+          }
+        }}
+        onComplete={async () => {
+          if (user && !user.user_metadata?.tour_completed_v2) {
+            const { data } = await supabase.auth.updateUser({ data: { tour_completed_v2: true } });
+            if (data?.user) setUser(data.user);
+          }
+        }}
+      />
+
+      {/* Premium feature gate removed — every feature is available to every user. */}
+      {/* Premium gate modal + dev "Upgrade" placeholder removed —
+          there are no tiers, every feature is unconditionally available. */}
+
+      {/* Add / Edit Expense Modal */}
+      {/* Delete Account confirmation — Apple-compliant in-app deletion. Two-step:
+          user must type DELETE to proceed, button is disabled until then. */}
+      {showDeleteAccount && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 99999, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div style={{ width: "100%", maxWidth: 440, background: D ? "#1a1a1a" : "#fff", border: `1px solid ${css.border}`, borderRadius: 14, padding: "28px 24px 22px", boxShadow: "0 20px 60px rgba(0,0,0,0.6)" }}>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "#C8553D", marginBottom: 10, fontFamily: "'Inter Tight', Inter, sans-serif" }}>Delete account · permanent</div>
+            <div style={{ fontSize: 13, color: css.text2, lineHeight: 1.55, marginBottom: 16 }}>
+              This will permanently delete your Continuum account and all data tied to it: trips, expenses, receipts, linked loyalty programs, expense reports, vouchers, forwarding addresses, and your login.
+            </div>
+            <div style={{ fontSize: 13, color: css.text2, lineHeight: 1.55, marginBottom: 18 }}>
+              <strong>You cannot undo this.</strong> Shared trips you own will be removed for everyone. Type <code style={{ background: css.surface2, padding: "1px 6px", borderRadius: 4, fontFamily: "'Geist Mono', monospace", fontSize: 12 }}>DELETE</code> below to confirm.
+            </div>
+            <input
+              type="text"
+              value={deleteAccountTyped}
+              onChange={e => setDeleteAccountTyped(e.target.value)}
+              placeholder="Type DELETE"
+              autoCapitalize="characters"
+              spellCheck={false}
+              style={{
+                width: "100%", boxSizing: "border-box",
+                padding: "11px 14px", borderRadius: 8,
+                border: `1px solid ${css.border}`, background: css.surface2,
+                color: css.text, fontSize: 14, fontFamily: "'Geist Mono', monospace",
+                letterSpacing: "0.1em", textAlign: "center",
+                marginBottom: 14, outline: "none",
+              }}
+            />
+            {deleteAccountError && (
+              <div style={{ fontSize: 12, color: "#C8553D", marginBottom: 12, lineHeight: 1.5 }}>{deleteAccountError}</div>
+            )}
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                onClick={() => { if (!deleteAccountBusy) { setShowDeleteAccount(false); setDeleteAccountTyped(""); setDeleteAccountError(""); } }}
+                disabled={deleteAccountBusy}
+                style={{
+                  flex: 1, padding: "12px 0", borderRadius: 8, border: `1px solid ${css.border}`,
+                  background: "transparent", color: css.text2, fontSize: 13, fontWeight: 600,
+                  cursor: deleteAccountBusy ? "default" : "pointer", fontFamily: "inherit",
+                  opacity: deleteAccountBusy ? 0.5 : 1,
+                }}
+              >Cancel</button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleteAccountBusy || deleteAccountTyped.trim().toUpperCase() !== "DELETE"}
+                style={{
+                  flex: 1, padding: "12px 0", borderRadius: 8, border: "none",
+                  background: (deleteAccountTyped.trim().toUpperCase() === "DELETE" && !deleteAccountBusy) ? "#C8553D" : css.surface2,
+                  color: (deleteAccountTyped.trim().toUpperCase() === "DELETE" && !deleteAccountBusy) ? "#fff" : css.text3,
+                  fontSize: 13, fontWeight: 700,
+                  cursor: (deleteAccountTyped.trim().toUpperCase() === "DELETE" && !deleteAccountBusy) ? "pointer" : "default",
+                  fontFamily: "inherit",
+                }}
+              >{deleteAccountBusy ? "Deleting..." : "Delete forever"}</button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Add / Edit Expense Modal */}
       {/* Share Trip Modal */}
       {/* Confirm Modal — replaces window.confirm for reliable cross-platform behavior */}
       {confirmModal && (
@@ -6937,7 +8789,7 @@ Start by introducing yourself briefly in-character with personality, and give an
               }}>Cancel</button>
               <button onClick={() => { const cb = confirmModal.onConfirm; setConfirmModal(null); cb(); }} style={{
                 flex: 1, padding: "12px 0", borderRadius: 8, border: "none",
-                background: "#ef4444", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                background: "#C8553D", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
               }}>Confirm</button>
             </div>
           </div>
@@ -6985,7 +8837,7 @@ Start by introducing yourself briefly in-character with personality, and give an
               </div>
               {shareStatus === "sent" && <div style={{ padding: "10px 14px", background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)", color: "#22c55e", fontSize: 12, fontWeight: 600, marginBottom: 16 }}>Trip shared successfully!</div>}
               {shareStatus === "already" && <div style={{ padding: "10px 14px", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", color: "#f59e0b", fontSize: 12, fontWeight: 600, marginBottom: 16 }}>This trip is already shared with that email</div>}
-              {shareStatus === "error" && <div style={{ padding: "10px 14px", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", color: "#ef4444", fontSize: 12, fontWeight: 600, marginBottom: 16 }}>Failed to share. Please try again.</div>}
+              {shareStatus === "error" && <div style={{ padding: "10px 14px", background: "rgba(200,85,61,0.1)", border: "1px solid rgba(200,85,61,0.2)", color: "#C8553D", fontSize: 12, fontWeight: 600, marginBottom: 16 }}>Failed to share. Please try again.</div>}
               <div style={{ display: "flex", gap: 10 }}>
                 <button onClick={() => { setShowShareModal(null); setShareStatus(""); setSharePermission("read"); }} style={{ flex: 1, padding: "12px 0", border: `1px solid ${css.border}`, background: "transparent", color: css.text2, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
                 <button onClick={handleShareTrip} disabled={!shareEmail.trim()} style={{ flex: 1, padding: "12px 0", border: "none", background: shareEmail.trim() ? "#3b82f6" : css.surface2, color: shareEmail.trim() ? "#fff" : css.text3, fontSize: 13, fontWeight: 700, cursor: shareEmail.trim() ? "pointer" : "not-allowed" }}>Share</button>
@@ -7017,9 +8869,10 @@ Start by introducing yourself briefly in-character with personality, and give an
             <div style={{ width: "100%", maxWidth: 520, maxHeight: isMobile ? "92vh" : "85vh", overflowY: "auto", background: D ? "#141414" : "#fff", border: `2px solid ${D ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"}`, padding: "32px", position: "relative" }}>
               {/* Header */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, position: "sticky", top: -32, zIndex: 10, background: D ? "#141414" : "#fff", margin: "-32px -32px 24px", padding: "20px 32px", borderBottom: `1px solid ${css.border}` }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                   {cat && <span style={{ fontSize: 10, fontWeight: 700, color: cat.color, background: `${cat.color}15`, padding: "3px 10px" }}>{cat.label}</span>}
                   <h2 style={{ fontSize: 18, fontWeight: 800, color: css.text, margin: 0 }}>Expense Detail</h2>
+                  <ReportedBadge reports={expenseReportMembership?.get(exp.id)} onOpen={openReport} />
                 </div>
                 <button onClick={() => setViewExpenseId(null)} style={{ width: 36, height: 36, border: `1px solid ${css.border}`, background: "transparent", color: css.text3, fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
               </div>
@@ -7037,49 +8890,54 @@ Start by introducing yourself briefly in-character with personality, and give an
                 <div style={{ marginTop: 20 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Receipt</div>
                   {exp.receiptImage.type?.startsWith("image/") ? (
-                    <div>
-                      <img src={exp.receiptImage.data} alt="Receipt" style={{ width: "100%", maxHeight: 500, objectFit: "contain", border: `1px solid ${css.border}`, background: D ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)" }} />
-                      <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                        <button onClick={() => { setCropExpenseId(exp.id); setCropStart(null); setCropEnd(null); }} style={{ padding: "6px 14px", borderRadius: 6, border: `1px solid ${css.border}`, background: "transparent", color: css.text2, fontSize: 11, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2v14a2 2 0 002 2h14"/><path d="M18 22V8a2 2 0 00-2-2H2"/></svg>
-                          Crop
-                        </button>
-                      </div>
-                    </div>
+                    <ImageReceiptWithFallback
+                      exp={exp}
+                      css={css}
+                      D={D}
+                      user={user}
+                      supabase={supabase}
+                      setExpenses={setExpenses}
+                      setCropExpenseId={setCropExpenseId}
+                      setCropRect={setCropRect}
+                      cropStartRef={cropStartRef}
+                      cropEndRef={cropEndRef}
+                    />
                   ) : exp.receiptImage.type === "application/pdf" ? (
-                    <div style={{ padding: "20px", border: `1px solid ${css.border}`, background: D ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)", textAlign: "center" }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: css.text2, marginBottom: 8 }}>{exp.receiptImage.name}</div>
-                      <div style={{ fontSize: 11, color: css.text3 }}>{(exp.receiptImage.size / 1024).toFixed(0)} KB · PDF</div>
-                      <a href={exp.receiptImage.data} download={exp.receiptImage.name} style={{ display: "inline-block", marginTop: 10, padding: "8px 16px", border: `1px solid ${css.accent}`, color: css.accent, fontSize: 11, fontWeight: 700, textDecoration: "none", cursor: "pointer" }}>Download PDF</a>
-                    </div>
-                  ) : exp.receiptImage.type === "text/html" ? (
-                    <div style={{ border: `1px solid ${css.border}`, borderRadius: 8, overflow: "hidden", background: "#fff" }}>
-                      <iframe id={`receipt-iframe-${exp.id}`} srcDoc={exp.receiptImage.data?.startsWith("data:") ? atob(exp.receiptImage.data.split(",")[1] || "") : exp.receiptImage.data} style={{ width: "100%", height: 500, border: "none" }} title="Receipt" sandbox="allow-same-origin" />
-                      <div style={{ padding: "8px 12px", borderTop: `1px solid ${css.border}`, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-                        <span style={{ fontSize: 11, color: css.text3 }}>Email Receipt</span>
+                    <div style={{ border: `1px solid ${css.border}`, background: "#fff", overflow: "hidden" }}>
+                      {/* Inline PDF render — most browsers handle data:application/pdf in an iframe natively */}
+                      <iframe id={`pdf-iframe-${exp.id}`} src={exp.receiptImage.data} title="Receipt PDF" style={{ width: "100%", height: 500, border: "none", display: "block" }} />
+                      <div style={{ padding: "8px 12px", borderTop: `1px solid ${css.border}`, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, background: D ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)" }}>
+                        <span style={{ fontSize: 11, color: css.text3 }}>{exp.receiptImage.name} · {(exp.receiptImage.size / 1024).toFixed(0)} KB</span>
                         <div style={{ display: "flex", gap: 6 }}>
                           <button onClick={async () => {
-                            // Auto-convert HTML to image and open crop
+                            // Render every page of the PDF stitched vertically into one tall
+                            // PNG so multi-page receipts preserve every page when stored as
+                            // an image. This replaces receiptImage with the stitched PNG.
                             try {
-                              const iframe = document.getElementById(`receipt-iframe-${exp.id}`);
-                              if (!iframe?.contentDocument?.body) return;
-                              const html2canvas = (await import("html2canvas")).default;
-                              const canvas = await html2canvas(iframe.contentDocument.body, { useCORS: true, scale: 2, width: iframe.contentDocument.body.scrollWidth, height: iframe.contentDocument.body.scrollHeight, windowWidth: iframe.contentDocument.body.scrollWidth });
-                              const dataUrl = canvas.toDataURL("image/png", 0.92);
-                              const newImg = { name: `receipt-${Date.now()}.png`, size: dataUrl.length, type: "image/png", data: dataUrl };
+                              const dataUrl = await renderPdfToStitchedImage(exp.receiptImage.data);
+                              const newImg = { name: (exp.receiptImage.name || "receipt").replace(/\.pdf$/i, "") + ".png", size: dataUrl.length, type: "image/png", data: dataUrl };
                               setExpenses(prev => prev.map(ex => ex.id === exp.id ? { ...ex, receiptImage: newImg } : ex));
                               if (user) supabase.from("expenses").update({ receipt_image: newImg }).eq("id", exp.id).eq("user_id", user.id);
-                              // Open crop modal
-                              setTimeout(() => { setCropExpenseId(exp.id); setCropStart(null); setCropEnd(null); }, 100);
-                            } catch (e) { console.error("Screenshot failed:", e); }
-                          }} style={{ padding: "4px 12px", borderRadius: 4, border: `1px solid ${css.border}`, background: "transparent", color: css.text2, fontSize: 10, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2v14a2 2 0 002 2h14"/><path d="M18 22V8a2 2 0 00-2-2H2"/></svg>
-                            Crop
+                            } catch (e) { console.error("PDF→image failed:", e); alert("Couldn't convert this PDF to an image. The PDF may be password-protected or corrupted."); }
+                          }} style={{ padding: "4px 12px", borderRadius: 4, border: `1px solid ${css.accent}`, background: "transparent", color: css.accent, fontSize: 10, fontWeight: 600, cursor: "pointer" }}>
+                            Convert to image
                           </button>
-                          <button onClick={() => { const w = window.open("", "_blank"); if (w) { w.document.write(exp.receiptImage.data?.startsWith("data:") ? atob(exp.receiptImage.data.split(",")[1] || "") : ""); w.document.close(); } }} style={{ padding: "4px 12px", borderRadius: 4, border: `1px solid ${css.accent}`, background: "transparent", color: css.accent, fontSize: 10, fontWeight: 600, cursor: "pointer" }}>Open Full Size</button>
+                          <a href={exp.receiptImage.data} download={exp.receiptImage.name} style={{ padding: "4px 12px", borderRadius: 4, border: `1px solid ${css.border}`, color: css.text2, fontSize: 10, fontWeight: 600, textDecoration: "none", cursor: "pointer" }}>Download</a>
                         </div>
                       </div>
                     </div>
+                  ) : exp.receiptImage.type === "text/html" ? (
+                    <HtmlReceiptViewer
+                      exp={exp}
+                      css={css}
+                      user={user}
+                      supabase={supabase}
+                      setExpenses={setExpenses}
+                      setCropExpenseId={setCropExpenseId}
+                      setCropRect={setCropRect}
+                      cropStartRef={cropStartRef}
+                      cropEndRef={cropEndRef}
+                    />
                   ) : (
                     <div style={{ padding: "16px", border: `1px solid ${css.border}`, fontSize: 12, color: css.text3 }}>
                       {exp.receiptImage.name} · {(exp.receiptImage.size / 1024).toFixed(0)} KB
@@ -7177,14 +9035,27 @@ Start by introducing yourself briefly in-character with personality, and give an
             <div style={{ marginBottom: 16 }}>
               <label style={eLbl}>Individuals Included</label>
               <input value={newExpense.individuals || "Self"} onChange={e => setNewExpense(p => ({ ...p, individuals: e.target.value }))} placeholder="Self" style={eInp} />
-              <div style={{ fontSize: 9, color: css.text3, marginTop: 3 }}>Comma-separated, e.g. "Self, John Smith, Jane Doe"</div>
+              <div style={{ fontSize: 11, color: css.text3, marginTop: 3 }}>Comma-separated, e.g. "Self, John Smith, Jane Doe"</div>
             </div>
 
             {/* Amount + Currency */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8, marginBottom: 16 }}>
               <div>
                 <label style={eLbl}>Expense Amount</label>
-                <input type="number" min="0" step="0.01" value={newExpense.amount} onChange={e => setNewExpense(p => ({ ...p, amount: e.target.value, usdReimbursement: p.currency === "USD" ? e.target.value : p.usdReimbursement }))} placeholder="0.00" style={eInp} />
+                <input type="number" min="0" step="0.01" value={newExpense.amount} onChange={e => setNewExpense(p => {
+                  const amt = e.target.value;
+                  const isUsd = p.currency === "USD";
+                  // Match the form's effectiveMode logic so live recompute also works
+                  // when fxRate came from email parsing without an explicit fxMode set.
+                  const inRateMode = p.fxMode === "rate"
+                    || (!p.fxMode && p.fxRate && Number(p.fxRate) > 0 && Number(p.fxRate) !== 1);
+                  if (!isUsd && inRateMode) {
+                    const rate = parseFloat(p.fxRate) || 0;
+                    const computed = (parseFloat(amt) || 0) * rate;
+                    return { ...p, amount: amt, usdReimbursement: rate > 0 ? computed.toFixed(2) : p.usdReimbursement };
+                  }
+                  return { ...p, amount: amt, usdReimbursement: isUsd ? amt : p.usdReimbursement };
+                })} placeholder="0.00" style={eInp} />
               </div>
               <div>
                 <label style={eLbl}>Currency</label>
@@ -7194,25 +9065,88 @@ Start by introducing yourself briefly in-character with personality, and give an
               </div>
             </div>
 
-            {/* USD Reimbursement */}
+            {/* USD Reimbursement — direct entry OR FX rate conversion */}
+            {(() => {
+              // Effective mode: use explicit fxMode if set; otherwise infer from
+              // whether fxRate looks meaningful (came from email parsing or a
+              // prior edit). Falls back to "direct" for fresh manual entries.
+              const effectiveMode = newExpense.fxMode
+                || ((newExpense.fxRate && Number(newExpense.fxRate) > 0 && Number(newExpense.fxRate) !== 1) ? "rate" : "direct");
+              return (
             <div style={{ marginBottom: 16 }}>
-              <label style={eLbl}>USD Reimbursement Amount</label>
+              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 6 }}>
+                <label style={{ ...eLbl, marginBottom: 0 }}>USD Reimbursement Amount</label>
+                {newExpense.currency !== "USD" && (
+                  <div style={{ display: "inline-flex", border: `1px solid ${css.border}`, borderRadius: 6, overflow: "hidden" }}>
+                    {[{ k: "direct", l: "Enter USD" }, { k: "rate", l: "Use FX rate" }].map(({ k, l }) => {
+                      const active = effectiveMode === k;
+                      return (
+                        <button key={k} onClick={() => setNewExpense(p => {
+                          // Switching to rate mode with a known fxRate: recompute USD from amount × rate.
+                          if (k === "rate") {
+                            const rate = parseFloat(p.fxRate) || 0;
+                            const amt = parseFloat(p.amount) || 0;
+                            const computed = rate > 0 && amt > 0 ? (amt * rate).toFixed(2) : p.usdReimbursement;
+                            return { ...p, fxMode: "rate", usdReimbursement: computed };
+                          }
+                          return { ...p, fxMode: "direct" };
+                        })} type="button" style={{
+                          padding: "4px 10px", border: "none",
+                          background: active ? css.accent : "transparent",
+                          color: active ? "#fff" : css.text3,
+                          fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.08em",
+                          textTransform: "uppercase", cursor: "pointer",
+                        }}>{l}</button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
               {newExpense.currency === "USD" ? (
                 <input type="number" value={newExpense.amount || ""} disabled style={{ ...eInp, color: css.text3, background: D ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)" }} />
+              ) : (effectiveMode === "rate") ? (
+                <>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                    <div>
+                      <div style={{ fontSize: 10, color: css.text3, marginBottom: 4, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase" }}>FX rate (1 {newExpense.currency || "—"} = ? USD)</div>
+                      <input type="number" min="0" step="0.000001" value={newExpense.fxRate || ""} onChange={e => setNewExpense(p => {
+                        const rate = e.target.value;
+                        const amt = parseFloat(p.amount) || 0;
+                        const r = parseFloat(rate) || 0;
+                        const computed = r > 0 && amt > 0 ? (amt * r).toFixed(2) : p.usdReimbursement;
+                        return { ...p, fxRate: rate, usdReimbursement: computed };
+                      })} placeholder="e.g. 0.0067" style={eInp} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 10, color: css.text3, marginBottom: 4, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase" }}>USD equivalent (computed)</div>
+                      <input type="number" value={newExpense.usdReimbursement || ""} disabled style={{ ...eInp, color: css.text2, background: D ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)" }} />
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 11, color: css.text3, marginTop: 6, fontFamily: "'Fraunces', serif", fontStyle: "italic" }}>
+                    {parseFloat(newExpense.amount) > 0 && parseFloat(newExpense.fxRate) > 0
+                      ? `${newExpense.currency} ${Number(newExpense.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })} × ${newExpense.fxRate} = USD ${Number(newExpense.usdReimbursement || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+                      : "Enter the rate from your card statement, bank, or xe.com — USD updates as you type."}
+                  </div>
+                </>
               ) : (
-                <input type="number" min="0" step="0.01" value={newExpense.usdReimbursement || ""} onChange={e => setNewExpense(p => ({ ...p, usdReimbursement: e.target.value }))} placeholder="Enter USD equivalent" style={eInp} />
+                <>
+                  <input type="number" min="0" step="0.01" value={newExpense.usdReimbursement || ""} onChange={e => setNewExpense(p => ({ ...p, usdReimbursement: e.target.value }))} placeholder="Enter USD equivalent" style={eInp} />
+                  <div style={{ fontSize: 11, color: css.text3, marginTop: 3 }}>Manual input — enter the USD equivalent for reimbursement</div>
+                </>
               )}
-              {newExpense.currency !== "USD" && <div style={{ fontSize: 9, color: css.text3, marginTop: 3 }}>Manual input — enter the USD equivalent for reimbursement</div>}
             </div>
+              );
+            })()}
 
             {/* Payment Method */}
             <div style={{ marginBottom: 16 }}>
               <label style={eLbl}>Payment Method</label>
               <select value={newExpense.paymentMethod} onChange={e => setNewExpense(p => ({ ...p, paymentMethod: e.target.value }))} style={eInp}>
                 <option value="">Select...</option>
-                <option value="Amex Platinum">Amex Platinum</option>
+                {LOYALTY_PROGRAMS.creditCards.filter(c => linkedAccounts[c.id]).map(c => (
+                  <option key={c.id} value={c.name}>{c.name}</option>
+                ))}
                 <option value="Cash">Cash</option>
-                <option value="Chase Sapphire">Chase Sapphire Reserve</option>
                 <option value="Debit Card">Debit Card</option>
                 <option value="Other">Other</option>
               </select>
@@ -7266,7 +9200,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                   }}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={css.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
                     <span style={{ fontSize: 11, fontWeight: 600, color: css.accent }}>Paste</span>
-                    <span style={{ fontSize: 9, color: css.text3 }}>Ctrl+V / Cmd+V</span>
+                    <span style={{ fontSize: 11, color: css.text3 }}>Ctrl+V / Cmd+V</span>
                   </div>
 
                   {/* Upload file button */}
@@ -7276,7 +9210,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                     cursor: "pointer", transition: "all 0.2s",
                   }}>
                     <span style={{ fontSize: 11, fontWeight: 600, color: css.accent }}>Upload File</span>
-                    <span style={{ fontSize: 9, color: css.text3 }}>JPG, PNG, PDF</span>
+                    <span style={{ fontSize: 11, color: css.text3 }}>JPG, PNG, PDF</span>
                     <input type="file" accept="image/*,.pdf" style={{ display: "none" }} onChange={e => {
                       const file = e.target.files?.[0];
                       if (file) {
@@ -7294,7 +9228,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                     cursor: "pointer", transition: "all 0.2s",
                   }}>
                     <span style={{ fontSize: 11, fontWeight: 600, color: css.accent }}>Take Photo</span>
-                    <span style={{ fontSize: 9, color: css.text3 }}>Use camera</span>
+                    <span style={{ fontSize: 11, color: css.text3 }}>Use camera</span>
                     <input type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={e => {
                       const file = e.target.files?.[0];
                       if (file) {
@@ -7312,7 +9246,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                     background: "transparent", cursor: "pointer",
                   }}>
                     <span style={{ fontSize: 11, fontWeight: 600, color: css.text3 }}>No Receipt</span>
-                    <span style={{ fontSize: 9, color: css.text3 }}>&nbsp;</span>
+                    <span style={{ fontSize: 11, color: css.text3 }}>&nbsp;</span>
                   </button>
                 </div>
               ) : (
@@ -7333,7 +9267,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                     </div>
                   </div>
                   <button onClick={() => setNewExpense(p => ({ ...p, receipt: false, receiptImage: null }))} style={{
-                    width: 30, height: 30, borderRadius: 8, border: "none", background: "rgba(239,68,68,0.1)", color: "#ef4444",
+                    width: 30, height: 30, borderRadius: 8, border: "none", background: "rgba(200,85,61,0.1)", color: "#C8553D",
                     fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
                   }}>×</button>
                 </div>
@@ -7355,6 +9289,56 @@ Start by introducing yourself briefly in-character with personality, and give an
         </div>
       )}
 
+      {/* Inline Report Viewer Overlay (mobile/PWA — desktop opens new tab) */}
+      {inlineReportHtml && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 10000, background: "#13111C",
+          display: "flex", flexDirection: "column",
+        }}>
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "14px 18px", background: "rgba(15,13,15,0.96)",
+            borderBottom: "1px solid rgba(255,255,255,0.08)", flexShrink: 0,
+          }}>
+            <button onClick={() => setInlineReportHtml(null)} style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              padding: "9px 14px", border: "1px solid rgba(255,255,255,0.14)",
+              background: "rgba(255,255,255,0.04)", color: "#f7f8f8",
+              fontFamily: "'JetBrains Mono', monospace", fontSize: 11,
+              fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase",
+              cursor: "pointer", borderRadius: 6,
+            }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+              Back to Continuum
+            </button>
+            <button onClick={() => {
+              const iframe = document.getElementById("continuum-inline-report-frame");
+              try { iframe?.contentWindow?.print(); } catch {}
+            }} style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              padding: "9px 16px", border: "1px solid #C8553D", background: "#C8553D",
+              color: "#fff", fontFamily: "'JetBrains Mono', monospace", fontSize: 11,
+              fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase",
+              cursor: "pointer", borderRadius: 6,
+            }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+              Print
+            </button>
+          </div>
+          <iframe
+            id="continuum-inline-report-frame"
+            title="Expense report"
+            srcDoc={inlineReportHtml.html}
+            onLoad={(e) => {
+              if (inlineReportHtml.autoPrint) {
+                try { e.currentTarget.contentWindow?.print(); } catch {}
+              }
+            }}
+            style={{ flex: 1, width: "100%", border: "none", background: "#13111C" }}
+          />
+        </div>
+      )}
+
       {/* Expense Report Modal */}
       {showExpenseReport && (() => {
         const trip = trips.find(t => t.id === showExpenseReport);
@@ -7367,7 +9351,7 @@ Start by introducing yourself briefly in-character with personality, and give an
         const CURRENCY_SYMBOLS = { USD:"$", EUR:"€", GBP:"£", CAD:"CA$", AUD:"A$", JPY:"¥", CHF:"Fr", CNY:"¥", HKD:"HK$", SGD:"S$", MXN:"MX$", BRL:"R$", INR:"₹", KRW:"₩", AED:"د.إ", THB:"฿", NOK:"kr", SEK:"kr", DKK:"kr", NZD:"NZ$" };
         const symFor = (cur) => CURRENCY_SYMBOLS[cur] || (cur + " ");
         const fmtAmt = (n, cur) => n === 0 ? "Free" : `${symFor(cur)}${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-        const toUSD = (exp) => exp.amount * (exp.fxRate || 1);
+        const toUSD = (exp) => expenseUSD(exp);
 
         // USD total (all expenses converted via their own fxRate)
         const tripTotalUSD = tripExps.reduce((s, e) => s + toUSD(e), 0);
@@ -7645,7 +9629,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                             {fmtAmt(exp.amount, cur)}
                           </div>
                           {isForeign && (
-                            <div style={{ fontSize: 9, color: "#62666d", fontFamily: "Inter, sans-serif", marginTop: 1 }}>
+                            <div style={{ fontSize: 11, color: "#62666d", fontFamily: "Inter, sans-serif", marginTop: 1 }}>
                               ${usdAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
                             </div>
                           )}
@@ -7678,7 +9662,4 @@ Start by introducing yourself briefly in-character with personality, and give an
       })()}
     </div>
   );
-}
-
-
 }
