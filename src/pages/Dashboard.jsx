@@ -435,7 +435,7 @@ export function renderDashboard(s) {
                       <div onClick={() => setQuickAddOpen?.(false)} style={{ position: "fixed", inset: 0, zIndex: 150 }} />
                       <div style={{ position: "absolute", top: "calc(100% + 10px)", right: 0, zIndex: 200, background: css.surface, border: `1px solid ${css.border}`, borderRadius: 12, boxShadow: css.shadowHover, padding: 6, minWidth: 190, animation: "c-fade-up 0.2s ease" }}>
                         {addItems.map(item => (
-                          <button key={item.label} onClick={item.onClick} style={{ display: "flex", alignItems: "center", gap: 11, width: "100%", padding: "11px 12px", border: "none", background: "transparent", cursor: "pointer", borderRadius: 8, color: css.text, fontFamily: "'Inter Tight', sans-serif", fontSize: 13, fontWeight: 500, textAlign: "left" }}
+                          <button key={item.label} onClick={item.onClick} style={{ display: "flex", alignItems: "center", gap: 11, width: "100%", padding: "11px 12px", border: "none", background: "transparent", cursor: "pointer", borderRadius: 8, color: css.text, fontFamily: "'JetBrains Mono', 'Geist Mono', monospace", fontSize: 11, fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", textAlign: "left" }}
                             onMouseEnter={e => e.currentTarget.style.background = D ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)"}
                             onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                             <span style={{ width: 30, height: 30, flexShrink: 0, borderRadius: 8, display: "grid", placeItems: "center", background: `${item.color}14`, color: item.color }}>
