@@ -4995,7 +4995,18 @@ Start by introducing yourself briefly in-character with personality, and give an
         try {
           const reg = await navigator.serviceWorker.ready;
           const sub = await reg.pushManager.getSubscription();
-          if (sub) { pushSubRef.current = sub.toJSON(); setPushEnabled(true); }
+          if (sub) {
+            pushSubRef.current = sub.toJSON();
+            setPushEnabled(true);
+            // Re-sync to the DB on every load in case it was never stored
+            // (e.g. a prior subscribe succeeded on-device but the save failed).
+            if (user?.id) {
+              fetch("/api/push-notify?action=subscribe", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userId: user.id, subscription: sub.toJSON() }),
+              }).catch(() => {});
+            }
+          }
         } catch {}
       }
     };
@@ -5003,6 +5014,31 @@ Start by introducing yourself briefly in-character with personality, and give an
   }, [isLoggedIn]);
 
   const [pushStatus, setPushStatus] = useState(null);
+  // VAPID public keys are base64url strings, but pushManager.subscribe wants a
+  // BufferSource for applicationServerKey on iOS/Safari WebKit (Chrome tolerates
+  // the raw string; iOS does not — passing the string makes subscribe throw and
+  // no subscription is ever created). Convert it.
+  const urlBase64ToUint8Array = (base64String) => {
+    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+    const raw = atob(base64);
+    const arr = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+    return arr;
+  };
+  // Persist a subscription to the DB; returns true on success so callers can
+  // surface failures (the old code swallowed them, leaving "enabled" on the
+  // device but nothing stored server-side).
+  const storePushSubscription = async (sub) => {
+    if (!user) return false;
+    try {
+      const resp = await fetch("/api/push-notify?action=subscribe", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, subscription: sub }),
+      });
+      return resp.ok;
+    } catch { return false; }
+  };
   const enablePushNotifications = async () => {
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
       setPushStatus("Push notifications are not supported in this browser.");
@@ -5024,17 +5060,12 @@ Start by introducing yourself briefly in-character with personality, and give an
       }
       let sub = await reg.pushManager.getSubscription();
       if (!sub) {
-        sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: vapidKey });
+        sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(vapidKey) });
       }
       pushSubRef.current = sub.toJSON();
+      const stored = await storePushSubscription(sub.toJSON());
       setPushEnabled(true);
-      setPushStatus(null);
-      if (user) {
-        fetch("/api/push-notify?action=subscribe", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: user.id, subscription: sub.toJSON() }),
-        }).catch(() => {});
-      }
+      setPushStatus(stored ? null : "Alerts on, but couldn't reach the server to save them — pull to refresh and try again.");
     } catch (e) {
       setPushStatus("Error: " + e.message);
     }
