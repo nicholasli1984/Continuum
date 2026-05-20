@@ -164,25 +164,46 @@ export default async function handler(req, res) {
     if (userId) flights[key].users.add(userId);
   };
 
+  // Hotels — fire a one-time "online check-in open" reminder ~24h before
+  // check-in. No flight API involved, so this is free.
+  const hotels = {}; // hotel_key -> { name, checkinAt, users:Set }
+  const addHotel = (userId, name, date) => {
+    if (!name || !date) return;
+    const checkinAt = new Date(`${date}T15:00:00`); // hotels check in ~3pm local
+    if (isNaN(checkinAt.getTime())) return;
+    if (checkinAt < new Date(now.getTime() - 2 * 3600 * 1000) || checkinAt > windowEnd) return;
+    const key = `H_${userId}_${date}_${String(name).slice(0, 24)}`;
+    if (!hotels[key]) hotels[key] = { name, checkinAt, users: new Set() };
+    if (userId) hotels[key].users.add(userId);
+  };
+
   for (const t of (trips || [])) {
     const segs = Array.isArray(t.segments) ? t.segments : [];
     if (segs.length) {
-      segs.filter(s => !s._isMeta && s.type === "flight" && s.flightNumber && s.date)
-        .forEach(s => addSeg(t.user_id, s.flightNumber, s.date, s.departureAirport, s.arrivalAirport, s.departureTime));
+      segs.forEach(s => {
+        if (s._isMeta) return;
+        if (s.type === "flight" && s.flightNumber && s.date) addSeg(t.user_id, s.flightNumber, s.date, s.departureAirport, s.arrivalAirport, s.departureTime);
+        if (s.type === "hotel") addHotel(t.user_id, s.property || s.propertyName || s.location || s.name || "your hotel", s.date);
+      });
     } else if (t.flight_number && t.date) {
       addSeg(t.user_id, t.flight_number, t.date, "", "", null); // legacy single-segment trip
     }
   }
 
   const keys = Object.keys(flights);
-  if (keys.length === 0) return res.json({ ok: true, flights: 0, checked: 0, apiCalls: 0, notifications: 0 });
+  const hotelKeys = Object.keys(hotels);
+  if (keys.length === 0 && hotelKeys.length === 0) return res.json({ ok: true, flights: 0, hotels: 0, checked: 0, apiCalls: 0, notifications: 0 });
 
   // ── 2. Load tracking rows + push subscriptions for everyone involved ──
-  const { data: trackRows } = await supabase.from("flight_status_tracking").select("*").in("flight_key", keys);
+  const allKeys = [...keys, ...hotelKeys];
+  const { data: trackRows } = await supabase.from("flight_status_tracking").select("*").in("flight_key", allKeys);
   const track = {}; (trackRows || []).forEach(r => { track[r.flight_key] = r; });
+  // reminded_users may be a legacy flat array (24h only) or the keyed object.
+  const remindersOf = (tr) => { const r = tr?.reminded_users; if (Array.isArray(r)) return { "24h": r }; return (r && typeof r === "object") ? r : {}; };
 
   const allUsers = new Set();
   keys.forEach(k => flights[k].users.forEach(u => allUsers.add(u)));
+  hotelKeys.forEach(k => hotels[k].users.forEach(u => allUsers.add(u)));
   const { data: subs } = await supabase.from("push_subscriptions").select("user_id, subscription").in("user_id", [...allUsers]);
   const subByUser = {};
   (subs || []).forEach(s => { try { subByUser[s.user_id] = typeof s.subscription === "string" ? JSON.parse(s.subscription) : s.subscription; } catch {} });
@@ -204,24 +225,20 @@ export default async function handler(req, res) {
   // ── 3. Per-flight processing ──
   for (const key of keys) {
     const f = flights[key];
-    const tr = track[key] || { last_status: null, last_checked_at: null, reminded_users: [] };
+    const tr = track[key] || { last_status: null, last_checked_at: null, reminded_users: {} };
     const hoursUntil = (f.departAt - now) / 3600000;
-    const reminded = new Set(tr.reminded_users || []);
+    const reminders = remindersOf(tr); // { "48h":[uid], "24h":[...], "1h":[...] }
 
     const pf = prettyFn(f.fn);
     const route = f.dep && f.arr ? `${f.dep} → ${f.arr}` : (f.dep || f.arr || "");
     const withRoute = (s) => route ? (s ? `${route} · ${s}` : route) : s;
-
-    // 24h departure reminder (per user, once)
-    if (hoursUntil > 0 && hoursUntil <= 24) {
-      const when = f.departAt.toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit", hour12: true });
+    // Send a one-time reminder for a given band (per user).
+    const sendBand = async (band, title, body) => {
+      reminders[band] = reminders[band] || [];
       for (const u of f.users) {
-        if (!reminded.has(u)) {
-          await notify(u, `${pf} departs within 24h`, withRoute(when), f.fn, `${f.fn}-24h`);
-          reminded.add(u);
-        }
+        if (!reminders[band].includes(u)) { await notify(u, title, body, f.fn, `${f.fn}-${band}`); reminders[band].push(u); }
       }
-    }
+    };
 
     // Tiered polling — is a status check due?
     const lastChecked = tr.last_checked_at ? new Date(tr.last_checked_at) : null;
@@ -260,13 +277,39 @@ export default async function handler(req, res) {
       }
     }
 
+    // ── Departure reminders (each band fires once per user) ──
+    const lastKnown = (fresh && !fresh.error) ? fresh : (tr.last_status || {});
+    const depWhen = f.departAt.toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit", hour12: true });
+    const gateInfo = lastKnown.departureGate ? `Gate ${lastKnown.departureGate}${lastKnown.departureTerminal ? `, Terminal ${lastKnown.departureTerminal}` : ""}` : "";
+    if (hoursUntil > 24 && hoursUntil <= 48) await sendBand("48h", `${pf} departs in 48 hours`, withRoute(depWhen));
+    else if (hoursUntil > 1 && hoursUntil <= 24) await sendBand("24h", `${pf} departs within 24h`, withRoute(depWhen));
+    else if (hoursUntil > 0 && hoursUntil <= 1) await sendBand("1h", `${pf} departs in 1 hour`, withRoute(gateInfo || depWhen));
+
     await supabase.from("flight_status_tracking").upsert({
       flight_key: key,
       last_status: fresh && !fresh.error ? fresh : (tr.last_status || null),
       last_checked_at: due ? now.toISOString() : (tr.last_checked_at || null),
-      reminded_users: [...reminded],
+      reminded_users: reminders,
       updated_at: now.toISOString(),
     }, { onConflict: "flight_key" });
+  }
+
+  // ── 3b. Per-hotel processing — one-time "check-in open" reminder, no API ──
+  for (const key of hotelKeys) {
+    const h = hotels[key];
+    const tr = track[key] || { reminded_users: {} };
+    const reminders = remindersOf(tr);
+    const hoursToCheckin = (h.checkinAt - now) / 3600000;
+    if (hoursToCheckin > 0 && hoursToCheckin <= 24) {
+      reminders["checkin"] = reminders["checkin"] || [];
+      for (const u of h.users) {
+        if (!reminders["checkin"].includes(u)) {
+          await notify(u, `Online check-in open — ${h.name}`, "Check in now and head straight to your room.", null, `${key}-checkin`);
+          reminders["checkin"].push(u);
+        }
+      }
+    }
+    await supabase.from("flight_status_tracking").upsert({ flight_key: key, reminded_users: reminders, updated_at: now.toISOString() }, { onConflict: "flight_key" });
   }
 
   // ── 4. Record API usage for the day ──
@@ -279,5 +322,5 @@ export default async function handler(req, res) {
     );
   }
 
-  return res.json({ ok: true, flights: keys.length, checked, apiCalls, notifications });
+  return res.json({ ok: true, flights: keys.length, hotels: hotelKeys.length, checked, apiCalls, notifications });
 }
