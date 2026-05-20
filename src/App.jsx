@@ -6111,7 +6111,7 @@ Start by introducing yourself briefly in-character with personality, and give an
 
               <p style={{ textAlign: "center", marginTop: 10, marginBottom: 0, fontSize: 10, color: "rgba(225,224,204,0.25)", lineHeight: 1.5 }}>
                 By continuing, you agree to our Terms of Service and{" "}
-                <a href="/privacy" style={{ color: "rgba(225,224,204,0.4)" }}>Privacy Policy</a>.
+                <a href="/privacy.html" style={{ color: "rgba(225,224,204,0.4)" }}>Privacy Policy</a>.
               </p>
             </div>
           </div>

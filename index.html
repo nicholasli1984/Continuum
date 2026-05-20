@@ -49,45 +49,6 @@
   </head>
   <body>
     <div id="root"></div>
-    <!-- TEMPORARY diagnostic overlay for the Capacitor native black-screen
-         issue. Captures the boot sequence + any uncaught error and paints it
-         directly on the screen so we don't need a Mac + Safari Web Inspector
-         to debug. Remove this whole block once the app is rendering on iOS. -->
-    <div id="continuum-debug-overlay" style="position:fixed;top:0;left:0;right:0;max-height:80vh;overflow:auto;background:rgba(255,255,255,0.95);color:#15130F;padding:10px 14px;font-family:'JetBrains Mono',Menlo,Consolas,monospace;font-size:11px;line-height:1.5;z-index:999999;border-bottom:2px solid #C8553D;white-space:pre-wrap;display:none;"></div>
-    <script>
-      (function() {
-        var el = document.getElementById("continuum-debug-overlay");
-        var lines = [];
-        function log(label, value) {
-          var t = new Date().toISOString().substr(11, 12);
-          lines.push("[" + t + "] " + label + (value !== undefined ? ": " + value : ""));
-          el.textContent = lines.join("\n");
-          el.style.display = "block";
-        }
-        window.__continuumDebug = log;
-        log("HTML loaded");
-        log("location.protocol", location.protocol);
-        log("location.href", location.href);
-        log("userAgent", navigator.userAgent.substring(0, 80));
-        log("Capacitor", typeof window.Capacitor);
-        window.addEventListener("error", function(e) {
-          log("window.error", (e.message || "?") + " @ " + (e.filename || "?") + ":" + (e.lineno || "?"));
-        });
-        window.addEventListener("unhandledrejection", function(e) {
-          var msg = e.reason && (e.reason.message || e.reason.toString()) || "unknown";
-          log("unhandledrejection", msg);
-        });
-        // If React hasn't mounted in 5s, flag it
-        setTimeout(function() {
-          var root = document.getElementById("root");
-          if (root && root.children.length === 0) {
-            log("React did NOT mount within 5s — root is still empty");
-          } else if (root) {
-            log("React mounted, root has " + root.children.length + " child(ren)");
-          }
-        }, 5000);
-      })();
-    </script>
     <div id="privacy-footer" style="position:fixed;bottom:0;width:100%;text-align:center;padding:10px;font-size:11px;font-family:sans-serif;color:#6B6458;z-index:0;pointer-events:none;"><a href="/privacy.html" style="color:#8B6F47;pointer-events:auto;">Privacy Policy</a></div>
     <script>
       // AGGRESSIVE cache busting — runs BEFORE the app renders.
