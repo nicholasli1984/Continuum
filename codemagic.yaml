@@ -52,12 +52,13 @@ workflows:
       node: 22
       xcode: latest
       cocoapods: default
-    # Auto-trigger on push is disabled during initial setup. Re-enable by
-    # uncommenting the events list once the first manual build succeeds and
-    # you're ready for every push to main to ship a TestFlight build.
+    # Auto-trigger: every push to main builds a fresh TestFlight build.
+    # Note this only uploads to TestFlight (submit_to_testflight: true in
+    # publishing) — it does NOT auto-submit to App Store review, so it's safe
+    # to keep on even while an App Store review is pending.
     triggering:
-      # events:
-      #   - push
+      events:
+        - push
       branch_patterns:
         - pattern: main
           include: true
