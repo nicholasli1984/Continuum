@@ -23,6 +23,7 @@ import { renderNews as renderNewsPage } from "./pages/News";
 import { renderExpenseSplit as renderExpenseSplitPage } from "./pages/ExpenseSplit";
 import { renderWallet as renderWalletPage } from "./pages/Wallet";
 import { renderAwardSweetSpots as renderAwardSweetSpotsPage } from "./pages/AwardSweetSpots";
+import { renderCommunity as renderCommunityPage } from "./pages/Community";
 // Premium / paid-tier system removed — see git history if reintroducing.
 import Tour from "./components/tour/Tour";
 import VoucherModal from "./components/VoucherModal";
@@ -1251,6 +1252,9 @@ export default function EliteStatusTracker() {
   const [globalQuery, setGlobalQuery] = useState("");
   // Dashboard quick-add (+ button expands to Trip / Expense / Booking)
   const [quickAddOpen, setQuickAddOpen] = useState(false);
+  // Community (anonymized aggregate stats)
+  const [communityStats, setCommunityStats] = useState(null);
+  const [communityLoading, setCommunityLoading] = useState(false);
 
   // Modal state for the first-run flows. Declared up here (instead of with
   // the other modal state below) so the useEffects right beneath can include
@@ -5147,6 +5151,19 @@ Start by introducing yourself briefly in-character with personality, and give an
     return () => { clearTimeout(initialTimer); clearInterval(interval); };
   }, [isLoggedIn, trips.length]);
 
+  // ── Community stats — fetch when the Community tab is opened ──
+  useEffect(() => {
+    if (!isLoggedIn || activeView !== "community" || !user?.id) return;
+    let cancelled = false;
+    setCommunityLoading(true);
+    fetch(`/api/community-stats?userId=${encodeURIComponent(user.id)}`)
+      .then(r => r.json())
+      .then(d => { if (!cancelled) setCommunityStats(d); })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setCommunityLoading(false); });
+    return () => { cancelled = true; };
+  }, [isLoggedIn, activeView, user?.id]);
+
   // Helper: get live status for a flight segment
   const getFlightLiveStatus = (seg) => {
     if (!seg?.flightNumber || !seg?.date) return null;
@@ -6309,6 +6326,7 @@ Start by introducing yourself briefly in-character with personality, and give an
   const renderExpenseSplit = () => renderExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTimestamp });
   const renderWallet = () => renderWalletPage({ css, isMobile, darkMode, linkedAccounts, ProgramLogo, setActiveView, transferBonuses, userPointCurrencies, benefitsSummary, allCreditCards: LOYALTY_PROGRAMS.creditCards, onEditCardBenefits: (cardId) => { setActiveView("programs"); setExpandedCardId(cardId); }, vouchers, setShowVoucherModal, markVoucherRedeemed });
   const renderAwardSweetSpots = () => renderAwardSweetSpotsPage({ css, isMobile, darkMode, userPointCurrencies });
+  const renderCommunity = () => renderCommunityPage({ css, isMobile, darkMode, communityStats, communityLoading, user });
 
   // ── Hub sub-navigation ──
   // Shared sticky top pill used by every multi-page hub (My Trips, Travel,
@@ -6426,6 +6444,8 @@ Start by introducing yourself briefly in-character with personality, and give an
     { id: "travel", label: "Travel", icon: <NavIcon d={<><circle cx="12" cy="12" r="3"/><path d="M12 2a10 10 0 0 1 10 10"/><path d="M22 12a10 10 0 0 1-10 10"/><path d="M12 22A10 10 0 0 1 2 12"/><path d="M2 12A10 10 0 0 1 12 2"/></>} />, gradient: "radial-gradient(circle, rgba(184,146,74,0.18) 0%, rgba(184,146,74,0.06) 50%, transparent 100%)", hoverColor: "#B8924A", subViews: ["programs", "alliances", "wallet", "awards", "lounges"], defaultSubView: "programs" },
     // Expenses — Expense Split + Expense Reports
     { id: "expenses", label: "Expenses", icon: <NavIcon d={<><path d="M16 3h5v5"/><line x1="21" y1="3" x2="14" y2="10"/><path d="M8 21H3v-5"/><line x1="3" y1="21" x2="10" y2="14"/><line x1="12" y1="2" x2="12" y2="22"/></>} />, gradient: "radial-gradient(circle, rgba(200,85,61,0.18) 0%, rgba(200,85,61,0.06) 50%, transparent 100%)", hoverColor: "#C8553D", subViews: ["expensesplit", "expensereports"], defaultSubView: "expensesplit" },
+    // Community — anonymized aggregate stats
+    { id: "community", label: "Community", icon: <NavIcon d={<><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>} />, gradient: "radial-gradient(circle, rgba(107,122,90,0.18) 0%, rgba(107,122,90,0.06) 50%, transparent 100%)", hoverColor: "#6B7A5A" },
   ];
 
   // Each sub-view maps to its hub wrapper so the sticky top pill always sits
@@ -6440,6 +6460,8 @@ Start by introducing yourself briefly in-character with personality, and give an
     programs: renderLoyalty, alliances: renderLoyalty, wallet: renderLoyalty, awards: renderLoyalty, lounges: renderLoyalty, loyalty: renderLoyalty,
     // Expenses hub
     expensesplit: renderExpensesHub, expensereports: renderExpensesHub,
+    // Community
+    community: renderCommunity,
     // legacy / still-reachable views
     expenses: renderExpenses, optimizer: renderOptimizer, insights: renderInsights, reports: renderReports, news: renderNews,
   };
