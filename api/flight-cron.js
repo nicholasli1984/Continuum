@@ -53,6 +53,12 @@ async function fetchStatus(fn, date, depAirport, arrAirport) {
     : data;
   if (!fd) return { error: "No data" };
   const dep = fd.departure || {}, arr = fd.arrival || {};
+  // AeroDataBox's local scheduled time carries the airport's UTC offset
+  // (e.g. "2026-05-31 18:00-04:00"), so it gives both the correct absolute
+  // instant (schedUtc) and the local time to display (schedLocal).
+  const schedLocalRaw = dep.scheduledTime?.local || dep.scheduledTimeLocal || null;
+  let schedUtc = null;
+  if (schedLocalRaw) { const d = new Date(String(schedLocalRaw).replace(" ", "T")); if (!isNaN(d.getTime())) schedUtc = d.toISOString(); }
   return {
     status: fd.status || "Unknown",
     departureGate: dep.gate || null,
@@ -61,7 +67,21 @@ async function fetchStatus(fn, date, depAirport, arrAirport) {
     departureRevised: dep.revisedTimeLocal || null,
     arrivalAirport: arr.airport?.iata || "",
     baggageBelt: arr.baggageBelt || null,
+    schedLocal: schedLocalRaw,
+    schedUtc,
   };
+}
+
+// Format an AeroDataBox local time string ("2026-05-31 18:00-04:00") as the
+// airport's local clock time, e.g. "Sat 6:00 PM" — without the server's
+// timezone shifting it.
+function fmtLocal(localStr) {
+  const m = String(localStr || "").match(/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
+  if (!m) return "";
+  const [, y, mo, d, hh, mm] = m;
+  const weekday = new Date(Date.UTC(+y, +mo - 1, +d, +hh, +mm)).toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" });
+  let h = +hh; const ampm = h >= 12 ? "PM" : "AM"; h = h % 12 || 12;
+  return `${weekday} ${h}:${mm} ${ampm}`;
 }
 
 export default async function handler(req, res) {
@@ -226,7 +246,13 @@ export default async function handler(req, res) {
   for (const key of keys) {
     const f = flights[key];
     const tr = track[key] || { last_status: null, last_checked_at: null, reminded_users: {} };
-    const hoursUntil = (f.departAt - now) / 3600000;
+    // Prefer AeroDataBox's scheduled time (carries the correct UTC offset) over
+    // the naive trip time for all timing. Falls back to the trip time until the
+    // flight has been polled once.
+    const schedFromTrack = tr.last_status?.schedUtc ? new Date(tr.last_status.schedUtc) : null;
+    let departAt = (schedFromTrack && !isNaN(schedFromTrack.getTime())) ? schedFromTrack : f.departAt;
+    let schedLocal = tr.last_status?.schedLocal || null;
+    let hoursUntil = (departAt - now) / 3600000;
     const reminders = remindersOf(tr); // { "48h":[uid], "24h":[...], "1h":[...] }
 
     const pf = prettyFn(f.fn);
@@ -250,6 +276,9 @@ export default async function handler(req, res) {
       apiCalls++; checked++;
       if (!fresh.error) {
         const old = tr.last_status || {};
+        // Refine timing from AeroDataBox's scheduled time (correct timezone)
+        if (fresh.schedUtc) { const acc = new Date(fresh.schedUtc); if (!isNaN(acc.getTime())) { departAt = acc; hoursUntil = (acc - now) / 3600000; } }
+        if (fresh.schedLocal) schedLocal = fresh.schedLocal;
         // Gate change (includes the previous gate when we have it)
         if (fresh.departureGate && fresh.departureGate !== old.departureGate) {
           const was = old.departureGate ? ` (was Gate ${old.departureGate})` : "";
@@ -279,7 +308,8 @@ export default async function handler(req, res) {
 
     // ── Departure reminders (each band fires once per user) ──
     const lastKnown = (fresh && !fresh.error) ? fresh : (tr.last_status || {});
-    const depWhen = f.departAt.toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit", hour12: true });
+    // Show the airport's local departure time when we have it, else the naive trip time.
+    const depWhen = schedLocal ? fmtLocal(schedLocal) : f.departAt.toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit", hour12: true });
     const gateInfo = lastKnown.departureGate ? `Gate ${lastKnown.departureGate}${lastKnown.departureTerminal ? `, Terminal ${lastKnown.departureTerminal}` : ""}` : "";
     if (hoursUntil > 24 && hoursUntil <= 48) await sendBand("48h", `${pf} departs in 48 hours`, withRoute(depWhen));
     else if (hoursUntil > 1 && hoursUntil <= 24) await sendBand("24h", `${pf} departs within 24h`, withRoute(depWhen));
