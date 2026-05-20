@@ -1249,6 +1249,8 @@ export default function EliteStatusTracker() {
   // ── Global search ──
   const [showSearch, setShowSearch] = useState(false);
   const [globalQuery, setGlobalQuery] = useState("");
+  // Dashboard quick-add (+ button expands to Trip / Expense / Booking)
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
 
   // Modal state for the first-run flows. Declared up here (instead of with
   // the other modal state below) so the useEffects right beneath can include
@@ -6188,6 +6190,7 @@ Start by introducing yourself briefly in-character with personality, and give an
 
   const renderDashboard = (embeddedTab) => renderDashboardPage({
     embeddedTab,
+    setShowSearch, quickAddOpen, setQuickAddOpen,
     css, isMobile, user, trips: (demoMode ? [...DEMO_TRIPS, ...trips] : trips), expenses: effectiveExpenses, sharedTrips, darkMode,
     dashSubTab, setDashSubTab, savedItineraries, setSavedItineraries,
     setActiveView, setTripDetailId, setTripDetailSegIdx,

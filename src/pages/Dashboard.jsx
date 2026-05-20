@@ -27,6 +27,7 @@ const PackCheckBox = ({ checked, onClick, size = 24, color = "#10b981" }) => (
 export function renderDashboard(s) {
   const {
     css, isMobile, user, trips, expenses, sharedTrips, darkMode,
+    setShowSearch, quickAddOpen, setQuickAddOpen,
     dashSubTab: _dashSubTab, setDashSubTab, embeddedTab, savedItineraries, setSavedItineraries,
     setActiveView, setTripDetailId, setTripDetailSegIdx,
     openEditTrip, removeTrip,
@@ -373,49 +374,63 @@ export function renderDashboard(s) {
           );
         })()}
 
-        {/* ── Quick actions — the most common things you do, one tap away.
-            Shown on the dashboard overview only (hidden in embedded/packing,
-            Analytics, and Inbox views). ── */}
+        {/* ── Search bar + quick-add (+) ──
+            Search opens the global search overlay; the + expands into three
+            gradient circles (Trip / Expense / Booking) matching the dashboard
+            pill style. Overview only. ── */}
         {!embeddedTab && dashSubTab === "overview" && (() => {
-          const actions = [
-            { label: "Add Trip", color: "#3b82f6", onClick: () => setShowCreateTrip(true),
-              icon: <><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></> },
-            { label: "Add Expense", color: "#B8924A", onClick: () => setShowAddExpense(true),
+          const addActions = [
+            { id: "trip", label: "Trip", from: "#3b82f6", to: "#60a5fa", onClick: () => { setShowCreateTrip(true); setQuickAddOpen?.(false); },
+              icon: <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1L11 12l-2 3H6l-2 2 4-1 4-1 2 7.5 2-2v-3l-3-2 4.8-7.3" /> },
+            { id: "expense", label: "Expense", from: "#B8924A", to: "#d4af6a", onClick: () => { setShowAddExpense(true); setQuickAddOpen?.(false); },
               icon: <><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></> },
-            { label: "Forward Booking", color: "#14b8a6", onClick: () => setShowPasteItinerary(true),
+            { id: "booking", label: "Booking", from: "#14b8a6", to: "#2dd4bf", onClick: () => { setShowPasteItinerary(true); setQuickAddOpen?.(false); },
               icon: <><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></> },
           ];
-          const chipBase = {
-            display: "flex", alignItems: "center", gap: 12,
-            padding: isMobile ? "14px" : "16px 18px",
-            background: css.surface, border: `1px solid ${css.border}`,
-            borderRadius: css.radius, cursor: "pointer", textAlign: "left",
-            transition: "all 0.2s", width: "100%", boxSizing: "border-box",
-          };
-          const iconWrap = (color) => ({ width: 36, height: 36, flexShrink: 0, borderRadius: 10, display: "grid", placeItems: "center", background: `${color}14`, color });
-          const labelStyle = { fontFamily: "'Inter Tight', sans-serif", fontSize: 13, fontWeight: 600, color: css.text, letterSpacing: "0.01em" };
-          const hoverOn = (color) => (e) => { const b = e.currentTarget; b.style.borderColor = color; b.style.transform = "translateY(-1px)"; b.style.boxShadow = css.shadowHover; };
-          const hoverOff = (e) => { const b = e.currentTarget; b.style.borderColor = css.border; b.style.transform = "none"; b.style.boxShadow = "none"; };
           return (
-            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 10, marginBottom: 24 }}>
-              {actions.map(a => (
-                <button key={a.label} onClick={a.onClick} style={chipBase} onMouseEnter={hoverOn(a.color)} onMouseLeave={hoverOff}>
-                  <span style={iconWrap(a.color)}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{a.icon}</svg>
-                  </span>
-                  <span style={labelStyle}>{a.label}</span>
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                {/* Search bar — opens the global search overlay */}
+                <button onClick={() => setShowSearch?.(true)} style={{
+                  flex: 1, display: "flex", alignItems: "center", gap: 10,
+                  padding: "13px 16px", borderRadius: 12,
+                  border: `1px solid ${css.border}`, background: css.surface,
+                  cursor: "pointer", textAlign: "left", transition: "border-color 0.2s, box-shadow 0.2s",
+                  boxShadow: css.shadow,
+                }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = css.accent; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = css.border; }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={css.text3} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  <span style={{ color: css.text3, fontSize: 14, fontFamily: "'Inter Tight', sans-serif" }}>{isMobile ? "Search…" : "Search trips, expenses, programs, airports…"}</span>
                 </button>
-              ))}
-              {/* Snap Receipt — label-wrapped file input so it works without a shared ref. */}
-              <label style={{ ...chipBase, opacity: snapReceiptProcessing ? 0.6 : 1, cursor: snapReceiptProcessing ? "default" : "pointer" }}
-                onMouseEnter={snapReceiptProcessing ? undefined : hoverOn("#C8553D")} onMouseLeave={hoverOff}>
-                <input type="file" accept="image/*" capture="environment" disabled={snapReceiptProcessing} style={{ display: "none" }}
-                  onChange={e => { if (e.target.files?.[0]) handleSnapReceipt(e.target.files[0]); e.target.value = ""; }} />
-                <span style={iconWrap("#C8553D")}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                </span>
-                <span style={labelStyle}>{snapReceiptProcessing ? "Processing…" : "Snap Receipt"}</span>
-              </label>
+                {/* + button — toggles the quick-add circles */}
+                <button onClick={() => setQuickAddOpen?.(!quickAddOpen)} title="Quick add" style={{
+                  width: 46, height: 46, flexShrink: 0, borderRadius: 12, border: "none",
+                  background: quickAddOpen ? css.accent : (D ? css.text : "#15130F"),
+                  color: quickAddOpen ? "#fff" : (D ? "#15130F" : "#F4F1EC"),
+                  cursor: "pointer", display: "grid", placeItems: "center", transition: "all 0.25s",
+                  boxShadow: css.shadow,
+                }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" style={{ transform: quickAddOpen ? "rotate(45deg)" : "none", transition: "transform 0.25s" }}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </button>
+              </div>
+              {/* Expanding quick-add circles */}
+              {quickAddOpen && (
+                <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap", animation: "c-fade-up 0.25s ease" }}>
+                  {addActions.map(a => (
+                    <button key={a.id} onClick={a.onClick} style={{
+                      display: "flex", alignItems: "center", gap: 9,
+                      padding: "11px 20px", borderRadius: 26, border: "none", cursor: "pointer",
+                      background: `linear-gradient(135deg, ${a.from}, ${a.to})`, color: "#fff",
+                      fontFamily: "'Inter Tight', sans-serif", fontSize: 13, fontWeight: 600,
+                      letterSpacing: "0.02em", boxShadow: `0 4px 14px ${a.from}44`,
+                    }}>
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{a.icon}</svg>
+                      {a.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           );
         })()}
