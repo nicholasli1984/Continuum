@@ -374,63 +374,88 @@ export function renderDashboard(s) {
           );
         })()}
 
-        {/* ── Search bar + quick-add (+) ──
-            Search opens the global search overlay; the + expands into three
-            gradient circles (Trip / Expense / Booking) matching the dashboard
-            pill style. Overview only. ── */}
-        {!embeddedTab && dashSubTab === "overview" && (() => {
-          const addActions = [
-            { id: "trip", label: "Trip", from: "#3b82f6", to: "#60a5fa", onClick: () => { setShowCreateTrip(true); setQuickAddOpen?.(false); },
+        {/* ── Search bar + menu pill (Travel Analytics · + · Inbox) ──
+            One line: search opens the global overlay; the pill holds the two
+            dashboard sub-views plus a (+) that drops down Add Trip / Add
+            Expense / Add Booking. Sticky so it stays reachable while scrolling.
+            Shown on all dashboard sub-views (not embedded packing). ── */}
+        {!embeddedTab && (() => {
+          const isAnalytics = dashSubTab === "reports";
+          const isInbox = dashSubTab === "inbox";
+          const inboxBadge = (savedItineraries.length + expenses.filter(e => !e.tripId && !e._demo).length) || 0;
+          const addItems = [
+            { label: "Add Trip", color: "#3b82f6", onClick: () => { setShowCreateTrip(true); setQuickAddOpen?.(false); },
               icon: <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1L11 12l-2 3H6l-2 2 4-1 4-1 2 7.5 2-2v-3l-3-2 4.8-7.3" /> },
-            { id: "expense", label: "Expense", from: "#B8924A", to: "#d4af6a", onClick: () => { setShowAddExpense(true); setQuickAddOpen?.(false); },
+            { label: "Add Expense", color: "#B8924A", onClick: () => { setShowAddExpense(true); setQuickAddOpen?.(false); },
               icon: <><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></> },
-            { id: "booking", label: "Booking", from: "#14b8a6", to: "#2dd4bf", onClick: () => { setShowPasteItinerary(true); setQuickAddOpen?.(false); },
+            { label: "Add Booking", color: "#14b8a6", onClick: () => { setShowPasteItinerary(true); setQuickAddOpen?.(false); },
               icon: <><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></> },
           ];
+          const circle = (active, activeColor) => ({
+            width: 38, height: 38, flexShrink: 0, borderRadius: "50%", border: "none", cursor: "pointer",
+            display: "grid", placeItems: "center", transition: "all 0.2s", position: "relative",
+            background: active ? activeColor : "transparent", color: active ? "#fff" : css.text3,
+          });
           return (
-            <div style={{ marginBottom: 24 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                {/* Search bar — opens the global search overlay */}
-                <button onClick={() => setShowSearch?.(true)} style={{
-                  flex: 1, display: "flex", alignItems: "center", gap: 10,
-                  padding: "13px 16px", borderRadius: 12,
-                  border: `1px solid ${css.border}`, background: css.surface,
-                  cursor: "pointer", textAlign: "left", transition: "border-color 0.2s, box-shadow 0.2s",
-                  boxShadow: css.shadow,
-                }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = css.accent; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = css.border; }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={css.text3} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                  <span style={{ color: css.text3, fontSize: 14, fontFamily: "'Inter Tight', sans-serif" }}>{isMobile ? "Search…" : "Search trips, expenses, programs, airports…"}</span>
+            <div style={{
+              position: "sticky", top: 0, zIndex: 100, marginBottom: 24, marginTop: -4,
+              paddingTop: 8, paddingBottom: 8,
+              display: "flex", alignItems: "center", gap: 10,
+              background: D ? "rgba(15,15,15,0.92)" : "rgba(255,255,255,0.92)",
+              backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+            }}>
+              {/* Search bar — opens the global search overlay */}
+              <button onClick={() => setShowSearch?.(true)} style={{
+                flex: 1, display: "flex", alignItems: "center", gap: 10, minWidth: 0,
+                padding: "13px 16px", borderRadius: 999,
+                border: `1px solid ${css.border}`, background: css.surface,
+                cursor: "pointer", textAlign: "left", transition: "border-color 0.2s",
+                boxShadow: css.shadow,
+              }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = css.accent; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = css.border; }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={css.text3} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <span style={{ color: css.text3, fontSize: 14, fontFamily: "'Inter Tight', sans-serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{isMobile ? "Search…" : "Search trips, expenses, programs, airports…"}</span>
+              </button>
+              {/* Menu pill — Travel Analytics · + · Inbox */}
+              <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0, padding: 5, borderRadius: 999, border: `1px solid ${css.border}`, background: css.surface, boxShadow: css.shadow }}>
+                {/* Travel Analytics */}
+                <button title="Travel Analytics" onClick={() => { setDashSubTab(isAnalytics ? "overview" : "reports"); setQuickAddOpen?.(false); }} style={circle(isAnalytics, "#14b8a6")}
+                  onMouseEnter={e => { if (!isAnalytics) e.currentTarget.style.background = D ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)"; }}
+                  onMouseLeave={e => { if (!isAnalytics) e.currentTarget.style.background = "transparent"; }}>
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="6" y1="20" x2="6" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="14"/></svg>
                 </button>
-                {/* + button — toggles the quick-add circles */}
-                <button onClick={() => setQuickAddOpen?.(!quickAddOpen)} title="Quick add" style={{
-                  width: 46, height: 46, flexShrink: 0, borderRadius: 12, border: "none",
-                  background: quickAddOpen ? css.accent : (D ? css.text : "#15130F"),
-                  color: quickAddOpen ? "#fff" : (D ? "#15130F" : "#F4F1EC"),
-                  cursor: "pointer", display: "grid", placeItems: "center", transition: "all 0.25s",
-                  boxShadow: css.shadow,
-                }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" style={{ transform: quickAddOpen ? "rotate(45deg)" : "none", transition: "transform 0.25s" }}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                {/* + with dropdown */}
+                <div style={{ position: "relative" }}>
+                  <button title="Quick add" onClick={() => setQuickAddOpen?.(!quickAddOpen)} style={{ ...circle(false), background: quickAddOpen ? css.accent : (D ? css.text : "#15130F"), color: quickAddOpen ? "#fff" : (D ? "#15130F" : "#F4F1EC") }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" style={{ transform: quickAddOpen ? "rotate(45deg)" : "none", transition: "transform 0.25s" }}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  </button>
+                  {quickAddOpen && (
+                    <>
+                      <div onClick={() => setQuickAddOpen?.(false)} style={{ position: "fixed", inset: 0, zIndex: 150 }} />
+                      <div style={{ position: "absolute", top: "calc(100% + 10px)", right: 0, zIndex: 200, background: css.surface, border: `1px solid ${css.border}`, borderRadius: 12, boxShadow: css.shadowHover, padding: 6, minWidth: 190, animation: "c-fade-up 0.2s ease" }}>
+                        {addItems.map(item => (
+                          <button key={item.label} onClick={item.onClick} style={{ display: "flex", alignItems: "center", gap: 11, width: "100%", padding: "11px 12px", border: "none", background: "transparent", cursor: "pointer", borderRadius: 8, color: css.text, fontFamily: "'Inter Tight', sans-serif", fontSize: 13, fontWeight: 500, textAlign: "left" }}
+                            onMouseEnter={e => e.currentTarget.style.background = D ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)"}
+                            onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                            <span style={{ width: 30, height: 30, flexShrink: 0, borderRadius: 8, display: "grid", placeItems: "center", background: `${item.color}14`, color: item.color }}>
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">{item.icon}</svg>
+                            </span>
+                            {item.label}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+                {/* Inbox */}
+                <button title="Inbox" onClick={() => { setDashSubTab(isInbox ? "overview" : "inbox"); setQuickAddOpen?.(false); }} style={circle(isInbox, "#22c55e")}
+                  onMouseEnter={e => { if (!isInbox) e.currentTarget.style.background = D ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)"; }}
+                  onMouseLeave={e => { if (!isInbox) e.currentTarget.style.background = "transparent"; }}>
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg>
+                  {inboxBadge > 0 && <span style={{ position: "absolute", top: -1, right: -1, minWidth: 16, height: 16, padding: "0 4px", borderRadius: 8, background: css.accent, color: "#fff", fontSize: 9, fontWeight: 700, display: "grid", placeItems: "center", fontFamily: "'JetBrains Mono', monospace" }}>{inboxBadge}</span>}
                 </button>
               </div>
-              {/* Expanding quick-add circles */}
-              {quickAddOpen && (
-                <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap", animation: "c-fade-up 0.25s ease" }}>
-                  {addActions.map(a => (
-                    <button key={a.id} onClick={a.onClick} style={{
-                      display: "flex", alignItems: "center", gap: 9,
-                      padding: "11px 20px", borderRadius: 26, border: "none", cursor: "pointer",
-                      background: `linear-gradient(135deg, ${a.from}, ${a.to})`, color: "#fff",
-                      fontFamily: "'Inter Tight', sans-serif", fontSize: 13, fontWeight: 600,
-                      letterSpacing: "0.02em", boxShadow: `0 4px 14px ${a.from}44`,
-                    }}>
-                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{a.icon}</svg>
-                      {a.label}
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
           );
         })()}
@@ -454,13 +479,12 @@ export function renderDashboard(s) {
           </div>
         )}
 
-        {/* ── Tab Bar — Desktop: editorial flat / Mobile: gradient circles ──
-            Dashboard pill now carries only Overview / Travel Analytics / Inbox.
-            Expense Reports moved to the Expenses hub; Packing moved to the
-            My Trips hub. Hidden entirely when rendered as an embedded tab. ── */}
-        {!embeddedTab && (() => {
-          // Overview is the default landing (tapping the Dashboard bottom tab
-          // returns here), so the pill itself carries just the two sub-views.
+        {/* ── (Removed) old sub-tab pill ──
+            Travel Analytics + Inbox now live in the menu pill at the top of the
+            dashboard (next to the search bar), so this standalone sticky pill is
+            disabled. Guarded with `false` rather than deleted to keep the diff
+            small; safe to remove the whole block in a later cleanup. ── */}
+        {false && !embeddedTab && (() => {
           const tabs = [
             { id: "reports", label: "Travel Analytics", hoverColor: "#14b8a6", gradFrom: "#14b8a6", gradTo: "#0d9488", icon: <><line x1="6" y1="20" x2="6" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="14"/></> },
             { id: "inbox", label: "Inbox", hoverColor: "#22c55e", gradFrom: "#80FF72", gradTo: "#22c55e", icon: <><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></>, badge: (savedItineraries.length + expenses.filter(e => !e.tripId && !e._demo).length) || 0 },
