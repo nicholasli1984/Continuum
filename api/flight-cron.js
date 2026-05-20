@@ -30,7 +30,8 @@ const normFn = (s) => (s || "").replace(/\s+/g, "").toUpperCase();
 function checkIntervalMin(h) {
   if (h > 24) return 180;   // >1 day out: every 3h
   if (h > 6)  return 30;    // day-of-ish: every 30 min
-  if (h > -3) return 15;    // ±window around departure: every run
+  if (h > 2)  return 15;    // 2–6h out: every 15 min
+  if (h > -2) return 5;     // ±2h around departure: every 5 min (fast gate/delay/boarding)
   return 30;                // post-departure: every 30 min (catch landing + baggage belt)
 }
 
@@ -66,6 +67,7 @@ async function fetchStatus(fn, date, depAirport, arrAirport) {
     departureDelay: dep.delay || 0,
     departureRevised: dep.revisedTimeLocal || null,
     arrivalAirport: arr.airport?.iata || "",
+    arrivalDelay: arr.delay || 0,
     baggageBelt: arr.baggageBelt || null,
     schedLocal: schedLocalRaw,
     schedUtc,
@@ -197,14 +199,40 @@ export default async function handler(req, res) {
     if (userId) hotels[key].users.add(userId);
   };
 
+  // Connections — consecutive flights meeting at the same airport with a short
+  // layover, so we can warn about tight connections (and ones a delay puts at
+  // risk). Times at one connecting airport share a timezone, so the gap math is
+  // offset-independent.
+  const connections = {}; // conn_key -> { userId, aFn, bFn, airport, scheduledGap, aKey }
+  const tMs = (date, timeStr) => { const m = (timeStr || "").match(/(\d{1,2}):(\d{2})/); if (!m || !date) return null; const d = new Date(`${date}T${m[1].padStart(2, "0")}:${m[2]}:00Z`); return isNaN(d.getTime()) ? null : d.getTime(); };
+  const addConnections = (userId, fs) => {
+    for (let i = 0; i < fs.length - 1; i++) {
+      const A = fs[i], B = fs[i + 1];
+      if (!A.arr || !B.dep || A.arr !== B.dep || !A.arrTime || !B.depTime) continue;
+      const aDep = tMs(A.date, A.depTime); let aArr = tMs(A.date, A.arrTime); const bDep = tMs(B.date, B.depTime);
+      if (aArr == null || bDep == null) continue;
+      if (aDep != null && aArr < aDep) aArr += 86400000; // arrival past midnight
+      const gap = Math.round((bDep - aArr) / 60000);
+      if (gap <= 0 || gap > 300) continue; // overnight stay / bad data — not a connection
+      const aKey = `${normFn(A.fn)}_${A.date}`;
+      connections[`C_${userId}_${aKey}_${normFn(B.fn)}`] = { userId, aFn: normFn(A.fn), bFn: normFn(B.fn), airport: A.arr, scheduledGap: gap, aKey };
+    }
+  };
+
   for (const t of (trips || [])) {
     const segs = Array.isArray(t.segments) ? t.segments : [];
     if (segs.length) {
+      const fseg = [];
       segs.forEach(s => {
         if (s._isMeta) return;
-        if (s.type === "flight" && s.flightNumber && s.date) addSeg(t.user_id, s.flightNumber, s.date, s.departureAirport, s.arrivalAirport, s.departureTime);
+        if (s.type === "flight" && s.flightNumber && s.date) {
+          addSeg(t.user_id, s.flightNumber, s.date, s.departureAirport, s.arrivalAirport, s.departureTime);
+          fseg.push({ fn: s.flightNumber, date: s.date, dep: s.departureAirport, arr: s.arrivalAirport, depTime: s.departureTime, arrTime: s.arrivalTime });
+        }
         if (s.type === "hotel") addHotel(t.user_id, s.property || s.propertyName || s.location || s.name || "your hotel", s.date);
       });
+      fseg.sort((a, b) => `${a.date} ${a.depTime || ""}`.localeCompare(`${b.date} ${b.depTime || ""}`));
+      addConnections(t.user_id, fseg);
     } else if (t.flight_number && t.date) {
       addSeg(t.user_id, t.flight_number, t.date, "", "", null); // legacy single-segment trip
     }
@@ -212,10 +240,11 @@ export default async function handler(req, res) {
 
   const keys = Object.keys(flights);
   const hotelKeys = Object.keys(hotels);
-  if (keys.length === 0 && hotelKeys.length === 0) return res.json({ ok: true, flights: 0, hotels: 0, checked: 0, apiCalls: 0, notifications: 0 });
+  const connKeys = Object.keys(connections);
+  if (keys.length === 0 && hotelKeys.length === 0) return res.json({ ok: true, flights: 0, hotels: 0, connections: 0, checked: 0, apiCalls: 0, notifications: 0 });
 
   // ── 2. Load tracking rows + push subscriptions for everyone involved ──
-  const allKeys = [...keys, ...hotelKeys];
+  const allKeys = [...keys, ...hotelKeys, ...connKeys];
   const { data: trackRows } = await supabase.from("flight_status_tracking").select("*").in("flight_key", allKeys);
   const track = {}; (trackRows || []).forEach(r => { track[r.flight_key] = r; });
   // reminded_users may be a legacy flat array (24h only) or the keyed object.
@@ -224,11 +253,13 @@ export default async function handler(req, res) {
   const allUsers = new Set();
   keys.forEach(k => flights[k].users.forEach(u => allUsers.add(u)));
   hotelKeys.forEach(k => hotels[k].users.forEach(u => allUsers.add(u)));
+  connKeys.forEach(k => allUsers.add(connections[k].userId));
   const { data: subs } = await supabase.from("push_subscriptions").select("user_id, subscription").in("user_id", [...allUsers]);
   const subByUser = {};
   (subs || []).forEach(s => { try { subByUser[s.user_id] = typeof s.subscription === "string" ? JSON.parse(s.subscription) : s.subscription; } catch {} });
 
   let apiCalls = 0, notifications = 0, checked = 0;
+  const statusByKey = {}; // flight_key -> latest known status (for connection alerts)
   // `tag` namespaces each event type per flight so distinct events persist
   // separately but repeated updates of the same event replace in place.
   const notify = async (userId, title, body, fnum, tag) => {
@@ -315,6 +346,7 @@ export default async function handler(req, res) {
     else if (hoursUntil > 3 && hoursUntil <= 24) await sendBand("24h", `${pf} departs within 24h`, withRoute(depWhen));
     else if (hoursUntil > 0 && hoursUntil <= 3) await sendBand("3h", `${pf} departs in 3 hours`, withRoute(`${depWhen}${gateInfo ? ` · ${gateInfo}` : ""} · Time to head to the airport`));
 
+    statusByKey[key] = (fresh && !fresh.error) ? fresh : (tr.last_status || null);
     await supabase.from("flight_status_tracking").upsert({
       flight_key: key,
       last_status: fresh && !fresh.error ? fresh : (tr.last_status || null),
@@ -342,6 +374,39 @@ export default async function handler(req, res) {
     await supabase.from("flight_status_tracking").upsert({ flight_key: key, reminded_users: reminders, updated_at: now.toISOString() }, { onConflict: "flight_key" });
   }
 
+  // ── 3c. Connection alerts — tight-connection heads-up + delay-at-risk ──
+  for (const ckey of connKeys) {
+    const c = connections[ckey];
+    const aFlight = flights[c.aKey];
+    if (!aFlight) continue; // inbound flight not in the window yet
+    const tr = track[ckey] || { reminded_users: {} };
+    const reminders = remindersOf(tr);
+    const aStatus = statusByKey[c.aKey] || {};
+    const aDepartAt = aStatus.schedUtc ? new Date(aStatus.schedUtc) : aFlight.departAt;
+    const hoursUntilA = (aDepartAt - now) / 3600000;
+    const arrDelay = aStatus.arrivalDelay || 0;
+    const revisedGap = c.scheduledGap - arrDelay;
+    const pfA = prettyFn(c.aFn), pfB = prettyFn(c.bFn);
+
+    // Heads-up: a scheduled tight connection, once, within 24h of the inbound.
+    if (c.scheduledGap < 90 && hoursUntilA > 0 && hoursUntilA <= 24) {
+      reminders["conn"] = reminders["conn"] || [];
+      if (!reminders["conn"].includes(c.userId)) {
+        await notify(c.userId, `Tight connection at ${c.airport}`, `${c.scheduledGap} min between ${pfA} and ${pfB}. We'll watch it.`, null, `${ckey}-conn`);
+        reminders["conn"].push(c.userId);
+      }
+    }
+    // At-risk: the inbound is running late enough to threaten the connection, once.
+    if (arrDelay > 0 && revisedGap < 45 && revisedGap < c.scheduledGap) {
+      reminders["risk"] = reminders["risk"] || [];
+      if (!reminders["risk"].includes(c.userId)) {
+        await notify(c.userId, `Connection at risk — ${c.airport}`, `${pfA} running ~${arrDelay} min late · about ${Math.max(0, revisedGap)} min to make ${pfB}.`, null, `${ckey}-risk`);
+        reminders["risk"].push(c.userId);
+      }
+    }
+    await supabase.from("flight_status_tracking").upsert({ flight_key: ckey, reminded_users: reminders, updated_at: now.toISOString() }, { onConflict: "flight_key" });
+  }
+
   // ── 4. Record API usage for the day ──
   if (apiCalls > 0) {
     const day = now.toISOString().slice(0, 10);
@@ -352,5 +417,5 @@ export default async function handler(req, res) {
     );
   }
 
-  return res.json({ ok: true, flights: keys.length, hotels: hotelKeys.length, checked, apiCalls, notifications });
+  return res.json({ ok: true, flights: keys.length, hotels: hotelKeys.length, connections: connKeys.length, checked, apiCalls, notifications });
 }

@@ -56,7 +56,7 @@
   ],
   "crons": [
     { "path": "/api/news?action=refresh-transfer-bonuses", "schedule": "0 12 * * 1" },
-    { "path": "/api/flight-cron", "schedule": "*/15 * * * *" }
+    { "path": "/api/flight-cron", "schedule": "*/5 * * * *" }
   ],
   "functions": {
     "api/forward-report.js": {
