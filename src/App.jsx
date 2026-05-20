@@ -6183,7 +6183,8 @@ Start by introducing yourself briefly in-character with personality, and give an
 
   const nextTrip = upcomingTripsFiltered[0] || null;
 
-  const renderDashboard = () => renderDashboardPage({
+  const renderDashboard = (embeddedTab) => renderDashboardPage({
+    embeddedTab,
     css, isMobile, user, trips: (demoMode ? [...DEMO_TRIPS, ...trips] : trips), expenses: effectiveExpenses, sharedTrips, darkMode,
     dashSubTab, setDashSubTab, savedItineraries, setSavedItineraries,
     setActiveView, setTripDetailId, setTripDetailSegIdx,
@@ -6272,54 +6273,100 @@ Start by introducing yourself briefly in-character with personality, and give an
   const renderWallet = () => renderWalletPage({ css, isMobile, darkMode, linkedAccounts, ProgramLogo, setActiveView, transferBonuses, userPointCurrencies, benefitsSummary, allCreditCards: LOYALTY_PROGRAMS.creditCards, onEditCardBenefits: (cardId) => { setActiveView("programs"); setExpandedCardId(cardId); }, vouchers, setShowVoucherModal, markVoucherRedeemed });
   const renderAwardSweetSpots = () => renderAwardSweetSpotsPage({ css, isMobile, darkMode, userPointCurrencies });
 
-  // Loyalty wrapper: shared sticky pill for Programs / Alliances / Wallet.
-  // The sub-tab IS the activeView, so all existing setActiveView("programs"
-  // | "alliances" | "wallet") calls keep working — they just switch the pill.
+  // ── Hub sub-navigation ──
+  // Shared sticky top pill used by every multi-page hub (My Trips, Travel,
+  // Expenses). The sub-tab id IS the activeView, so all existing
+  // setActiveView("programs" | "lounges" | "expensereports" | ...) calls keep
+  // working — they just light up the matching pill. Horizontally scrollable so
+  // a 5-item hub (Travel) never crowds on a narrow phone.
+  const renderHubPill = (tabs) => (
+    <div style={{
+      position: "sticky", top: 0, zIndex: 100,
+      display: "flex", alignItems: "stretch", justifyContent: isMobile ? "flex-start" : "center",
+      marginBottom: 24, marginTop: -8,
+      borderTop: `1px solid ${css.border}`, borderBottom: `1px solid ${css.border}`,
+      background: D ? "rgba(15,15,15,0.92)" : "rgba(255,255,255,0.92)",
+      backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+      overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none",
+    }}>
+      {tabs.map((tab, ti) => {
+        const isOn = activeView === tab.id;
+        return (
+          <button key={tab.id}
+            onClick={() => { setActiveView(tab.id); const m = document.querySelector("main"); if (m) m.scrollTo({ top: 0, behavior: "smooth" }); }}
+            onMouseEnter={e => { if (!isOn) { e.currentTarget.style.color = tab.hoverColor; e.currentTarget.style.background = D ? "rgba(255,255,255,0.04)" : css.surface; } }}
+            onMouseLeave={e => { if (!isOn) { e.currentTarget.style.color = css.text3; e.currentTarget.style.background = "transparent"; } }}
+            style={{
+              padding: "16px 22px", border: "none", whiteSpace: "nowrap", flexShrink: 0,
+              borderRight: ti < tabs.length - 1 ? `1px solid ${css.border}` : "none",
+              borderLeft: ti === 0 ? `1px solid ${css.border}` : "none",
+              background: isOn ? (D ? "rgba(255,255,255,0.04)" : css.surface) : "transparent",
+              fontFamily: "'JetBrains Mono', 'Geist Mono', monospace",
+              fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase",
+              color: isOn ? css.text : css.text3,
+              transition: "all 0.3s", position: "relative", cursor: "pointer",
+            }}>
+            {isOn && <div style={{ position: "absolute", left: 0, top: -1, right: 0, height: 2, background: tab.hoverColor }} />}
+            {tab.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  // My Trips hub — Trips + Packing. Packing is rendered by the Dashboard page
+  // in embedded mode (hero + dashboard pill hidden), so the packing UI lives in
+  // one place but appears here.
+  const MYTRIPS_SUBTABS = [
+    { id: "trips", label: "Trips", hoverColor: "#3b82f6" },
+    { id: "packing", label: "Packing", hoverColor: "#9333ea" },
+  ];
+  const renderMyTrips = () => {
+    const subActive = activeView === "packing" ? "packing" : "trips";
+    return (
+      <>
+        {renderHubPill(MYTRIPS_SUBTABS)}
+        {subActive === "trips" && renderTrips()}
+        {subActive === "packing" && renderDashboard("packing")}
+      </>
+    );
+  };
+
+  // Expenses hub — Expense Split + Expense Reports.
+  const EXPENSES_SUBTABS = [
+    { id: "expensesplit", label: "Expense Split", hoverColor: "#C8553D" },
+    { id: "expensereports", label: "Expense Reports", hoverColor: "#E4A88F" },
+  ];
+  const renderExpensesHub = () => {
+    const subActive = activeView === "expensereports" ? "expensereports" : "expensesplit";
+    return (
+      <>
+        {renderHubPill(EXPENSES_SUBTABS)}
+        {subActive === "expensesplit" && renderExpenseSplit()}
+        {subActive === "expensereports" && renderExpenseReports()}
+      </>
+    );
+  };
+
+  // Travel hub (formerly "Loyalty"): Programs / Alliances / Wallet / Awards
+  // plus Lounges, which moved here off the bottom nav.
   const LOYALTY_SUBTABS = [
     { id: "programs", label: "Programs", hoverColor: "#9333ea" },
     { id: "alliances", label: "Alliances", hoverColor: "#B8924A" },
     { id: "wallet", label: "Wallet", hoverColor: "#6B7A5A" },
     { id: "awards", label: "Awards", hoverColor: "#C8553D" },
+    { id: "lounges", label: "Lounges", hoverColor: "#14b8a6" },
   ];
   const renderLoyalty = () => {
-    const subActive = activeView === "alliances" ? "alliances" : activeView === "wallet" ? "wallet" : activeView === "awards" ? "awards" : "programs";
+    const subActive = ["alliances", "wallet", "awards", "lounges"].includes(activeView) ? activeView : "programs";
     return (
       <>
-        <div style={{
-          position: "sticky", top: 0, zIndex: 100,
-          display: "flex", alignItems: "stretch", justifyContent: "center",
-          marginBottom: 24, marginTop: -8,
-          borderTop: `1px solid ${css.border}`, borderBottom: `1px solid ${css.border}`,
-          background: D ? "rgba(15,15,15,0.92)" : "rgba(255,255,255,0.92)",
-          backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
-        }}>
-          {LOYALTY_SUBTABS.map((tab, ti) => {
-            const isOn = subActive === tab.id;
-            return (
-              <button key={tab.id}
-                onClick={() => { setActiveView(tab.id); const m = document.querySelector("main"); if (m) m.scrollTo({ top: 0, behavior: "smooth" }); }}
-                onMouseEnter={e => { if (!isOn) { e.currentTarget.style.color = tab.hoverColor; e.currentTarget.style.background = D ? "rgba(255,255,255,0.04)" : css.surface; } }}
-                onMouseLeave={e => { if (!isOn) { e.currentTarget.style.color = css.text3; e.currentTarget.style.background = "transparent"; } }}
-                style={{
-                  padding: "16px 28px", border: "none",
-                  borderRight: ti < LOYALTY_SUBTABS.length - 1 ? `1px solid ${css.border}` : "none",
-                  borderLeft: ti === 0 ? `1px solid ${css.border}` : "none",
-                  background: isOn ? (D ? "rgba(255,255,255,0.04)" : css.surface) : "transparent",
-                  fontFamily: "'JetBrains Mono', 'Geist Mono', monospace",
-                  fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase",
-                  color: isOn ? css.text : css.text3,
-                  transition: "all 0.3s", position: "relative", cursor: "pointer",
-                }}>
-                {isOn && <div style={{ position: "absolute", left: 0, top: -1, right: 0, height: 2, background: tab.hoverColor }} />}
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
+        {renderHubPill(LOYALTY_SUBTABS)}
         {subActive === "programs" && renderPrograms()}
         {subActive === "alliances" && renderAlliances()}
         {subActive === "wallet" && renderWallet()}
         {subActive === "awards" && renderAwardSweetSpots()}
+        {subActive === "lounges" && renderLounges()}
       </>
     );
   };
@@ -6330,21 +6377,35 @@ Start by introducing yourself briefly in-character with personality, and give an
   const NavIcon = ({ d, size = 18 }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{typeof d === "string" ? <path d={d} /> : d}</svg>
   );
+  // Bottom nav — 4 hubs. Each hub (except Dashboard) groups several sub-pages
+  // behind a sticky top pill (renderHubPill). `subViews` lets the bottom tab
+  // stay highlighted when any of its sub-pages is the activeView; tapping it
+  // lands on `defaultSubView`.
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: <NavIcon d={<><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="4" rx="1"/><rect x="14" y="11" width="7" height="10" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></>} />, gradient: "radial-gradient(circle, rgba(212,116,45,0.18) 0%, rgba(212,116,45,0.06) 50%, transparent 100%)", hoverColor: "#D4742D" },
-    { id: "trips", label: "Trips", icon: <NavIcon d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1L11 12l-2 3H6l-2 2 4-1 4-1 2 7.5 2-2v-3l-3-2 4.8-7.3" />, gradient: "radial-gradient(circle, rgba(59,130,246,0.18) 0%, rgba(59,130,246,0.06) 50%, transparent 100%)", hoverColor: "#3b82f6" },
-    { id: "lounges", label: "Lounges", icon: <NavIcon d={<><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></>} />, gradient: "radial-gradient(circle, rgba(20,184,166,0.18) 0%, rgba(20,184,166,0.06) 50%, transparent 100%)", hoverColor: "#14b8a6" },
-    // "Loyalty" bundles Programs / Alliances / Wallet — they all answer
-    // "what do I get for being loyal?" Tapping the nav defaults to Programs;
-    // the page renders a sticky sub-tab pill to switch between them.
-    { id: "loyalty", label: "Loyalty", icon: <NavIcon d={<><circle cx="12" cy="12" r="3"/><path d="M12 2a10 10 0 0 1 10 10"/><path d="M22 12a10 10 0 0 1-10 10"/><path d="M12 22A10 10 0 0 1 2 12"/><path d="M2 12A10 10 0 0 1 12 2"/></>} />, gradient: "radial-gradient(circle, rgba(184,146,74,0.18) 0%, rgba(184,146,74,0.06) 50%, transparent 100%)", hoverColor: "#B8924A", subViews: ["programs", "alliances", "wallet", "awards"], defaultSubView: "programs" },
-    { id: "expensesplit", label: "Expense Split", icon: <NavIcon d={<><path d="M16 3h5v5"/><line x1="21" y1="3" x2="14" y2="10"/><path d="M8 21H3v-5"/><line x1="3" y1="21" x2="10" y2="14"/><line x1="12" y1="2" x2="12" y2="22"/></>} />, gradient: "radial-gradient(circle, rgba(200,85,61,0.18) 0%, rgba(200,85,61,0.06) 50%, transparent 100%)", hoverColor: "#C8553D" },
+    // My Trips — Trips + Packing
+    { id: "mytrips", label: "My Trips", icon: <NavIcon d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1L11 12l-2 3H6l-2 2 4-1 4-1 2 7.5 2-2v-3l-3-2 4.8-7.3" />, gradient: "radial-gradient(circle, rgba(59,130,246,0.18) 0%, rgba(59,130,246,0.06) 50%, transparent 100%)", hoverColor: "#3b82f6", subViews: ["trips", "packing"], defaultSubView: "trips" },
+    // Travel — Programs / Alliances / Wallet / Awards / Lounges
+    { id: "travel", label: "Travel", icon: <NavIcon d={<><circle cx="12" cy="12" r="3"/><path d="M12 2a10 10 0 0 1 10 10"/><path d="M22 12a10 10 0 0 1-10 10"/><path d="M12 22A10 10 0 0 1 2 12"/><path d="M2 12A10 10 0 0 1 12 2"/></>} />, gradient: "radial-gradient(circle, rgba(184,146,74,0.18) 0%, rgba(184,146,74,0.06) 50%, transparent 100%)", hoverColor: "#B8924A", subViews: ["programs", "alliances", "wallet", "awards", "lounges"], defaultSubView: "programs" },
+    // Expenses — Expense Split + Expense Reports
+    { id: "expenses", label: "Expenses", icon: <NavIcon d={<><path d="M16 3h5v5"/><line x1="21" y1="3" x2="14" y2="10"/><path d="M8 21H3v-5"/><line x1="3" y1="21" x2="10" y2="14"/><line x1="12" y1="2" x2="12" y2="22"/></>} />, gradient: "radial-gradient(circle, rgba(200,85,61,0.18) 0%, rgba(200,85,61,0.06) 50%, transparent 100%)", hoverColor: "#C8553D", subViews: ["expensesplit", "expensereports"], defaultSubView: "expensesplit" },
   ];
 
-  // Programs / Alliances / Wallet share the Loyalty wrapper so the sub-tab
-  // pill always sits above whichever sub-page is active. The wrapper picks
-  // which sub-page to render based on activeView itself.
-  const viewRenderers = { dashboard: renderDashboard, programs: renderLoyalty, trips: renderTrips, expensereports: renderExpenseReports, expenses: renderExpenses, optimizer: renderOptimizer, insights: renderInsights, reports: renderReports, alliances: renderLoyalty, wallet: renderLoyalty, awards: renderLoyalty, loyalty: renderLoyalty, news: renderNews, lounges: renderLounges, expensesplit: renderExpenseSplit };
+  // Each sub-view maps to its hub wrapper so the sticky top pill always sits
+  // above whichever sub-page is active. Legacy renderers (optimizer, insights,
+  // reports, news, the old standalone expenses list) stay mapped so any
+  // setActiveView() to them elsewhere keeps working.
+  const viewRenderers = {
+    dashboard: renderDashboard,
+    // My Trips hub
+    trips: renderMyTrips, packing: renderMyTrips,
+    // Travel hub
+    programs: renderLoyalty, alliances: renderLoyalty, wallet: renderLoyalty, awards: renderLoyalty, lounges: renderLoyalty, loyalty: renderLoyalty,
+    // Expenses hub
+    expensesplit: renderExpensesHub, expensereports: renderExpensesHub,
+    // legacy / still-reachable views
+    expenses: renderExpenses, optimizer: renderOptimizer, insights: renderInsights, reports: renderReports, news: renderNews,
+  };
 
   // ============================================================
   // MAIN LAYOUT — Warm Editorial Design System

@@ -27,7 +27,7 @@ const PackCheckBox = ({ checked, onClick, size = 24, color = "#10b981" }) => (
 export function renderDashboard(s) {
   const {
     css, isMobile, user, trips, expenses, sharedTrips, darkMode,
-    dashSubTab, setDashSubTab, savedItineraries, setSavedItineraries,
+    dashSubTab: _dashSubTab, setDashSubTab, embeddedTab, savedItineraries, setSavedItineraries,
     setActiveView, setTripDetailId, setTripDetailSegIdx,
     openEditTrip, removeTrip,
     setShowCreateTrip, setShowAddExpense, setNewExpense, setEditExpenseId,
@@ -53,6 +53,11 @@ export function renderDashboard(s) {
     expenseReportMembership, openReport,
   } = s;
   const D = darkMode;
+  // When `embeddedTab` is passed (e.g. the My Trips hub renders the Packing
+  // tab on its own), it overrides the dashboard's internal sub-tab and we hide
+  // the hero header + the dashboard's own tab pill so only that tab's content
+  // shows. Normal dashboard rendering leaves embeddedTab undefined.
+  const dashSubTab = embeddedTab || _dashSubTab;
   const handleAddTrip = () => setShowCreateTrip(true);
   const dv = { bone: D ? "#1a1a1a" : "#F4F1EC", paper: D ? "#222" : "#EBE6DD", cream: D ? "rgba(255,255,255,0.06)" : "#E2DCCE", stone: D ? "#8a8a8a" : "#857A66", taupe: D ? "#999" : "#6B6458", graphite: D ? "#111" : "#2C2A26", ink: D ? "#f0ece6" : "#15130F", moss: "#6B7A5A", gold: "#B8924A" };
 
@@ -308,7 +313,7 @@ export function renderDashboard(s) {
       <div style={{ fontFamily: lp.sans, color: lp.text }}>
 
         {/* ── Editorial Header ── */}
-        {(() => {
+        {!embeddedTab && (() => {
           // Build the context-aware status line. Three modes:
           //   in-trip — "Currently in London. Returning home in 18h."
           //   imminent — "Next: JFK → LHR in 18 hours."
@@ -387,13 +392,15 @@ export function renderDashboard(s) {
           </div>
         )}
 
-        {/* ── Tab Bar — Desktop: editorial flat / Mobile: gradient circles ── */}
-        {(() => {
+        {/* ── Tab Bar — Desktop: editorial flat / Mobile: gradient circles ──
+            Dashboard pill now carries only Overview / Travel Analytics / Inbox.
+            Expense Reports moved to the Expenses hub; Packing moved to the
+            My Trips hub. Hidden entirely when rendered as an embedded tab. ── */}
+        {!embeddedTab && (() => {
+          // Overview is the default landing (tapping the Dashboard bottom tab
+          // returns here), so the pill itself carries just the two sub-views.
           const tabs = [
-            { id: "overview", label: "Overview", hoverColor: "#D4742D", gradFrom: "#D4742D", gradTo: "#E8883A", section: "S01", icon: <><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></> },
-            { id: "expensereports", label: "Expense Reports", hoverColor: "#C8553D", gradFrom: "#C8553D", gradTo: "#E4A88F", icon: <><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></> },
             { id: "reports", label: "Travel Analytics", hoverColor: "#14b8a6", gradFrom: "#14b8a6", gradTo: "#0d9488", icon: <><line x1="6" y1="20" x2="6" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="14"/></> },
-            { id: "packing", label: "Packing", hoverColor: "#9333ea", gradFrom: "#a955ff", gradTo: "#7c3aed", icon: <><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></> },
             { id: "inbox", label: "Inbox", hoverColor: "#22c55e", gradFrom: "#80FF72", gradTo: "#22c55e", icon: <><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></>, badge: (savedItineraries.length + expenses.filter(e => !e.tripId && !e._demo).length) || 0 },
           ];
 
