@@ -55,7 +55,8 @@
     { "source": "/((?!api/|privacy).*)", "destination": "/index.html" }
   ],
   "crons": [
-    { "path": "/api/news?action=refresh-transfer-bonuses", "schedule": "0 12 * * 1" }
+    { "path": "/api/news?action=refresh-transfer-bonuses", "schedule": "0 12 * * 1" },
+    { "path": "/api/flight-cron", "schedule": "*/15 * * * *" }
   ],
   "functions": {
     "api/forward-report.js": {
@@ -68,6 +69,9 @@
     "api/render-html-to-png.js": {
       "memory": 1024,
       "maxDuration": 30
+    },
+    "api/flight-cron.js": {
+      "maxDuration": 60
     }
   }
 }
