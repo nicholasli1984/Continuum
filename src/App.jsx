@@ -8505,7 +8505,21 @@ Start by introducing yourself briefly in-character with personality, and give an
       {showSearch && (() => {
         const q = globalQuery.trim().toLowerCase();
         const close = () => { setShowSearch(false); setGlobalQuery(""); };
-        const tripHits = !q ? [] : (trips || []).filter(t => (t.tripName || t.trip_name || t.location || "").toLowerCase().includes(q)).slice(0, 6);
+        // Build a wide searchable string per trip: name/location + every
+        // segment's route, airports, airline, flight #, confirmation, named
+        // venues, AND the city each airport code resolves to (so "taipei"
+        // matches a flight into TPE, and "TPE" does too).
+        const tripHaystack = (t) => {
+          const parts = [t.tripName, t.trip_name, t.location, t.confirmationCode, t.confirmation_code];
+          (t.segments || []).forEach(s => {
+            parts.push(s.route, s.departureAirport, s.arrivalAirport, s.airline, s.flightNumber, s.confirmationCode,
+              s.location, s.activityName, s.restaurantName, s.operator, s.company, s.loungeName,
+              s.hotelName, s.propertyName, s.property, s.name, s.notes, s.type);
+            [s.departureAirport, s.arrivalAirport].forEach(code => { if (code) parts.push(AIRPORT_CITY?.[String(code).toUpperCase()]); });
+          });
+          return parts.filter(Boolean).join(" ").toLowerCase();
+        };
+        const tripHits = !q ? [] : (trips || []).filter(t => tripHaystack(t).includes(q)).slice(0, 6);
         const expHits = !q ? [] : (expenses || []).filter(e => `${e.description || ""} ${e.merchant || ""} ${e.category || ""}`.toLowerCase().includes(q)).slice(0, 6);
         const allProgs = [...(LOYALTY_PROGRAMS.airlines || []), ...(LOYALTY_PROGRAMS.hotels || []), ...(LOYALTY_PROGRAMS.rentals || []), ...(LOYALTY_PROGRAMS.creditCards || [])];
         const progHits = !q ? [] : allProgs.filter(p => (p.name || "").toLowerCase().includes(q)).slice(0, 6);
