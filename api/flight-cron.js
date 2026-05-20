@@ -88,6 +88,11 @@ export default async function handler(req, res) {
     const status = await fetchStatus(normFn(fn), date, "", "");
     return res.json({ debugFlight: `${fn}/${date}`, status });
   }
+  // ?debugSubs=1  → report whether push_subscriptions exists + row count
+  if (req.query.debugSubs) {
+    const { data, error, count } = await supabase.from("push_subscriptions").select("user_id", { count: "exact" });
+    return res.json({ tableError: error?.message || null, count: count ?? (data?.length || 0), userIds: (data || []).map(d => d.user_id).slice(0, 20) });
+  }
   // ?debugPush=<user_id>  → send one test push to that user's subscription
   if (req.query.debugPush) {
     const userId = String(req.query.debugPush);
