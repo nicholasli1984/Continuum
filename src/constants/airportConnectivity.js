@@ -26,11 +26,17 @@
 // Last verified: 2026-05.
 
 export const POST_SECURITY_TERMINAL_GROUPS = {
+  BSB: [["1","2"]],
+  HAM: [["1","2"]],
+  OKA: [["Domestic","International"]],
+  PER: [["3","4"]],
+  SDQ: [["A","B"]],
+
+  CMN: [["1","2"]],
+
   // ── Amsterdam Schiphol ──
-  // Single central terminal with a continuous airside spine across piers B/C/D
-  // (Schengen) and E/F/G (non-Schengen). Passport control between Schengen and
-  // non-Schengen is not a re-security event.
-  AMS: [["3", "2", "Non-Schengen"]],
+  // Single airside terminal (one label "1" in our DB) — all piers reachable
+  // post-security, so no inter-terminal group is needed.
 
   // ── Atlanta Hartsfield-Jackson ──
   // Plane Train (underground people mover) + parallel pedestrian Transportation
@@ -94,14 +100,13 @@ export const POST_SECURITY_TERMINAL_GROUPS = {
   IAH: [["A", "B", "C", "D", "E"]],
 
   // ── Istanbul ──
-  // Single mega-terminal. International and domestic concourses share airside
-  // with passport control (not re-security) between them.
-  IST: [["Int'l", "Dom"]],
+  // Single mega-terminal (one label "1" in our DB) — international and domestic
+  // concourses share airside, so no inter-terminal group is needed.
 
   // ── Johannesburg OR Tambo ──
   // Single integrated terminal; international (Terminal A) and domestic
-  // (Terminal B/C) are airside-walkable, separated only by immigration.
-  JNB: [["Int'l", "Dom"]],
+  // (Terminal B) are airside-walkable, separated only by immigration.
+  JNB: [["A", "B"]],
 
   // ── Los Angeles LAX ──
   // T3, T4, T5, T6, T7, T8, and TBIT are all airside-connected since the 2018
@@ -128,17 +133,15 @@ export const POST_SECURITY_TERMINAL_GROUPS = {
   MEX: [["T1", "T2"]],
 
   // ── Miami International ──
-  // Concourses D–E and H–J are each airside-connected, but the North Terminal
-  // (Concourse D area, labeled "N" in our DB) is NOT airside-connected to
-  // Concourse J. So N and J are in DIFFERENT clusters and stay separate.
-  // Encoded explicitly here for clarity (no cross-cluster grouping).
-  MIA: [["N", "D", "E", "F", "G"], ["H", "J"]],
+  // North/Central concourses (D, E) are airside-connected; the South cluster
+  // (Concourse H) is a SEPARATE airside cluster — no cross-cluster path. Two
+  // groups keep them apart. (Airline-vocab labels: aa→D, ua/ba→E, dl→H.)
+  MIA: [["D", "E"], ["H"]],
 
   // ── Minneapolis-Saint Paul ──
-  // Terminal 1 (Lindbergh) has concourses A–G all airside-connected via the
-  // central terminal. Terminal 2 (Humphrey) is 3 miles away with no airside
-  // link to T1.
-  MSP: [["1-A", "1-B", "1-C", "1-D", "1-E", "1-F", "1-G"]],
+  // Terminal 1 (Lindbergh, label "1") has concourses A–G all airside-connected
+  // within the single terminal, so no inter-terminal group is needed. Terminal 2
+  // (Humphrey, label "2") is 3 miles away with no airside link to T1.
 
   // ── Munich ──
   // T1 and T2 connected airside by a shuttle bus (every 10-20 min) running
@@ -158,15 +161,24 @@ export const POST_SECURITY_TERMINAL_GROUPS = {
   PDX: [["B", "C", "D", "E"]],
 
   // ── Philadelphia ──
-  // All terminals (A West, A East, B, C, D, E, F) connected in a continuous
-  // line via post-security pedestrian walkways; free airside shuttle bus
-  // supplements walking between A-East and F.
-  PHL: [["A West", "A East", "B/C", "B", "C", "D", "E", "F"]],
+  // All terminals (A–F) connected in a continuous line via post-security
+  // pedestrian walkways; free airside shuttle bus supplements walking between
+  // A and F.
+  PHL: [["A", "B", "C", "D", "E", "F"]],
+
+  // ── Pittsburgh ──
+  // Airside terminal: all concourses share one post-security core (tram from
+  // landside). Airlines board at B, lounge sits at C — both reachable.
+  PIT: [["B", "C"]],
+
+  // ── New Orleans Louis Armstrong ──
+  // Single airside terminal; concourses A, B, C connected post-security.
+  MSY: [["A", "B", "C"]],
 
   // ── Panama City Tocumen ──
-  // Main (T1) and T2 connected by an airside transit corridor (15-25 min
-  // walk) plus an airside shuttle (~15 min headway, 5am–9pm).
-  PTY: [["Main", "T2"]],
+  // Main (T1, label "1") and T2 connected by an airside transit corridor
+  // (15-25 min walk) plus an airside shuttle (~15 min headway, 5am–9pm).
+  PTY: [["1", "2"]],
 
   // ── Shanghai Pudong ──
   // T1 and T2 connected airside via an underground corridor; satellites S1/S2
@@ -174,9 +186,8 @@ export const POST_SECURITY_TERMINAL_GROUPS = {
   PVG: [["T1", "T2"]],
 
   // ── San Diego ──
-  // Terminal 2 East and West share a common airside corridor (separate
-  // checkpoints but connected post-security). Terminal 1 is separate.
-  SAN: [["2W", "2E"]],
+  // Terminal 2 (East+West, one label "2" in our DB) shares a common airside
+  // corridor. Terminal 1 is separate, so no inter-terminal group is needed.
 
   // ── Seattle-Tacoma ──
   // Satellite Transit System (SEA Underground) airside APM + post-security
@@ -208,8 +219,8 @@ export const POST_SECURITY_TERMINAL_GROUPS = {
 
   // ── Vancouver ──
   // Y-shaped main terminal with post-security corridors linking domestic
-  // (piers A/B/C), international (pier D), and US-preclearance (pier E).
-  YVR: [["Int'l", "Dom"]],
+  // (label "M") and international (label "D") piers.
+  YVR: [["M", "D"]],
 
   // ──────────────────────────────────────────────────────────────────────
   // Airports explicitly verified to have NO airside connectivity between

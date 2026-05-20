@@ -5290,6 +5290,12 @@ Start by introducing yourself briefly in-character with personality, and give an
           if (c === "intl_premium_cabin" && (!isIntl || !flyingPremium)) return;
           if (c === "intl_first_cabin" && (!isIntl || flyingClass !== "first")) return;
           if (c === "intl_or_transcon" && !isIntl && !flyingPremium) return;
+          // Carrier flagship First lounges — require an int'l itinerary on that carrier.
+          if (c === "intl_ba" && (!isIntl || loungeFlightAirline !== "ba_avios")) return;
+          if (c === "intl_ana" && (!isIntl || loungeFlightAirline !== "ana")) return;
+          if (c === "intl_emirates" && (!isIntl || loungeFlightAirline !== "emirates_skywards")) return;
+          if (c === "intl_af" && (!isIntl || loungeFlightAirline !== "flying_blue")) return;
+          if (c === "intl_lh" && (!isIntl || loungeFlightAirline !== "lufthansa")) return;
           results.push({ source: "elite", airlineName: airline.name, tier: acct.currentTier, guests: rule.guests, guestNote: rule.guestNote, condition: rule.condition });
         });
       }

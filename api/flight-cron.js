@@ -16,6 +16,8 @@
 
 import webpush from "web-push";
 import { createClient } from "@supabase/supabase-js";
+import { LOUNGE_DATABASE, AIRLINE_ALLIANCE } from "../src/constants/lounges.js";
+import { airlineIdFromFn, isInternational, loungeAccessSummary } from "../src/constants/loungeAccess.js";
 
 const AERO_KEY = (process.env.VITE_AERODATABOX_API_KEY || "").trim();
 const VAPID_PUBLIC = (process.env.VITE_VAPID_PUBLIC_KEY || "").trim();
@@ -127,9 +129,11 @@ export default async function handler(req, res) {
       { tag: "s-board", title: "BR 51 is boarding",        body: "JFK → TPE · Gate 42" },
       { tag: "s-land",  title: "Landed — BR 51",           body: "JFK → TPE" },
       { tag: "s-bag",   title: "Baggage claim — BR 51",    body: "Carousel 7 · TPE" },
-      // Previews (not wired yet — pending your go-ahead)
       { tag: "s-3h",    title: "BR 51 departs in 3 hours", body: "JFK → TPE · Sat 6:00 PM · Time to head to the airport" },
       { tag: "s-hotel", title: "Online check-in open — The Ritz-Carlton, Tokyo", body: "Check in now and head straight to your room." },
+      // Lounge access — top 2 ranked, gate in brackets, rest deferred to the app
+      { tag: "s-lounge",  title: "Lounge access — JFK", body: "Amex Centurion (Gate B20), Chase Sapphire (T4) · +6 more in the app" },
+      { tag: "s-clounge", title: "Lounge access — HKG", body: "Cathay Pacific The Pier First (Gate 65), Cathay Pacific The Wing First (Gate 1) · +10 more in the app" },
     ];
     let sent = 0;
     for (const s of samples) {
@@ -140,6 +144,38 @@ export default async function handler(req, res) {
       } catch (e) { /* skip */ }
     }
     return res.json({ debugSamples: userId, sent });
+  }
+  // ?debugLounge=<user_id>/<airport>/<flightNumber>  → compute (no push) the
+  // lounge access this user would be told about, e.g. ?debugLounge=<uid>/JFK/BR51
+  if (req.query.debugLounge) {
+    const [userId, airport, fn] = String(req.query.debugLounge).split("/");
+    const { data: laRows } = await supabase.from("linked_accounts").select("program_id, current_tier").eq("user_id", userId);
+    const accounts = {}; (laRows || []).forEach(r => { accounts[r.program_id] = { currentTier: r.current_tier || "" }; });
+    const airlineId = airlineIdFromFn(fn);
+    const alliance = airlineId ? AIRLINE_ALLIANCE[airlineId] : null;
+    const result = loungeAccessSummary({ airport: (airport || "").toUpperCase(), flyingAirlineId: airlineId, alliance, isIntl: true, accounts });
+    return res.json({ debugLounge: req.query.debugLounge, airlineId, alliance, programs: Object.keys(accounts), ...result });
+  }
+  // ?debugLoungePush=<user_id>/<airport>/<onwardFlightNumber>  → compute the real
+  // lounge access from this user's accounts and PUSH it once to their device, so
+  // the layover/departure alert can be previewed on a phone.
+  if (req.query.debugLoungePush) {
+    const [userId, airport, fn] = String(req.query.debugLoungePush).split("/");
+    const { data: laRows } = await supabase.from("linked_accounts").select("program_id, current_tier").eq("user_id", userId);
+    const accounts = {}; (laRows || []).forEach(r => { accounts[r.program_id] = { currentTier: r.current_tier || "" }; });
+    const airlineId = airlineIdFromFn(fn);
+    const alliance = airlineId ? AIRLINE_ALLIANCE[airlineId] : null;
+    const { count, body } = loungeAccessSummary({ airport: (airport || "").toUpperCase(), flyingAirlineId: airlineId, alliance, isIntl: true, accounts });
+    if (!count) return res.json({ debugLoungePush: req.query.debugLoungePush, sent: false, reason: "no accessible lounges computed" });
+    const { data: sub } = await supabase.from("push_subscriptions").select("subscription").eq("user_id", userId).maybeSingle();
+    if (!sub) return res.json({ debugLoungePush: req.query.debugLoungePush, sent: false, reason: "no subscription stored for this user" });
+    try {
+      const subscription = typeof sub.subscription === "string" ? JSON.parse(sub.subscription) : sub.subscription;
+      await webpush.sendNotification(subscription, JSON.stringify({ title: `Lounge access — ${(airport || "").toUpperCase()}`, body, icon: "/pwa-192x192.png", badge: "/pwa-64x64.png", data: { tag: "lounge-preview" } }));
+      return res.json({ debugLoungePush: req.query.debugLoungePush, sent: true, count, body });
+    } catch (e) {
+      return res.json({ debugLoungePush: req.query.debugLoungePush, sent: false, error: e.message, statusCode: e.statusCode });
+    }
   }
   // ?debugSubs=1  → report whether push_subscriptions exists + row count
   if (req.query.debugSubs) {
@@ -215,7 +251,7 @@ export default async function handler(req, res) {
       const gap = Math.round((bDep - aArr) / 60000);
       if (gap <= 0 || gap > 300) continue; // overnight stay / bad data — not a connection
       const aKey = `${normFn(A.fn)}_${A.date}`;
-      connections[`C_${userId}_${aKey}_${normFn(B.fn)}`] = { userId, aFn: normFn(A.fn), bFn: normFn(B.fn), airport: A.arr, scheduledGap: gap, aKey };
+      connections[`C_${userId}_${aKey}_${normFn(B.fn)}`] = { userId, aFn: normFn(A.fn), bFn: normFn(B.fn), airport: A.arr, bArr: B.arr || "", scheduledGap: gap, aKey };
     }
   };
 
@@ -257,6 +293,12 @@ export default async function handler(req, res) {
   const { data: subs } = await supabase.from("push_subscriptions").select("user_id, subscription").in("user_id", [...allUsers]);
   const subByUser = {};
   (subs || []).forEach(s => { try { subByUser[s.user_id] = typeof s.subscription === "string" ? JSON.parse(s.subscription) : s.subscription; } catch {} });
+
+  // Linked loyalty accounts (cards + elite status) per user, for lounge-access
+  // alerts. Only program_id + current_tier matter for access computation.
+  const { data: laRows } = await supabase.from("linked_accounts").select("user_id, program_id, current_tier").in("user_id", [...allUsers]);
+  const accountsByUser = {}; // userId -> { programId: { currentTier } }
+  (laRows || []).forEach(r => { (accountsByUser[r.user_id] ||= {})[r.program_id] = { currentTier: r.current_tier || "" }; });
 
   let apiCalls = 0, notifications = 0, checked = 0;
   const statusByKey = {}; // flight_key -> latest known status (for connection alerts)
@@ -346,6 +388,26 @@ export default async function handler(req, res) {
     else if (hoursUntil > 3 && hoursUntil <= 24) await sendBand("24h", `${pf} departs within 24h`, withRoute(depWhen));
     else if (hoursUntil > 0 && hoursUntil <= 3) await sendBand("3h", `${pf} departs in 3 hours`, withRoute(`${depWhen}${gateInfo ? ` · ${gateInfo}` : ""} · Time to head to the airport`));
 
+    // ── Lounge access at the departure airport — once per user, ~3h out ──
+    // Lists the lounges this user's cards + elite status open at the origin so
+    // they can plan before heading airside. Persisted in the same reminders
+    // object as the flight's other bands, so it fires exactly once.
+    if (hoursUntil > 0 && hoursUntil <= 3 && f.dep && LOUNGE_DATABASE[f.dep]) {
+      reminders["lounge"] = reminders["lounge"] || [];
+      const airlineId = airlineIdFromFn(f.fn);
+      const alliance = airlineId ? AIRLINE_ALLIANCE[airlineId] : null;
+      const intl = isInternational(f.dep, f.arr);
+      for (const u of f.users) {
+        if (reminders["lounge"].includes(u)) continue;
+        const accts = accountsByUser[u];
+        if (!accts) continue;
+        const { count, body } = loungeAccessSummary({ airport: f.dep, flyingAirlineId: airlineId, alliance, isIntl: intl, accounts: accts });
+        if (!count) continue;
+        await notify(u, `Lounge access — ${f.dep}`, body, f.fn, `${f.fn}-lounge`);
+        reminders["lounge"].push(u);
+      }
+    }
+
     statusByKey[key] = (fresh && !fresh.error) ? fresh : (tr.last_status || null);
     await supabase.from("flight_status_tracking").upsert({
       flight_key: key,
@@ -402,6 +464,23 @@ export default async function handler(req, res) {
       if (!reminders["risk"].includes(c.userId)) {
         await notify(c.userId, `Connection at risk — ${c.airport}`, `${pfA} running ~${arrDelay} min late · about ${Math.max(0, revisedGap)} min to make ${pfB}.`, null, `${ckey}-risk`);
         reminders["risk"].push(c.userId);
+      }
+    }
+    // Lounge access at the layover — fired once the inbound has landed, if the
+    // layover is long enough to be worth it (>= 60 min) and the airport has
+    // lounges. Uses the ONWARD flight's airline/route to gauge access.
+    if (aStatus.status === "Arrived" && c.scheduledGap >= 60 && LOUNGE_DATABASE[c.airport]) {
+      reminders["clounge"] = reminders["clounge"] || [];
+      const accts = accountsByUser[c.userId];
+      if (accts && !reminders["clounge"].includes(c.userId)) {
+        const airlineId = airlineIdFromFn(c.bFn);
+        const alliance = airlineId ? AIRLINE_ALLIANCE[airlineId] : null;
+        const intl = isInternational(c.airport, c.bArr);
+        const { count, body } = loungeAccessSummary({ airport: c.airport, flyingAirlineId: airlineId, alliance, isIntl: intl, accounts: accts });
+        if (count) {
+          await notify(c.userId, `Lounge access — ${c.airport}`, body, null, `${ckey}-clounge`);
+          reminders["clounge"].push(c.userId);
+        }
       }
     }
     await supabase.from("flight_status_tracking").upsert({ flight_key: ckey, reminded_users: reminders, updated_at: now.toISOString() }, { onConflict: "flight_key" });
