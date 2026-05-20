@@ -31,8 +31,11 @@ function checkIntervalMin(h) {
   if (h > 24) return 180;   // >1 day out: every 3h
   if (h > 6)  return 30;    // day-of-ish: every 30 min
   if (h > -3) return 15;    // ±window around departure: every run
-  return 60;                // post-departure (catch landing): hourly
+  return 30;                // post-departure: every 30 min (catch landing + baggage belt)
 }
+
+// "BR51" → "BR 51" for display (space between airline code and number).
+const prettyFn = (fn) => (fn || "").replace(/^([A-Z]+)(\d.*)$/, "$1 $2");
 
 async function fetchStatus(fn, date, depAirport, arrAirport) {
   const resp = await fetch(`https://aerodatabox.p.rapidapi.com/flights/number/${fn}/${date}`, {
@@ -88,6 +91,34 @@ export default async function handler(req, res) {
     const status = await fetchStatus(normFn(fn), date, "", "");
     return res.json({ debugFlight: `${fn}/${date}`, status });
   }
+  // ?debugSamples=<user_id>  → send one of each notification format so the
+  // wording/layout can be reviewed on a real device. Unique tags so they stack.
+  if (req.query.debugSamples) {
+    const userId = String(req.query.debugSamples);
+    const { data: row } = await supabase.from("push_subscriptions").select("subscription").eq("user_id", userId).maybeSingle();
+    if (!row) return res.json({ sent: 0, reason: "no subscription stored for this user" });
+    const subscription = typeof row.subscription === "string" ? JSON.parse(row.subscription) : row.subscription;
+    const samples = [
+      // Live now (new format: route in every flight alert)
+      { tag: "s-24h",   title: "BR 51 departs within 24h", body: "JFK → TPE · Sat 1:25 AM" },
+      { tag: "s-gate",  title: "Gate change — BR 51",      body: "JFK → TPE · Now Gate 42, Terminal 1 (was Gate 31)" },
+      { tag: "s-board", title: "BR 51 is boarding",        body: "JFK → TPE · Gate 42" },
+      { tag: "s-land",  title: "Landed — BR 51",           body: "JFK → TPE" },
+      { tag: "s-bag",   title: "Baggage claim — BR 51",    body: "Carousel 7 · TPE" },
+      // Previews (not wired yet — pending your go-ahead)
+      { tag: "s-1h",    title: "BR 51 departs in 1 hour",  body: "JFK → TPE · Gate 31, Terminal 1" },
+      { tag: "s-hotel", title: "Online check-in open — The Ritz-Carlton, Tokyo", body: "Check in now and head straight to your room." },
+    ];
+    let sent = 0;
+    for (const s of samples) {
+      try {
+        await webpush.sendNotification(subscription, JSON.stringify({ title: s.title, body: s.body, icon: "/pwa-192x192.png", badge: "/pwa-64x64.png", data: { flightNumber: s.tag } }));
+        sent++;
+        await new Promise(r => setTimeout(r, 600)); // small gap so iOS shows them distinctly
+      } catch (e) { /* skip */ }
+    }
+    return res.json({ debugSamples: userId, sent });
+  }
   // ?debugSubs=1  → report whether push_subscriptions exists + row count
   if (req.query.debugSubs) {
     const { data, error, count } = await supabase.from("push_subscriptions").select("user_id", { count: "exact" });
@@ -108,7 +139,9 @@ export default async function handler(req, res) {
   }
 
   const now = new Date();
-  const windowStart = new Date(now.getTime() - 18 * 3600 * 1000);
+  // Track from 48h before departure to 26h after, so we still catch the
+  // baggage belt (often assigned after arrival) even on long-haul flights.
+  const windowStart = new Date(now.getTime() - 26 * 3600 * 1000);
   const windowEnd = new Date(now.getTime() + 48 * 3600 * 1000);
 
   // ── 1. Load all trips; extract upcoming flight segments; group by flight ──
@@ -155,11 +188,13 @@ export default async function handler(req, res) {
   (subs || []).forEach(s => { try { subByUser[s.user_id] = typeof s.subscription === "string" ? JSON.parse(s.subscription) : s.subscription; } catch {} });
 
   let apiCalls = 0, notifications = 0, checked = 0;
-  const notify = async (userId, title, body, fnum) => {
+  // `tag` namespaces each event type per flight so distinct events persist
+  // separately but repeated updates of the same event replace in place.
+  const notify = async (userId, title, body, fnum, tag) => {
     const sub = subByUser[userId];
     if (!sub) return;
     try {
-      await webpush.sendNotification(sub, JSON.stringify({ title, body, icon: "/pwa-192x192.png", badge: "/pwa-64x64.png", data: { flightNumber: fnum } }));
+      await webpush.sendNotification(sub, JSON.stringify({ title, body, icon: "/pwa-192x192.png", badge: "/pwa-64x64.png", data: { flightNumber: fnum, tag: tag || fnum } }));
       notifications++;
     } catch (e) {
       if (e.statusCode === 410 || e.statusCode === 404) await supabase.from("push_subscriptions").delete().eq("user_id", userId);
@@ -173,12 +208,16 @@ export default async function handler(req, res) {
     const hoursUntil = (f.departAt - now) / 3600000;
     const reminded = new Set(tr.reminded_users || []);
 
+    const pf = prettyFn(f.fn);
+    const route = f.dep && f.arr ? `${f.dep} → ${f.arr}` : (f.dep || f.arr || "");
+    const withRoute = (s) => route ? (s ? `${route} · ${s}` : route) : s;
+
     // 24h departure reminder (per user, once)
     if (hoursUntil > 0 && hoursUntil <= 24) {
       const when = f.departAt.toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit", hour12: true });
       for (const u of f.users) {
         if (!reminded.has(u)) {
-          await notify(u, `${f.fn} departs within 24h`, `${f.dep}${f.dep && f.arr ? " → " : ""}${f.arr} · ${when}`, f.fn);
+          await notify(u, `${pf} departs within 24h`, withRoute(when), f.fn, `${f.fn}-24h`);
           reminded.add(u);
         }
       }
@@ -194,16 +233,30 @@ export default async function handler(req, res) {
       apiCalls++; checked++;
       if (!fresh.error) {
         const old = tr.last_status || {};
-        if (fresh.departureGate && fresh.departureGate !== old.departureGate)
-          for (const u of f.users) await notify(u, `Gate ${fresh.departureGate} — ${f.fn}`, fresh.departureTerminal ? `Terminal ${fresh.departureTerminal}` : "Gate assigned", f.fn);
-        if (fresh.departureDelay > 15 && (old.departureDelay || 0) <= 15)
-          for (const u of f.users) await notify(u, `${f.fn} delayed ${fresh.departureDelay} min`, fresh.departureRevised ? `New departure ${fresh.departureRevised.split(" ").pop()?.replace(/[+-]\d{2}:\d{2}$/, "")}` : "", f.fn);
+        // Gate change (includes the previous gate when we have it)
+        if (fresh.departureGate && fresh.departureGate !== old.departureGate) {
+          const was = old.departureGate ? ` (was Gate ${old.departureGate})` : "";
+          const term = fresh.departureTerminal ? `, Terminal ${fresh.departureTerminal}` : "";
+          for (const u of f.users) await notify(u, `Gate change — ${pf}`, withRoute(`Now Gate ${fresh.departureGate}${term}${was}`), f.fn, `${f.fn}-gate`);
+        }
+        // Delay
+        if (fresh.departureDelay > 15 && (old.departureDelay || 0) <= 15) {
+          const rev = fresh.departureRevised ? `New departure ${fresh.departureRevised.split(" ").pop()?.replace(/[+-]\d{2}:\d{2}$/, "")}` : "";
+          for (const u of f.users) await notify(u, `${pf} delayed ${fresh.departureDelay} min`, withRoute(rev), f.fn, `${f.fn}-delay`);
+        }
+        // Cancellation
         if (fresh.status === "Canceled" && old.status !== "Canceled")
-          for (const u of f.users) await notify(u, `CANCELLED: ${f.fn}`, "Contact your airline.", f.fn);
+          for (const u of f.users) await notify(u, `Cancelled — ${pf}`, withRoute("Contact your airline."), f.fn, `${f.fn}-cancel`);
+        // Boarding
         if (fresh.status === "Boarding" && old.status !== "Boarding")
-          for (const u of f.users) await notify(u, `${f.fn} is boarding`, fresh.departureGate ? `Gate ${fresh.departureGate}` : "", f.fn);
+          for (const u of f.users) await notify(u, `${pf} is boarding`, withRoute(fresh.departureGate ? `Gate ${fresh.departureGate}` : ""), f.fn, `${f.fn}-board`);
+        // Landed
         if (fresh.status === "Arrived" && old.status !== "Arrived")
-          for (const u of f.users) await notify(u, `Landed: ${f.fn}`, fresh.baggageBelt ? `Baggage belt ${fresh.baggageBelt}` : (fresh.arrivalAirport || ""), f.fn);
+          for (const u of f.users) await notify(u, `Landed — ${pf}`, withRoute(""), f.fn, `${f.fn}-landed`);
+        // Baggage claim — the belt is often assigned after the Arrived status,
+        // so this is its own event, fired when the carousel number appears.
+        if (fresh.baggageBelt && fresh.baggageBelt !== old.baggageBelt)
+          for (const u of f.users) await notify(u, `Baggage claim — ${pf}`, `Carousel ${fresh.baggageBelt}${f.arr ? ` · ${f.arr}` : ""}`, f.fn, `${f.fn}-baggage`);
       }
     }
 

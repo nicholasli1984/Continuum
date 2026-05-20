@@ -39,7 +39,15 @@ self.addEventListener("push", (event) => {
         { action: "open", title: "View Trip" },
         { action: "dismiss", title: "Dismiss" },
       ],
-      tag: data.data?.flightNumber || "flight-alert",
+      // Per-event tag (e.g. "BR51-gate", "BR51-baggage") so distinct events for
+      // the same flight each persist separately, while repeated updates of the
+      // SAME event (gate 31 → 42) replace in place instead of stacking stale info.
+      // Falls back to flightNumber, then a generic tag.
+      tag: data.data?.tag || data.data?.flightNumber || "flight-alert",
+      // Keep the alert from auto-dismissing where supported (Android/desktop).
+      // iOS ignores this but already keeps notifications in Notification Center
+      // and on the lock screen until the user clears them.
+      requireInteraction: true,
       renotify: true,
     };
     event.waitUntil(self.registration.showNotification(data.title || "Continuum", options));
