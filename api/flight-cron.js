@@ -126,7 +126,7 @@ export default async function handler(req, res) {
       { tag: "s-land",  title: "Landed — BR 51",           body: "JFK → TPE" },
       { tag: "s-bag",   title: "Baggage claim — BR 51",    body: "Carousel 7 · TPE" },
       // Previews (not wired yet — pending your go-ahead)
-      { tag: "s-1h",    title: "BR 51 departs in 1 hour",  body: "JFK → TPE · Gate 31, Terminal 1" },
+      { tag: "s-3h",    title: "BR 51 departs in 3 hours", body: "JFK → TPE · Sat 6:00 PM · Time to head to the airport" },
       { tag: "s-hotel", title: "Online check-in open — The Ritz-Carlton, Tokyo", body: "Check in now and head straight to your room." },
     ];
     let sent = 0;
@@ -312,8 +312,8 @@ export default async function handler(req, res) {
     const depWhen = schedLocal ? fmtLocal(schedLocal) : f.departAt.toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit", hour12: true });
     const gateInfo = lastKnown.departureGate ? `Gate ${lastKnown.departureGate}${lastKnown.departureTerminal ? `, Terminal ${lastKnown.departureTerminal}` : ""}` : "";
     if (hoursUntil > 24 && hoursUntil <= 48) await sendBand("48h", `${pf} departs in 48 hours`, withRoute(depWhen));
-    else if (hoursUntil > 1 && hoursUntil <= 24) await sendBand("24h", `${pf} departs within 24h`, withRoute(depWhen));
-    else if (hoursUntil > 0 && hoursUntil <= 1) await sendBand("1h", `${pf} departs in 1 hour`, withRoute(gateInfo || depWhen));
+    else if (hoursUntil > 3 && hoursUntil <= 24) await sendBand("24h", `${pf} departs within 24h`, withRoute(depWhen));
+    else if (hoursUntil > 0 && hoursUntil <= 3) await sendBand("3h", `${pf} departs in 3 hours`, withRoute(`${depWhen}${gateInfo ? ` · ${gateInfo}` : ""} · Time to head to the airport`));
 
     await supabase.from("flight_status_tracking").upsert({
       flight_key: key,
