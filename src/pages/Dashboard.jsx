@@ -373,6 +373,53 @@ export function renderDashboard(s) {
           );
         })()}
 
+        {/* ── Quick actions — the most common things you do, one tap away.
+            Shown on the dashboard overview only (hidden in embedded/packing,
+            Analytics, and Inbox views). ── */}
+        {!embeddedTab && dashSubTab === "overview" && (() => {
+          const actions = [
+            { label: "Add Trip", color: "#3b82f6", onClick: () => setShowCreateTrip(true),
+              icon: <><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></> },
+            { label: "Add Expense", color: "#B8924A", onClick: () => setShowAddExpense(true),
+              icon: <><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></> },
+            { label: "Forward Booking", color: "#14b8a6", onClick: () => setShowPasteItinerary(true),
+              icon: <><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></> },
+          ];
+          const chipBase = {
+            display: "flex", alignItems: "center", gap: 12,
+            padding: isMobile ? "14px" : "16px 18px",
+            background: css.surface, border: `1px solid ${css.border}`,
+            borderRadius: css.radius, cursor: "pointer", textAlign: "left",
+            transition: "all 0.2s", width: "100%", boxSizing: "border-box",
+          };
+          const iconWrap = (color) => ({ width: 36, height: 36, flexShrink: 0, borderRadius: 10, display: "grid", placeItems: "center", background: `${color}14`, color });
+          const labelStyle = { fontFamily: "'Inter Tight', sans-serif", fontSize: 13, fontWeight: 600, color: css.text, letterSpacing: "0.01em" };
+          const hoverOn = (color) => (e) => { const b = e.currentTarget; b.style.borderColor = color; b.style.transform = "translateY(-1px)"; b.style.boxShadow = css.shadowHover; };
+          const hoverOff = (e) => { const b = e.currentTarget; b.style.borderColor = css.border; b.style.transform = "none"; b.style.boxShadow = "none"; };
+          return (
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 10, marginBottom: 24 }}>
+              {actions.map(a => (
+                <button key={a.label} onClick={a.onClick} style={chipBase} onMouseEnter={hoverOn(a.color)} onMouseLeave={hoverOff}>
+                  <span style={iconWrap(a.color)}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{a.icon}</svg>
+                  </span>
+                  <span style={labelStyle}>{a.label}</span>
+                </button>
+              ))}
+              {/* Snap Receipt — label-wrapped file input so it works without a shared ref. */}
+              <label style={{ ...chipBase, opacity: snapReceiptProcessing ? 0.6 : 1, cursor: snapReceiptProcessing ? "default" : "pointer" }}
+                onMouseEnter={snapReceiptProcessing ? undefined : hoverOn("#C8553D")} onMouseLeave={hoverOff}>
+                <input type="file" accept="image/*" capture="environment" disabled={snapReceiptProcessing} style={{ display: "none" }}
+                  onChange={e => { if (e.target.files?.[0]) handleSnapReceipt(e.target.files[0]); e.target.value = ""; }} />
+                <span style={iconWrap("#C8553D")}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                </span>
+                <span style={labelStyle}>{snapReceiptProcessing ? "Processing…" : "Snap Receipt"}</span>
+              </label>
+            </div>
+          );
+        })()}
+
         {/* Alert bar */}
         {pushSupported && !pushEnabled && dashSubTab === "overview" && (
           <div onClick={enablePushNotifications} style={{

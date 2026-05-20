@@ -1246,6 +1246,9 @@ export default function EliteStatusTracker() {
     } catch {}
     return "dashboard";
   });
+  // ── Global search ──
+  const [showSearch, setShowSearch] = useState(false);
+  const [globalQuery, setGlobalQuery] = useState("");
 
   // Modal state for the first-run flows. Declared up here (instead of with
   // the other modal state below) so the useEffects right beneath can include
@@ -6592,6 +6595,14 @@ Start by introducing yourself briefly in-character with personality, and give an
                 {hideShared ? "Shared Off" : "Shared On"}
               </HoverGlowButton>
             )}
+            {/* Global search — opens an overlay that searches trips, expenses,
+                programs, and airports from any hub. */}
+            <button onClick={() => { setShowSearch(true); setGlobalQuery(""); }} title="Search"
+              style={{ width: 34, height: 34, border: `1px solid ${D ? "rgba(255,255,255,0.08)" : "#E2DCCE"}`, background: "transparent", color: D ? "#666" : "#6B6458", cursor: "pointer", display: "grid", placeItems: "center", transition: "all 0.25s" }}
+              onMouseEnter={e => { e.currentTarget.style.color = css.accent; e.currentTarget.style.borderColor = css.accent; e.currentTarget.style.background = css.surface; }}
+              onMouseLeave={e => { e.currentTarget.style.color = D ? "#666" : "#6B6458"; e.currentTarget.style.borderColor = D ? "rgba(255,255,255,0.08)" : "#E2DCCE"; e.currentTarget.style.background = "transparent"; }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </button>
             {/* Refresh — spins on click */}
             <button id="refreshBtn" onClick={async (e) => { const btn = e.currentTarget; btn.style.transition = "transform 0.6s ease"; btn.style.transform = "rotate(360deg)"; setTimeout(() => { btn.style.transition = "none"; btn.style.transform = ""; }, 650); try { const v = activeView || "dashboard"; const t = tripDetailId ? `&t=${encodeURIComponent(String(tripDetailId))}` : ""; history.replaceState(null, "", `${window.location.pathname}${window.location.search}#v=${v}${t}`); } catch {} if ('serviceWorker' in navigator) { const regs = await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map(r => r.unregister())); } if ('caches' in window) { const keys = await caches.keys(); await Promise.all(keys.map(k => caches.delete(k))); } setTimeout(() => window.location.reload(true), 700); }} title="Refresh"
               style={{ width: 34, height: 34, border: `1px solid ${D ? "rgba(255,255,255,0.08)" : "#E2DCCE"}`, background: "transparent", color: D ? "#666" : "#6B6458", cursor: "pointer", display: "grid", placeItems: "center", transition: "all 0.25s" }}
@@ -8486,6 +8497,63 @@ Start by introducing yourself briefly in-character with personality, and give an
       })()}
 
       {/* Voucher Modal */}
+      {/* ── Global Search Overlay ── command-palette style; searches trips,
+          expenses, loyalty programs, and airports from any hub. ── */}
+      {showSearch && (() => {
+        const q = globalQuery.trim().toLowerCase();
+        const close = () => { setShowSearch(false); setGlobalQuery(""); };
+        const tripHits = !q ? [] : (trips || []).filter(t => (t.tripName || t.trip_name || t.location || "").toLowerCase().includes(q)).slice(0, 6);
+        const expHits = !q ? [] : (expenses || []).filter(e => `${e.description || ""} ${e.merchant || ""} ${e.category || ""}`.toLowerCase().includes(q)).slice(0, 6);
+        const allProgs = [...(LOYALTY_PROGRAMS.airlines || []), ...(LOYALTY_PROGRAMS.hotels || []), ...(LOYALTY_PROGRAMS.rentals || []), ...(LOYALTY_PROGRAMS.creditCards || [])];
+        const progHits = !q ? [] : allProgs.filter(p => (p.name || "").toLowerCase().includes(q)).slice(0, 6);
+        const airHits = !q ? [] : Object.entries(AIRPORT_CITY || {}).filter(([code, city]) => code.toLowerCase().includes(q) || (city || "").toLowerCase().includes(q)).slice(0, 6);
+        const total = tripHits.length + expHits.length + progHits.length + airHits.length;
+
+        const goTrip = (t) => { setActiveView("trips"); setTripDetailId(t.id); close(); };
+        const goExpense = (e) => { if (e.tripId) { setActiveView("trips"); setTripDetailId(e.tripId); } else { setActiveView("dashboard"); setDashSubTab("inbox"); } close(); };
+        const goProgram = () => { setActiveView("programs"); close(); };
+        const goAirport = (code) => { setLoungeAirport(code); setActiveView("lounges"); close(); };
+
+        const rowStyle = { display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", cursor: "pointer", borderRadius: 8, transition: "background 0.12s" };
+        const sectionLabel = { fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: css.text3, padding: "14px 16px 6px" };
+        const dot = (c) => ({ width: 30, height: 30, flexShrink: 0, borderRadius: 8, display: "grid", placeItems: "center", background: `${c}14`, color: c });
+        const Row = ({ onClick, color, icon, title, sub }) => (
+          <div onClick={onClick} style={rowStyle}
+            onMouseEnter={e => e.currentTarget.style.background = D ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)"}
+            onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+            <span style={dot(color)}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{icon}</svg></span>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ fontFamily: "'Inter Tight', sans-serif", fontSize: 14, fontWeight: 500, color: css.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{title}</div>
+              {sub && <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: css.text3, marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sub}</div>}
+            </div>
+          </div>
+        );
+
+        return (
+          <div onClick={close} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(2px)", zIndex: 2000, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: isMobile ? "70px 12px 12px" : "90px 20px 20px" }}>
+            <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 600, background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, boxShadow: css.shadowHover, overflow: "hidden", maxHeight: "80vh", display: "flex", flexDirection: "column" }}>
+              {/* Search input */}
+              <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 18px", borderBottom: `1px solid ${css.border}` }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={css.text3} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input autoFocus value={globalQuery} onChange={e => setGlobalQuery(e.target.value)} onKeyDown={e => { if (e.key === "Escape") close(); }}
+                  placeholder="Search trips, expenses, programs, airports…"
+                  style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontFamily: "'Inter Tight', sans-serif", fontSize: 16, color: css.text }} />
+                <button onClick={close} style={{ background: "none", border: `1px solid ${css.border}`, borderRadius: 6, color: css.text3, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.1em", padding: "4px 8px", cursor: "pointer" }}>ESC</button>
+              </div>
+              {/* Results */}
+              <div style={{ overflowY: "auto", padding: "4px 6px 10px" }}>
+                {!q && <div style={{ padding: "32px 16px", textAlign: "center", fontFamily: "'Fraunces', serif", fontStyle: "italic", color: css.text3, fontSize: 15 }}>Start typing to search across everything.</div>}
+                {q && total === 0 && <div style={{ padding: "32px 16px", textAlign: "center", fontFamily: "'Fraunces', serif", fontStyle: "italic", color: css.text3, fontSize: 15 }}>No matches for “{globalQuery}”.</div>}
+                {tripHits.length > 0 && <><div style={sectionLabel}>Trips</div>{tripHits.map(t => <Row key={`t${t.id}`} onClick={() => goTrip(t)} color="#3b82f6" icon={<path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1L11 12l-2 3H6l-2 2 4-1 4-1 2 7.5 2-2v-3l-3-2 4.8-7.3" />} title={t.tripName || t.trip_name || t.location || "Trip"} sub={formatTripDates ? formatTripDates(t) : (t.date || "")} />)}</>}
+                {expHits.length > 0 && <><div style={sectionLabel}>Expenses</div>{expHits.map((e, i) => <Row key={`e${e.id || i}`} onClick={() => goExpense(e)} color="#B8924A" icon={<><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></>} title={e.description || e.merchant || "Expense"} sub={`${e.category || ""}${e.amount ? ` · ${e.currency || "$"}${e.amount}` : ""}`} />)}</>}
+                {progHits.length > 0 && <><div style={sectionLabel}>Programs</div>{progHits.map(p => <Row key={`p${p.id}`} onClick={goProgram} color="#9333ea" icon={<><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></>} title={p.name} sub={linkedAccounts?.[p.id] ? "Linked" : "Tap to view in Programs"} />)}</>}
+                {airHits.length > 0 && <><div style={sectionLabel}>Airports · Lounges</div>{airHits.map(([code, city]) => <Row key={`a${code}`} onClick={() => goAirport(code)} color="#14b8a6" icon={<path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1L11 12l-2 3H6l-2 2 4-1 4-1 2 7.5 2-2v-3l-3-2 4.8-7.3" />} title={`${code} · ${city}`} sub="View lounges" />)}</>}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {showVoucherModal && <VoucherModal
         css={css}
         initial={showVoucherModal === "new" ? null : showVoucherModal}
