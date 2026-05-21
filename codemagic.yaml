@@ -158,6 +158,23 @@ workflows:
             /usr/libexec/PlistBuddy -c "Set :CFBundleURLTypes:0:CFBundleURLSchemes:0 $REV" "$PLIST"
           echo "Registered Google URL scheme: $REV"
 
+      - name: Patch AppDelegate for push notifications
+        script: |
+          # Capacitor's generated AppDelegate does NOT forward the APNs device
+          # token to the push plugin. Without these methods, register() gets a
+          # token from iOS but the JS 'registration' event never fires — push
+          # setup just times out (no token, no error). The @capacitor/push-
+          # notifications README says to add them manually; since ios/ is
+          # regenerated every build, we inject them here. Idempotent.
+          APPDEL="ios/App/App/AppDelegate.swift"
+          if grep -q "didRegisterForRemoteNotificationsWithDeviceToken" "$APPDEL"; then
+            echo "AppDelegate already forwards APNs callbacks — skipping"
+          else
+            perl -0pi -e 's/(class AppDelegate: UIResponder, UIApplicationDelegate \{\n)/$1\n    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {\n        NotificationCenter.default.post(name: .capacitorDidRegisterForRemoteNotifications, object: deviceToken)\n    }\n\n    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {\n        NotificationCenter.default.post(name: .capacitorDidFailToRegisterForRemoteNotifications, object: error)\n    }\n/' "$APPDEL"
+            echo "Patched AppDelegate.swift with APNs forwarding"
+          fi
+          grep -nE "didRegisterForRemoteNotifications|didFailToRegister" "$APPDEL" || echo "WARN: AppDelegate patch did not apply — check the class declaration anchor"
+
       - name: Set version + build number from Codemagic
         script: |
           # Set CFBundleVersion to the max of (Apple's latest known build,
