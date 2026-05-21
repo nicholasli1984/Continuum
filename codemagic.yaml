@@ -178,6 +178,15 @@ workflows:
           echo "Latest TestFlight build: $LATEST_TESTFLIGHT"
           echo "Setting new CFBundleVersion to: $NEW_BUILD_NUMBER"
           agvtool new-version -all "$NEW_BUILD_NUMBER"
+          # Marketing version (CFBundleShortVersionString). Once a version is
+          # released to the App Store its "train" closes, so new builds need a
+          # HIGHER marketing version than the last released one — otherwise the
+          # upload fails with "train version 'X' is closed" (error 90186/90062).
+          # Override via the MARKETING_VERSION env var in Codemagic and bump it
+          # after each App Store release (1.0 is live → default 1.0.1 here).
+          MV="${MARKETING_VERSION:-1.0.1}"
+          echo "Setting marketing version (CFBundleShortVersionString) to: $MV"
+          agvtool new-marketing-version "$MV"
 
       - name: Install CocoaPods (skip on Capacitor 8 SPM)
         script: |
