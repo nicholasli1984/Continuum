@@ -54,16 +54,22 @@ export async function registerNativePush(userId, { silent = false } = {}) {
     let settled = false;
     const finish = (result) => { if (!settled) { settled = true; resolve(result); } };
 
-    PushNotifications.addListener("registration", async (token) => {
-      await saveToken(userId, token.value, platform);
-      finish({ ok: true, token: token.value });
-    });
-    PushNotifications.addListener("registrationError", (err) => {
-      finish({ ok: false, reason: String(err?.error || err) });
-    });
+    // Attach BOTH listeners before calling register(). addListener is async in
+    // Capacitor — calling register() first lets the registration event fire
+    // before anything is listening, which previously just timed out.
+    Promise.all([
+      PushNotifications.addListener("registration", async (token) => {
+        await saveToken(userId, token.value, platform);
+        finish({ ok: true, token: token.value });
+      }),
+      PushNotifications.addListener("registrationError", (err) => {
+        finish({ ok: false, reason: String(err?.error || err?.message || JSON.stringify(err)) });
+      }),
+    ])
+      .then(() => PushNotifications.register())
+      .catch((e) => finish({ ok: false, reason: "register: " + String(e?.message || e) }));
 
-    PushNotifications.register();
     // Don't hang the UI forever if the OS never fires the event.
-    setTimeout(() => finish({ ok: false, reason: "timeout" }), 12000);
+    setTimeout(() => finish({ ok: false, reason: "timeout" }), 15000);
   });
 }

@@ -5059,7 +5059,7 @@ Start by introducing yourself briefly in-character with personality, and give an
       if (r.ok) { setPushEnabled(true); setPushStatus(null); }
       else setPushStatus(/permission|denied|blocked/i.test(r.reason || "")
         ? "Notifications are off. Enable them in iOS Settings → Continuum → Notifications."
-        : "Couldn't enable notifications — please try again.");
+        : `Couldn't enable notifications: ${r.reason || "unknown"}`);
       return;
     }
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
