@@ -27,7 +27,7 @@ import { renderAwardSweetSpots as renderAwardSweetSpotsPage } from "./pages/Awar
 import Tour from "./components/tour/Tour";
 import VoucherModal from "./components/VoucherModal";
 import { snapReceiptNative, isNative } from "./utils/nativeCamera";
-import { registerNativePush } from "./utils/nativePush";
+import { registerNativePush, openAppSettings } from "./utils/nativePush";
 import { nativeSignIn, nativeGoogleEnabled } from "./utils/nativeAuth";
 import { expenseUSD } from "./utils/expenseUsd";
 import { isLandingDemo, getDemoTrip } from "./utils/landingDemo";
@@ -5057,9 +5057,14 @@ Start by introducing yourself briefly in-character with personality, and give an
       setPushStatus("Setting up alerts...");
       const r = await registerNativePush(user?.id);
       if (r.ok) { setPushEnabled(true); setPushStatus(null); }
-      else setPushStatus(/permission|denied|blocked/i.test(r.reason || "")
-        ? "Notifications are off. Enable them in iOS Settings → Continuum → Notifications."
-        : `Couldn't enable notifications: ${r.reason || "unknown"}`);
+      else if (/permission|denied|blocked/i.test(r.reason || "")) {
+        // iOS won't let us flip the permission — send the user straight to the
+        // app's Settings page so they can turn Notifications back on.
+        setPushStatus("Notifications are off — opening Settings. Turn on Notifications for Continuum, then come back.");
+        openAppSettings();
+      } else {
+        setPushStatus(`Couldn't enable notifications: ${r.reason || "unknown"}`);
+      }
       return;
     }
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {

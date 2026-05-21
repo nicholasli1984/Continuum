@@ -26,6 +26,18 @@ async function saveToken(userId, token, platform) {
   }
 }
 
+// Open the OS Settings page for this app, so a user who previously denied
+// notifications can re-enable them (iOS won't let an app flip that itself).
+export async function openAppSettings() {
+  try {
+    const { NativeSettings, IOSSettings, AndroidSettings } = await import("capacitor-native-settings");
+    await NativeSettings.open({ optionIOS: IOSSettings.App, optionAndroid: AndroidSettings.AppNotification });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // Register for native push and persist the token.
 //   silent=true  → only proceed if permission is ALREADY granted (no prompt).
 //                  Used to refresh the token on every app open.
