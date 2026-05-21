@@ -173,9 +173,15 @@ workflows:
           LATEST_APP_STORE=$(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo 0)
           LATEST_TESTFLIGHT=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo 0)
           LATEST=$(( LATEST_APP_STORE > LATEST_TESTFLIGHT ? LATEST_APP_STORE : LATEST_TESTFLIGHT ))
-          NEW_BUILD_NUMBER=$(( LATEST + 1 ))
-          echo "Latest App Store build: $LATEST_APP_STORE"
-          echo "Latest TestFlight build: $LATEST_TESTFLIGHT"
+          APPLE_NEXT=$(( LATEST + 1 ))
+          # Codemagic's own build counter ($BUILD_NUMBER) is monotonic and
+          # already higher than the Apple build numbers, so use it as a floor.
+          # This keeps uploads unique + increasing even if the app-store-connect
+          # queries above transiently fail (fall back to 0 → would otherwise
+          # reuse a number and the upload fails with "already used").
+          CM_BUILD="${BUILD_NUMBER:-0}"
+          NEW_BUILD_NUMBER=$(( CM_BUILD > APPLE_NEXT ? CM_BUILD : APPLE_NEXT ))
+          echo "Latest App Store build: $LATEST_APP_STORE · TestFlight: $LATEST_TESTFLIGHT · Codemagic #: $CM_BUILD"
           echo "Setting new CFBundleVersion to: $NEW_BUILD_NUMBER"
           agvtool new-version -all "$NEW_BUILD_NUMBER"
           # Marketing version (CFBundleShortVersionString). Once a version is
