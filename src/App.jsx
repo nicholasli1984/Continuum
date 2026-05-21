@@ -1295,6 +1295,12 @@ export default function EliteStatusTracker() {
   // Redirect expenses view to trips (expenses is rendered within trips)
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [isRegistering, setIsRegistering] = useState(false);
+  // Password reset (forgot password → email link → set new password)
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [resetPw, setResetPw] = useState("");
+  const [resetPw2, setResetPw2] = useState("");
+  const [resetMsg, setResetMsg] = useState("");
+  const [resetSaving, setResetSaving] = useState(false);
   const [registerForm, setRegisterForm] = useState({ name: "", email: "", password: "" });
   const [authError, setAuthError] = useState("");
   const [authInfo, setAuthInfo] = useState("");
@@ -2390,6 +2396,9 @@ export default function EliteStatusTracker() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       // Don't sign out on INITIAL_SESSION with no session — getSession above handles that
       if (event === "INITIAL_SESSION") return;
+      // Followed a password-reset link → show the set-new-password screen
+      // (switch to the app shell so the overlay renders).
+      if (event === "PASSWORD_RECOVERY") { setShowPasswordReset(true); setPublicPage("app"); }
       if (session?.user) {
         setUser(session.user);
         setIsLoggedIn(true);
@@ -2921,6 +2930,32 @@ Start by introducing yourself briefly in-character with personality, and give an
     if (error) { setAuthError(error.message); return; }
     setActiveView("dashboard");
     setPublicPage("app");
+  };
+
+  // Send a password-reset link. The link always points at the web app
+  // (gocontinuum.app); even from the native app it opens there in the browser,
+  // where the PASSWORD_RECOVERY flow shows the set-new-password screen.
+  const handleForgotPassword = async () => {
+    const email = (loginForm.email || "").trim();
+    if (!email) { setAuthError("Enter your email above, then tap “Forgot password”."); setAuthInfo(""); return; }
+    setAuthError(""); setAuthInfo(""); setAuthLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: "https://gocontinuum.app" });
+    setAuthLoading(false);
+    if (error) { setAuthError(error.message); return; }
+    setAuthInfo(`Check ${email} for a link to reset your password.`);
+  };
+
+  // Called from the set-new-password screen (after the user follows the reset
+  // link and Supabase fires PASSWORD_RECOVERY).
+  const handleSetNewPassword = async () => {
+    if (!resetPw || resetPw.length < 6) { setResetMsg("Password must be at least 6 characters."); return; }
+    if (resetPw !== resetPw2) { setResetMsg("Passwords don’t match."); return; }
+    setResetSaving(true); setResetMsg("");
+    const { error } = await supabase.auth.updateUser({ password: resetPw });
+    setResetSaving(false);
+    if (error) { setResetMsg(error.message); return; }
+    setShowPasswordReset(false); setResetPw(""); setResetPw2("");
+    setActiveView("dashboard"); setPublicPage("app");
   };
 
   const handleRegister = async (e) => {
@@ -6164,6 +6199,9 @@ Start by introducing yourself briefly in-character with personality, and give an
                   <button onClick={handleLogin} disabled={authLoading} style={{ width: "100%", padding: "10px 0", border: "none", borderRadius: 99, cursor: authLoading ? "default" : "pointer", fontSize: 13, fontWeight: 600, fontFamily: "'Space Grotesk', sans-serif", background: elCream, color: "#000", letterSpacing: 0.2, opacity: authLoading ? 0.7 : 1 }}>
                     {authLoading ? "Signing in…" : "Sign in"}
                   </button>
+                  <button onClick={handleForgotPassword} disabled={authLoading} style={{ background: "transparent", border: "none", color: elCreamFaded, fontSize: 11, cursor: "pointer", padding: "4px 0 0", alignSelf: "center", textDecoration: "underline", fontFamily: "inherit" }}>
+                    Forgot password?
+                  </button>
                 </div>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -7705,6 +7743,19 @@ Start by introducing yourself briefly in-character with personality, and give an
       })()}
 
       {/* ── Settings Modal ── */}
+      {showPasswordReset && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 5000, background: "rgba(0,0,0,0.72)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, width: "100%", maxWidth: 400, padding: 28 }}>
+            <h2 style={{ margin: "0 0 6px", fontSize: 20, fontWeight: 700, color: css.text, fontFamily: "'Inter Tight', sans-serif" }}>Set a new password</h2>
+            <p style={{ margin: "0 0 18px", fontSize: 13, color: css.text3, fontFamily: "Inter, sans-serif", lineHeight: 1.5 }}>Choose a new password for your Continuum account, then you’ll be signed in.</p>
+            <input type="password" placeholder="New password" value={resetPw} onChange={e => setResetPw(e.target.value)} style={{ width: "100%", boxSizing: "border-box", marginBottom: 8, padding: "10px 12px", background: D ? "#13111C" : "#f4f4f8", border: `1px solid ${css.border}`, borderRadius: 8, color: css.text, fontSize: 14, fontFamily: "Inter, sans-serif", outline: "none" }} />
+            <input type="password" placeholder="Confirm new password" value={resetPw2} onChange={e => setResetPw2(e.target.value)} onKeyDown={e => { if (e.key === "Enter") handleSetNewPassword(); }} style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", background: D ? "#13111C" : "#f4f4f8", border: `1px solid ${css.border}`, borderRadius: 8, color: css.text, fontSize: 14, fontFamily: "Inter, sans-serif", outline: "none" }} />
+            {resetMsg && <div style={{ marginTop: 10, fontSize: 12, color: "#C8553D", fontFamily: "Inter, sans-serif" }}>{resetMsg}</div>}
+            <button onClick={handleSetNewPassword} disabled={resetSaving} style={{ marginTop: 18, width: "100%", padding: "12px", borderRadius: 10, border: "none", background: css.accent, color: "#fff", fontSize: 14, fontWeight: 600, fontFamily: "Inter, sans-serif", cursor: resetSaving ? "default" : "pointer", opacity: resetSaving ? 0.7 : 1 }}>{resetSaving ? "Saving…" : "Update password"}</button>
+          </div>
+        </div>
+      )}
+
       {showSettings && (() => {
         const sf = { display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: D ? "#13111C" : "#f4f4f8", border: `1px solid ${css.border}`, borderRadius: 6, color: css.text, fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" };
         const lbl = { fontSize: 10, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: 1.2, fontFamily: "Inter, sans-serif" };
