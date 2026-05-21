@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { apiFetch } from "../utils/apiBase";
+import { openFeedback } from "../components/FeedbackModal";
 import { motion, AnimatePresence } from "framer-motion";
 import { LANDMARK_FALLBACK_PHOTOS } from "../constants/airline-data";
 import TransferBonusBand from "../components/transferBonuses/TransferBonusBand";
@@ -2266,6 +2267,12 @@ export function renderDashboard(s) {
             </div>
           );
         })()}
+
+        {dashSubTab === "overview" && !embeddedTab && (
+          <div style={{ textAlign: "center", padding: "28px 20px 16px", marginTop: 12, borderTop: `1px solid ${lp.border}` }}>
+            <button onClick={openFeedback} style={{ background: "transparent", border: "none", cursor: "pointer", fontFamily: lp.mono, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: lp.dim }}>Suggest a feature</button>
+          </div>
+        )}
 
       </div>
     );

@@ -30,6 +30,7 @@ import VoucherModal from "./components/VoucherModal";
 import { snapReceiptNative, isNative } from "./utils/nativeCamera";
 import { registerNativePush, openAppSettings } from "./utils/nativePush";
 import { nativeSignIn, nativeGoogleEnabled } from "./utils/nativeAuth";
+import FeedbackModal, { openFeedback } from "./components/FeedbackModal";
 import { expenseUSD } from "./utils/expenseUsd";
 import { isLandingDemo, getDemoTrip } from "./utils/landingDemo";
 import LandingPhoneCarousel from "./components/LandingPhoneCarousel";
@@ -7713,6 +7714,8 @@ Start by introducing yourself briefly in-character with personality, and give an
       })()}
 
       {/* ── Settings Modal ── */}
+      <FeedbackModal user={user} darkMode={darkMode} />
+
       {showSettings && (() => {
         const sf = { display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: D ? "#13111C" : "#f4f4f8", border: `1px solid ${css.border}`, borderRadius: 6, color: css.text, fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" };
         const lbl = { fontSize: 10, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: 1.2, fontFamily: "Inter, sans-serif" };
@@ -7742,6 +7745,12 @@ Start by introducing yourself briefly in-character with personality, and give an
                     textAlign: "left",
                   }}>{t.icon} {t.label}</button>
                 ))}
+                <div style={{ margin: "10px 16px 0", paddingTop: 12, borderTop: `1px solid ${css.border}` }}>
+                  <button onClick={() => { setShowSettings(false); openFeedback(); }} style={{
+                    display: "block", width: "100%", padding: "4px 0", border: "none", background: "transparent",
+                    color: css.accent, cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "Inter, sans-serif", textAlign: "left",
+                  }}>Suggest a feature</button>
+                </div>
               </div>
 
               {/* Content */}
