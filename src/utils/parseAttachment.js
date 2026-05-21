@@ -36,7 +36,7 @@ export async function parseAttachmentFile(file, segmentType) {
     else mediaType = "image/png";
   }
 
-  const res = await fetch("/api/parse-attachment", {
+  const res = await apiFetch("/api/parse-attachment", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ imageDataUrl: dataUrl, mediaType, segmentType, fileName: name }),

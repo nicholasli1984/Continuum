@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { apiFetch } from "../utils/apiBase";
 import { motion, AnimatePresence } from "framer-motion";
 import lobsterPicture from "../components/expenseSplitBg.jpg";
 import { isLandingDemo, DEMO_FIRST_NAME, getDemoContacts, getDemoTrip } from "../utils/landingDemo";
@@ -206,7 +207,7 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
       if (!token) return null;
-      const res = await fetch("/api/shared-trips", {
+      const res = await apiFetch("/api/shared-trips", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ action: "lookup_user", email: norm }),

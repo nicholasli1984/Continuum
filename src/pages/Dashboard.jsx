@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { apiFetch } from "../utils/apiBase";
 import { motion, AnimatePresence } from "framer-motion";
 import { LANDMARK_FALLBACK_PHOTOS } from "../constants/airline-data";
 import TransferBonusBand from "../components/transferBonuses/TransferBonusBand";
@@ -1191,7 +1192,7 @@ export function renderDashboard(s) {
               </div>
             </div>
             <button onClick={async () => {
-              const res = await fetch(`/api/gmail-auth?userId=${user?.id}`);
+              const res = await apiFetch(`/api/gmail-auth?userId=${user?.id}`);
               const data = await res.json();
               if (data.authUrl) window.location.href = data.authUrl;
             }} style={{

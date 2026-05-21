@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
+import { apiFetch } from "./utils/apiBase";
 import { ComposableMap, Geographies, Geography, Marker, Line } from "react-simple-maps";
 import { supabase } from "./supabase";
 
@@ -748,7 +749,7 @@ function HtmlReceiptViewer({ exp, css, user, supabase, setExpenses, setCropExpen
         const { data: { session } } = await supabase.auth.getSession();
         const token = session?.access_token;
         if (!token) throw new Error("Not signed in");
-        const resp = await fetch("/api/render-html-to-png", {
+        const resp = await apiFetch("/api/render-html-to-png", {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({ html: rawHtml }),
@@ -1108,7 +1109,7 @@ function ImageReceiptWithFallback({ exp, css, D, user, supabase, setExpenses, se
         // Send the summary fields; server uses Claude to generate styled
         // HTML that looks like a real transactional email, then renders
         // that to PNG via Chromium.
-        const resp = await fetch("/api/render-html-to-png", {
+        const resp = await apiFetch("/api/render-html-to-png", {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({ summary: ri.summary }),
@@ -1354,7 +1355,7 @@ export default function EliteStatusTracker() {
     if (visaCache[key]) return;
     setVisaLoading(prev => ({ ...prev, [key]: true }));
     try {
-      const resp = await fetch("/api/visa-check", {
+      const resp = await apiFetch("/api/visa-check", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ passportCountry: passportCode, destinationCountry: destCountry, destinationCity: destCity }),
       });
@@ -1470,7 +1471,7 @@ export default function EliteStatusTracker() {
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
-      const resp = await fetch(`/api/receipt?t=${userForwardingAddress}`, {
+      const resp = await apiFetch(`/api/receipt?t=${userForwardingAddress}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "ocr", imageData: dataUrl, mediaType: file.type || "image/jpeg" }),
@@ -2186,7 +2187,7 @@ export default function EliteStatusTracker() {
         if (weatherLoading.current[cacheKey]) continue;
         weatherLoading.current[cacheKey] = true;
         try {
-          const resp = await fetch(`/api/weather?city=${encodeURIComponent(city)}&date=${date}`);
+          const resp = await apiFetch(`/api/weather?city=${encodeURIComponent(city)}&date=${date}`);
           if (resp.ok && !cancelled) {
             const data = await resp.json();
             if (data.high !== undefined) {
@@ -2527,7 +2528,7 @@ export default function EliteStatusTracker() {
     // If RLS blocks direct access, fetch via API with service role
     if (!tripRows || tripRows.length === 0) {
       try {
-        const resp = await fetch(`/api/shared-trips`, {
+        const resp = await apiFetch(`/api/shared-trips`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ tripIds }),
@@ -2675,7 +2676,7 @@ export default function EliteStatusTracker() {
     setNewsLoading(true);
     const results = await Promise.allSettled(
       NEWS_SOURCES.map(src =>
-        fetch(`/api/news?url=${encodeURIComponent(src.url)}`)
+        apiFetch(`/api/news?url=${encodeURIComponent(src.url)}`)
           .then(r => r.json())
           .then(data => (data.items || []).map(item => ({
             id: item.guid || item.link,
@@ -2990,7 +2991,7 @@ Start by introducing yourself briefly in-character with personality, and give an
         setDeleteAccountBusy(false);
         return;
       }
-      const resp = await fetch("/api/delete-account", {
+      const resp = await apiFetch("/api/delete-account", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -3879,7 +3880,7 @@ Start by introducing yourself briefly in-character with personality, and give an
     const updated = [...metaSegs, ...realSegs.filter((_, i) => i !== segIdx)];
     if (trip._shared) {
       setSharedTrips(prev => prev.map(t => t.id === tripId ? { ...t, segments: updated } : t));
-      if (user) fetch("/api/shared-trips", {
+      if (user) apiFetch("/api/shared-trips", {
         method: "PUT", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tripId, userId: user.id, userEmail: user.email, payload: { segments: updated } }),
       }).then();
@@ -3968,7 +3969,7 @@ Start by introducing yourself briefly in-character with personality, and give an
         // Optimistic: update sharedTrips state
         setSharedTrips(prev => prev.map(t => t.id === editingTripId ? { ...t, ...newTrip, segments, estimatedPoints: totalPoints, estimatedNights: totalNights, tripName: newTrip.tripName, status: newTrip.status, date: firstDate } : t));
         // Persist via service-role API (RLS blocks direct writes for non-owners)
-        if (user) fetch("/api/shared-trips", {
+        if (user) apiFetch("/api/shared-trips", {
           method: "PUT", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ tripId: editingTripId, userId: user.id, userEmail: user.email, payload }),
         }).then();
@@ -4012,7 +4013,7 @@ Start by introducing yourself briefly in-character with personality, and give an
         // Optimistic UI removal
         setSharedTrips(prev => prev.filter(t => t.id !== id));
         try {
-          const resp = await fetch("/api/shared-trips", {
+          const resp = await apiFetch("/api/shared-trips", {
             method: "DELETE",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ tripId: id, userId: user.id, userEmail: user.email }),
@@ -5003,7 +5004,7 @@ Start by introducing yourself briefly in-character with personality, and give an
             // Re-sync to the DB on every load in case it was never stored
             // (e.g. a prior subscribe succeeded on-device but the save failed).
             if (user?.id) {
-              fetch("/api/push-notify?action=subscribe", {
+              apiFetch("/api/push-notify?action=subscribe", {
                 method: "POST", headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ userId: user.id, subscription: sub.toJSON() }),
               }).catch(() => {});
@@ -5043,7 +5044,7 @@ Start by introducing yourself briefly in-character with personality, and give an
   const storePushSubscription = async (sub) => {
     if (!user) return false;
     try {
-      const resp = await fetch("/api/push-notify?action=subscribe", {
+      const resp = await apiFetch("/api/push-notify?action=subscribe", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: user.id, subscription: sub }),
       });
@@ -5131,7 +5132,7 @@ Start by introducing yourself briefly in-character with personality, and give an
       });
       if (flightsToCheck.length === 0) return;
       try {
-        const resp = await fetch("/api/flight-status", {
+        const resp = await apiFetch("/api/flight-status", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ flights: flightsToCheck }),
@@ -5149,25 +5150,25 @@ Start by introducing yourself briefly in-character with personality, and give an
               const fn = key.split("_")[0];
               // Gate change
               if (status.departureGate && status.departureGate !== old.departureGate && sub) {
-                fetch("/api/push-notify", { method: "POST", headers: { "Content-Type": "application/json" },
+                apiFetch("/api/push-notify", { method: "POST", headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ subscription: sub, title: `Gate Assigned: ${fn}`, body: `Gate ${status.departureGate}${status.departureTerminal ? ` · Terminal ${status.departureTerminal}` : ""}`, data: { flightNumber: fn } }),
                 }).catch(() => {});
               }
               // Delay
               if (status.departureDelay > 15 && (!old.departureDelay || old.departureDelay <= 15) && sub) {
-                fetch("/api/push-notify", { method: "POST", headers: { "Content-Type": "application/json" },
+                apiFetch("/api/push-notify", { method: "POST", headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ subscription: sub, title: `Flight Delayed: ${fn}`, body: `Delayed ${status.departureDelay} minutes${status.departureRevised ? ". New departure: " + status.departureRevised.split(" ").pop()?.replace(/[+-]\d{2}:\d{2}$/, "") : ""}`, data: { flightNumber: fn } }),
                 }).catch(() => {});
               }
               // Cancellation
               if (status.status === "Canceled" && old.status !== "Canceled" && sub) {
-                fetch("/api/push-notify", { method: "POST", headers: { "Content-Type": "application/json" },
+                apiFetch("/api/push-notify", { method: "POST", headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ subscription: sub, title: `CANCELLED: ${fn}`, body: `Flight ${fn} has been cancelled. Contact your airline.`, data: { flightNumber: fn } }),
                 }).catch(() => {});
               }
               // Landed
               if (status.status === "Landed" && old.status !== "Landed" && sub) {
-                fetch("/api/push-notify", { method: "POST", headers: { "Content-Type": "application/json" },
+                apiFetch("/api/push-notify", { method: "POST", headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ subscription: sub, title: `Landed: ${fn}`, body: `${status.arrivalAirport || ""}${status.baggageBelt ? " · Baggage belt " + status.baggageBelt : ""}`, data: { flightNumber: fn } }),
                 }).catch(() => {});
               }

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { apiFetch } from "../utils/apiBase";
 import { expenseUSD } from "../utils/expenseUsd";
 import { getReportExpenses as getReportExpensesUtil } from "../utils/reportExpenses";
 import { buildPrintReport as buildPrintReportUtil } from "../utils/buildPrintReport";
@@ -692,7 +693,7 @@ export function renderExpenseReports(s) {
               // category breakdown, line items, embedded receipts).
               const html = await buildPrintReport(report.title, exps);
               const pdfBase64 = await renderHtmlToPdfBase64(html);
-              const resp = await fetch("/api/forward-report", {
+              const resp = await apiFetch("/api/forward-report", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
