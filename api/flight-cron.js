@@ -18,6 +18,7 @@ import webpush from "web-push";
 import { createClient } from "@supabase/supabase-js";
 import { LOUNGE_DATABASE, AIRLINE_ALLIANCE } from "../src/constants/lounges.js";
 import { airlineIdFromFn, isInternational, loungeAccessSummary } from "../src/constants/loungeAccess.js";
+import { createApnsSender, apnsConfigured } from "./_apns.js";
 
 const AERO_KEY = (process.env.VITE_AERODATABOX_API_KEY || "").trim();
 const VAPID_PUBLIC = (process.env.VITE_VAPID_PUBLIC_KEY || "").trim();
@@ -182,6 +183,23 @@ export default async function handler(req, res) {
     const { data, error, count } = await supabase.from("push_subscriptions").select("user_id", { count: "exact" });
     return res.json({ tableError: error?.message || null, count: count ?? (data?.length || 0), userIds: (data || []).map(d => d.user_id).slice(0, 20) });
   }
+  // ?debugApns=<user_id>  → send a test APNs push to all of this user's device tokens
+  if (req.query.debugApns) {
+    const userId = String(req.query.debugApns);
+    if (!apnsConfigured()) return res.json({ debugApns: userId, configured: false, reason: "APNS_* env vars not set" });
+    const { data: toks } = await supabase.from("device_push_tokens").select("token, platform").eq("user_id", userId);
+    if (!toks?.length) return res.json({ debugApns: userId, configured: true, sent: 0, reason: "no device tokens stored for this user" });
+    const sender = createApnsSender();
+    if (!sender) return res.json({ debugApns: userId, configured: true, error: "sender init failed (check APNS_KEY)" });
+    const results = [];
+    for (const t of toks) {
+      const r = await sender.send(t.token, { title: "Continuum test alert", body: "Native push is working. ✈️", data: { test: true } });
+      results.push({ token: t.token.slice(0, 8) + "…", ...r });
+      if (sender.isDeadToken(r)) await supabase.from("device_push_tokens").delete().eq("token", t.token);
+    }
+    sender.close();
+    return res.json({ debugApns: userId, configured: true, sent: results.filter(r => r.ok).length, results });
+  }
   // ?debugPush=<user_id>  → send one test push to that user's subscription
   if (req.query.debugPush) {
     const userId = String(req.query.debugPush);
@@ -294,6 +312,13 @@ export default async function handler(req, res) {
   const subByUser = {};
   (subs || []).forEach(s => { try { subByUser[s.user_id] = typeof s.subscription === "string" ? JSON.parse(s.subscription) : s.subscription; } catch {} });
 
+  // Native app device tokens (APNs) — separate channel from web push. A user
+  // may have several (multiple devices). Send to all of them too.
+  const { data: tokRows } = await supabase.from("device_push_tokens").select("user_id, token, platform").in("user_id", [...allUsers]);
+  const tokensByUser = {}; // userId -> [{ token, platform }]
+  (tokRows || []).forEach(r => { (tokensByUser[r.user_id] ||= []).push({ token: r.token, platform: r.platform }); });
+  const apns = (tokRows && tokRows.length && apnsConfigured()) ? createApnsSender() : null;
+
   // Linked loyalty accounts (cards + elite status) per user, for lounge-access
   // alerts. Only program_id + current_tier matter for access computation.
   const { data: laRows } = await supabase.from("linked_accounts").select("user_id, program_id, current_tier").in("user_id", [...allUsers]);
@@ -305,13 +330,24 @@ export default async function handler(req, res) {
   // `tag` namespaces each event type per flight so distinct events persist
   // separately but repeated updates of the same event replace in place.
   const notify = async (userId, title, body, fnum, tag) => {
+    const data = { flightNumber: fnum, tag: tag || fnum };
+    // Web push (PWA / browser)
     const sub = subByUser[userId];
-    if (!sub) return;
-    try {
-      await webpush.sendNotification(sub, JSON.stringify({ title, body, icon: "/pwa-192x192.png", badge: "/pwa-64x64.png", data: { flightNumber: fnum, tag: tag || fnum } }));
-      notifications++;
-    } catch (e) {
-      if (e.statusCode === 410 || e.statusCode === 404) await supabase.from("push_subscriptions").delete().eq("user_id", userId);
+    if (sub) {
+      try {
+        await webpush.sendNotification(sub, JSON.stringify({ title, body, icon: "/pwa-192x192.png", badge: "/pwa-64x64.png", data }));
+        notifications++;
+      } catch (e) {
+        if (e.statusCode === 410 || e.statusCode === 404) await supabase.from("push_subscriptions").delete().eq("user_id", userId);
+      }
+    }
+    // Native push (APNs) — every device token this user has registered
+    if (apns && tokensByUser[userId]) {
+      for (const { token } of tokensByUser[userId]) {
+        const r = await apns.send(token, { title, body, data });
+        if (r.ok) notifications++;
+        else if (apns.isDeadToken(r)) await supabase.from("device_push_tokens").delete().eq("token", token);
+      }
     }
   };
 
@@ -496,5 +532,6 @@ export default async function handler(req, res) {
     );
   }
 
+  if (apns) apns.close();
   return res.json({ ok: true, flights: keys.length, hotels: hotelKeys.length, connections: connKeys.length, checked, apiCalls, notifications });
 }

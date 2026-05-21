@@ -27,6 +27,7 @@ import { renderAwardSweetSpots as renderAwardSweetSpotsPage } from "./pages/Awar
 import Tour from "./components/tour/Tour";
 import VoucherModal from "./components/VoucherModal";
 import { snapReceiptNative, isNative } from "./utils/nativeCamera";
+import { registerNativePush } from "./utils/nativePush";
 import { expenseUSD } from "./utils/expenseUsd";
 import { isLandingDemo, getDemoTrip } from "./utils/landingDemo";
 import LandingPhoneCarousel from "./components/LandingPhoneCarousel";
@@ -5013,6 +5014,15 @@ Start by introducing yourself briefly in-character with personality, and give an
     checkPush();
   }, [isLoggedIn]);
 
+  // Native push: refresh the device token on each login (no permission prompt —
+  // only re-registers if the user already granted notifications). The native
+  // "Enable notifications" tap handles the first-time prompt via enablePushNotifications.
+  useEffect(() => {
+    if (!isLoggedIn || !isNative() || !user?.id) return;
+    setPushSupported(true);
+    registerNativePush(user.id, { silent: true }).then(r => { if (r.ok) setPushEnabled(true); }).catch(() => {});
+  }, [isLoggedIn, user?.id]);
+
   const [pushStatus, setPushStatus] = useState(null);
   // VAPID public keys are base64url strings, but pushManager.subscribe wants a
   // BufferSource for applicationServerKey on iOS/Safari WebKit (Chrome tolerates
@@ -5040,6 +5050,17 @@ Start by introducing yourself briefly in-character with personality, and give an
     } catch { return false; }
   };
   const enablePushNotifications = async () => {
+    // Native (Capacitor) app → register with the OS (APNs on iOS) instead of
+    // web-push. More reliable than iOS web push and works without the PWA.
+    if (isNative()) {
+      setPushStatus("Setting up alerts...");
+      const r = await registerNativePush(user?.id);
+      if (r.ok) { setPushEnabled(true); setPushStatus(null); }
+      else setPushStatus(/permission|denied|blocked/i.test(r.reason || "")
+        ? "Notifications are off. Enable them in iOS Settings → Continuum → Notifications."
+        : "Couldn't enable notifications — please try again.");
+      return;
+    }
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
       setPushStatus("Push notifications are not supported in this browser.");
       return;

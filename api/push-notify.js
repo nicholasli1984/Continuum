@@ -18,6 +18,17 @@ export default async function handler(req, res) {
     } catch (e) { return res.status(500).json({ error: e.message }); }
   }
 
+  // Native app device token (APNs/FCM) — separate from web-push subscriptions.
+  if (req.query.action === "subscribe-native") {
+    try {
+      const { userId, token, platform } = req.body;
+      if (!userId || !token) return res.status(400).json({ error: "Missing userId or token" });
+      const supabase = createClient(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+      await supabase.from("device_push_tokens").upsert({ token, user_id: userId, platform: platform || "ios", updated_at: new Date().toISOString() }, { onConflict: "token" });
+      return res.json({ ok: true });
+    } catch (e) { return res.status(500).json({ error: e.message }); }
+  }
+
   const vapidPublic = (process.env.VITE_VAPID_PUBLIC_KEY || "").trim();
   const vapidPrivate = (process.env.VAPID_PRIVATE_KEY || "").trim();
   if (!vapidPublic || !vapidPrivate) return res.status(500).json({ error: "VAPID keys not configured" });
