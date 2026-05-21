@@ -9,14 +9,18 @@
 import { isNative } from "./nativeCamera";
 
 // Save a device token to the backend (idempotent upsert, keyed by token).
+// MUST be absolute: the native app runs from capacitor://localhost, so a
+// relative "/api/..." never reaches the Vercel backend (it hangs against the
+// local bundle, which is what was timing out push registration).
+const API_BASE = "https://gocontinuum.app";
 async function saveToken(userId, token, platform) {
   try {
-    await fetch("/api/push-notify?action=subscribe-native", {
+    const resp = await fetch(`${API_BASE}/api/push-notify?action=subscribe-native`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId, token, platform }),
     });
-    return true;
+    return resp.ok;
   } catch {
     return false;
   }
