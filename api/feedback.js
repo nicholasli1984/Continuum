@@ -20,7 +20,8 @@ export default async function handler(req, res) {
     const msg = String(message).trim().slice(0, 4000);
     const cat = String(category || "Feedback").slice(0, 60);
     const supa = createClient(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-    await supa.from("feedback").insert({ user_id: userId || null, email: email || null, category: cat, message: msg });
+    const { error: insErr } = await supa.from("feedback").insert({ user_id: userId || null, email: email || null, category: cat, message: msg });
+    if (insErr) return res.status(500).json({ error: "db: " + insErr.message });
 
     // Best-effort email so suggestions land in the inbox immediately. Never let
     // an email failure fail the submission — it's already saved in the table.
