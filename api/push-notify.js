@@ -2,8 +2,13 @@ import webpush from "web-push";
 import { createClient } from "@supabase/supabase-js";
 
 export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "https://gocontinuum.app");
+  // Allow the native app (origin capacitor://localhost) AND the web to call this.
+  // No cookies/credentials are used (auth is the userId in the body), so a
+  // wildcard origin is safe — and required, since the previous hardcoded
+  // gocontinuum.app origin blocked the native app's cross-origin token save.
+  res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
