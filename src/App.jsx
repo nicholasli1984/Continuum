@@ -30,7 +30,7 @@ import VoucherModal from "./components/VoucherModal";
 import { snapReceiptNative, isNative } from "./utils/nativeCamera";
 import { registerNativePush, openAppSettings } from "./utils/nativePush";
 import { nativeSignIn, nativeGoogleEnabled } from "./utils/nativeAuth";
-import FeedbackModal, { openFeedback } from "./components/FeedbackModal";
+import FeedbackPage from "./pages/Feedback";
 import { expenseUSD } from "./utils/expenseUsd";
 import { isLandingDemo, getDemoTrip } from "./utils/landingDemo";
 import LandingPhoneCarousel from "./components/LandingPhoneCarousel";
@@ -6481,6 +6481,8 @@ Start by introducing yourself briefly in-character with personality, and give an
     { id: "travel", label: "Travel", icon: <NavIcon d={<><circle cx="12" cy="12" r="3"/><path d="M12 2a10 10 0 0 1 10 10"/><path d="M22 12a10 10 0 0 1-10 10"/><path d="M12 22A10 10 0 0 1 2 12"/><path d="M2 12A10 10 0 0 1 12 2"/></>} />, gradient: "radial-gradient(circle, rgba(184,146,74,0.18) 0%, rgba(184,146,74,0.06) 50%, transparent 100%)", hoverColor: "#B8924A", subViews: ["programs", "alliances", "wallet", "awards", "lounges"], defaultSubView: "programs" },
     // Expenses — Expense Split + Expense Reports
     { id: "expenses", label: "Expenses", icon: <NavIcon d={<><path d="M16 3h5v5"/><line x1="21" y1="3" x2="14" y2="10"/><path d="M8 21H3v-5"/><line x1="3" y1="21" x2="10" y2="14"/><line x1="12" y1="2" x2="12" y2="22"/></>} />, gradient: "radial-gradient(circle, rgba(200,85,61,0.18) 0%, rgba(200,85,61,0.06) 50%, transparent 100%)", hoverColor: "#C8553D", subViews: ["expensesplit", "expensereports"], defaultSubView: "expensesplit" },
+    // Feedback — suggest a feature / share feedback / report a bug
+    { id: "feedback", label: "Feedback", icon: <NavIcon d={<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>} />, gradient: "radial-gradient(circle, rgba(107,122,90,0.18) 0%, rgba(107,122,90,0.06) 50%, transparent 100%)", hoverColor: "#6B7A5A" },
   ];
 
   // Each sub-view maps to its hub wrapper so the sticky top pill always sits
@@ -6495,6 +6497,8 @@ Start by introducing yourself briefly in-character with personality, and give an
     programs: renderLoyalty, alliances: renderLoyalty, wallet: renderLoyalty, awards: renderLoyalty, lounges: renderLoyalty, loyalty: renderLoyalty,
     // Expenses hub
     expensesplit: renderExpensesHub, expensereports: renderExpensesHub,
+    // Feedback hub
+    feedback: () => <FeedbackPage css={css} isMobile={isMobile} darkMode={darkMode} user={user} />,
     // legacy / still-reachable views
     expenses: renderExpenses, optimizer: renderOptimizer, insights: renderInsights, reports: renderReports, news: renderNews,
   };
@@ -7714,8 +7718,6 @@ Start by introducing yourself briefly in-character with personality, and give an
       })()}
 
       {/* ── Settings Modal ── */}
-      <FeedbackModal user={user} darkMode={darkMode} />
-
       {showSettings && (() => {
         const sf = { display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: D ? "#13111C" : "#f4f4f8", border: `1px solid ${css.border}`, borderRadius: 6, color: css.text, fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" };
         const lbl = { fontSize: 10, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: 1.2, fontFamily: "Inter, sans-serif" };
@@ -7745,12 +7747,6 @@ Start by introducing yourself briefly in-character with personality, and give an
                     textAlign: "left",
                   }}>{t.icon} {t.label}</button>
                 ))}
-                <div style={{ margin: "10px 16px 0", paddingTop: 12, borderTop: `1px solid ${css.border}` }}>
-                  <button onClick={() => { setShowSettings(false); openFeedback(); }} style={{
-                    display: "block", width: "100%", padding: "4px 0", border: "none", background: "transparent",
-                    color: css.accent, cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "Inter, sans-serif", textAlign: "left",
-                  }}>Suggest a feature</button>
-                </div>
               </div>
 
               {/* Content */}
