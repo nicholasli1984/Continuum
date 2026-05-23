@@ -27,6 +27,19 @@ export function apnsConfigured() {
   return !!(KEY && KEY_ID && TEAM_ID && BUNDLE_ID);
 }
 
+// Non-secret config snapshot for diagnostics (identifiers only, never the key).
+export function apnsDebugInfo() {
+  const pem = KEY.includes("\\n") ? KEY.replace(/\\n/g, "\n") : KEY;
+  return {
+    bundleId: BUNDLE_ID,
+    teamId: TEAM_ID,
+    keyId: KEY_ID,
+    production: PRODUCTION,
+    keyLooksLikePem: /-----BEGIN PRIVATE KEY-----/.test(pem) && /-----END PRIVATE KEY-----/.test(pem),
+    keyChars: KEY.length,
+  };
+}
+
 const b64url = (buf) =>
   Buffer.from(buf).toString("base64").replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
 
@@ -47,24 +60,22 @@ export function createApnsSender() {
   let jwt;
   try { jwt = makeJwt(); } catch (e) { console.error("APNs JWT error:", e.message); return null; }
 
-  const host = PRODUCTION ? "https://api.push.apple.com" : "https://api.sandbox.push.apple.com";
-  const client = http2.connect(host);
-  client.on("error", () => {}); // avoid uncaught on transient session errors
+  // Two APNs hosts. A device token belongs to exactly one environment; which
+  // one depends on the build's aps-environment, which isn't always what we
+  // expect (TestFlight vs App Store vs dev). So we try the configured host
+  // first, then fall back to the other on an environment-mismatch error.
+  const HOSTS = { production: "https://api.push.apple.com", sandbox: "https://api.sandbox.push.apple.com" };
+  const clients = {};
+  const clientFor = (env) => {
+    if (!clients[env]) { clients[env] = http2.connect(HOSTS[env]); clients[env].on("error", () => {}); }
+    return clients[env];
+  };
 
-  // Returns { ok, status, reason }. reason is Apple's error string on failure.
-  const send = (token, { title, body, data }) =>
+  const sendOn = (env, token, payload) =>
     new Promise((resolve) => {
-      let payload;
-      try {
-        payload = JSON.stringify({
-          aps: { alert: { title, body: body || "" }, sound: "default", "thread-id": data?.tag || data?.flightNumber || "flight" },
-          ...(data || {}),
-        });
-      } catch { return resolve({ ok: false, status: 0, reason: "payload" }); }
-
       let req;
       try {
-        req = client.request({
+        req = clientFor(env).request({
           ":method": "POST",
           ":path": `/3/device/${token}`,
           "authorization": `bearer ${jwt}`,
@@ -88,11 +99,34 @@ export function createApnsSender() {
       req.end(payload);
     });
 
-  const close = () => { try { client.close(); } catch {} };
+  // An env mismatch surfaces as one of these — retry on the other host.
+  const isEnvMismatch = (r) => (r.status === 400 || r.status === 403) &&
+    /BadDeviceToken|BadEnvironmentKeyInToken|BadCertificateEnvironment|environment/i.test(r.reason || "");
 
-  // A token should be deleted from the DB when Apple says it's permanently bad.
-  const isDeadToken = (r) =>
-    r.status === 410 || ["BadDeviceToken", "Unregistered", "DeviceTokenNotForTopic"].includes(r.reason);
+  // Returns { ok, status, reason }. Tries configured env, falls back to the other.
+  const send = async (token, { title, body, data }) => {
+    let payload;
+    try {
+      payload = JSON.stringify({
+        aps: { alert: { title, body: body || "" }, sound: "default", "thread-id": data?.tag || data?.flightNumber || "flight" },
+        ...(data || {}),
+      });
+    } catch { return { ok: false, status: 0, reason: "payload" }; }
+
+    const primary = PRODUCTION ? "production" : "sandbox";
+    const secondary = PRODUCTION ? "sandbox" : "production";
+    let r = await sendOn(primary, token, payload);
+    if (isEnvMismatch(r)) r = await sendOn(secondary, token, payload);
+    return r;
+  };
+
+  const close = () => { for (const c of Object.values(clients)) { try { c.close(); } catch {} } };
+
+  // Only delete a token when Apple says the DEVICE is genuinely gone (app
+  // uninstalled). NOT on BadDeviceToken / env / topic errors — those are
+  // usually misconfig (key environment, wrong topic) and would wrongly nuke
+  // valid tokens.
+  const isDeadToken = (r) => r.status === 410 || r.reason === "Unregistered";
 
   return { send, close, isDeadToken };
 }

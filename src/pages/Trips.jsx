@@ -327,7 +327,7 @@ export function renderTrips(s) {
 
               return (
                 <button key={i} onClick={handleClick} style={{
-                  display: "flex", alignItems: "center", gap: 10,
+                  display: "flex", alignItems: isMobile ? "flex-start" : "center", gap: 10,
                   background: "transparent", border: "none", padding: "3px 0",
                   textAlign: "left", cursor: "pointer", width: "100%",
                   fontFamily: "inherit", minWidth: 0,
@@ -336,17 +336,19 @@ export function renderTrips(s) {
                   onMouseEnter={e => { e.currentTarget.style.color = ev.accent; }}
                   onMouseLeave={e => { e.currentTarget.style.color = "inherit"; }}
                 >
-                  <span style={{ width: 18, height: 18, borderRadius: "50%", background: info.wash, display: "grid", placeItems: "center", flexShrink: 0 }}>
+                  <span style={{ width: 18, height: 18, borderRadius: "50%", background: info.wash, display: "grid", placeItems: "center", flexShrink: 0, marginTop: isMobile ? 1 : 0 }}>
                     <SegIcon type={seg.type} size={9} color={info.color} />
                   </span>
-                  <span style={{
-                    fontFamily: ev.serif, fontSize: isMobile ? 12 : 13,
-                    color: "currentColor", lineHeight: 1.3,
-                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                    minWidth: 0, flex: 1,
-                  }}>
-                    {main}
-                    {sub && <span style={{ fontFamily: ev.mono, fontSize: isMobile ? 10 : 11, color: ev.taupe, marginLeft: 8, fontVariantNumeric: "tabular-nums" }}>{sub}</span>}
+                  {/* On narrow phones, stack the meta (airline · times) onto its
+                      own line so flight times are never clipped by ellipsis. */}
+                  <span style={{ display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center", gap: isMobile ? 1 : 0, minWidth: 0, flex: 1 }}>
+                    <span style={{
+                      fontFamily: ev.serif, fontSize: isMobile ? 12 : 13,
+                      color: "currentColor", lineHeight: 1.3,
+                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                      minWidth: 0, maxWidth: "100%",
+                    }}>{main}</span>
+                    {sub && <span style={{ fontFamily: ev.mono, fontSize: isMobile ? 10 : 11, color: ev.taupe, marginLeft: isMobile ? 0 : 8, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{sub}</span>}
                   </span>
                 </button>
               );

@@ -18,7 +18,7 @@ import webpush from "web-push";
 import { createClient } from "@supabase/supabase-js";
 import { LOUNGE_DATABASE, AIRLINE_ALLIANCE } from "../src/constants/lounges.js";
 import { airlineIdFromFn, isInternational, loungeAccessSummary } from "../src/constants/loungeAccess.js";
-import { createApnsSender, apnsConfigured } from "./_apns.js";
+import { createApnsSender, apnsConfigured, apnsDebugInfo } from "./_apns.js";
 
 const AERO_KEY = (process.env.VITE_AERODATABOX_API_KEY || "").trim();
 const VAPID_PUBLIC = (process.env.VITE_VAPID_PUBLIC_KEY || "").trim();
@@ -178,6 +178,35 @@ export default async function handler(req, res) {
       return res.json({ debugLoungePush: req.query.debugLoungePush, sent: false, error: e.message, statusCode: e.statusCode });
     }
   }
+  // ?debugApnsSamples=<user_id>  → send realistic sample alerts via APNs to the
+  // user's most-recently-registered device, to preview real formats natively.
+  if (req.query.debugApnsSamples) {
+    const userId = String(req.query.debugApnsSamples);
+    if (!apnsConfigured()) return res.json({ debugApnsSamples: userId, configured: false });
+    const { data: toks } = await supabase.from("device_push_tokens").select("token, updated_at").eq("user_id", userId).order("updated_at", { ascending: false });
+    if (!toks?.length) return res.json({ debugApnsSamples: userId, sent: 0, reason: "no device tokens stored for this user" });
+    const sender = createApnsSender();
+    if (!sender) return res.json({ debugApnsSamples: userId, error: "sender init failed (check APNS_KEY)" });
+    const token = toks[0].token; // newest device only, so no duplicate banners
+    const samples = [
+      { title: "BR 51 departs in 3 hours", body: "JFK → TPE · Sat 6:00 PM · Time to head to the airport", tag: "s-3h" },
+      { title: "Gate change — BR 51", body: "JFK → TPE · Now Gate 42, Terminal 1 (was Gate 31)", tag: "s-gate" },
+      { title: "Lounge access — HKG", body: "Cathay Pacific The Pier First (Gate 65), Cathay Pacific The Wing First (Gate 1) · +10 more in the app", tag: "s-lounge" },
+    ];
+    const results = [];
+    for (const s of samples) {
+      const r = await sender.send(token, { title: s.title, body: s.body, data: { tag: s.tag } });
+      results.push({ tag: s.tag, ...r });
+      await new Promise(res2 => setTimeout(res2, 700)); // gap so iOS shows them distinctly
+    }
+    sender.close();
+    return res.json({ debugApnsSamples: userId, sent: results.filter(r => r.ok).length, results });
+  }
+  // ?debugTokens=1  → list ALL native device tokens (which user_id owns each)
+  if (req.query.debugTokens) {
+    const { data, error } = await supabase.from("device_push_tokens").select("user_id, token, platform, updated_at").order("updated_at", { ascending: false });
+    return res.json({ tableError: error?.message || null, count: data?.length || 0, rows: (data || []).map(r => ({ user_id: r.user_id, token: r.token.slice(0, 10) + "…", platform: r.platform, updated_at: r.updated_at })) });
+  }
   // ?debugSubs=1  → report whether push_subscriptions exists + row count
   if (req.query.debugSubs) {
     const { data, error, count } = await supabase.from("push_subscriptions").select("user_id", { count: "exact" });
@@ -188,17 +217,17 @@ export default async function handler(req, res) {
     const userId = String(req.query.debugApns);
     if (!apnsConfigured()) return res.json({ debugApns: userId, configured: false, reason: "APNS_* env vars not set" });
     const { data: toks } = await supabase.from("device_push_tokens").select("token, platform").eq("user_id", userId);
-    if (!toks?.length) return res.json({ debugApns: userId, configured: true, sent: 0, reason: "no device tokens stored for this user" });
+    if (!toks?.length) return res.json({ debugApns: userId, configured: true, config: apnsDebugInfo(), sent: 0, reason: "no device tokens stored for this user" });
     const sender = createApnsSender();
-    if (!sender) return res.json({ debugApns: userId, configured: true, error: "sender init failed (check APNS_KEY)" });
+    if (!sender) return res.json({ debugApns: userId, configured: true, config: apnsDebugInfo(), error: "sender init failed (check APNS_KEY)" });
     const results = [];
     for (const t of toks) {
       const r = await sender.send(t.token, { title: "Continuum test alert", body: "Native push is working. ✈️", data: { test: true } });
       results.push({ token: t.token.slice(0, 8) + "…", ...r });
-      if (sender.isDeadToken(r)) await supabase.from("device_push_tokens").delete().eq("token", t.token);
+      // Diagnostic endpoint — never delete tokens here.
     }
     sender.close();
-    return res.json({ debugApns: userId, configured: true, sent: results.filter(r => r.ok).length, results });
+    return res.json({ debugApns: userId, configured: true, config: apnsDebugInfo(), tokens: toks.map(t => ({ head: t.token.slice(0, 8), len: t.token.length })), sent: results.filter(r => r.ok).length, results });
   }
   // ?debugPush=<user_id>  → send one test push to that user's subscription
   if (req.query.debugPush) {
