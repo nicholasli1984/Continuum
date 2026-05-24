@@ -3763,6 +3763,7 @@ Start by introducing yourself briefly in-character with personality, and give an
     if (!addSegmentType) return;
     const trip = trips.find(t => t.id === tripId);
     if (!trip) return;
+    const isNewFlightAdd = addSegmentType === "flight" && editingSegIdx === null;
 
     let newSegs = [];
 
@@ -3869,6 +3870,7 @@ Start by introducing yourself briefly in-character with personality, and give an
     setSegmentForm({});
     setFlightLegs([{ id: 1, flightNumber: "", date: "", arrivalDate: "", departureTime: "", arrivalTime: "", departureAirport: "", arrivalAirport: "", departureTerminal: "", arrivalTerminal: "", airline: "", aircraft: "", lookupMsg: "" }]);
     setEditingSegIdx(null);
+    if (isNewFlightAdd) maybePromptFlightAlerts();
   };
 
   // Edit an existing segment — opens the add form pre-filled
@@ -4022,6 +4024,7 @@ Start by introducing yourself briefly in-character with personality, and give an
         setTrips(prev => [...prev, { ...newTrip, segments, estimatedPoints: totalPoints, estimatedNights: totalNights, tripName: newTrip.tripName, status: newTrip.status, date: firstDate, id: Date.now() }]);
       }
     }
+    if (!editingTripId && segments.some(s => s.type === "flight")) maybePromptFlightAlerts();
     resetTripModal();
   };
 
@@ -5024,6 +5027,10 @@ Start by introducing yourself briefly in-character with personality, and give an
   // ── Push notification subscription ──
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushSupported, setPushSupported] = useState(false);
+  // One-time nudge shown right after a user adds a flight, inviting them to turn
+  // on gate/delay/lounge alerts. Suppressed for the session once acted on.
+  const [flightAlertNudge, setFlightAlertNudge] = useState(false);
+  const flightNudgeDismissedRef = useRef(false);
 
   useEffect(() => {
     if (!isLoggedIn) return;
@@ -5134,6 +5141,22 @@ Start by introducing yourself briefly in-character with personality, and give an
       setPushStatus("Error: " + e.message);
     }
   };
+
+  // Offer flight alerts at the moment of highest intent — just after a flight is
+  // added — but only when they aren't already on, and at most once per session.
+  const maybePromptFlightAlerts = () => {
+    if (!isLoggedIn || pushEnabled || !pushSupported) return;
+    if (flightNudgeDismissedRef.current) return;
+    setFlightAlertNudge(true);
+  };
+  const dismissFlightNudge = () => { flightNudgeDismissedRef.current = true; setFlightAlertNudge(false); };
+  const acceptFlightNudge = () => { flightNudgeDismissedRef.current = true; setFlightAlertNudge(false); enablePushNotifications(); };
+  // Auto-retire the nudge if ignored, so it never lingers on screen.
+  useEffect(() => {
+    if (!flightAlertNudge) return;
+    const t = setTimeout(() => setFlightAlertNudge(false), 13000);
+    return () => clearTimeout(t);
+  }, [flightAlertNudge]);
 
   // Native Apple/Google sign-in (Capacitor). The OS shows a native sheet and the
   // Supabase auth listener updates the session on success; surface real errors
@@ -9941,6 +9964,49 @@ Start by introducing yourself briefly in-character with personality, and give an
           </div>
         );
       })()}
+
+      {/* Flight-alert opt-in nudge — appears right after a flight is added */}
+      {flightAlertNudge && (
+        <div style={{
+          position: "fixed", left: 0, right: 0, zIndex: 9998,
+          bottom: isMobile ? "calc(88px + env(safe-area-inset-bottom))" : 24,
+          padding: "0 16px", display: "flex", justifyContent: "center", pointerEvents: "none",
+        }}>
+          <div style={{
+            pointerEvents: "all", width: "100%", maxWidth: 440,
+            background: css.surface, border: `1px solid ${css.border}`, borderRadius: 16,
+            padding: "14px 16px", boxShadow: css.shadowHover,
+            display: "flex", flexDirection: isMobile ? "column" : "row",
+            alignItems: isMobile ? "stretch" : "center", gap: isMobile ? 12 : 14,
+            animation: "nudge-up 0.32s cubic-bezier(0.16,1,0.3,1)",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 13, flex: 1, minWidth: 0 }}>
+              <span style={{
+                width: 38, height: 38, borderRadius: 11, flexShrink: 0,
+                background: css.accentBg, border: `1px solid ${css.accentBorder}`,
+                display: "grid", placeItems: "center",
+              }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={css.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+              </span>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: css.text, letterSpacing: "-0.01em" }}>Stay ahead of this flight</div>
+                <div style={{ fontSize: 12.5, color: css.text3, marginTop: 2, lineHeight: 1.4 }}>Gate changes, delays &amp; lounge access — even when the app is closed.</div>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexShrink: 0 }}>
+              <button onClick={dismissFlightNudge} style={{
+                padding: "9px 12px", borderRadius: 10, border: "none", background: "transparent",
+                color: css.text3, fontSize: 13, fontWeight: 500, cursor: "pointer",
+              }}>Not now</button>
+              <button onClick={acceptFlightNudge} style={{
+                padding: "9px 18px", borderRadius: 10, border: "none", background: css.accent,
+                color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap",
+              }}>Enable</button>
+            </div>
+          </div>
+          <style>{`@keyframes nudge-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+        </div>
+      )}
     </div>
   );
 }
