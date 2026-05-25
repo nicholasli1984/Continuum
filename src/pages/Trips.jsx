@@ -1411,8 +1411,20 @@ export function renderTrips(s) {
                     </span>
                   </div>
                 )}
-                {/* Status */}
-                <span style={{ fontFamily: dv.mono, fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", padding: "4px 10px", border: `1px solid ${sColor}`, color: sColor, whiteSpace: "nowrap" }}>{trip.status || "planned"}</span>
+                {/* Status (+ mobile quick actions) */}
+                {isMobile ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: 7, justifySelf: "end" }}>
+                    <span style={{ fontFamily: dv.mono, fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", padding: "4px 10px", border: `1px solid ${sColor}`, color: sColor, whiteSpace: "nowrap" }}>{trip.status || "planned"}</span>
+                    <button onClick={e => { e.stopPropagation(); openEditTrip(trip); }} title="Edit" style={{ width: 34, height: 34, borderRadius: 9, border: `1px solid ${dv.cream}`, background: dv.bone, color: dv.taupe, display: "grid", placeItems: "center", cursor: "pointer", flexShrink: 0 }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.85 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                    </button>
+                    <button onClick={e => { e.stopPropagation(); removeTrip(trip); }} title={trip._shared ? "Remove shared trip" : "Delete trip"} style={{ width: 34, height: 34, borderRadius: 9, border: `1px solid ${D ? "rgba(200,85,61,0.28)" : "rgba(200,85,61,0.2)"}`, background: "rgba(200,85,61,0.07)", color: "#C8553D", display: "grid", placeItems: "center", cursor: "pointer", flexShrink: 0 }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                  </div>
+                ) : (
+                  <span style={{ fontFamily: dv.mono, fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", padding: "4px 10px", border: `1px solid ${sColor}`, color: sColor, whiteSpace: "nowrap" }}>{trip.status || "planned"}</span>
+                )}
                   {/* Actions — editorial style */}
                   {!isMobile && (
                     <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
@@ -1625,7 +1637,19 @@ export function renderTrips(s) {
                           </span>
                         </div>
                       )}
-                      <span style={{ fontFamily: dv.mono, fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", padding: "4px 10px", border: `1px solid ${sColor}`, color: sColor, whiteSpace: "nowrap" }}>{trip.status || "confirmed"}</span>
+                      {isMobile ? (
+                        <div style={{ display: "flex", alignItems: "center", gap: 7, justifySelf: "end" }}>
+                          <span style={{ fontFamily: dv.mono, fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", padding: "4px 10px", border: `1px solid ${sColor}`, color: sColor, whiteSpace: "nowrap" }}>{trip.status || "confirmed"}</span>
+                          <button onClick={e => { e.stopPropagation(); openEditTrip(trip); }} title="Edit" style={{ width: 34, height: 34, borderRadius: 9, border: `1px solid ${dv.cream}`, background: dv.bone, color: dv.taupe, display: "grid", placeItems: "center", cursor: "pointer", flexShrink: 0 }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.85 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                          </button>
+                          <button onClick={e => { e.stopPropagation(); removeTrip(trip); }} title={trip._shared ? "Remove shared trip" : "Delete trip"} style={{ width: 34, height: 34, borderRadius: 9, border: `1px solid ${D ? "rgba(200,85,61,0.28)" : "rgba(200,85,61,0.2)"}`, background: "rgba(200,85,61,0.07)", color: "#C8553D", display: "grid", placeItems: "center", cursor: "pointer", flexShrink: 0 }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                          </button>
+                        </div>
+                      ) : (
+                        <span style={{ fontFamily: dv.mono, fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", padding: "4px 10px", border: `1px solid ${sColor}`, color: sColor, whiteSpace: "nowrap" }}>{trip.status || "confirmed"}</span>
+                      )}
                       {!isMobile && (
                         <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
                           <button onClick={e => { e.stopPropagation(); setShowAddExpense(trip.id); }} style={{ padding: "7px 12px", fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: css.accent, border: `1px solid ${dv.cream}`, background: "transparent", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, transition: "all 0.25s" }}

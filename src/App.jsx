@@ -5184,7 +5184,7 @@ Start by introducing yourself briefly in-character with personality, and give an
     if (!isLoggedIn || trips.length === 0) return;
     const checkFlightStatus = async () => {
       const now = new Date();
-      const cutoff = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+      const cutoff = new Date(now.getTime() + 72 * 60 * 60 * 1000);
       const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
       const flightsToCheck = [];
       trips.forEach(trip => {

@@ -1,10 +1,47 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { apiFetch } from "../utils/apiBase";
 import { motion, AnimatePresence } from "framer-motion";
 import { LANDMARK_FALLBACK_PHOTOS } from "../constants/airline-data";
+import { airlineIdFromFn, isInternational, loungeAccessSummary, computeLoungeAccess } from "../constants/loungeAccess";
+import { AIRLINE_ALLIANCE } from "../constants/lounges";
 import TransferBonusBand from "../components/transferBonuses/TransferBonusBand";
 import ReportedBadge from "../components/ReportedBadge";
 import { isLandingDemo, DEMO_FIRST_NAME } from "../utils/landingDemo";
+
+// Verified destination cover photos (each visually checked). Bermuda uses a
+// Wikimedia Horseshoe Bay shot since no reliable Unsplash one existed.
+function cityPhoto(city) {
+  const Q = "?w=1400&q=80&auto=format&fit=crop";
+  const M = {
+    Tokyo: "https://images.unsplash.com/photo-1542051841857-5f90071e7989" + Q,
+    Osaka: "https://images.unsplash.com/photo-1590559899731-a382839e5549" + Q,
+    Seoul: "https://images.unsplash.com/photo-1538485399081-7191377e8241" + Q,
+    Taipei: "https://images.unsplash.com/photo-1470004914212-05527e49370b" + Q,
+    "Hong Kong": "https://images.unsplash.com/photo-1536599018102-9f803c140fc1" + Q,
+    Singapore: "https://images.unsplash.com/photo-1525625293386-3f8f99389edd" + Q,
+    Bangkok: "https://images.unsplash.com/photo-1563492065599-3520f775eeed" + Q,
+    Dubai: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c" + Q,
+    "New York": "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9" + Q,
+    London: "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad" + Q,
+    Paris: "https://images.unsplash.com/photo-1511739001486-6bfe10ce785f" + Q,
+    Rome: "https://images.unsplash.com/photo-1552832230-c0197dd311b5" + Q,
+    Barcelona: "https://images.unsplash.com/photo-1583422409516-2895a77efded" + Q,
+    Amsterdam: "https://images.unsplash.com/photo-1534351590666-13e3e96b5017" + Q,
+    Sydney: "https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9" + Q,
+    "San Francisco": "https://images.unsplash.com/photo-1449034446853-66c86144b0ad" + Q,
+    Miami: "https://images.unsplash.com/photo-1535498730771-e735b998cd64" + Q,
+    Honolulu: "https://images.unsplash.com/photo-1507876466758-bc54f384809c" + Q,
+    Vancouver: "https://images.unsplash.com/photo-1560814304-4f05b62af116" + Q,
+    Montreal: "https://images.unsplash.com/photo-1519178614-68673b201f36" + Q,
+    Toronto: "https://images.unsplash.com/photo-1517935706615-2717063c2225" + Q,
+    Bermuda: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/Horseshoebay.Bermuda.JPG/1280px-Horseshoebay.Bermuda.JPG",
+  };
+  const def = "https://images.unsplash.com/photo-1488646953014-85cb44e25828" + Q;
+  if (!city) return def;
+  const lc = String(city).toLowerCase();
+  for (const [k, u] of Object.entries(M)) if (lc.includes(k.toLowerCase())) return u;
+  return def;
+}
 
 // Animated checkbox from prompt — SVG path draw animation
 const PackCheckBox = ({ checked, onClick, size = 24, color = "#10b981" }) => (
@@ -24,6 +61,365 @@ const PackCheckBox = ({ checked, onClick, size = 24, color = "#10b981" }) => (
     </svg>
   </div>
 );
+
+// Minimal weather glyph (no emoji, per design rules) keyed to WMO codes.
+// Soft, filled, illustrative weather icons (no emoji). Natural colors so they
+// read instantly: amber sun, soft blue-grey clouds, blue rain, pale snow.
+function WeatherGlyph({ code, size = 30 }) {
+  const c = Number(code);
+  const SUN = "#E8A93C", CLOUD = "#C7CEDA", CLOUD_DK = "#AAB4C4", RAIN = "#5B8DEF", SNOW = "#AEC2D8";
+  const cloud = (cx = 0, cy = 0, fill = CLOUD) => <path transform={`translate(${cx},${cy})`} d="M7.6 18.6a4.1 4.1 0 0 1 0-8.2 5.5 5.5 0 0 1 10.5-1.4A3.8 3.8 0 0 1 17.8 18.6z" fill={fill} />;
+  const rays = (
+    <g stroke={SUN} strokeWidth="1.7" strokeLinecap="round">
+      <line x1="12" y1="2" x2="12" y2="4.2" /><line x1="12" y1="19.8" x2="12" y2="22" />
+      <line x1="2" y1="12" x2="4.2" y2="12" /><line x1="19.8" y1="12" x2="22" y2="12" />
+      <line x1="5" y1="5" x2="6.6" y2="6.6" /><line x1="17.4" y1="17.4" x2="19" y2="19" />
+      <line x1="5" y1="19" x2="6.6" y2="17.4" /><line x1="17.4" y1="6.6" x2="19" y2="5" />
+    </g>
+  );
+  let body;
+  if (c === 0 || c === 1) body = <>{rays}<circle cx="12" cy="12" r="4.8" fill={SUN} /></>;
+  else if (c === 2) body = <><circle cx="9" cy="8.5" r="3.4" fill={SUN} />{cloud(1, 1)}</>;
+  else if (c === 3 || c === 45 || c === 48) body = cloud(0, 0, CLOUD_DK);
+  else if (c >= 71 && c <= 86) body = <>{cloud(0, -1.5)}<g fill={SNOW}>{[8, 12, 16].map((x, i) => <circle key={i} cx={x} cy={21} r="1.1" />)}</g></>;
+  else if ((c >= 51 && c <= 67) || (c >= 80 && c <= 99)) body = <>{cloud(0, -1.5)}<g stroke={RAIN} strokeWidth="1.8" strokeLinecap="round">{[8, 12, 16].map((x, i) => <line key={i} x1={x} y1="19.5" x2={x - 1.3} y2="22.6" />)}</g></>;
+  else body = cloud();
+  return <svg viewBox="0 0 24 24" width={size} height={size} style={{ display: "block" }}>{body}</svg>;
+}
+
+// Destination weather strip — 6-day forecast for the next trip's city via
+// Open-Meteo (free, no key). Self-contained so it owns its own fetch state.
+function DestinationWeather({ css, dv, isMobile, city, compact }) {
+  const [days, setDays] = useState(null);
+  const [err, setErr] = useState(false);
+  const [unit, setUnit] = useState(() => { try { return localStorage.getItem("continuum_temp_unit") === "C" ? "C" : "F"; } catch { return "F"; } });
+  const setU = (u) => { setUnit(u); try { localStorage.setItem("continuum_temp_unit", u); } catch {} };
+  useEffect(() => {
+    if (!city) return; let cancel = false;
+    (async () => {
+      try {
+        const g = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en`).then(r => r.json());
+        const loc = g?.results?.[0];
+        if (!loc) { if (!cancel) setErr(true); return; }
+        const w = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${loc.latitude}&longitude=${loc.longitude}&daily=temperature_2m_max,temperature_2m_min,weather_code&temperature_unit=celsius&timezone=auto&forecast_days=6`).then(r => r.json());
+        if (cancel || !w?.daily?.time) return;
+        setDays(w.daily.time.map((t, i) => ({ date: t, hiC: w.daily.temperature_2m_max[i], loC: w.daily.temperature_2m_min[i], code: w.daily.weather_code[i] })));
+      } catch { if (!cancel) setErr(true); }
+    })();
+    return () => { cancel = true; };
+  }, [city]);
+  if (!city || err) return null;
+  const conv = (c) => unit === "C" ? Math.round(c) : Math.round(c * 9 / 5 + 32);
+  const N = compact ? 5 : 6;
+  const list = days ? days.slice(0, N) : Array.from({ length: N });
+  const tabBtn = (u) => ({ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.06em", padding: compact ? "2px 7px" : "3px 9px", cursor: "pointer", border: "none", background: unit === u ? css.accent : "transparent", color: unit === u ? "#fff" : dv.taupe });
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: compact ? 8 : 12 }}>
+        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: dv.taupe }}>Weather · {city}</span>
+        <div style={{ display: "inline-flex", border: `1px solid ${dv.cream}` }}>
+          <button onClick={() => setU("C")} style={tabBtn("C")}>°C</button>
+          <button onClick={() => setU("F")} style={tabBtn("F")}>°F</button>
+        </div>
+      </div>
+      <div style={{ display: "flex", gap: compact ? 6 : (isMobile ? 8 : 10) }}>
+        {list.map((d, i) => (
+          <div key={i} style={{ flex: 1, minWidth: 0, textAlign: "center", background: dv.bone, border: `1px solid ${dv.cream}`, padding: compact ? "7px 2px" : (isMobile ? "10px 6px" : "12px 12px") }}>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.06em", textTransform: "uppercase", color: dv.taupe, marginBottom: compact ? 5 : 9 }}>{d ? new Date(d.date + "T12:00:00").toLocaleDateString("en-US", { weekday: "short" }) : "—"}</div>
+            <div style={{ display: "grid", placeItems: "center", height: compact ? 22 : 30, marginBottom: compact ? 5 : 9 }}>{d ? <WeatherGlyph code={d.code} size={compact ? 22 : 28} /> : null}</div>
+            <div style={{ fontFamily: "'Fraunces', serif", fontSize: compact ? 15 : 17, color: dv.ink, lineHeight: 1 }}>{d ? `${conv(d.hiC)}°` : "--"}</div>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: compact ? 10 : 11, color: dv.taupe, marginTop: compact ? 2 : 4 }}>{d ? `${conv(d.loC)}°` : ""}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// "Ask Continuum" — natural-language travel assistant (Claude via /api/ask).
+function AskContinuum({ css, dv, isMobile, trips, formatTripDates }) {
+  const [q, setQ] = useState("");
+  const [answer, setAnswer] = useState("");
+  const [loading, setLoading] = useState(false);
+  const suggestions = ["What should I pack for my next trip?", "When is my next trip?", "Tips for my layover?"];
+  const ask = async (text) => {
+    const query = (typeof text === "string" ? text : q).trim();
+    if (!query || loading) return;
+    if (typeof text === "string") setQ(text);
+    setLoading(true); setAnswer("");
+    try {
+      const context = (trips || []).slice(0, 8).map(t => `- ${t.tripName || t.trip_name || t.location || "Trip"}${t.location ? ` (${t.location})` : ""}${formatTripDates ? ` — ${formatTripDates(t)}` : ""}`).join("\n");
+      const resp = await apiFetch("/api/ask", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query, context }) });
+      const data = await resp.json();
+      setAnswer(resp.ok ? (data.answer || "") : (data.error || "Something went wrong."));
+    } catch { setAnswer("Couldn't reach the assistant — please try again."); }
+    setLoading(false);
+  };
+  return (
+    <div style={{ marginBottom: 32 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", margin: "32px 0 16px", paddingBottom: 14, borderBottom: `1px solid ${css.border}` }}>
+        <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: isMobile ? 22 : 26, fontWeight: 400, letterSpacing: "-0.02em", color: css.text, margin: 0 }}>
+          Ask Continuum <em style={{ fontStyle: "italic", color: css.text3, fontSize: isMobile ? 14 : 16, marginLeft: 4 }}>— your travel desk.</em>
+        </h2>
+      </div>
+      <div style={{ background: dv.paper, border: `1px solid ${dv.cream}`, padding: isMobile ? 16 : 20 }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <input value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => { if (e.key === "Enter") ask(); }} placeholder="Ask anything about your travels…"
+            style={{ flex: 1, minWidth: 0, background: dv.bone, border: `1px solid ${dv.cream}`, color: css.text, fontFamily: "'Inter Tight', sans-serif", fontSize: 14, padding: "12px 14px", outline: "none" }} />
+          <button onClick={() => ask()} disabled={loading} style={{ flexShrink: 0, background: css.accent, color: "#fff", border: "none", fontFamily: "'JetBrains Mono', monospace", fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", padding: "12px 18px", cursor: loading ? "default" : "pointer", opacity: loading ? 0.7 : 1 }}>{loading ? "…" : "Ask"}</button>
+        </div>
+        {!answer && !loading && (
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
+            {suggestions.map((sug, i) => (
+              <button key={i} onClick={() => ask(sug)} style={{ background: "transparent", border: `1px solid ${dv.cream}`, color: dv.taupe, fontFamily: "'Inter Tight', sans-serif", fontSize: 12.5, padding: "6px 12px", borderRadius: 999, cursor: "pointer" }}>{sug}</button>
+            ))}
+          </div>
+        )}
+        {loading && <div style={{ marginTop: 14, fontFamily: "'Fraunces', serif", fontStyle: "italic", color: dv.taupe, fontSize: 14 }}>Thinking…</div>}
+        {answer && <div style={{ marginTop: 14, fontFamily: "'Inter Tight', sans-serif", fontSize: 14, lineHeight: 1.6, color: dv.ink, whiteSpace: "pre-wrap" }}>{answer}</div>}
+      </div>
+    </div>
+  );
+}
+
+// Next-flight hero card (shown within 3 days of departure). Tapping it pulls up
+// a boarding-pass-style sheet with passenger + flight details, the destination
+// weather, and the top 2 lounges to visit.
+function NextFlightCard({ css, dv, D, isMobile, trips, getFlightLiveStatus, AIRPORT_CITY, linkedAccounts, user, setActiveView, setTripDetailId, setTripDetailSegIdx }) {
+  const [expanded, setExpanded] = useState(null); // null = wallet stack; index = that flight expanded
+
+  // Every flight departing within the next 3 days, across all trips.
+  const _t0 = new Date(); _t0.setHours(0, 0, 0, 0);
+  const upcoming = [];
+  for (const trip of (trips || [])) {
+    const segs = (trip.segments || []).filter(x => !x._isMeta && x.type === "flight" && (x.flightNumber || x.route));
+    for (let si = 0; si < segs.length; si++) {
+      const seg = segs[si];
+      const d = seg.date || trip.date;
+      if (!d) continue;
+      const days = Math.round((new Date(d + "T00:00:00") - _t0) / 86400000);
+      if (days < 0 || days > 3) continue;
+      upcoming.push({ seg, trip, days, segIdx: si, sortKey: `${d} ${seg.departureTime || ""}` });
+    }
+  }
+  upcoming.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+  if (upcoming.length === 0) return null;
+
+  const passenger = (user?.user_metadata?.first_name ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ""}`.trim() : (user?.user_metadata?.name || (user?.email || "").split("@")[0] || "You"));
+  const CLS = { business_first: "Business", business: "Business", first: "First", premium_economy: "Premium", economy: "Economy" };
+
+  // Derive everything one card needs from a {seg, trip, days, segIdx}.
+  const derive = ({ seg, trip, days, segIdx }) => {
+    const fl = seg;
+    const codes = (fl.route || "").split(/[^A-Za-z]+/).map(z => z.trim().toUpperCase()).filter(z => /^[A-Z]{3}$/.test(z));
+    const dep = codes[0] || ((fl.departureAirport || "").toUpperCase().match(/\b[A-Z]{3}\b/) || [])[0] || "";
+    const arr = codes[codes.length - 1] || ((fl.arrivalAirport || "").toUpperCase().match(/\b[A-Z]{3}\b/) || [])[0] || "";
+    const depCity = (dep && AIRPORT_CITY[dep]) || "";
+    const arrCity = (arr && AIRPORT_CITY[arr]) || (trip.location || "").split(",")[0].trim() || "";
+    const live = getFlightLiveStatus ? getFlightLiveStatus(fl) : null;
+    const fnum = (fl.flightNumber || "").trim();
+    const carrier = (fnum.match(/^[A-Z][A-Z0-9]/) || [])[0] || "";
+    const logo = carrier ? `https://images.kiwi.com/airlines/128/${carrier}.png` : "";
+    const term = live?.departureTerminal || fl.departureTerminal || "";
+    const gateDisplay = live?.departureGate || (term ? (/^\d/.test(String(term)) ? `T${term}` : String(term)) : "—");
+    const aircraft = live?.aircraft || fl.aircraft || "Aircraft to be assigned";
+    const aircraftReg = live?.aircraftReg || "";
+    const seat = fl.seat || "—";
+    const cls = CLS[fl.fareClass] || fl.fareClass || fl.class || "—";
+    const refDate = fl.date || trip.date;
+    const fdate = new Date(refDate + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short" });
+    const boards = live?.boardingTime || "—";
+    const baggage = live?.baggageBelt || "";
+    const depTime = fl.departureTime || "";
+    const arrTime = fl.arrivalTime || "";
+    const overnight = fl.arrivalDate && fl.date && fl.arrivalDate > fl.date;
+    const countdown = days === 0 ? "Today" : days === 1 ? "Tomorrow" : `In ${days} days`;
+    return { fl, trip, segIdx, dep, arr, depCity, arrCity, live, fnum, carrier, logo, term, gateDisplay, aircraft, aircraftReg, seat, cls, fdate, boards, baggage, depTime, arrTime, overnight, countdown };
+  };
+
+  const loungesFor = (f) => {
+    if (!f.dep) return [];
+    try {
+      const aid = airlineIdFromFn(f.fnum);
+      const accessible = computeLoungeAccess({ airport: f.dep, flyingAirlineId: aid, alliance: aid ? AIRLINE_ALLIANCE[aid] : null, isIntl: isInternational(f.dep, f.arr), accounts: linkedAccounts });
+      const nrm = (x) => String(x || "").toUpperCase().replace(/TERMINAL|[T#\s]/g, "");
+      const dt = nrm(f.fl.departureTerminal);
+      let pool = accessible;
+      if (dt) { const inT = accessible.filter(a => nrm(a.lounge.terminal) === dt); pool = inT.length ? inT : []; }
+      pool = [...pool].sort((a, b) => ((b.lounge.tier === "first" ? 100 : 0) + (b.lounge.rating || 0)) - ((a.lounge.tier === "first" ? 100 : 0) + (a.lounge.rating || 0)));
+      const seen = new Set(); const out = [];
+      for (const it of pool) {
+        if (seen.has(it.lounge.name)) continue; seen.add(it.lounge.name);
+        const l = it.lounge; const gm = String(l.location || "").match(/gate\s+([A-Za-z]?\d+[A-Za-z]?)/i);
+        out.push({ name: l.name, rating: l.rating || 0, where: gm ? `Gate ${gm[1].toUpperCase()}` : (l.terminal ? (/^\d/.test(String(l.terminal)) ? `T${l.terminal}` : String(l.terminal)) : "") });
+        if (out.length >= 2) break;
+      }
+      return out;
+    } catch { return []; }
+  };
+
+  const goTrip = (f) => { setTripDetailId(f.trip.id); setTripDetailSegIdx(f.segIdx || 0); setActiveView("trips"); };
+
+  const Logo = ({ src, alt, size, light }) => src ? <img src={src} alt={alt} onError={e => { e.currentTarget.style.display = "none"; }} style={{ width: size, height: size, objectFit: "contain", borderRadius: 6, background: "#fff", padding: 3, boxSizing: "border-box", boxShadow: light ? "0 1px 5px rgba(0,0,0,0.3)" : "none" }} /> : null;
+  const Field = ({ label, val }) => (
+    <div>
+      <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: dv.taupe, marginBottom: 3 }}>{label}</div>
+      <div style={{ fontFamily: "'Fraunces', serif", fontSize: isMobile ? 15 : 16, color: dv.ink, lineHeight: 1.1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{val}</div>
+    </div>
+  );
+  const Hub = ({ code, city, align, time, plus }) => (
+    <div style={{ textAlign: align, minWidth: 0 }}>
+      <div style={{ fontFamily: "'Fraunces', serif", fontSize: isMobile ? 26 : 30, fontWeight: 500, color: "#FBF8F3", lineHeight: 1 }}>{code || "—"}</div>
+      {city && <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.06em", color: "rgba(244,241,236,0.8)", marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{city}</div>}
+      {time && <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "rgba(244,241,236,0.95)", marginTop: 5 }}>{time}{plus ? " +1" : ""}</div>}
+    </div>
+  );
+
+  // The full, detailed boarding-pass card.
+  const FullCard = (f) => {
+    const lounges = loungesFor(f);
+    return (
+      <div style={{ border: `1px solid ${dv.cream}`, borderRadius: 16, overflow: "hidden", background: D ? "#16140f" : "#fff" }}>
+        {/* Dark route header (tap → full trip) */}
+        <div onClick={() => goTrip(f)} style={{ background: "#15130f", padding: isMobile ? "13px 18px 15px" : "15px 22px 17px", cursor: "pointer" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 12 }}>
+            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(244,241,236,0.5)" }}>Boarding pass</span>
+            {f.fnum && <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, letterSpacing: "0.1em", color: "rgba(244,241,236,0.85)" }}>{f.fnum}</span>}
+          </div>
+          <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 10 }}>
+            <Hub code={f.dep} city={f.depCity} align="left" time={f.depTime} />
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", paddingBottom: 4 }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="#FBF8F3"><path d="M22 16.5 14 11V4.5a2 2 0 0 0-4 0V11l-8 5.5V19l8-2.5V21l-2.2 1.6V24l4-1 4 1v-1.4L14 21v-4.5l8 2.5z" /></svg>
+              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(244,241,236,0.75)", marginTop: 4, whiteSpace: "nowrap" }}>{f.countdown}</div>
+            </div>
+            <Hub code={f.arr} city={f.arrCity} align="right" time={f.arrTime} plus={f.overnight} />
+          </div>
+        </div>
+
+        {/* Body */}
+        <div style={{ padding: isMobile ? "14px 16px" : "16px 20px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: dv.taupe }}>Passenger</div>
+              <div style={{ fontFamily: "'Fraunces', serif", fontSize: isMobile ? 19 : 22, fontWeight: 500, color: dv.ink, marginTop: 2 }}>{passenger}</div>
+            </div>
+            <Logo src={f.logo} alt={f.carrier} size={36} />
+          </div>
+
+          {/* Flight grid */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "14px 10px", marginTop: 14, paddingTop: 14, borderTop: `1px solid ${dv.cream}` }}>
+            <Field label="Date" val={f.fdate} />
+            <Field label={f.live?.departureGate ? "Gate" : "Terminal"} val={f.gateDisplay} />
+            <Field label="Flight" val={f.fnum || "—"} />
+            <Field label="Boarding" val={f.boards} />
+            <Field label="Seat" val={f.seat} />
+            <Field label="Class" val={f.cls} />
+            {f.baggage && <Field label="Baggage" val={f.baggage} />}
+          </div>
+
+          {/* Aircraft — clean monoline icon + type */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 14, paddingTop: 14, borderTop: `1px solid ${dv.cream}` }}>
+            <span style={{ width: 40, height: 40, borderRadius: 10, background: dv.bone, border: `1px solid ${dv.cream}`, display: "grid", placeItems: "center", flexShrink: 0 }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={dv.stone} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3.5S18 3 16.5 4.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" /></svg>
+            </span>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: dv.taupe, marginBottom: 3 }}>Aircraft</div>
+              <div style={{ fontFamily: "'Fraunces', serif", fontSize: isMobile ? 16 : 18, color: dv.ink, lineHeight: 1.15 }}>
+                {f.aircraft}{f.aircraftReg && <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, letterSpacing: "0.06em", color: dv.taupe, marginLeft: 8 }}>{f.aircraftReg}</span>}
+              </div>
+            </div>
+          </div>
+
+          {/* Weather (compact) */}
+          {f.arrCity && (
+            <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${dv.cream}` }}>
+              <DestinationWeather css={css} dv={dv} isMobile={isMobile} city={f.arrCity} compact />
+            </div>
+          )}
+
+          {/* Lounges to visit (top 2 in your terminal) */}
+          {lounges.length > 0 && (
+            <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${dv.cream}` }}>
+              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: dv.taupe, marginBottom: 10 }}>Lounges to visit</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {lounges.map((l, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ width: 24, height: 24, borderRadius: 7, background: css.accentBg, border: `1px solid ${css.accentBorder}`, display: "grid", placeItems: "center", flexShrink: 0 }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={css.accent} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                    </span>
+                    <div style={{ minWidth: 0, display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+                      <span style={{ fontFamily: "'Fraunces', serif", fontSize: isMobile ? 15 : 16, color: dv.ink }}>{l.name}</span>
+                      {l.rating > 0 && (
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 3, transform: "translateY(1px)" }}>
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill={dv.gold}><path d="M12 2l2.9 6.3 6.9.7-5.2 4.6 1.5 6.8L12 17.8 5.9 21l1.5-6.8L2.2 9l6.9-.7z" /></svg>
+                          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: dv.stone }}>{l.rating.toFixed(1)}</span>
+                        </span>
+                      )}
+                      {l.where && <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: css.accent }}>{l.where}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // A collapsed summary card for the wallet stack — itinerary + time only.
+  const SummaryCard = (f, i) => (
+    <div key={i} onClick={() => setExpanded(i)}
+      style={{ position: "relative", zIndex: i + 1, marginTop: i === 0 ? 0 : -16, cursor: "pointer", background: "#15130f", borderRadius: 14, padding: isMobile ? "13px 16px 17px" : "14px 18px 18px", border: "1px solid rgba(255,255,255,0.07)", boxShadow: "0 -3px 12px rgba(0,0,0,0.22), 0 8px 20px rgba(0,0,0,0.14)" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+          <Logo src={f.logo} alt={f.carrier} size={20} light />
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.1em", color: "rgba(244,241,236,0.75)" }}>{f.fnum}</span>
+        </div>
+        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(244,241,236,0.55)", border: "1px solid rgba(244,241,236,0.18)", borderRadius: 100, padding: "3px 9px", whiteSpace: "nowrap" }}>{f.countdown}</span>
+      </div>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
+        <span style={{ fontFamily: "'Fraunces', serif", fontSize: isMobile ? 18 : 20, fontWeight: 500, color: "#FBF8F3", lineHeight: 1 }}>{f.dep} → {f.arr}</span>
+        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, letterSpacing: "0.04em", color: "rgba(244,241,236,0.78)" }}>{f.fdate}{(f.depTime || f.arrTime) ? ` · ${f.depTime}${f.depTime && f.arrTime ? "–" : ""}${f.arrTime}` : ""}</span>
+      </div>
+    </div>
+  );
+
+  const single = upcoming.length === 1;
+  const headerLabel = single
+    ? `${upcoming[0].trip.tripName || upcoming[0].trip.trip_name || upcoming[0].trip.location || "your trip"}.`
+    : `${upcoming.length} flights.`;
+
+  return (
+    <div style={{ marginBottom: 28 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", margin: "0 0 12px" }}>
+        <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: isMobile ? 20 : 24, fontWeight: 400, letterSpacing: "-0.02em", color: css.text, margin: 0 }}>
+          Up next <em style={{ fontStyle: "italic", color: css.text3, fontSize: isMobile ? 14 : 17, marginLeft: 4 }}>— {headerLabel}</em>
+        </h2>
+        {!single && expanded !== null && (
+          <button onClick={() => setExpanded(null)} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "transparent", border: `1px solid ${css.border}`, borderRadius: 100, padding: "5px 11px", cursor: "pointer", fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: css.text2 }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+            All {upcoming.length} flights
+          </button>
+        )}
+      </div>
+
+      <AnimatePresence mode="wait" initial={false}>
+        {single ? (
+          <motion.div key="single">{FullCard(derive(upcoming[0]))}</motion.div>
+        ) : expanded !== null ? (
+          <motion.div key={`exp-${expanded}`} initial={{ opacity: 0, y: 10, scale: 0.985 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.985 }} transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}>
+            {FullCard(derive(upcoming[expanded]))}
+          </motion.div>
+        ) : (
+          <motion.div key="wallet" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }} transition={{ duration: 0.18 }}>
+            {upcoming.map((u, i) => SummaryCard(derive(u), i))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 export function renderDashboard(s) {
   const {
@@ -160,7 +556,7 @@ export function renderDashboard(s) {
         eyebrow: "Departing soon",
         accent: css.accent,
         title: `${nextFlightSeg.route || "Next flight"}`,
-        sub: `In ${hoursToNextFlight < 1 ? "<1 hour" : `${hoursToNextFlight} hours`} · check packing`,
+        sub: `In ${hoursToNextFlight < 1 ? "less than an hour" : `${hoursToNextFlight} hour${hoursToNextFlight === 1 ? "" : "s"}`}`,
         onClick: () => { setTripDetailId(nextFlightSeg._tripId); setPackingViewTripId(nextFlightSeg._tripId); setActiveView("trips"); },
       });
     }
@@ -609,110 +1005,7 @@ export function renderDashboard(s) {
                   />
                 )}
 
-                {/* Featured Trip — Editorial Hero Card */}
-                {nextTrip && (() => {
-                  const nt = nextTrip;
-                  const ntName = nt.tripName || nt.trip_name || nt.location || "Upcoming Trip";
-                  const ntSegs = (nt.segments || []).filter(s => !s._isMeta);
-                  const ntDates = ntSegs.map(s => s.date).filter(Boolean).sort();
-                  const ntNights = ntSegs.filter(s => s.type === "hotel").reduce((s, h) => s + (h.nights || 1), 0);
-                  const ntFlights = ntSegs.filter(s => s.type === "flight");
-                  const ntDepart = ntFlights[0]?.route?.split(/→|->/).map(s => s.trim())[0] || "";
-                  const ntReturn = ntFlights.length > 0 ? ntFlights[ntFlights.length - 1]?.route?.split(/→|->/).map(s => s.trim()).pop() || "" : "";
-                  const ntLoc = nt.location || ntName;
-                  // Find a photo for this trip's destination
-                  const ntCity = ntLoc.split(",")[0].trim();
-                  const FEAT_PHOTOS = {
-                    "Tokyo":"https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1400&q=80&fit=crop",
-                    "Osaka":"https://images.unsplash.com/photo-1590253230532-a67f6bc61b1e?w=1400&q=80&fit=crop",
-                    "Hong Kong":"https://images.unsplash.com/photo-1506146332389-18140dc7b2fb?w=1400&q=80&fit=crop",
-                    "New York":"https://images.unsplash.com/photo-1485871981521-5b1fd3805eee?w=1400&q=80&fit=crop",
-                    "London":"https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=1400&q=80&fit=crop",
-                    "Paris":"https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=1400&q=80&fit=crop",
-                    "Taipei":"https://images.unsplash.com/photo-1552529899-8c1ebff7ea46?w=1400&q=80&fit=crop",
-                    "Las Vegas":"https://images.unsplash.com/photo-1605833556294-ea5c7a74f57d?w=1400&q=80&fit=crop",
-                    "Singapore":"https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=1400&q=80&fit=crop",
-                    "Bermuda":"https://images.unsplash.com/photo-1548574505-5e239809ee19?w=1400&q=80&fit=crop",
-                  };
-                  let ntPhoto = landmarkPhotos?.[`${ntCity}, `] || null;
-                  if (!ntPhoto) { for (const [city, url] of Object.entries(FEAT_PHOTOS)) { if (ntLoc.toLowerCase().includes(city.toLowerCase())) { ntPhoto = url; break; } } }
-                  if (!ntPhoto) ntPhoto = "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1400&q=80&fit=crop";
-
-                  return (
-                    <div onClick={() => { setTripDetailId(nt.id); setActiveView("trips"); }}
-                      style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.1fr 1fr", gap: 0, background: css.surface, border: `1px solid ${css.border}`, marginBottom: 32, overflow: "hidden", cursor: "pointer" }}>
-                      {/* Image */}
-                      <div style={{ position: "relative", minHeight: isMobile ? 220 : 400, overflow: "hidden", background: "#1a1a1a" }}>
-                        <img src={ntPhoto} alt={ntName} style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0, filter: "saturate(0.85) contrast(1.05)" }} />
-                        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(21,19,15,0) 0%, rgba(21,19,15,0.2) 60%, rgba(21,19,15,0.6) 100%)" }} />
-                        <div style={{ position: "absolute", bottom: 16, left: 20, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: "#F4F1EC", opacity: 0.85, zIndex: 2 }}>
-                          <span style={{ color: css.accent }}>&#9679; </span>{ntCity}
-                        </div>
-                      </div>
-                      {/* Body */}
-                      <div style={{ padding: isMobile ? 24 : "32px 36px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                        <div>
-                          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: css.accent, marginBottom: 20, display: "flex", alignItems: "center", gap: 10 }}>
-                            <span style={{ width: 6, height: 6, borderRadius: "50%", background: css.accent, boxShadow: `0 0 10px ${css.accent}`, display: "inline-block" }} />
-                            Next Departure
-                          </div>
-                          <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 20 }}>
-                            <span style={{ fontFamily: "'Fraunces', serif", fontSize: isMobile ? 36 : 64, fontWeight: 300, lineHeight: 0.9, letterSpacing: "-0.04em", color: css.text, fontVariantNumeric: "tabular-nums" }}>{daysToNext !== null ? daysToNext : "--"}</span>
-                            <span style={{ fontFamily: "'Fraunces', serif", fontStyle: "italic", fontSize: 16, color: css.text3 }}>days away</span>
-                          </div>
-                          <div style={{ fontFamily: "'Fraunces', serif", fontSize: isMobile ? 24 : 32, fontWeight: 400, letterSpacing: "-0.02em", lineHeight: 1.1, color: css.text, marginBottom: 8 }}>
-                            {ntName}
-                          </div>
-                          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: css.accent, fontWeight: 500, marginBottom: nt._shared ? 8 : 24 }}>
-                            {nt.location || ""}{ntNights > 0 ? ` · ${ntNights} nights` : ""}
-                          </div>
-                          {nt._shared && (
-                            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, letterSpacing: "0.1em", color: "#3b82f6", fontWeight: 500, marginBottom: 24, display: "inline-flex", alignItems: "center", gap: 6 }}>
-                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-                              Shared by {nt._sharedBy || "Someone"}
-                            </div>
-                          )}
-                        </div>
-                        {/* Stats */}
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 0, paddingTop: 20, borderTop: `1px solid ${css.border}` }}>
-                          <div style={{ paddingRight: 16, borderRight: `1px solid ${css.border}` }}>
-                            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: css.text3, marginBottom: 6 }}>Depart</div>
-                            <div style={{ fontFamily: "'Inter Tight', sans-serif", fontSize: 15, fontWeight: 500, color: css.text }}>{ntDates[0] ? new Date(ntDates[0]+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"}) : "--"} {ntDepart && <span style={{ fontFamily: "'JetBrains Mono', monospace", color: css.text3, fontSize: 11, marginLeft: 4 }}>{ntDepart}</span>}</div>
-                          </div>
-                          <div style={{ padding: "0 16px", borderRight: `1px solid ${css.border}` }}>
-                            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: css.text3, marginBottom: 6 }}>Return</div>
-                            <div style={{ fontFamily: "'Inter Tight', sans-serif", fontSize: 15, fontWeight: 500, color: css.text }}>{ntDates.length > 1 ? new Date(ntDates[ntDates.length-1]+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"}) : "--"} {ntReturn && <span style={{ fontFamily: "'JetBrains Mono', monospace", color: css.text3, fontSize: 11, marginLeft: 4 }}>{ntReturn}</span>}</div>
-                          </div>
-                          <div style={{ paddingLeft: 16 }}>
-                            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: css.text3, marginBottom: 6 }}>Status</div>
-                            <div style={{ fontFamily: "'Inter Tight', sans-serif", fontSize: 15, fontWeight: 500, color: css.text, textTransform: "capitalize" }}>{nt.status || "Confirmed"}</div>
-                          </div>
-                        </div>
-                        {/* Quick action chips — bypass the whole-card click to jump straight to a function */}
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 16, paddingTop: 16, borderTop: `1px solid ${css.border}` }}>
-                          <button onClick={e => { e.stopPropagation(); setTripDetailId(nt.id); setActiveView("trips"); }}
-                            style={chipStyle(dv, css, true)}>
-                            Open trip →
-                          </button>
-                          <button onClick={e => { e.stopPropagation(); setTripDetailId(nt.id); setPackingViewTripId(nt.id); setActiveView("trips"); }}
-                            style={chipStyle(dv, css)}>
-                            Packing list
-                          </button>
-                          {typeof generateFlightyICS === "function" && ntFlights.length > 0 && (
-                            <button onClick={e => { e.stopPropagation(); generateFlightyICS(nt); }}
-                              style={chipStyle(dv, css)}>
-                              Export to calendar
-                            </button>
-                          )}
-                          <button onClick={e => { e.stopPropagation(); setShowAddExpense(nt.id); }}
-                            style={chipStyle(dv, css)}>
-                            Log expense
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
+                {/* Next Departure section removed — the Next 30 Days rail covers upcoming. */}
 
         {/* ── Phase 2: Smart prompts row ── */}
         {smartPrompts.length > 0 && (
@@ -741,123 +1034,15 @@ export function renderDashboard(s) {
           </div>
         )}
 
-        {/* ── Phase 3: Next 30 days rail ── */}
-        {(railSegments.length > 0 || railSharedCount > 0) && (
-          <div style={{ marginBottom: 40 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, gap: 12, flexWrap: "wrap" }}>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
-                <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: isMobile ? 22 : 26, fontWeight: 400, letterSpacing: "-0.02em", color: css.text, margin: 0 }}>
-                  Next 30 Days <em style={{ fontStyle: "italic", color: css.text3, fontSize: isMobile ? 14 : 16, marginLeft: 4 }}>— the rail.</em>
-                </h2>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                {/* Hide shared toggle — only surfaces when there are shared trips in the window */}
-                {railSharedCount > 0 && (
-                  <button onClick={() => setHideShared?.(!hideShared)}
-                    title={hideShared ? "Show shared trips everywhere in the app" : "Hide shared trips everywhere in the app"}
-                    style={{
-                      display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 10px",
-                      border: `1px solid ${hideShared ? css.border : "#3b82f6"}`,
-                      background: hideShared ? "transparent" : "rgba(59,130,246,0.06)",
-                      color: hideShared ? css.text3 : "#3b82f6",
-                      fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase",
-                      cursor: "pointer", transition: "all 0.2s",
-                    }}>
-                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: hideShared ? css.text3 : "#3b82f6" }} />
-                    {hideShared ? "Shared hidden" : "Shared shown"}
-                  </button>
-                )}
-                <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: css.text3 }}>
-                  {railSegments.length} item{railSegments.length === 1 ? "" : "s"}
-                </span>
-              </div>
-            </div>
-            {railSegments.length === 0 ? (
-              <div style={{ padding: "16px 18px", background: dv.paper, border: `1px solid ${dv.cream}`, fontFamily: "'Fraunces', serif", fontStyle: "italic", color: css.text3, fontSize: 14 }}>
-                Every upcoming item in this window is from a shared trip — toggle "Shared hidden" to bring them back.
-              </div>
-            ) : (
-            <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 8, scrollSnapType: "x proximity" }}>
-              {railSegments.map((seg, i) => {
-                const segDate = new Date(seg.date + "T12:00:00");
-                const dateLabel = segDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-                const dayLabel = segDate.toLocaleDateString("en-US", { weekday: "short" });
-                const segTypeLower = (seg.type || "").toString().toLowerCase();
-                const typeLabels = { flight: "Flight", hotel: "Hotel", activity: "Activity", car: "Car", train: "Train" };
-                const typeIcon = segTypeLower === "flight"
-                  ? <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" />
-                  : <><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></>;
-                const typeLabel = typeLabels[segTypeLower] || (seg.type ? String(seg.type).charAt(0).toUpperCase() + String(seg.type).slice(1) : "Item");
-                const detail = segTypeLower === "flight"
-                  ? (seg.route || `${seg.departureAirport || ""} → ${seg.arrivalAirport || ""}`.trim().replace(/^→\s*$/, ""))
-                  : (seg.property || seg.title || seg.name || seg.route || seg.location || typeLabel);
-                return (
-                  <button key={`${seg._tripId}-${seg.id || i}`} onClick={() => {
-                    // Queue a jump that App.jsx's resolver will translate into
-                    // the right day-pill index + expanded card key once Trips loads.
-                    setPendingTripJump?.({
-                      tripId: seg._tripId,
-                      segDate: seg.date,
-                      match: { type: seg.type || "", date: seg.date || "", flightNumber: seg.flightNumber || "", route: seg.route || "" },
-                    });
-                    setTripDetailId(seg._tripId);
-                    setActiveView("trips");
-                  }}
-                    style={{
-                      flex: "0 0 auto", scrollSnapAlign: "start", textAlign: "left", cursor: "pointer",
-                      width: isMobile ? 200 : 220, minWidth: 0, maxWidth: isMobile ? 200 : 220,
-                      boxSizing: "border-box", overflow: "hidden",
-                      padding: "14px 16px",
-                      background: dv.paper, border: `1px solid ${dv.cream}`,
-                      display: "flex", flexDirection: "column", gap: 8, transition: "border-color 0.2s",
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = css.accent; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = dv.cream; }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: css.text3, minWidth: 0 }}>
-                      <span style={{ color: css.accent }}>{dateLabel}</span>
-                      <span>· {dayLabel}</span>
-                      <span style={{ marginLeft: "auto", color: css.text3 }}>{typeLabel}</span>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-                      <span style={{ width: 28, height: 28, background: dv.bone, border: `1px solid ${dv.cream}`, color: css.text3, display: "grid", placeItems: "center", flexShrink: 0 }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{typeIcon}</svg>
-                      </span>
-                      <span style={{ fontFamily: "'Fraunces', serif", fontSize: 15, color: css.text, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0, flex: 1 }}>
-                        {detail}
-                      </span>
-                    </div>
-                    {/* Flight number + time row (or just time for non-flight segments) */}
-                    {(() => {
-                      const fn = segTypeLower === "flight" ? (seg.flightNumber || "") : "";
-                      const tm = seg.departureTime || seg.time || seg.startTime || "";
-                      if (!fn && !tm) return null;
-                      return (
-                        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.06em", color: css.accent, fontWeight: 500, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>
-                          {[fn, tm].filter(Boolean).join(" · ")}
-                        </div>
-                      );
-                    })()}
-                    <div style={{ fontFamily: "'Fraunces', serif", fontStyle: "italic", fontSize: 11, color: css.text3, lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0, maxWidth: "100%" }}>
-                      {seg._tripName}
-                    </div>
-                    {seg._tripShared && (
-                      <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, letterSpacing: "0.08em", color: "#3b82f6", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0, maxWidth: "100%" }}>
-                        Shared by {seg._tripSharedBy || "Someone"}
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-            )}
-          </div>
-        )}
+        {/* Next 30 Days rail removed — merged into the Upcoming Trips horizontal rail below. */}
+
+        {/* ── Up next — boarding-pass card (within 3 days) ── */}
+        <NextFlightCard css={css} dv={dv} D={D} isMobile={isMobile} trips={trips} getFlightLiveStatus={getFlightLiveStatus} AIRPORT_CITY={AIRPORT_CITY} linkedAccounts={linkedAccounts} user={user} setActiveView={setActiveView} setTripDetailId={setTripDetailId} setTripDetailSegIdx={setTripDetailSegIdx} />
 
         {/* ── Upcoming Trips — Editorial Timeline ── */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", margin: "32px 0 20px", paddingBottom: 14, borderBottom: `1px solid ${css.border}` }}>
           <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: isMobile ? 24 : 28, fontWeight: 400, letterSpacing: "-0.02em", color: css.text, margin: 0 }}>
-            Upcoming Trips <em style={{ fontStyle: "italic", color: css.text3, fontSize: isMobile ? 16 : 20, marginLeft: 4 }}>— the chronicle.</em>
+            Upcoming Trips <em style={{ fontStyle: "italic", color: css.text3, fontSize: isMobile ? 16 : 20, marginLeft: 4 }}>— next 30 days.</em>
           </h2>
           <div style={{ display: "flex", alignItems: "baseline", gap: 20 }}>
             <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: css.text3, letterSpacing: "0.1em" }}>S 02 · Itinerary</span>
@@ -867,297 +1052,124 @@ export function renderDashboard(s) {
             </button>
           </div>
         </div>
-        <div style={{ marginBottom: 32 }}>
-          {upcomingTripsFiltered.slice(0, 6).map((trip, tIdx) => {
-            const tripStart = trip.date || (trip.segments && trip.segments.map(s => s.date).filter(Boolean).sort()[0]) || "";
-            const daysAway = tripStart ? Math.max(0, Math.ceil((new Date(tripStart + "T12:00:00") - new Date()) / 86400000)) : null;
-            const confCode = trip.confirmationCode || trip.confirmation_code || (trip.segments && trip.segments.map(s => s.confirmationCode).filter(Boolean)[0]) || "";
-            const realSegs = (trip.segments || []).filter(s => !s._isMeta);
-            const hasFlights = realSegs.some(s => s.type === "flight");
-            const tripName = trip.tripName || trip.trip_name || trip.location || "Trip";
-            const sColors = { confirmed: "#6B7A5A", planned: "#B8924A", pending: css.accent };
-            const sColor = sColors[trip.status] || css.text3;
-            // Get city codes from flights
-            const cityCodes = [];
-            realSegs.filter(s => s.type === "flight" && s.route).forEach(s => {
-              const codes = (s.route || "").split(/→|->|-|\//).map(c => c.trim().toUpperCase()).filter(c => c.length === 3);
-              codes.forEach(c => { if (!cityCodes.includes(c)) cityCodes.push(c); });
+        <div style={{ display: "flex", gap: 16, overflowX: "auto", overflowY: "hidden", paddingBottom: 10, marginBottom: 32, scrollSnapType: "x proximity", WebkitOverflowScrolling: "touch" }}>
+          {(() => {
+            // Every image below was visually verified (correct city + high quality).
+            // Bermuda uses a Wikimedia Commons photo of Horseshoe Bay (the actual
+            // famous beach) since reliable Unsplash shots of Bermuda were wrong.
+            const Q = "?w=1200&q=80&auto=format&fit=crop";
+            const FEAT_PHOTOS = {
+              "Tokyo":"https://images.unsplash.com/photo-1542051841857-5f90071e7989"+Q,
+              "Osaka":"https://images.unsplash.com/photo-1590559899731-a382839e5549"+Q,
+              "Seoul":"https://images.unsplash.com/photo-1538485399081-7191377e8241"+Q,
+              "Taipei":"https://images.unsplash.com/photo-1470004914212-05527e49370b"+Q,
+              "Hong Kong":"https://images.unsplash.com/photo-1536599018102-9f803c140fc1"+Q,
+              "Singapore":"https://images.unsplash.com/photo-1525625293386-3f8f99389edd"+Q,
+              "Bangkok":"https://images.unsplash.com/photo-1563492065599-3520f775eeed"+Q,
+              "Dubai":"https://images.unsplash.com/photo-1512453979798-5ea266f8880c"+Q,
+              "New York":"https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9"+Q,
+              "London":"https://images.unsplash.com/photo-1513635269975-59663e0ac1ad"+Q,
+              "Paris":"https://images.unsplash.com/photo-1511739001486-6bfe10ce785f"+Q,
+              "Rome":"https://images.unsplash.com/photo-1552832230-c0197dd311b5"+Q,
+              "Barcelona":"https://images.unsplash.com/photo-1583422409516-2895a77efded"+Q,
+              "Amsterdam":"https://images.unsplash.com/photo-1534351590666-13e3e96b5017"+Q,
+              "Sydney":"https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9"+Q,
+              "San Francisco":"https://images.unsplash.com/photo-1449034446853-66c86144b0ad"+Q,
+              "Miami":"https://images.unsplash.com/photo-1535498730771-e735b998cd64"+Q,
+              "Honolulu":"https://images.unsplash.com/photo-1507876466758-bc54f384809c"+Q,
+              "Vancouver":"https://images.unsplash.com/photo-1560814304-4f05b62af116"+Q,
+              "Montreal":"https://images.unsplash.com/photo-1519178614-68673b201f36"+Q,
+              "Toronto":"https://images.unsplash.com/photo-1517935706615-2717063c2225"+Q,
+              "Bermuda":"https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/Horseshoebay.Bermuda.JPG/1280px-Horseshoebay.Bermuda.JPG",
+            };
+            const DEFAULT_PHOTO = "https://images.unsplash.com/photo-1488646953014-85cb44e25828"+Q;
+            const within30 = upcomingTripsFiltered.filter(t => {
+              const ts = t.date || (t.segments && t.segments.map(s => s.date).filter(Boolean).sort()[0]) || "";
+              if (!ts) return false;
+              const d = Math.ceil((new Date(ts + "T12:00:00") - new Date()) / 86400000);
+              return d >= 0 && d <= 30;
             });
-
-            return (
-              <div key={trip.id} onClick={() => { setTripDetailId(trip.id); setTripDetailSegIdx(0); setActiveView("trips"); }}
-                style={{
-                  display: "grid", gridTemplateColumns: isMobile ? "auto 1fr auto" : "auto auto 1fr auto auto auto",
-                  gap: isMobile ? 12 : 20, alignItems: "center", padding: isMobile ? "16px 16px" : "18px 24px",
-                  background: dv.paper, border: `1px solid ${dv.cream}`,
-                  marginBottom: tIdx < Math.min(upcomingTripsFiltered.length, 6) - 1 ? 3 : 0,
-                  cursor: "pointer", transition: "background 0.3s",
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = dv.bone}
-                onMouseLeave={e => e.currentTarget.style.background = dv.paper}>
-                {/* Index */}
-                {!isMobile && <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: dv.stone, letterSpacing: "0.08em", width: 24 }}>{String(tIdx + 1).padStart(2, "0")}</span>}
-                {/* Icon */}
-                <div style={{ width: 38, height: 38, border: `1px solid ${dv.cream}`, background: dv.bone, display: "grid", placeItems: "center", flexShrink: 0, transition: "border-color 0.3s, color 0.3s" }}>
-                  <SegIcon type={hasFlights ? "flight" : "hotel"} size={16} color={dv.taupe} />
-                </div>
-                {/* Main */}
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontFamily: "'Fraunces', serif", fontSize: isMobile ? 18 : 22, fontWeight: 400, letterSpacing: "-0.015em", color: dv.ink, lineHeight: 1.15, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {tripName}
-                  </div>
-                  {trip.location && (
-                    <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: css.accent, fontWeight: 500, marginTop: 4 }}>
-                      {trip.location}
-                    </div>
-                  )}
-                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, letterSpacing: "0.04em", color: dv.taupe, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginTop: 4 }}>
-                    <span>{formatTripDates(trip)}</span>
-                    {confCode && <span style={{ background: dv.bone, border: `1px solid ${dv.cream}`, padding: "1px 6px", fontSize: 10, letterSpacing: "0.08em", color: dv.taupe }}>{confCode}</span>}
-                    {trip._shared && <span style={{ color: "#3b82f6", fontWeight: 500 }}>Shared by {trip._sharedBy || "Someone"}</span>}
-                  </div>
-                </div>
-                {/* City codes */}
-                {!isMobile && cityCodes.length > 0 && (
-                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: css.accent, letterSpacing: "0.08em", textTransform: "uppercase", display: "flex", gap: 4, alignItems: "center" }}>
-                    {cityCodes.slice(0, 4).map((c, i) => <span key={i}>{c}{i < Math.min(cityCodes.length, 4) - 1 && <span style={{ color: dv.stone, margin: "0 2px" }}>&#8594;</span>}</span>)}
-                  </div>
-                )}
-                {/* Days */}
-                <div style={{ textAlign: "right", minWidth: isMobile ? 40 : 60 }}>
-                  <div style={{ fontFamily: "'Fraunces', serif", fontSize: isMobile ? 18 : 24, fontWeight: 400, lineHeight: 1, color: dv.ink, fontVariantNumeric: "tabular-nums" }}>{daysAway !== null ? daysAway : "--"}</div>
-                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: dv.taupe, marginTop: 3 }}>days out</div>
-                </div>
-                {/* Status */}
-                {!isMobile && <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", padding: "4px 10px", border: `1px solid ${sColor}`, color: sColor }}>{trip.status || "planned"}</span>}
-                {/* Edit / Delete actions — owners get both, shared trips with edit permission get edit only */}
-                {!isMobile && (() => {
-                  const canEdit = !trip._shared || trip._permission === "edit";
-                  const canDelete = true; // shared trips delete = remove the share
-                  return (
-                    <div style={{ display: "flex", gap: 4 }} onClick={e => e.stopPropagation()}>
-                      {canEdit && openEditTrip && (
-                        <button onClick={e => { e.stopPropagation(); openEditTrip(trip); }} title={trip._shared ? "Edit shared trip" : "Edit trip"} style={{
-                          width: 28, height: 28, border: `1px solid ${dv.cream}`, background: "transparent", color: dv.taupe,
-                          display: "grid", placeItems: "center", cursor: "pointer", transition: "all 0.2s",
-                        }}
-                          onMouseEnter={e => { e.currentTarget.style.color = css.text; e.currentTarget.style.borderColor = css.text; }}
-                          onMouseLeave={e => { e.currentTarget.style.color = dv.taupe; e.currentTarget.style.borderColor = dv.cream; }}>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.85 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
-                        </button>
-                      )}
-                      {canDelete && removeTrip && (
-                        <button onClick={e => { e.stopPropagation(); removeTrip(trip); }} title={trip._shared ? "Remove shared trip" : "Delete trip"} style={{
-                          width: 28, height: 28, border: `1px solid ${dv.cream}`, background: "transparent", color: dv.taupe,
-                          display: "grid", placeItems: "center", cursor: "pointer", transition: "all 0.2s",
-                        }}
-                          onMouseEnter={e => { e.currentTarget.style.color = "#C8553D"; e.currentTarget.style.borderColor = "#C8553D"; }}
-                          onMouseLeave={e => { e.currentTarget.style.color = dv.taupe; e.currentTarget.style.borderColor = dv.cream; }}>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                        </button>
-                      )}
-                    </div>
-                  );
-                })()}
-                {/* Arrow */}
-                {!isMobile && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={dv.taupe} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ transition: "transform 0.3s, color 0.3s" }}><polyline points="9 18 15 12 9 6"/></svg>}
+            if (within30.length === 0) return (
+              <div style={{ flexShrink: 0, width: "100%", padding: "40px 20px", textAlign: "center", background: dv.paper, border: `1px solid ${dv.cream}` }}>
+                <p style={{ fontFamily: "'Fraunces', serif", fontStyle: "italic", fontSize: 16, color: dv.taupe, margin: 0 }}>No trips in the next 30 days.</p>
               </div>
             );
-          })}
-          {upcomingTripsFiltered.length === 0 && (
-            <div style={{ padding: "48px 20px", textAlign: "center", background: dv.paper, border: `1px solid ${dv.cream}` }}>
-              <p style={{ fontFamily: "'Fraunces', serif", fontStyle: "italic", fontSize: 16, color: dv.taupe }}>No upcoming trips — add one to begin.</p>
-            </div>
-          )}
+            return within30.slice(0, 12).map((trip, tIdx) => {
+              const tripStart = trip.date || (trip.segments && trip.segments.map(s => s.date).filter(Boolean).sort()[0]) || "";
+              const daysAway = tripStart ? Math.max(0, Math.ceil((new Date(tripStart + "T12:00:00") - new Date()) / 86400000)) : null;
+              const confCode = trip.confirmationCode || trip.confirmation_code || (trip.segments && trip.segments.map(s => s.confirmationCode).filter(Boolean)[0]) || "";
+              const realSegs = (trip.segments || []).filter(s => !s._isMeta);
+              const tripName = trip.tripName || trip.trip_name || trip.location || "Trip";
+              const tripLoc = trip.location || "";
+              const status = trip.status || "planned";
+              const canEdit = !trip._shared || trip._permission === "edit";
+              const cityCodes = [];
+              realSegs.filter(s => s.type === "flight" && s.route).forEach(s => {
+                (s.route || "").split(/→|->|-|\//).map(c => c.trim().toUpperCase()).filter(c => c.length === 3).forEach(c => { if (!cityCodes.includes(c)) cityCodes.push(c); });
+              });
+              const destCity = tripLoc.split(",")[0].trim();
+              let photo = null;
+              for (const [city, url] of Object.entries(FEAT_PHOTOS)) { if (`${tripLoc} ${tripName}`.toLowerCase().includes(city.toLowerCase())) { photo = url; break; } }
+              if (!photo) photo = landmarkPhotos?.[`${destCity}, `] || null;
+              if (!photo) photo = DEFAULT_PHOTO;
+              return (
+                <div key={trip.id} onClick={() => { setTripDetailId(trip.id); setTripDetailSegIdx(0); setActiveView("trips"); }}
+                  style={{ position: "relative", flexShrink: 0, scrollSnapAlign: "start", width: isMobile ? "82vw" : 380, maxWidth: 440, height: isMobile ? 300 : 320, borderRadius: 20, overflow: "hidden", cursor: "pointer", background: "#1a1a1a", border: `1px solid ${dv.cream}`, boxShadow: D ? "0 1px 3px rgba(0,0,0,0.4)" : "0 2px 12px rgba(0,0,0,0.10)", transition: "transform 0.25s ease, box-shadow 0.25s ease" }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = D ? "0 10px 30px rgba(0,0,0,0.5)" : "0 12px 34px rgba(0,0,0,0.16)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = D ? "0 1px 3px rgba(0,0,0,0.4)" : "0 2px 12px rgba(0,0,0,0.10)"; }}>
+                  <img src={photo} alt={tripName} loading="lazy" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", filter: "saturate(0.9) contrast(1.03)" }} />
+                  <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(18,15,11,0.86) 0%, rgba(18,15,11,0.32) 46%, rgba(18,15,11,0.18) 100%)" }} />
+                  {/* Top row — status (left) + location (right) */}
+                  <div style={{ position: "absolute", top: 16, left: 18, right: 18, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+                    <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "#F4F1EC", background: "rgba(0,0,0,0.30)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", border: "1px solid rgba(255,255,255,0.22)", padding: "5px 11px", borderRadius: 999 }}>{status}</span>
+                    <div style={{ display: "flex", gap: 6 }} onClick={e => e.stopPropagation()}>
+                      {canEdit && openEditTrip && (
+                        <button onClick={e => { e.stopPropagation(); openEditTrip(trip); }} title="Edit trip" style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(0,0,0,0.32)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", border: "1px solid rgba(255,255,255,0.26)", color: "#F4F1EC", display: "grid", placeItems: "center", cursor: "pointer", transition: "all 0.2s" }}
+                          onMouseEnter={e => { e.currentTarget.style.background = "rgba(0,0,0,0.5)"; }} onMouseLeave={e => { e.currentTarget.style.background = "rgba(0,0,0,0.32)"; }}>
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.85 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                        </button>
+                      )}
+                      {removeTrip && (
+                        <button onClick={e => { e.stopPropagation(); removeTrip(trip); }} title={trip._shared ? "Remove shared trip" : "Delete trip"} style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(0,0,0,0.32)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", border: "1px solid rgba(255,255,255,0.26)", color: "#F4F1EC", display: "grid", placeItems: "center", cursor: "pointer", transition: "all 0.2s" }}
+                          onMouseEnter={e => { e.currentTarget.style.color = "#ff9b85"; e.currentTarget.style.borderColor = "rgba(255,140,120,0.6)"; }} onMouseLeave={e => { e.currentTarget.style.color = "#F4F1EC"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.26)"; }}>
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  {/* Bottom-left — route eyebrow + title + dates/ref */}
+                  <div style={{ position: "absolute", left: 18, right: 96, bottom: 18 }}>
+                    {cityCodes.length > 0 && <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: css.accent, marginBottom: 8, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 1 }}>
+                      {cityCodes.slice(0, 5).map((c, i) => <span key={i} style={{ whiteSpace: "nowrap" }}>{c}{i < Math.min(cityCodes.length, 5) - 1 && <span style={{ color: "rgba(244,241,236,0.55)", margin: "0 4px" }}>&#8594;</span>}</span>)}
+                    </div>}
+                    <div style={{ fontFamily: "'Fraunces', serif", fontSize: isMobile ? 24 : 28, fontWeight: 500, lineHeight: 1.04, letterSpacing: "-0.015em", color: "#FBF8F3", marginBottom: 8, textShadow: "0 1px 14px rgba(0,0,0,0.4)", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{tripName}</div>
+                    <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, letterSpacing: "0.04em", color: "rgba(244,241,236,0.9)", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                      {tripLoc && <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, opacity: 0.85 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>{tripLoc}</span>}
+                      <span>{formatTripDates(trip)}</span>
+                      {confCode && <span style={{ color: "rgba(244,241,236,0.6)" }}>· Ref {confCode}</span>}
+                      {trip._shared && <span style={{ color: "#9ec3ff" }}>· Shared</span>}
+                    </div>
+                  </div>
+                  {/* Bottom-right — days out + arrow */}
+                  <div style={{ position: "absolute", right: 16, bottom: 16, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 10 }}>
+                    {daysAway !== null && <div style={{ textAlign: "right", lineHeight: 1 }}>
+                      <span style={{ fontFamily: "'Fraunces', serif", fontSize: 28, fontWeight: 400, color: "#FBF8F3", fontVariantNumeric: "tabular-nums" }}>{daysAway}</span>
+                      <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(244,241,236,0.8)", marginTop: 3 }}>days out</div>
+                    </div>}
+                    <span style={{ width: 44, height: 44, borderRadius: 13, background: "rgba(0,0,0,0.30)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", border: "1px solid rgba(255,255,255,0.26)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F4F1EC" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    </span>
+                  </div>
+                </div>
+              );
+            });
+          })()}
         </div>
 
-        {/* ── Trip Highlights — Editorial Scrollable Rail ── */}
-        {upcomingTripsFiltered.length > 0 && (() => {
-          const IATA_CITY = { JFK: "New York", LAX: "Los Angeles", SFO: "San Francisco", ORD: "Chicago", MIA: "Miami", LHR: "London", CDG: "Paris", NRT: "Tokyo", HND: "Tokyo", KIX: "Osaka", ICN: "Seoul", SIN: "Singapore", HKG: "Hong Kong", DXB: "Dubai", FCO: "Rome", BCN: "Barcelona", AMS: "Amsterdam", IST: "Istanbul", BKK: "Bangkok", SYD: "Sydney", YYZ: "Toronto", TPE: "Taipei", BDA: "Bermuda", NAS: "Nassau", CUN: "Cancun", HNL: "Honolulu", ATH: "Athens", LIS: "Lisbon", PRG: "Prague", BUD: "Budapest", VIE: "Vienna", SEA: "Seattle", BOS: "Boston", DEN: "Denver", MCO: "Orlando", FLL: "Fort Lauderdale", LAS: "Las Vegas", YVR: "Vancouver", YUL: "Montreal", DOH: "Doha", TSA: "Taipei", EWR: "New York" };
-          const CITY_LANDMARKS = {
-            "New York": ["Statue of Liberty", "Central Park", "Times Square", "Brooklyn Bridge", "Empire State Building"],
-            "London": ["Big Ben", "Tower Bridge", "Buckingham Palace", "British Museum", "Hyde Park"],
-            "Paris": ["Eiffel Tower", "Louvre Museum", "Arc de Triomphe", "Notre-Dame", "Montmartre"],
-            "Tokyo": ["Shibuya Crossing", "Senso-ji Temple", "Tokyo Tower", "Meiji Shrine", "Tsukiji Market"],
-            "Osaka": ["Osaka Castle", "Dotonbori", "Universal Studios", "Shinsekai", "Namba"],
-            "Seoul": ["Gyeongbokgung Palace", "Bukchon Hanok Village", "Myeongdong", "N Seoul Tower", "Hongdae"],
-            "Singapore": ["Marina Bay Sands", "Gardens by the Bay", "Sentosa Island", "Chinatown", "Orchard Road"],
-            "Hong Kong": ["Victoria Peak", "Star Ferry", "Temple Street", "Tian Tan Buddha", "Mong Kok"],
-            "Dubai": ["Burj Khalifa", "Palm Jumeirah", "Dubai Mall", "Gold Souk", "Dubai Marina"],
-            "Rome": ["Colosseum", "Vatican City", "Trevi Fountain", "Pantheon", "Spanish Steps"],
-            "Barcelona": ["Sagrada Familia", "Park Guell", "La Rambla", "Casa Batllo", "Gothic Quarter"],
-            "Amsterdam": ["Anne Frank House", "Rijksmuseum", "Canal Cruise", "Vondelpark", "Dam Square"],
-            "Istanbul": ["Hagia Sophia", "Blue Mosque", "Grand Bazaar", "Topkapi Palace", "Bosphorus Cruise"],
-            "Bangkok": ["Grand Palace", "Wat Pho", "Chatuchak Market", "Khao San Road", "Jim Thompson House"],
-            "Sydney": ["Opera House", "Harbour Bridge", "Bondi Beach", "Taronga Zoo", "The Rocks"],
-            "Bermuda": ["Horseshoe Bay", "Crystal Caves", "Royal Naval Dockyard", "St George", "Gibbs Hill Lighthouse"],
-            "Miami": ["South Beach", "Wynwood Walls", "Art Deco District", "Brickell", "Little Havana"],
-            "Los Angeles": ["Hollywood Sign", "Santa Monica Pier", "Griffith Observatory", "Venice Beach", "Getty Center"],
-            "San Francisco": ["Golden Gate Bridge", "Alcatraz Island", "Fishermans Wharf", "Chinatown", "Cable Cars"],
-            "Chicago": ["Millennium Park", "Willis Tower", "Navy Pier", "Art Institute", "Magnificent Mile"],
-            "Honolulu": ["Waikiki Beach", "Diamond Head", "Pearl Harbor", "North Shore", "Ala Moana"],
-            "Cancun": ["Chichen Itza", "Isla Mujeres", "Xcaret Park", "Tulum Ruins", "Cenotes"],
-            "Nassau": ["Atlantis Resort", "Cable Beach", "Fort Charlotte", "Blue Lagoon", "Junkanoo Beach"],
-            "Taipei": ["Taipei 101", "Jiufen Old Street", "Shilin Night Market", "National Palace Museum", "Elephant Mountain"],
-            "Washington DC": ["Lincoln Memorial", "Capitol Building", "Smithsonian", "Georgetown", "National Mall"],
-            "Boston": ["Freedom Trail", "Fenway Park", "Harvard Yard", "Boston Common", "Faneuil Hall"],
-            "Seattle": ["Space Needle", "Pike Place Market", "Chihuly Garden", "Museum of Pop Culture", "Kerry Park"],
-            "Toronto": ["CN Tower", "Royal Ontario Museum", "Distillery District", "Kensington Market", "Toronto Islands"],
-          };
-          // Normalize city name lookups (handle "New York City" -> "New York" etc.)
-          const normalizeCity = (name) => {
-            const map = { "New York City": "New York", "NYC": "New York", "LA": "Los Angeles", "SF": "San Francisco", "DC": "Washington DC", "Washington": "Washington DC" };
-            return map[name] || name;
-          };
-          return (
-            <div>
-              {/* Section head */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", margin: "0 0 20px", paddingBottom: 14, borderBottom: `1px solid ${css.border}` }}>
-                <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: isMobile ? 24 : 28, fontWeight: 400, letterSpacing: "-0.02em", color: css.text, margin: 0 }}>
-                  Trip Highlights <em style={{ fontStyle: "italic", color: css.text3, fontSize: isMobile ? 16 : 20, marginLeft: 4 }}>— places to wander.</em>
-                </h2>
-                <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: css.text3, letterSpacing: "0.1em" }}>S 03 · Itinerary Notes</span>
-              </div>
+        {/* ── Ask Continuum (AI assistant) ── */}
+        <AskContinuum css={css} dv={dv} isMobile={isMobile} trips={upcomingTripsFiltered} formatTripDates={formatTripDates} />
 
-              <div style={{ display: "flex", flexDirection: "column", gap: 32, marginBottom: 32 }}>
-                {upcomingTripsFiltered.slice(0, 4).map((trip, tIdx) => {
-                  const realSegs = (trip.segments || []).filter(s => !s._isMeta);
-                  const flights = realSegs.filter(s => s.type === "flight");
-                  // Collect unique destination cities from flight segments
-                  // Find origin city (first departure) and final return (last arrival) to exclude
-                  const sortedFlights = [...flights].sort((a, b) => (a.date || "").localeCompare(b.date || ""));
-                  const homeCode = sortedFlights.length > 0 ? (sortedFlights[0].departureAirport?.toUpperCase() || sortedFlights[0].route?.split(/[→\-–>\/]/)[0]?.trim()?.toUpperCase()) : null;
-                  const returnCode = sortedFlights.length > 0 ? (sortedFlights[sortedFlights.length - 1].arrivalAirport?.toUpperCase() || sortedFlights[sortedFlights.length - 1].route?.split(/[→\-–>\/]/).pop()?.trim()?.toUpperCase()) : null;
-                  const homeCodes = new Set([homeCode, returnCode].filter(Boolean));
-
-                  // Collect all airport codes from flights
-                  const allCodes = new Set();
-                  flights.forEach(f => {
-                    if (f.arrivalAirport) allCodes.add(f.arrivalAirport.toUpperCase());
-                    if (f.departureAirport) allCodes.add(f.departureAirport.toUpperCase());
-                    if (f.route) {
-                      f.route.split(/[→\-–>\/]/).map(s => s.trim().toUpperCase()).filter(s => s.length === 3 && /^[A-Z]{3}$/.test(s)).forEach(code => allCodes.add(code));
-                    }
-                  });
-
-                  // Remove home/origin airports — keep only destination cities
-                  homeCodes.forEach(code => allCodes.delete(code));
-
-                  const cities = [...allCodes].map(code => IATA_CITY[code]).filter(Boolean);
-
-                  // Also check non-flight segments for location-based cities
-                  realSegs.filter(s => s.type !== "flight").forEach(s => {
-                    if (s.location) {
-                      s.location.split(/[,\/]/).map(p => p.trim()).filter(Boolean).forEach(loc => {
-                        const n = normalizeCity(loc);
-                        if (CITY_LANDMARKS[n] && !cities.includes(n)) cities.push(n);
-                      });
-                    }
-                  });
-
-                  // Also parse trip.location for additional cities
-                  if (trip.location) {
-                    trip.location.split(/[,\/]/).map(s => s.trim()).filter(Boolean).forEach(loc => {
-                      const normalized = normalizeCity(loc);
-                      // Skip if it matches the home city
-                      const homeCity = homeCode ? IATA_CITY[homeCode] : null;
-                      if (normalized !== homeCity && !cities.includes(normalized)) cities.push(normalized);
-                    });
-                  }
-                  const uniqueCities = [...new Set(cities)];
-                  // Build landmark cards
-                  const landmarks = [];
-                  const CITY_PHOTOS = {
-                      "New York": "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=400&q=80&auto=format&fit=crop",
-                      "London": "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=400&q=80&auto=format&fit=crop",
-                      "Paris": "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400&q=80&auto=format&fit=crop",
-                      "Tokyo": "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&q=80&auto=format&fit=crop",
-                      "Osaka": "https://images.unsplash.com/photo-1590559899731-a382839e5549?w=400&q=80&auto=format&fit=crop",
-                      "Seoul": "https://images.unsplash.com/photo-1546874177-9e664107314e?w=400&q=80&auto=format&fit=crop",
-                      "Singapore": "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=400&q=80&auto=format&fit=crop",
-                      "Hong Kong": "https://images.unsplash.com/photo-1536599018102-9f803c140fc1?w=400&q=80&auto=format&fit=crop",
-                      "Dubai": "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=400&q=80&auto=format&fit=crop",
-                      "Rome": "https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=400&q=80&auto=format&fit=crop",
-                      "Barcelona": "https://images.unsplash.com/photo-1583779457094-ab6f77f7bf57?w=400&q=80&auto=format&fit=crop",
-                      "Amsterdam": "https://images.unsplash.com/photo-1534351590666-13e3e96b5017?w=400&q=80&auto=format&fit=crop",
-                      "Istanbul": "https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?w=400&q=80&auto=format&fit=crop",
-                      "Bangkok": "https://images.unsplash.com/photo-1563492065599-3520f775eeed?w=400&q=80&auto=format&fit=crop",
-                      "Sydney": "https://images.unsplash.com/photo-1523482580672-f109ba8cb9be?w=400&q=80&auto=format&fit=crop",
-                      "Bermuda": "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=400&q=80&auto=format&fit=crop",
-                      "Miami": "https://images.unsplash.com/photo-1535498730771-e735b998cd64?w=400&q=80&auto=format&fit=crop",
-                      "Los Angeles": "https://images.unsplash.com/photo-1534190760961-74e8c1c5c3da?w=400&q=80&auto=format&fit=crop",
-                      "San Francisco": "https://images.unsplash.com/photo-1449034446853-66c86144b0ad?w=400&q=80&auto=format&fit=crop",
-                      "Chicago": "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=400&q=80&auto=format&fit=crop",
-                      "Honolulu": "https://images.unsplash.com/photo-1507876466758-bc54f384809c?w=400&q=80&auto=format&fit=crop",
-                      "Taipei": "https://images.unsplash.com/photo-1508248467877-aec1e22e0e68?w=400&q=80&auto=format&fit=crop",
-                      "Cancun": "https://images.unsplash.com/photo-1518638150340-f706e86654de?w=400&q=80&auto=format&fit=crop",
-                      "Vancouver": "https://images.unsplash.com/photo-1559511260-66a68e7e9b97?w=400&q=80&auto=format&fit=crop",
-                      "Montreal": "https://images.unsplash.com/photo-1519178614-68673b201f36?w=400&q=80&auto=format&fit=crop",
-                      "Nashville": "https://images.unsplash.com/photo-1545419913-775cae67e15f?w=400&q=80&auto=format&fit=crop",
-                      "Fort Lauderdale": "https://images.unsplash.com/photo-1591792111137-5b8219d5fad6?w=400&q=80&auto=format&fit=crop",
-                      "Washington DC": "https://images.unsplash.com/photo-1501466044931-62695aada8e9?w=400&q=80&auto=format&fit=crop",
-                      "Jersey City": "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=400&q=80&auto=format&fit=crop",
-                  };
-                  uniqueCities.forEach(city => {
-                    const normalCity = normalizeCity(city);
-                    const cityLandmarks = CITY_LANDMARKS[normalCity] || [`Visit ${city}`];
-                    const defaultCityPhoto = CITY_PHOTOS[normalCity] || "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=400&q=80&auto=format&fit=crop";
-                    cityLandmarks.forEach(lm => {
-                      const photoKey = `${lm}, ${normalCity}`;
-                      const fallback = LANDMARK_FALLBACK_PHOTOS[lm] || defaultCityPhoto;
-                      landmarks.push({ city: normalCity, name: lm, photo: landmarkPhotos[photoKey] || fallback, _fetchKey: photoKey, _lm: lm, _city: normalCity });
-                    });
-                  });
-                  if (landmarks.length === 0 && trip.location) {
-                    const loc = normalizeCity(trip.location.split(",")[0].trim());
-                    landmarks.push({ city: loc, name: `Visit ${loc}`, photo: landmarkPhotos[`${loc}, `] || CITY_PHOTOS[loc] || "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=400&q=80&auto=format&fit=crop", _fetchKey: `${loc}, `, _lm: loc, _city: "" });
-                  }
-                  return (
-                    <div key={trip.id}>
-                      {/* Trip header — editorial layout */}
-                      <div style={{ display: "flex", alignItems: "baseline", gap: isMobile ? 10 : 20, marginBottom: 16, paddingBottom: 12, borderBottom: `1px solid ${css.border}`, flexWrap: "wrap" }}>
-                        <h3 style={{ fontFamily: "'Fraunces', serif", fontSize: isMobile ? 18 : 24, fontWeight: 400, letterSpacing: "-0.015em", color: css.text, margin: 0 }}>{trip.tripName || trip.trip_name || trip.location || "Trip"}</h3>
-                        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: css.text3, letterSpacing: "0.05em" }}>{formatTripDates(trip)}</span>
-                        {uniqueCities.length > 0 && (
-                          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: css.accent }}>
-                            {uniqueCities.map((c, ci) => <span key={ci}>{c}{ci < uniqueCities.length - 1 && <span style={{ color: css.text3, margin: "0 6px" }}>·</span>}</span>)}
-                          </span>
-                        )}
-                      </div>
-                      {/* Scrollable highlight rail — editorial cards */}
-                      <div style={{ display: "flex", gap: 14, overflowX: "auto", scrollBehavior: "smooth", margin: isMobile ? "0 -16px" : "0 -40px", padding: isMobile ? "4px 16px 12px" : "4px 40px 12px", scrollbarWidth: "thin", scrollbarColor: `${css.text3}40 transparent` }}>
-                        {landmarks.slice(0, 10).map((lm, li) => (
-                          <a key={li} href={`https://www.google.com/search?q=${encodeURIComponent(lm.name + " " + lm.city)}`} target="_blank" rel="noopener noreferrer"
-                            style={{ flex: "0 0 240px", height: 300, position: "relative", overflow: "hidden", cursor: "pointer", background: "#2C2A26", border: `1px solid ${css.border}`, textDecoration: "none", transition: "all 0.4s" }}
-                            onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.borderColor = css.accent; const img = e.currentTarget.querySelector("img"); if (img) { img.style.transform = "scale(1.08)"; img.style.filter = "saturate(1) contrast(1.08)"; } }}
-                            onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.borderColor = css.border; const img = e.currentTarget.querySelector("img"); if (img) { img.style.transform = "scale(1)"; img.style.filter = "saturate(0.88) contrast(1.05)"; } }}>
-                            {/* Image */}
-                            {lm.photo && <img src={lm.photo} alt={lm.name} loading="lazy" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", filter: "saturate(0.88) contrast(1.05)", transition: "transform 0.9s ease, filter 0.3s" }} />}
-                            {/* Gradient overlay */}
-                            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(21,19,15,0.85) 0%, rgba(21,19,15,0.1) 55%, rgba(21,19,15,0.3) 100%)", zIndex: 1 }} />
-                            {/* Index */}
-                            <div style={{ position: "absolute", top: 14, left: 14, zIndex: 2, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.15em", color: "#F4F1EC", opacity: 0.85 }}>
-                              <span style={{ color: css.accent }}>N&#176; </span>{String(li + 1).padStart(2, "0")}
-                            </div>
-                            {/* Body */}
-                            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: 18, zIndex: 2 }}>
-                              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: css.accent, opacity: 0.9, marginBottom: 8 }}>{lm.city}</div>
-                              <div style={{ fontFamily: "'Fraunces', serif", fontSize: 20, fontWeight: 400, letterSpacing: "-0.01em", lineHeight: 1.05, color: "#F4F1EC", marginBottom: 10 }}>{lm.name}</div>
-                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 10, borderTop: "1px solid rgba(244,241,236,0.2)", fontFamily: "'JetBrains Mono', monospace", fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "#F4F1EC", opacity: 0.85 }}>
-                                <span>N&#176; {String(li + 1).padStart(3, "0")}</span>
-                                <span style={{ color: css.accent }}>Explore &#8594;</span>
-                              </div>
-                            </div>
-                          </a>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })()}
+        {/* Trip Highlights rail removed per request. */}
 
         </>}
 

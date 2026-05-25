@@ -48,7 +48,7 @@ export const AIRLINE_IATA_TO_PROGRAM = {
 
 // Pull the loyalty-program id from a flight number ("BR51" → "eva_air").
 export function airlineIdFromFn(fn) {
-  const m = String(fn || "").toUpperCase().match(/^([0-9A-Z]{2})\d/);
+  const m = String(fn || "").toUpperCase().match(/^([0-9A-Z]{2})\s*\d/);
   return m ? (AIRLINE_IATA_TO_PROGRAM[m[1]] || null) : null;
 }
 
@@ -196,8 +196,10 @@ export function computeLoungeAccess({ airport, flyingAirlineId, alliance, isIntl
           if (!mapping || !allianceLevel) continue;
           if (mapping.alliance !== alliance) continue;
           if (lounge.alliance !== mapping.alliance) continue;
-          // oneworld Sapphire = business only (no dedicated First lounges).
-          if (lounge.tier === "first" && mapping.alliance === "oneworld" && allianceLevel === "Sapphire") continue;
+          // Dedicated First-class lounges (e.g. JFK T8 Chelsea, BA Concorde Room)
+          // require a First/Flagship-First CABIN, not just status — and cabin is
+          // unknown here. Never grant them on status alone, for any tier.
+          if (lounge.tier === "first") continue;
           const key = `${mapping.alliance}_${allianceLevel}`;
           if (seen.has(key)) continue;
           const allianceRules = ALLIANCE_LOUNGE_ACCESS[mapping.alliance]?.[allianceLevel];
