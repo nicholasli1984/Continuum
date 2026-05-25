@@ -54,6 +54,11 @@ if (SENTRY_DSN) {
       'ResizeObserver loop limit exceeded',
       'ResizeObserver loop completed with undelivered notifications',
       'Non-Error promise rejection captured',
+      // Not from our code — a browser extension / injected script on the page
+      // tries to load a "util" module and fails; Sentry's global handler catches
+      // it. No such string exists anywhere in our bundle.
+      'Could not load "util"',
+      /Could not load "util"/,
     ],
   });
 }

@@ -5024,6 +5024,17 @@ Start by introducing yourself briefly in-character with personality, and give an
     return allPrograms.find(p => p.id === seg.program)?.name || seg.customProgramName || seg.program || "—";
   };
 
+  // Keep the document + status-bar background in lockstep with the theme, so the
+  // iOS safe-area and any overscroll never flash a mismatched (black) bar.
+  useEffect(() => {
+    const bg = darkMode ? "#0f0f0f" : "#ffffff";
+    document.documentElement.style.background = bg;
+    document.body.style.background = bg;
+    let meta = document.querySelector('meta[name="theme-color"]');
+    if (!meta) { meta = document.createElement("meta"); meta.setAttribute("name", "theme-color"); document.head.appendChild(meta); }
+    meta.setAttribute("content", bg);
+  }, [darkMode]);
+
   // ── Push notification subscription ──
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushSupported, setPushSupported] = useState(false);
@@ -6705,6 +6716,7 @@ Start by introducing yourself briefly in-character with personality, and give an
       {/* ── Top Header Bar ── */}
       <header style={{
         position: "sticky", top: 0, zIndex: 200, flexShrink: 0,
+        paddingTop: "env(safe-area-inset-top, 0px)",
         background: css.nav, backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
         boxShadow: D ? "none" : "0 1px 0 rgba(0,0,0,0.06)",
       }}>
@@ -6793,7 +6805,7 @@ Start by introducing yourself briefly in-character with personality, and give an
       {/* overflow-x: hidden so a single wide element can't pan the whole page
           sideways. Inner sections that need horizontal scrolling (e.g. the
           Trip Highlights rail) declare their own overflowX inside themselves. */}
-      <main style={{ flex: 1, overflowY: "auto", overflowX: "hidden", position: "relative" }}>
+      <main style={{ flex: 1, overflowY: "auto", overflowX: "hidden", position: "relative", overscrollBehavior: "none", WebkitOverflowScrolling: "touch" }}>
         <div style={{ maxWidth: 2200, margin: "0 auto", padding: isMobile ? "20px 16px calc(90px + env(safe-area-inset-bottom))" : "32px 40px calc(90px + env(safe-area-inset-bottom))", overflowX: tripDetailId ? "visible" : "clip" }}>
           {viewRenderers[activeView]?.()}
         </div>

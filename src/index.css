@@ -43,7 +43,11 @@ html {
 }
 body, html { margin: 0; padding: 0; min-height: 100vh; min-height: 100dvh; background: var(--color-bg-primary); color: var(--color-text-primary); -webkit-tap-highlight-color: transparent; -webkit-text-size-adjust: 100%; overflow-x: hidden; max-width: 100vw; }
 body { font-family: var(--font-regular); line-height: 1.5; overflow-x: hidden; overscroll-behavior-x: none; touch-action: pan-y; position: relative; }
-#root { min-height: 100vh; min-height: 100dvh; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); overflow-x: hidden; max-width: 100vw; }
+/* Safe-area insets are handled by the in-app chrome (header pads the top, the
+   bottom nav pads the bottom) — NOT here. Padding #root while the app shell is
+   100dvh made the shell overflow #root, which let the whole page rubber-band
+   and exposed the dark body background as a black bar at the top. */
+#root { min-height: 100vh; min-height: 100dvh; overflow-x: hidden; max-width: 100vw; overscroll-behavior: none; }
 ::selection { color: #fff; background: #0EA5A0; }
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
