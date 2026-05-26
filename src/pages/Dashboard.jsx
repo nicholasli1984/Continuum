@@ -124,7 +124,7 @@ function DestinationWeather({ css, dv, isMobile, city, compact }) {
       </div>
       <div style={{ display: "flex", gap: compact ? 6 : (isMobile ? 8 : 10) }}>
         {list.map((d, i) => (
-          <div key={i} style={{ flex: 1, minWidth: 0, textAlign: "center", background: dv.bone, border: `1px solid ${dv.cream}`, padding: compact ? "7px 2px" : (isMobile ? "10px 6px" : "12px 12px") }}>
+          <div key={i} style={{ flex: 1, minWidth: 0, textAlign: "center", background: dv.bone, borderRadius: 12, border: `1px solid ${dv.cream}`, padding: compact ? "7px 2px" : (isMobile ? "10px 6px" : "12px 12px") }}>
             <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.06em", textTransform: "uppercase", color: dv.taupe, marginBottom: compact ? 5 : 9 }}>{d ? new Date(d.date + "T12:00:00").toLocaleDateString("en-US", { weekday: "short" }) : "—"}</div>
             <div style={{ display: "grid", placeItems: "center", height: compact ? 22 : 30, marginBottom: compact ? 5 : 9 }}>{d ? <WeatherGlyph code={d.code} size={compact ? 22 : 28} /> : null}</div>
             <div style={{ fontFamily: "'Fraunces', serif", fontSize: compact ? 15 : 17, color: dv.ink, lineHeight: 1 }}>{d ? `${conv(d.hiC)}°` : "--"}</div>
@@ -137,54 +137,9 @@ function DestinationWeather({ css, dv, isMobile, city, compact }) {
 }
 
 // "Ask Continuum" — natural-language travel assistant (Claude via /api/ask).
-function AskContinuum({ css, dv, isMobile, trips, formatTripDates }) {
-  const [q, setQ] = useState("");
-  const [answer, setAnswer] = useState("");
-  const [loading, setLoading] = useState(false);
-  const suggestions = ["What should I pack for my next trip?", "When is my next trip?", "Tips for my layover?"];
-  const ask = async (text) => {
-    const query = (typeof text === "string" ? text : q).trim();
-    if (!query || loading) return;
-    if (typeof text === "string") setQ(text);
-    setLoading(true); setAnswer("");
-    try {
-      const context = (trips || []).slice(0, 8).map(t => `- ${t.tripName || t.trip_name || t.location || "Trip"}${t.location ? ` (${t.location})` : ""}${formatTripDates ? ` — ${formatTripDates(t)}` : ""}`).join("\n");
-      const resp = await apiFetch("/api/ask", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query, context }) });
-      const data = await resp.json();
-      setAnswer(resp.ok ? (data.answer || "") : (data.error || "Something went wrong."));
-    } catch { setAnswer("Couldn't reach the assistant — please try again."); }
-    setLoading(false);
-  };
-  return (
-    <div style={{ marginBottom: 32 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", margin: "32px 0 16px", paddingBottom: 14, borderBottom: `1px solid ${css.border}` }}>
-        <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: isMobile ? 22 : 26, fontWeight: 400, letterSpacing: "-0.02em", color: css.text, margin: 0 }}>
-          Ask Continuum <em style={{ fontStyle: "italic", color: css.text3, fontSize: isMobile ? 14 : 16, marginLeft: 4 }}>— your travel desk.</em>
-        </h2>
-      </div>
-      <div style={{ background: dv.paper, border: `1px solid ${dv.cream}`, padding: isMobile ? 16 : 20 }}>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <input value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => { if (e.key === "Enter") ask(); }} placeholder="Ask anything about your travels…"
-            style={{ flex: 1, minWidth: 0, background: dv.bone, border: `1px solid ${dv.cream}`, color: css.text, fontFamily: "'Inter Tight', sans-serif", fontSize: 14, padding: "12px 14px", outline: "none" }} />
-          <button onClick={() => ask()} disabled={loading} style={{ flexShrink: 0, background: css.accent, color: "#fff", border: "none", fontFamily: "'JetBrains Mono', monospace", fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", padding: "12px 18px", cursor: loading ? "default" : "pointer", opacity: loading ? 0.7 : 1 }}>{loading ? "…" : "Ask"}</button>
-        </div>
-        {!answer && !loading && (
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
-            {suggestions.map((sug, i) => (
-              <button key={i} onClick={() => ask(sug)} style={{ background: "transparent", border: `1px solid ${dv.cream}`, color: dv.taupe, fontFamily: "'Inter Tight', sans-serif", fontSize: 12.5, padding: "6px 12px", borderRadius: 999, cursor: "pointer" }}>{sug}</button>
-            ))}
-          </div>
-        )}
-        {loading && <div style={{ marginTop: 14, fontFamily: "'Fraunces', serif", fontStyle: "italic", color: dv.taupe, fontSize: 14 }}>Thinking…</div>}
-        {answer && <div style={{ marginTop: 14, fontFamily: "'Inter Tight', sans-serif", fontSize: 14, lineHeight: 1.6, color: dv.ink, whiteSpace: "pre-wrap" }}>{answer}</div>}
-      </div>
-    </div>
-  );
-}
-
-// Next-flight hero card (shown within 3 days of departure). Tapping it pulls up
-// a boarding-pass-style sheet with passenger + flight details, the destination
-// weather, and the top 2 lounges to visit.
+// Next-flight boarding-pass card(s) — shows flights within 3 days of departure.
+// A single flight renders the full boarding pass; multiple flights stack like
+// wallet cards that expand on tap. Includes destination weather and lounges.
 function NextFlightCard({ css, dv, D, isMobile, trips, getFlightLiveStatus, AIRPORT_CITY, linkedAccounts, user, setActiveView, setTripDetailId, setTripDetailSegIdx }) {
   const [expanded, setExpanded] = useState(null); // null = wallet stack; index = that flight expanded
 
@@ -319,7 +274,7 @@ function NextFlightCard({ css, dv, D, isMobile, trips, getFlightLiveStatus, AIRP
 
           {/* Aircraft — clean monoline icon + type */}
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 14, paddingTop: 14, borderTop: `1px solid ${dv.cream}` }}>
-            <span style={{ width: 40, height: 40, borderRadius: 10, background: dv.bone, border: `1px solid ${dv.cream}`, display: "grid", placeItems: "center", flexShrink: 0 }}>
+            <span style={{ width: 40, height: 40, borderRadius: 10, background: dv.bone, borderRadius: 12, border: `1px solid ${dv.cream}`, display: "grid", placeItems: "center", flexShrink: 0 }}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={dv.stone} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3.5S18 3 16.5 4.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" /></svg>
             </span>
             <div style={{ minWidth: 0 }}>
@@ -457,7 +412,7 @@ export function renderDashboard(s) {
   // shows. Normal dashboard rendering leaves embeddedTab undefined.
   const dashSubTab = embeddedTab || _dashSubTab;
   const handleAddTrip = () => setShowCreateTrip(true);
-  const dv = { bone: D ? "#1a1a1a" : "#F4F1EC", paper: D ? "#222" : "#EBE6DD", cream: D ? "rgba(255,255,255,0.06)" : "#E2DCCE", stone: D ? "#8a8a8a" : "#857A66", taupe: D ? "#999" : "#6B6458", graphite: D ? "#111" : "#2C2A26", ink: D ? "#f0ece6" : "#15130F", moss: "#6B7A5A", gold: "#B8924A" };
+  const dv = { bone: D ? "#1a1a1a" : "#fff", paper: D ? "#222" : "#fff", cream: D ? "rgba(255,255,255,0.06)" : "#E2DCCE", stone: D ? "#8a8a8a" : "#857A66", taupe: D ? "#999" : "#6B6458", graphite: D ? "#111" : "#2C2A26", ink: D ? "#f0ece6" : "#15130F", moss: "#6B7A5A", gold: "#B8924A" };
 
   // Quick action chip used on the Featured Trip card. Mono uppercase, subtle
   // border, accent-on-hover. The `primary` variant fills with ink on rest.
@@ -1014,7 +969,7 @@ export function renderDashboard(s) {
               <button key={p.id} onClick={p.onClick}
                 style={{
                   textAlign: "left", cursor: "pointer", padding: isMobile ? "14px 16px" : "16px 18px",
-                  background: dv.paper, border: `1px solid ${dv.cream}`, borderLeft: `3px solid ${p.accent}`,
+                  background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, borderLeft: `3px solid ${p.accent}`,
                   display: "flex", flexDirection: "column", gap: 6, transition: "border-color 0.2s, background 0.2s",
                 }}
                 onMouseEnter={e => { e.currentTarget.style.background = dv.bone; }}
@@ -1090,7 +1045,7 @@ export function renderDashboard(s) {
               return d >= 0 && d <= 30;
             });
             if (within30.length === 0) return (
-              <div style={{ flexShrink: 0, width: "100%", padding: "40px 20px", textAlign: "center", background: dv.paper, border: `1px solid ${dv.cream}` }}>
+              <div style={{ flexShrink: 0, width: "100%", padding: "40px 20px", textAlign: "center", background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}` }}>
                 <p style={{ fontFamily: "'Fraunces', serif", fontStyle: "italic", fontSize: 16, color: dv.taupe, margin: 0 }}>No trips in the next 30 days.</p>
               </div>
             );
@@ -1166,8 +1121,7 @@ export function renderDashboard(s) {
           })()}
         </div>
 
-        {/* ── Ask Continuum (AI assistant) ── */}
-        <AskContinuum css={css} dv={dv} isMobile={isMobile} trips={upcomingTripsFiltered} formatTripDates={formatTripDates} />
+        {/* Ask Continuum (AI assistant) removed per request — the top search bar covers lookups. */}
 
         {/* Trip Highlights rail removed per request. */}
 
@@ -1175,7 +1129,7 @@ export function renderDashboard(s) {
 
         {/* ── Inbox Tab — Booking + Expense Inboxes ── */}
         {dashSubTab === "inbox" && (() => {
-          const dv = { bone: D ? "#1a1a1a" : "#F4F1EC", paper: D ? "#222" : "#EBE6DD", cream: D ? "rgba(255,255,255,0.06)" : "#E2DCCE", stone: D ? "#8a8a8a" : "#857A66", taupe: D ? "#999" : "#6B6458", graphite: D ? "#111" : "#2C2A26", ink: D ? "#f0ece6" : "#15130F", serif: "'Fraunces', serif", sans: "'Inter Tight', sans-serif", mono: "'JetBrains Mono', monospace" };
+          const dv = { bone: D ? "#1a1a1a" : "#fff", paper: D ? "#222" : "#fff", cream: D ? "rgba(255,255,255,0.06)" : "#E2DCCE", stone: D ? "#8a8a8a" : "#857A66", taupe: D ? "#999" : "#6B6458", graphite: D ? "#111" : "#2C2A26", ink: D ? "#f0ece6" : "#15130F", serif: "'Fraunces', serif", sans: "'Inter Tight', sans-serif", mono: "'JetBrains Mono', monospace" };
           return (
           <div style={{ fontFamily: dv.sans, color: dv.ink }}>
           {/* Hero */}
@@ -1195,7 +1149,7 @@ export function renderDashboard(s) {
             </div>
           </div>
           {/* Gmail connection */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", background: dv.paper, border: `1px solid ${dv.cream}`, marginBottom: 24 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, marginBottom: 24 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}><path d="M22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6zm-2 0l-8 5-8-5h16zm0 12H4V8l8 5 8-5v10z" fill={css.accent}/></svg>
               <div>
@@ -1223,7 +1177,7 @@ export function renderDashboard(s) {
             <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
               <h3 style={{ fontFamily: dv.serif, fontSize: 22, fontWeight: 400, letterSpacing: "-0.015em", color: dv.ink, margin: 0 }}>Booking Inbox</h3>
               {savedItineraries.length > 0 && (
-                <span style={{ fontFamily: dv.mono, fontSize: 10, color: css.accent, letterSpacing: "0.08em", background: dv.paper, border: `1px solid ${dv.cream}`, padding: "2px 8px" }}>{savedItineraries.length}</span>
+                <span style={{ fontFamily: dv.mono, fontSize: 10, color: css.accent, letterSpacing: "0.08em", background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, padding: "2px 8px" }}>{savedItineraries.length}</span>
               )}
             </div>
             <button onClick={() => setShowPasteItinerary(true)} style={{
@@ -1236,7 +1190,7 @@ export function renderDashboard(s) {
           </div>
           {/* Forwarding address — available to every user */}
           {userForwardingAddress && (
-            <div style={{ marginBottom: 20, padding: "12px 16px", background: dv.paper, border: `1px solid ${dv.cream}`, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <div style={{ marginBottom: 20, padding: "12px 16px", background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={dv.taupe} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
               <span style={{ fontFamily: dv.mono, fontSize: 10, color: dv.taupe, letterSpacing: "0.08em", textTransform: "uppercase" }}>Forward bookings to:</span>
               <span style={{ fontFamily: dv.mono, fontSize: 12, fontWeight: 500, color: css.accent, cursor: "pointer", wordBreak: "break-all" }}
@@ -1280,7 +1234,7 @@ export function renderDashboard(s) {
                   }));
                 };
                 return (
-                  <div key={itin.id} style={{ background: dv.paper, border: `1px solid ${dv.cream}`, overflow: "hidden", transition: "all 0.2s ease" }}>
+                  <div key={itin.id} style={{ background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, overflow: "hidden", transition: "all 0.2s ease" }}>
                     {/* Header row */}
                     <div style={{ padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, cursor: "pointer" }}
                       onClick={() => setExpandedItinId(isExpanded ? null : itin.id)}>
@@ -1543,7 +1497,7 @@ export function renderDashboard(s) {
                 <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
                   <h3 style={{ fontFamily: dv.serif, fontSize: 22, fontWeight: 400, letterSpacing: "-0.015em", color: dv.ink, margin: 0 }}>Expense Inbox</h3>
                   {inboxExpenses.length > 0 && (
-                    <span style={{ fontFamily: dv.mono, fontSize: 10, color: css.accent, letterSpacing: "0.08em", background: dv.paper, border: `1px solid ${dv.cream}`, padding: "2px 8px" }}>{inboxExpenses.length}</span>
+                    <span style={{ fontFamily: dv.mono, fontSize: 10, color: css.accent, letterSpacing: "0.08em", background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, padding: "2px 8px" }}>{inboxExpenses.length}</span>
                   )}
                 </div>
                 <div style={{ display: "flex", gap: 8 }}>
@@ -1575,7 +1529,7 @@ export function renderDashboard(s) {
                 </div>
               </div>
               {userForwardingAddress && (
-                <div style={{ marginBottom: 20, padding: "12px 16px", background: dv.paper, border: `1px solid ${dv.cream}`, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                <div style={{ marginBottom: 20, padding: "12px 16px", background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={dv.taupe} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                   <span style={{ fontFamily: dv.mono, fontSize: 10, color: dv.taupe, letterSpacing: "0.08em", textTransform: "uppercase" }}>Forward receipts to:</span>
                   <span style={{ fontFamily: dv.mono, fontSize: 12, fontWeight: 500, color: css.accent, cursor: "pointer", wordBreak: "break-all" }}
@@ -1591,7 +1545,7 @@ export function renderDashboard(s) {
                   {inboxExpenses.map(exp => {
                     const cat = EXPENSE_CATEGORIES.find(c => c.id === exp.category);
                     return (
-                      <div key={exp.id} style={{ background: dv.paper, border: `1px solid ${dv.cream}`, padding: isMobile ? "12px" : "12px 16px" }} onClick={() => setViewExpenseId(exp.id)}>
+                      <div key={exp.id} style={{ background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, padding: isMobile ? "12px" : "12px 16px" }} onClick={() => setViewExpenseId(exp.id)}>
                         {/* Top row: description + amount */}
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
                           <div style={{ flex: 1, minWidth: 0 }}>
@@ -1635,7 +1589,7 @@ export function renderDashboard(s) {
                   })}
                 </div>
               ) : (
-                <div style={{ padding: "24px 20px", textAlign: "center", background: dv.paper, border: `1px solid ${dv.cream}` }}>
+                <div style={{ padding: "24px 20px", textAlign: "center", background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}` }}>
                   <p style={{ fontFamily: dv.serif, fontStyle: "italic", fontSize: 14, color: dv.taupe, margin: "0 0 4px" }}>No unassigned expenses</p>
                   <p style={{ fontFamily: dv.mono, fontSize: 10, color: dv.stone, letterSpacing: "0.08em", textTransform: "uppercase", margin: 0 }}>Add receipts here and assign them to trips later</p>
                 </div>
@@ -2002,7 +1956,7 @@ export function renderDashboard(s) {
 
         {/* ── Activity Tab — recent actions feed ── */}
         {dashSubTab === "packing" && (() => {
-          const dv = { bone: D ? "#1a1a1a" : "#F4F1EC", paper: D ? "#222" : "#EBE6DD", cream: D ? "rgba(255,255,255,0.06)" : "#E2DCCE", stone: D ? "#8a8a8a" : "#857A66", taupe: D ? "#999" : "#6B6458", graphite: D ? "#111" : "#2C2A26", ink: D ? "#f0ece6" : "#15130F", moss: "#6B7A5A", gold: "#B8924A", serif: "'Fraunces', 'Instrument Serif', Georgia, serif", sans: "'Inter Tight', 'Instrument Sans', sans-serif", mono: "'JetBrains Mono', 'Geist Mono', monospace" };
+          const dv = { bone: D ? "#1a1a1a" : "#fff", paper: D ? "#222" : "#fff", cream: D ? "rgba(255,255,255,0.06)" : "#E2DCCE", stone: D ? "#8a8a8a" : "#857A66", taupe: D ? "#999" : "#6B6458", graphite: D ? "#111" : "#2C2A26", ink: D ? "#f0ece6" : "#15130F", moss: "#6B7A5A", gold: "#B8924A", serif: "'Fraunces', 'Instrument Serif', Georgia, serif", sans: "'Inter Tight', 'Instrument Sans', sans-serif", mono: "'JetBrains Mono', 'Geist Mono', monospace" };
           const CatIcon = ({ d, size = 20 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={css.accent} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d={d}/></svg>;
 
           const todayStr = new Date().toISOString().slice(0, 10);
@@ -2046,7 +2000,7 @@ export function renderDashboard(s) {
                 </button>
 
                 {/* Config bar */}
-                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "2fr 1.2fr 1fr 1fr auto", gap: 0, background: dv.paper, border: `1px solid ${dv.cream}`, padding: 8, marginBottom: 32, alignItems: "center" }}>
+                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "2fr 1.2fr 1fr 1fr auto", gap: 0, background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, padding: 8, marginBottom: 32, alignItems: "center" }}>
                   <div style={{ padding: "14px 20px", borderRight: isMobile ? "none" : `1px solid ${dv.cream}` }}>
                     <div style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: dv.taupe, marginBottom: 4 }}>Destination</div>
                     <div style={{ fontFamily: dv.serif, fontSize: 18, fontWeight: 400, color: dv.ink }}>{tripName}</div>
@@ -2077,7 +2031,7 @@ export function renderDashboard(s) {
                       setCustomPackItems(nx);
                       try { localStorage.setItem("continuum_custom_pack_items", JSON.stringify(nx)); } catch {}
                       e.target.value = "";
-                    }} style={{ padding: "14px 16px", background: dv.paper, border: `1px solid ${dv.cream}`, fontFamily: dv.mono, fontSize: 11, letterSpacing: "0.06em", color: dv.ink, cursor: "pointer", outline: "none" }}>
+                    }} style={{ padding: "14px 16px", background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, fontFamily: dv.mono, fontSize: 11, letterSpacing: "0.06em", color: dv.ink, cursor: "pointer", outline: "none" }}>
                       <option value="">Copy from trip...</option>
                       {trips.filter(t => t.id !== trip.id && (customPackItems[t.id] || []).length > 0).map(t => (
                         <option key={t.id} value={t.id}>{(t.tripName || t.trip_name || t.location || "Trip").slice(0, 30)} ({(customPackItems[t.id] || []).length} items)</option>
@@ -2094,7 +2048,7 @@ export function renderDashboard(s) {
 
                 {/* Dashboard strip */}
                 <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.4fr 1fr 1fr", gap: 20, marginBottom: 32 }}>
-                  <div style={{ background: dv.paper, border: `1px solid ${dv.cream}`, padding: isMobile ? 20 : 28, position: "relative" }}>
+                  <div style={{ background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, padding: isMobile ? 20 : 28, position: "relative" }}>
                     <div style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: dv.taupe, marginBottom: 14 }}>Packing Progress</div>
                     <div style={{ fontFamily: dv.serif, fontSize: 44, fontWeight: 300, lineHeight: 1, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}>
                       {done}<span style={{ fontSize: 18, color: dv.taupe, fontStyle: "italic", marginLeft: 4 }}>/ {total}</span>
@@ -2108,7 +2062,7 @@ export function renderDashboard(s) {
                       <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", fontFamily: dv.mono, fontSize: 11, fontWeight: 500, color: dv.ink }}>{pct}%</div>
                     </div>
                   </div>
-                  <div style={{ background: dv.paper, border: `1px solid ${dv.cream}`, padding: isMobile ? 20 : 28 }}>
+                  <div style={{ background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, padding: isMobile ? 20 : 28 }}>
                     <div style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: dv.taupe, marginBottom: 14 }}>Weight Est.</div>
                     <div style={{ fontFamily: dv.serif, fontSize: 44, fontWeight: 300, lineHeight: 1 }}>{(total * 0.14).toFixed(1)}<span style={{ fontSize: 18, color: dv.taupe, fontStyle: "italic", marginLeft: 4 }}>kg</span></div>
                     <div style={{ fontFamily: dv.serif, fontStyle: "italic", fontSize: 13, color: dv.taupe, marginTop: 8 }}>Well within carry-on.</div>
@@ -2135,7 +2089,7 @@ export function renderDashboard(s) {
                     const catItems = [...cat.items.filter(i => !hiddenIds.includes(i.id)), ...catCustom];
                     const catDone = catItems.filter(i => checked[i.id]).length;
                     return (
-                      <div key={catKey} style={{ background: dv.paper, border: `1px solid ${dv.cream}`, padding: isMobile ? 18 : 24, transition: "border-color 0.3s, transform 0.3s" }}
+                      <div key={catKey} style={{ background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, padding: isMobile ? 18 : 24, transition: "border-color 0.3s, transform 0.3s" }}
                         onMouseEnter={e => { e.currentTarget.style.borderColor = dv.stone; e.currentTarget.style.transform = "translateY(-2px)"; }}
                         onMouseLeave={e => { e.currentTarget.style.borderColor = dv.cream; e.currentTarget.style.transform = "translateY(0)"; }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16, paddingBottom: 12, borderBottom: `1px solid ${dv.cream}` }}>

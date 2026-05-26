@@ -9,7 +9,7 @@ const FONTS = { serif: "'Fraunces', serif", sans: "'Inter Tight', sans-serif", m
 
 // Shared mini-card surface used by previews
 const surface = (dv) => ({
-  background: dv.bone, border: `1px solid ${dv.cream}`, padding: "10px 12px",
+  background: dv.bone, borderRadius: 12, border: `1px solid ${dv.cream}`, padding: "10px 12px",
   display: "flex", flexDirection: "column", gap: 4,
 });
 

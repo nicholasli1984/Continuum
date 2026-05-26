@@ -150,14 +150,14 @@ export default function Tour({ open, steps, darkMode, onClose, onComplete }) {
           left: rect ? tooltipPos.left : "50%",
           transform: rect ? "none" : "translate(-50%, -50%)",
           width: 360, maxWidth: "calc(100vw - 24px)",
-          background: dv.paper, border: `1px solid ${dv.cream}`,
+          background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`,
           padding: "20px 22px 18px", boxShadow: "0 12px 36px rgba(15,13,15,0.35)",
           pointerEvents: "auto",
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
           <span style={{ fontFamily: FONTS.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: dv.accent }}>
-            Welcome · {String(stepIdx + 1).padStart(2, "0")} / {String(steps.length).padStart(2, "0")}
+            Welcome · {String(stepIdx + 1)} / {String(steps.length)}
           </span>
           <button onClick={skip} aria-label="Skip tour"
             style={{ background: "transparent", border: "none", color: dv.taupe, cursor: "pointer", padding: 0, display: "grid", placeItems: "center" }}>

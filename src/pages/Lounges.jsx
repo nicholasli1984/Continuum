@@ -23,8 +23,8 @@ export function renderLounges(s) {
   const D = darkMode;
 
   const dv = {
-    bone: D ? "#1a1a1a" : "#F4F1EC",
-    paper: D ? "#222" : "#EBE6DD",
+    bone: D ? "#1a1a1a" : "#fff",
+    paper: D ? "#222" : "#fff",
     cream: D ? "rgba(255,255,255,0.08)" : "#E2DCCE",
     stone: D ? "#8a8a8a" : "#857A66",
     taupe: D ? "#999" : "#6B6458",
@@ -150,10 +150,10 @@ export function renderLounges(s) {
 
   // ─── METRICS ───
   const metrics = [
-    { lbl: "Programs Linked", val: String(linkedProgramCount).padStart(2, "0"), sub: linkedProgramCount === 0 ? "Add a card or status to unlock access." : "Used to compute your access rights." },
+    { lbl: "Programs Linked", val: String(linkedProgramCount), sub: linkedProgramCount === 0 ? "Add a card or status to unlock access." : "Used to compute your access rights." },
     { lbl: "Airports Indexed", val: String(airportCodes.length), sub: "Across major hubs and growing." },
-    { lbl: "Visits Logged", val: String(visitCount).padStart(2, "0"), sub: visitCount === 0 ? "Log your first visit from any lounge." : "Across all airports." },
-    { lbl: loungeAirport ? `Accessible · ${loungeAirport}` : "Accessible · Airport", val: loungeAirport ? String(accessible.length).padStart(2, "0") : "—", sub: loungeAirport ? `of ${lounges.length} on the field.` : "Search an airport to begin." },
+    { lbl: "Visits Logged", val: String(visitCount), sub: visitCount === 0 ? "Log your first visit from any lounge." : "Across all airports." },
+    { lbl: loungeAirport ? `Accessible · ${loungeAirport}` : "Accessible · Airport", val: loungeAirport ? String(accessible.length) : "—", sub: loungeAirport ? `of ${lounges.length} on the field.` : "Search an airport to begin." },
   ];
 
   return (
@@ -182,7 +182,7 @@ export function renderLounges(s) {
       </div>
 
       {/* ─── METRICS BAND ─── */}
-      <section style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 0, background: dv.paper, border: `1px solid ${dv.cream}`, marginBottom: 40 }}>
+      <section style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 0, background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, marginBottom: 40 }}>
         {metrics.map((m, i) => (
           <div key={i} style={{
             padding: isMobile ? "20px 18px" : "26px 28px",
@@ -200,10 +200,10 @@ export function renderLounges(s) {
       </section>
 
       {/* ─── SEARCH SECTION ─── */}
-      <SectionSep dv={dv} num="§ 01" title="Search" rule />
+      <SectionSep dv={dv} num="§ 1" title="Search" rule />
 
       {/* Flight context */}
-      <div style={{ background: dv.paper, border: `1px solid ${dv.cream}`, padding: isMobile ? "20px 18px" : "26px 28px", marginBottom: 16 }}>
+      <div style={{ background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, padding: isMobile ? "20px 18px" : "26px 28px", marginBottom: 16 }}>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 18, flexWrap: "wrap", gap: 8 }}>
           <div>
             <span style={{ fontFamily: dv.serif, fontSize: 20, fontWeight: 400, letterSpacing: "-0.015em", color: dv.ink }}>Flight context</span>
@@ -238,7 +238,7 @@ export function renderLounges(s) {
       </div>
 
       {/* Airport search */}
-      <div style={{ background: dv.paper, border: `1px solid ${dv.cream}`, padding: isMobile ? "20px 18px" : "26px 28px", marginBottom: 40 }}>
+      <div style={{ background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, padding: isMobile ? "20px 18px" : "26px 28px", marginBottom: 40 }}>
         <div style={{ marginBottom: 14 }}>
           <span style={{ fontFamily: dv.serif, fontSize: 20, fontWeight: 400, letterSpacing: "-0.015em", color: dv.ink }}>Airport</span>
           <em style={{ fontFamily: dv.serif, fontStyle: "italic", color: dv.taupe, fontSize: 14, marginLeft: 6 }}>— search by name or IATA.</em>
@@ -290,7 +290,7 @@ export function renderLounges(s) {
             return (
               <div style={{
                 position: "absolute", top: "100%", left: 0, right: 0, marginTop: 6, zIndex: 200,
-                background: dv.bone, border: `1px solid ${dv.cream}`,
+                background: dv.bone, borderRadius: 12, border: `1px solid ${dv.cream}`,
                 boxShadow: D ? "0 12px 28px rgba(0,0,0,0.6)" : "0 12px 28px rgba(21,19,15,0.12)",
                 maxHeight: 320, overflowY: "auto",
               }}>
@@ -335,7 +335,7 @@ export function renderLounges(s) {
             ? `${airlineName} at ${loungeAirport}`
             : `Terminal context · ${loungeAirport}`;
         return (
-          <div style={{ background: dv.paper, border: `1px solid ${dv.cream}`, borderLeft: `3px solid ${dv.accent}`, padding: isMobile ? "14px 16px" : "16px 22px", marginBottom: 24, display: "flex", flexDirection: isMobile ? "column" : "row", gap: 16, alignItems: isMobile ? "flex-start" : "center", justifyContent: "space-between" }}>
+          <div style={{ background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, borderLeft: `3px solid ${dv.accent}`, padding: isMobile ? "14px 16px" : "16px 22px", marginBottom: 24, display: "flex", flexDirection: isMobile ? "column" : "row", gap: 16, alignItems: isMobile ? "flex-start" : "center", justifyContent: "space-between" }}>
             <div style={{ minWidth: 0, flex: 1 }}>
               <div style={{ fontFamily: dv.mono, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: dv.accent, marginBottom: 4 }}>
                 {eyebrow}
@@ -389,13 +389,13 @@ export function renderLounges(s) {
         <>
           <SectionSep
             dv={dv}
-            num="§ 02"
+            num="§ 2"
             title={`Accessible at ${loungeAirport}`}
             count={accessible.length}
             rule
           />
           {accessible.length === 0 ? (
-            <div style={{ padding: "44px 28px", textAlign: "center", background: dv.paper, border: `1px solid ${dv.cream}`, marginBottom: 40 }}>
+            <div style={{ padding: "44px 28px", textAlign: "center", background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, marginBottom: 40 }}>
               <p style={{ fontFamily: dv.serif, fontStyle: "italic", color: dv.taupe, fontSize: 16, margin: 0 }}>
                 No accessible lounges with the current setup. Adjust your flight class or add programs to unlock more.
               </p>
@@ -420,7 +420,7 @@ export function renderLounges(s) {
             <>
               <SectionSep
                 dv={dv}
-                num="§ 03"
+                num="§ 3"
                 title="Out of reach"
                 count={inaccessible.length}
                 rule
@@ -444,7 +444,7 @@ export function renderLounges(s) {
       )}
 
       {!loungeAirport && (
-        <div style={{ padding: "60px 28px", textAlign: "center", background: dv.paper, border: `1px solid ${dv.cream}` }}>
+        <div style={{ padding: "60px 28px", textAlign: "center", background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}` }}>
           <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke={dv.accent} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
@@ -468,8 +468,8 @@ function SectionSep({ dv, num, title, count, rule }) {
       <div style={{ width: 28, height: 1, background: dv.accent }} />
       <strong style={{ color: dv.ink, fontWeight: 500 }}>{num} · {title}</strong>
       {count != null && (
-        <span style={{ color: dv.accent, background: dv.paper, border: `1px solid ${dv.cream}`, padding: "2px 8px" }}>
-          {String(count).padStart(2, "0")} {count === 1 ? "entry" : "entries"}
+        <span style={{ color: dv.accent, background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, padding: "2px 8px" }}>
+          {String(count)} {count === 1 ? "entry" : "entries"}
         </span>
       )}
       {rule && <div style={{ flex: 1, height: 1, background: dv.cream }} />}
@@ -499,7 +499,7 @@ function selectStyle(dv) {
 
 function LoungeLedger({ dv, isMobile, lounges, expandedId, setExpandedId, loungePhotos, loungeAirport, renderStars, networkAccent, saveLoungeVisit, hasAccess }) {
   return (
-    <div style={{ background: dv.paper, border: `1px solid ${dv.cream}`, marginBottom: 40 }}>
+    <div style={{ background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, marginBottom: 40 }}>
       {lounges.map((lounge, idx) => {
         const expanded = expandedId === lounge.id;
         const accessRules = lounge._access || [];
@@ -520,7 +520,7 @@ function LoungeLedger({ dv, isMobile, lounges, expandedId, setExpandedId, lounge
               }}
               onMouseEnter={e => e.currentTarget.style.background = dv.bone}
               onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-              <span style={{ fontFamily: dv.mono, fontSize: 11, color: dv.stone, letterSpacing: "0.08em" }}>{String(idx + 1).padStart(2, "0")}</span>
+              <span style={{ fontFamily: dv.mono, fontSize: 11, color: dv.stone, letterSpacing: "0.08em" }}>{String(idx + 1)}</span>
               <div style={{ width: 4, height: 36, background: nColor, opacity: hasAccess ? 1 : 0.4 }} />
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontFamily: dv.serif, fontSize: isMobile ? 16 : 19, fontWeight: 400, letterSpacing: "-0.005em", color: hasAccess ? dv.ink : dv.taupe, lineHeight: 1.15, marginBottom: 4 }}>

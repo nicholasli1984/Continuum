@@ -49,8 +49,8 @@ export function renderWallet(s) {
 function WalletPage({ css, isMobile, darkMode, linkedAccounts, ProgramLogo, setActiveView, transferBonuses, userPointCurrencies, benefitsSummary, allCreditCards, onEditCardBenefits, vouchers = [], setShowVoucherModal, markVoucherRedeemed }) {
   const D = darkMode;
   const dv = {
-    bone: D ? "#1a1a1a" : "#F4F1EC",
-    paper: D ? "#222" : "#EBE6DD",
+    bone: D ? "#1a1a1a" : "#fff",
+    paper: D ? "#222" : "#fff",
     cream: D ? "rgba(255,255,255,0.08)" : "#E2DCCE",
     stone: D ? "#8a8a8a" : "#857A66",
     taupe: D ? "#999" : "#6B6458",
@@ -129,7 +129,7 @@ function WalletPage({ css, isMobile, darkMode, linkedAccounts, ProgramLogo, setA
       <div style={{ fontFamily: dv.sans, color: dv.ink }}>
         <Hero dv={dv} D={D} isMobile={isMobile} css={css} />
         <PageHeader dv={dv} isMobile={isMobile} />
-        <div style={{ background: dv.paper, border: `1px solid ${dv.cream}`, padding: isMobile ? "32px 22px" : "48px 32px", textAlign: "center" }}>
+        <div style={{ background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, padding: isMobile ? "32px 22px" : "48px 32px", textAlign: "center" }}>
           <h3 style={{ fontFamily: dv.serif, fontSize: 24, fontWeight: 400, color: dv.ink, margin: "0 0 10px", letterSpacing: "-0.01em" }}>
             No cards in your wallet yet.
           </h3>
@@ -164,10 +164,10 @@ function WalletPage({ css, isMobile, darkMode, linkedAccounts, ProgramLogo, setA
 
       {/* ── Wallet band ── */}
       <SectionEyebrow dv={dv} title={`Your wallet · ${linkedCards.length} card${linkedCards.length === 1 ? "" : "s"}`} />
-      <div style={{ background: dv.paper, border: `1px solid ${dv.cream}`, padding: isMobile ? "16px" : "20px 24px", marginBottom: 40, display: "flex", flexWrap: "wrap", gap: 14 }}>
+      <div style={{ background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, padding: isMobile ? "16px" : "20px 24px", marginBottom: 40, display: "flex", flexWrap: "wrap", gap: 14 }}>
         {linkedCards.map(card => (
-          <div key={card.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 14px 8px 8px", background: dv.bone, border: `1px solid ${dv.cream}`, minWidth: 0 }}>
-            <div style={{ width: 32, height: 32, background: dv.paper, border: `1px solid ${dv.cream}`, display: "grid", placeItems: "center", flexShrink: 0 }}>
+          <div key={card.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 14px 8px 8px", background: dv.bone, borderRadius: 12, border: `1px solid ${dv.cream}`, minWidth: 0 }}>
+            <div style={{ width: 32, height: 32, background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, display: "grid", placeItems: "center", flexShrink: 0 }}>
               {ProgramLogo ? <ProgramLogo prog={card} size={20} /> : null}
             </div>
             <div style={{ minWidth: 0 }}>
@@ -182,7 +182,7 @@ function WalletPage({ css, isMobile, darkMode, linkedAccounts, ProgramLogo, setA
 
       {/* ── Decision engine ── */}
       <SectionEyebrow dv={dv} title="The decision · which card to swipe" />
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "minmax(280px, 340px) 1fr", gap: 0, background: dv.paper, border: `1px solid ${dv.cream}`, marginBottom: 56 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "minmax(280px, 340px) 1fr", gap: 0, background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, marginBottom: 56 }}>
         <div style={{ padding: isMobile ? "24px 20px" : "28px 26px", borderRight: isMobile ? "none" : `1px solid ${dv.cream}`, borderBottom: isMobile ? `1px solid ${dv.cream}` : "none", background: dv.bone }}>
           <div style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: dv.accent, marginBottom: 22, display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{ width: 24, height: 1, background: dv.accent }} />
@@ -274,7 +274,7 @@ function WalletPage({ css, isMobile, darkMode, linkedAccounts, ProgramLogo, setA
                             borderBottom: i < alternatives.length - 1 ? `1px solid ${dv.cream}` : "none",
                             background: i % 2 === 1 ? "rgba(226,220,206,0.18)" : "transparent",
                           }}>
-                            <div style={{ width: 28, height: 28, background: dv.bone, border: `1px solid ${dv.cream}`, display: "grid", placeItems: "center" }}>
+                            <div style={{ width: 28, height: 28, background: dv.bone, borderRadius: 12, border: `1px solid ${dv.cream}`, display: "grid", placeItems: "center" }}>
                               {ProgramLogo && altProg ? <ProgramLogo prog={altProg} size={18} /> : null}
                             </div>
                             <div style={{ minWidth: 0 }}>
@@ -331,7 +331,7 @@ function WalletPage({ css, isMobile, darkMode, linkedAccounts, ProgramLogo, setA
             </div>
 
             {active.length === 0 && potential.length === 0 && (
-              <div style={{ padding: "16px 18px", background: dv.paper, border: `1px solid ${dv.cream}`, fontFamily: dv.serif, fontStyle: "italic", color: dv.taupe, fontSize: 14 }}>
+              <div style={{ padding: "16px 18px", background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, fontFamily: dv.serif, fontStyle: "italic", color: dv.taupe, fontSize: 14 }}>
                 Track companion vouchers, hotel free nights, upgrade certs and travel credits — never miss an expiry date again.
               </div>
             )}
@@ -458,14 +458,14 @@ function WalletPage({ css, isMobile, darkMode, linkedAccounts, ProgramLogo, setA
               borderBottom: !isInLastRow ? `1px solid ${dv.cream}` : "none",
               display: "flex", alignItems: "center", gap: 16,
             }}>
-              <div style={{ width: 36, height: 36, background: dv.bone, border: `1px solid ${dv.cream}`, display: "grid", placeItems: "center", flexShrink: 0, color: dv.taupe }}>
+              <div style={{ width: 36, height: 36, background: dv.bone, borderRadius: 12, border: `1px solid ${dv.cream}`, display: "grid", placeItems: "center", flexShrink: 0, color: dv.taupe }}>
                 <Icon id={PURCHASE_CATEGORIES.find(p => p.id === cat.id)?.icon || "shop"} size={16} />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: dv.taupe, marginBottom: 4 }}>{cat.label}</div>
                 {rec ? (
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ width: 26, height: 26, background: dv.bone, border: `1px solid ${dv.cream}`, display: "grid", placeItems: "center", flexShrink: 0 }}>
+                    <div style={{ width: 26, height: 26, background: dv.bone, borderRadius: 12, border: `1px solid ${dv.cream}`, display: "grid", placeItems: "center", flexShrink: 0 }}>
                       {ProgramLogo && bestProg ? <ProgramLogo prog={bestProg} size={16} /> : null}
                     </div>
                     <div style={{ minWidth: 0 }}>
@@ -491,7 +491,7 @@ function WalletPage({ css, isMobile, darkMode, linkedAccounts, ProgramLogo, setA
         If you redeem differently than the average traveler, override any of these to match your own redemption strategy — the decision engine will recompute instantly.
       </p>
 
-      <div style={{ background: dv.paper, border: `1px solid ${dv.cream}`, marginBottom: 32 }}>
+      <div style={{ background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, marginBottom: 32 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 22px", borderBottom: `1px solid ${dv.cream}`, background: dv.bone }}>
           <div style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: dv.taupe }}>
             {Object.keys(overrides).length > 0
@@ -542,7 +542,7 @@ function WalletPage({ css, isMobile, darkMode, linkedAccounts, ProgramLogo, setA
                   <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                     <input type="number" step="0.01" value={draftValues[id] ?? ""}
                       onChange={e => setDraftValues(d => ({ ...d, [id]: e.target.value }))}
-                      style={{ width: 64, padding: "6px 8px", background: dv.bone, border: `1px solid ${meta.isOverride ? dv.accent : dv.cream}`, color: dv.ink, fontFamily: dv.mono, fontSize: 13, textAlign: "right", outline: "none" }}
+                      style={{ width: 64, padding: "6px 8px", background: dv.bone, borderRadius: 12, border: `1px solid ${meta.isOverride ? dv.accent : dv.cream}`, color: dv.ink, fontFamily: dv.mono, fontSize: 13, textAlign: "right", outline: "none" }}
                     />
                     <span style={{ fontFamily: dv.mono, fontSize: 11, color: dv.taupe }}>¢</span>
                   </div>
@@ -605,7 +605,7 @@ function RecommendationCard({ dv, option, ProgramLogo, reasoning }) {
   return (
     <>
       <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 14 }}>
-        <div style={{ width: 48, height: 48, background: dv.bone, border: `1px solid ${dv.cream}`, display: "grid", placeItems: "center", flexShrink: 0 }}>
+        <div style={{ width: 48, height: 48, background: dv.bone, borderRadius: 12, border: `1px solid ${dv.cream}`, display: "grid", placeItems: "center", flexShrink: 0 }}>
           {ProgramLogo && prog ? <ProgramLogo prog={prog} size={32} /> : null}
         </div>
         <div>
@@ -634,7 +634,7 @@ function PathCard({ dv, option, pathTitle, ProgramLogo, isBest }) {
       )}
       <div style={{ fontFamily: dv.mono, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: dv.taupe, marginBottom: 8 }}>{pathTitle}</div>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-        <div style={{ width: 32, height: 32, background: dv.paper, border: `1px solid ${dv.cream}`, display: "grid", placeItems: "center", flexShrink: 0 }}>
+        <div style={{ width: 32, height: 32, background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, display: "grid", placeItems: "center", flexShrink: 0 }}>
           {ProgramLogo && prog ? <ProgramLogo prog={prog} size={20} /> : null}
         </div>
         <div style={{ minWidth: 0 }}>

@@ -161,8 +161,8 @@ export function renderAlliances(s) {
 function AlliancesPage({ css, isMobile, darkMode, linkedAccounts, setActiveView, ProgramLogo }) {
   const D = darkMode;
   const dv = {
-    bone: D ? "#1a1a1a" : "#F4F1EC",
-    paper: D ? "#222" : "#EBE6DD",
+    bone: D ? "#1a1a1a" : "#fff",
+    paper: D ? "#222" : "#fff",
     cream: D ? "rgba(255,255,255,0.08)" : "#E2DCCE",
     stone: D ? "#8a8a8a" : "#857A66",
     taupe: D ? "#999" : "#6B6458",
@@ -315,7 +315,7 @@ function AlliancesPage({ css, isMobile, darkMode, linkedAccounts, setActiveView,
       </div>
 
       {/* ── Profile band ── */}
-      <div style={{ background: dv.paper, border: `1px solid ${dv.cream}`, padding: isMobile ? "20px 18px" : "22px 26px", marginBottom: 40, display: "grid", gridTemplateColumns: isMobile ? "1fr" : "auto 1fr auto", gap: isMobile ? 16 : 28, alignItems: "center" }}>
+      <div style={{ background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, padding: isMobile ? "20px 18px" : "22px 26px", marginBottom: 40, display: "grid", gridTemplateColumns: isMobile ? "1fr" : "auto 1fr auto", gap: isMobile ? 16 : 28, alignItems: "center" }}>
         <div style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: dv.taupe }}>
           <span style={{ color: dv.accent }}>●</span>&nbsp;&nbsp;Your Continuum profile
         </div>
@@ -328,7 +328,7 @@ function AlliancesPage({ css, isMobile, darkMode, linkedAccounts, setActiveView,
             <>
               {userHoldings.map((h, i) => (
                 <div key={`a-${i}`} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <div style={{ width: 36, height: 36, background: dv.bone, border: `1px solid ${dv.cream}`, display: "grid", placeItems: "center", flexShrink: 0 }}>
+                  <div style={{ width: 36, height: 36, background: dv.bone, borderRadius: 12, border: `1px solid ${dv.cream}`, display: "grid", placeItems: "center", flexShrink: 0 }}>
                     {ProgramLogo && h.prog ? <ProgramLogo prog={h.prog} size={22} /> : (
                       <span style={{ fontFamily: dv.mono, fontSize: 11, color: dv.ink, letterSpacing: "0.05em" }}>{h.airlineCode}</span>
                     )}
@@ -343,7 +343,7 @@ function AlliancesPage({ css, isMobile, darkMode, linkedAccounts, setActiveView,
               ))}
               {independentHoldings.map((h, i) => (
                 <div key={`i-${i}`} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <div style={{ width: 36, height: 36, background: dv.bone, border: `1px solid ${dv.cream}`, display: "grid", placeItems: "center", flexShrink: 0 }}>
+                  <div style={{ width: 36, height: 36, background: dv.bone, borderRadius: 12, border: `1px solid ${dv.cream}`, display: "grid", placeItems: "center", flexShrink: 0 }}>
                     {ProgramLogo && h.prog ? <ProgramLogo prog={h.prog} size={22} /> : (
                       <span style={{ fontFamily: dv.mono, fontSize: 11, color: dv.ink, letterSpacing: "0.05em" }}>{h.airlineCode}</span>
                     )}
@@ -368,7 +368,7 @@ function AlliancesPage({ css, isMobile, darkMode, linkedAccounts, setActiveView,
       </div>
 
       {/* ── Calculator ── */}
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "minmax(320px, 360px) 1fr", gap: 0, background: dv.paper, border: `1px solid ${dv.cream}`, marginBottom: 56, minHeight: 540 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "minmax(320px, 360px) 1fr", gap: 0, background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, marginBottom: 56, minHeight: 540 }}>
 
         {/* LEFT: inputs */}
         <div style={{ padding: isMobile ? "26px 20px" : "32px 30px", borderRight: isMobile ? "none" : `1px solid ${dv.cream}`, borderBottom: isMobile ? `1px solid ${dv.cream}` : "none", background: dv.bone }}>
@@ -612,7 +612,7 @@ function AlliancesPage({ css, isMobile, darkMode, linkedAccounts, setActiveView,
             }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6, gap: 12 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                  <div style={{ width: 42, height: 42, background: dv.bone, border: `1px solid ${dv.cream}`, display: "grid", placeItems: "center", flexShrink: 0 }}>
+                  <div style={{ width: 42, height: 42, background: dv.bone, borderRadius: 12, border: `1px solid ${dv.cream}`, display: "grid", placeItems: "center", flexShrink: 0 }}>
                     {ProgramLogo && prog ? <ProgramLogo prog={prog} size={26} /> : (
                       <span style={{ fontFamily: dv.mono, fontSize: 11, color: dv.ink }}>{progId.toUpperCase().slice(0, 3)}</span>
                     )}
@@ -667,7 +667,7 @@ function AlliancesPage({ css, isMobile, darkMode, linkedAccounts, setActiveView,
                   {meta.partners.map((p, pi) => (
                     <span key={pi} style={{
                       fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.04em",
-                      color: dv.taupe, padding: "3px 8px", background: dv.bone, border: `1px solid ${dv.cream}`,
+                      color: dv.taupe, padding: "3px 8px", background: dv.bone, borderRadius: 12, border: `1px solid ${dv.cream}`,
                     }}>{p}</span>
                   ))}
                 </div>

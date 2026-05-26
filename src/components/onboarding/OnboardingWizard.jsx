@@ -160,12 +160,12 @@ export default function OnboardingWizard({
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 9800, background: "rgba(15,13,15,0.78)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-      <div style={{ width: "100%", maxWidth: 640, maxHeight: "92vh", overflowY: "auto", background: dv.paper, border: `1px solid ${dv.cream}`, padding: 0, position: "relative" }}>
+      <div style={{ width: "100%", maxWidth: 640, maxHeight: "92vh", overflowY: "auto", background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, padding: 0, position: "relative" }}>
         {/* Top bar — progress + skip */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: `1px solid ${dv.cream}`, background: dv.bone }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ fontFamily: FONTS.mono, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: dv.accent }}>
-              Setup · {String(stepIdx + 1).padStart(2, "0")} / {String(totalSteps).padStart(2, "0")}
+              Setup · {String(stepIdx + 1)} / {String(totalSteps)}
             </span>
             <span style={{ fontFamily: FONTS.serif, fontStyle: "italic", color: dv.taupe, fontSize: 13 }}>{stepNames[stepIdx]}</span>
           </div>
@@ -248,7 +248,7 @@ function StepWelcome({ dv, firstName }) {
 
 function StepProfile({ dv, profile, setProfile }) {
   const lbl = { display: "block", fontFamily: FONTS.mono, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: dv.taupe, marginBottom: 8 };
-  const inp = { width: "100%", padding: "12px 14px", background: dv.bone, border: `1px solid ${dv.cream}`, color: dv.ink, fontSize: 15, fontFamily: FONTS.serif, outline: "none", boxSizing: "border-box" };
+  const inp = { width: "100%", padding: "12px 14px", background: dv.bone, borderRadius: 12, border: `1px solid ${dv.cream}`, color: dv.ink, fontSize: 15, fontFamily: FONTS.serif, outline: "none", boxSizing: "border-box" };
   return (
     <div>
       <div style={{ fontFamily: FONTS.mono, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: dv.accent, marginBottom: 12 }}>● About you</div>
@@ -333,7 +333,7 @@ function StepDone({ dv, profile, airlinePicks, hotelPicks, cardPicks }) {
       <p style={{ fontFamily: FONTS.serif, fontStyle: "italic", color: dv.taupe, fontSize: 15, lineHeight: 1.55, margin: "0 0 18px" }}>
         Here's what we set up. Edit any of it from Programs or Settings whenever you want.
       </p>
-      <div style={{ background: dv.bone, border: `1px solid ${dv.cream}`, padding: "14px 18px" }}>
+      <div style={{ background: dv.bone, borderRadius: 12, border: `1px solid ${dv.cream}`, padding: "14px 18px" }}>
         {lines.map((line, i) => (
           <div key={i} style={{ fontFamily: FONTS.serif, fontSize: 14, color: dv.ink, padding: "8px 0", borderBottom: i < lines.length - 1 ? `1px solid ${dv.cream}` : "none" }}>
             {line}
@@ -381,8 +381,8 @@ function ChipGrid({ items, picks, onToggle, dv }) {
 
 function palette(D) {
   return {
-    bone: D ? "#1a1a1a" : "#F4F1EC",
-    paper: D ? "#222" : "#EBE6DD",
+    bone: D ? "#1a1a1a" : "#fff",
+    paper: D ? "#222" : "#fff",
     cream: D ? "rgba(255,255,255,0.08)" : "#E2DCCE",
     stone: D ? "#8a8a8a" : "#857A66",
     taupe: D ? "#999" : "#6B6458",

@@ -54,13 +54,17 @@ body { font-family: var(--font-regular); line-height: 1.5; overflow-x: hidden; o
 ::-webkit-scrollbar-thumb { background: #352f4a; border-radius: 4px; }
 input, select, textarea, button { font-family: inherit; color: inherit; font-size: 16px; }
 @media (min-width: 768px) { input, select, textarea, button { font-size: inherit; } }
+/* App-wide rounded edges. Inline border-radius (e.g. "50%" for circular icon
+   buttons) still wins since these have no !important — this only softens the
+   square defaults. */
+button, input, select, textarea { border-radius: 10px; }
 input::placeholder { color: #62666d; }
 select option { background: #211e2e; color: #fff; }
 a, button { transition: all 0.15s ease; }
 /* Hide scrollbar on mobile horizontal tab bar */
 nav div::-webkit-scrollbar { display: none; }
 /* Google Places Autocomplete dark theme */
-.pac-container { background: #1c1c1c !important; border: 1px solid rgba(255,255,255,0.08) !important; border-radius: 0 !important; box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important; margin-top: 4px !important; font-family: "Instrument Sans", sans-serif !important; z-index: 99999 !important; }
+.pac-container { background: #1c1c1c !important; border: 1px solid rgba(255,255,255,0.08) !important; border-radius: 12px !important; overflow: hidden !important; box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important; margin-top: 4px !important; font-family: "Instrument Sans", sans-serif !important; z-index: 99999 !important; }
 .pac-item { border-top: 1px solid rgba(255,255,255,0.04) !important; padding: 10px 14px !important; color: #a0a0a0 !important; cursor: pointer !important; font-size: 13px !important; }
 .pac-item:hover, .pac-item-selected { background: rgba(255,255,255,0.06) !important; }
 .pac-item-query { color: #f5f5f5 !important; font-weight: 600 !important; font-size: 13px !important; }

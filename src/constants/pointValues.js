@@ -3,6 +3,9 @@
 // Defaults reflect industry-standard valuations (TPG / Frequent Miler / NerdWallet
 // blended) for the major rewards programs as of mid-2026. Users can override
 // any of these from the Wallet page; overrides persist in localStorage.
+// Note: World of Hyatt set to 1.65¢ (was 1.7¢) after the May 2026 award-chart
+// devaluation (5-tier chart). Reflects the general online consensus — TPG 1.65¢,
+// NerdWallet 1.8¢, post-devaluation average ~1.57¢. Kept in sync with benefits.js.
 
 export const POINT_CURRENCIES = {
   // Transferable point currencies
@@ -17,7 +20,7 @@ export const POINT_CURRENCIES = {
   aa:         { name: "American AAdvantage",      short: "AA",   defaultValue: 0.0155 },
   marriott:   { name: "Marriott Bonvoy",          short: "BVY",  defaultValue: 0.0081 },
   hilton:     { name: "Hilton Honors",            short: "HH",   defaultValue: 0.005 },
-  hyatt:      { name: "World of Hyatt",           short: "WoH",  defaultValue: 0.017 },
+  hyatt:      { name: "World of Hyatt",           short: "WoH",  defaultValue: 0.0165 },
   ihg:        { name: "IHG One Rewards",          short: "IHG",  defaultValue: 0.005 },
   southwest:  { name: "Southwest Rapid Rewards",  short: "SW",   defaultValue: 0.014 },
   atmos:      { name: "Alaska / Atmos",           short: "AS",   defaultValue: 0.0165 },

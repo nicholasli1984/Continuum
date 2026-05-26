@@ -31,7 +31,7 @@ export default function BenefitsSummaryPanel({ summary, isMobile, darkMode, Prog
       </div>
 
       {/* Per-card breakdown */}
-      <div style={{ background: dv.paper, border: `1px solid ${dv.cream}` }}>
+      <div style={{ background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}` }}>
         {summary.perCard.map((c, i) => {
           const card = allCards?.find(x => x.id === c.cardId);
           const pct = c.max > 0 ? Math.round((c.claimed / c.max) * 100) : 0;
@@ -43,7 +43,7 @@ export default function BenefitsSummaryPanel({ summary, isMobile, darkMode, Prog
               display: "grid", gridTemplateColumns: isMobile ? "auto 1fr auto" : "auto 1fr 1.6fr auto", gap: 14, alignItems: "center",
               background: i % 2 === 1 ? "rgba(226,220,206,0.18)" : "transparent",
             }}>
-              <div style={{ width: 36, height: 36, background: dv.bone, border: `1px solid ${dv.cream}`, display: "grid", placeItems: "center", flexShrink: 0 }}>
+              <div style={{ width: 36, height: 36, background: dv.bone, borderRadius: 12, border: `1px solid ${dv.cream}`, display: "grid", placeItems: "center", flexShrink: 0 }}>
                 {ProgramLogo && card ? <ProgramLogo prog={card} size={22} /> : null}
               </div>
               <div style={{ minWidth: 0 }}>
@@ -55,7 +55,7 @@ export default function BenefitsSummaryPanel({ summary, isMobile, darkMode, Prog
               {!isMobile && (
                 <div>
                   {/* Progress bar — claimed (filled) vs remaining (empty) */}
-                  <div style={{ height: 8, background: dv.bone, border: `1px solid ${dv.cream}`, position: "relative", overflow: "hidden" }}>
+                  <div style={{ height: 8, background: dv.bone, borderRadius: 12, border: `1px solid ${dv.cream}`, position: "relative", overflow: "hidden" }}>
                     <div style={{ position: "absolute", inset: 0, width: `${pct}%`, background: pct >= 100 ? dv.moss : dv.accent, transition: "width 0.4s ease" }} />
                   </div>
                   <div style={{ fontFamily: FONTS.mono, fontSize: 11, color: c.remaining > 0 ? dv.accent : dv.moss, letterSpacing: "0.08em", textTransform: "uppercase", marginTop: 5 }}>
@@ -88,14 +88,14 @@ export function BenefitsDashboardPill({ summary, isMobile, darkMode, onClick }) 
   return (
     <button onClick={onClick} style={{
       width: "100%", display: "flex", alignItems: "center", gap: 14,
-      background: dv.paper, border: `1px solid ${urgent ? dv.accent : dv.cream}`,
+      background: dv.paper, borderRadius: 12, border: `1px solid ${urgent ? dv.accent : dv.cream}`,
       padding: isMobile ? "14px 16px" : "16px 22px", marginBottom: 20,
       cursor: "pointer", textAlign: "left", transition: "border-color 0.2s",
     }}
       onMouseEnter={e => { if (!urgent) e.currentTarget.style.borderColor = dv.taupe; }}
       onMouseLeave={e => { if (!urgent) e.currentTarget.style.borderColor = dv.cream; }}
     >
-      <div style={{ width: 28, height: 28, background: dv.bone, border: `1px solid ${urgent ? dv.accent : dv.cream}`, color: urgent ? dv.accent : dv.taupe, display: "grid", placeItems: "center", flexShrink: 0 }}>
+      <div style={{ width: 28, height: 28, background: dv.bone, borderRadius: 12, border: `1px solid ${urgent ? dv.accent : dv.cream}`, color: urgent ? dv.accent : dv.taupe, display: "grid", placeItems: "center", flexShrink: 0 }}>
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" />
         </svg>
@@ -140,8 +140,8 @@ function SectionEyebrow({ dv, title }) {
 
 function palette(D) {
   return {
-    bone: D ? "#1a1a1a" : "#F4F1EC",
-    paper: D ? "#222" : "#EBE6DD",
+    bone: D ? "#1a1a1a" : "#fff",
+    paper: D ? "#222" : "#fff",
     cream: D ? "rgba(255,255,255,0.08)" : "#E2DCCE",
     stone: D ? "#8a8a8a" : "#857A66",
     taupe: D ? "#999" : "#6B6458",

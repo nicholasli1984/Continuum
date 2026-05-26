@@ -262,15 +262,22 @@ const calcSegmentCredits = (creditAirlineId, operatingAirlineId, cabin, distance
 
 // Clearbit logo domains keyed by program id
 
+// Domains whose Google favicon is missing/blank (404) — serve these from
+// DuckDuckGo's icon service first. (capitalone.com has no Google favicon.)
+const DDG_PRIMARY_DOMAINS = new Set(["capitalone.com"]);
 const ProgramLogo = ({ prog, size = 32 }) => {
-  const [err, setErr] = useState(false);
+  const [stage, setStage] = useState(0); // 0 = primary source, 1 = fallback source, 2 = emoji
   const domain = PROGRAM_LOGO_DOMAINS[prog?.id];
-  if (domain && !err) {
+  if (domain && stage < 2) {
+    const google = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+    const ddg = `https://icons.duckduckgo.com/ip3/${domain}.ico`;
+    const ddgFirst = DDG_PRIMARY_DOMAINS.has(domain);
+    const src = stage === 0 ? (ddgFirst ? ddg : google) : (ddgFirst ? google : ddg);
     return (
       <img
-        src={`https://www.google.com/s2/favicons?domain=${domain}&sz=128`}
+        src={src}
         alt={prog.name}
-        onError={() => setErr(true)}
+        onError={() => setStage(s => s + 1)}
         style={{ width: size, height: size, objectFit: "contain", flexShrink: 0 }}
       />
     );
@@ -7792,281 +7799,256 @@ Start by introducing yourself briefly in-character with personality, and give an
       )}
 
       {showSettings && (() => {
-        const sf = { display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: D ? "#13111C" : "#f4f4f8", border: `1px solid ${css.border}`, borderRadius: 6, color: css.text, fontSize: 13, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" };
-        const lbl = { fontSize: 10, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: 1.2, fontFamily: "Inter, sans-serif" };
-        const sectionHead = { fontSize: 13, fontWeight: 700, color: css.text, fontFamily: "'Inter Tight', Inter, sans-serif", marginBottom: 14, paddingBottom: 10, borderBottom: `1px solid ${css.border}` };
+        const C = { line: "#f0eee9", border: "#E2DCCE", taupe: "#6B6458", stone: "#857A66", ink: "#15130F", paper: "#fff" };
+        const sf = { display: "block", width: "100%", marginTop: 6, padding: "10px 12px", background: "#fff", border: `1px solid ${C.border}`, borderRadius: 10, color: C.ink, fontSize: 13, fontFamily: "'Inter Tight', sans-serif", outline: "none", boxSizing: "border-box" };
+        const lbl = { fontSize: 10, fontWeight: 700, color: C.stone, textTransform: "uppercase", letterSpacing: "0.08em", fontFamily: "'JetBrains Mono', monospace" };
+        const sectionHead = { fontSize: 14, fontWeight: 700, color: C.ink, fontFamily: "'Inter Tight', sans-serif", marginBottom: 14, paddingBottom: 10, borderBottom: `1px solid ${C.line}` };
+        const primaryBtn = { padding: "9px 20px", borderRadius: 10, border: "none", background: css.accent, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Inter Tight', sans-serif" };
+        const ghostBtn = { padding: "8px 14px", borderRadius: 10, border: `1px solid ${css.accent}`, background: "transparent", color: css.accent, fontFamily: "'JetBrains Mono', monospace", fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer" };
         const tabs = [
-          { id: "profile", label: "Profile", icon: "👤" },
-          { id: "security", label: "Security", icon: "🔒" },
-          { id: "preferences", label: "Preferences", icon: "🎛" },
-          { id: "account", label: "Account", icon: "⚠️" },
+          { id: "profile", label: "Profile" },
+          { id: "security", label: "Security" },
+          { id: "preferences", label: "Preferences" },
+          { id: "account", label: "Account" },
         ];
-        return (
-          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000, padding: 20 }}>
-            <div style={{ background: css.surface, border: `1px solid ${css.border}`, borderRadius: 12, width: "100%", maxWidth: 620, maxHeight: "88vh", display: "flex", overflow: "hidden", position: "relative" }}>
-              {/* Close button */}
-              <button onClick={() => setShowSettings(false)} style={{ position: "absolute", top: 12, right: 12, zIndex: 10, width: 32, height: 32, borderRadius: 10, border: `1px solid ${css.border}`, background: D ? "#1a1a1e" : "#f0f0f0", color: css.text3, fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }}>×</button>
+        const userName = [settingsForm.firstName, settingsForm.lastName].filter(Boolean).join(" ") || user?.user_metadata?.name || (user?.email || "").split("@")[0] || "Member";
+        const initials = userName.split(/\s+/).map(w => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase() || "—";
+        const joinedDate = user?.created_at ? new Date(user.created_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : "";
 
-              {/* Sidebar tabs */}
-              <div style={{ width: 160, flexShrink: 0, background: D ? "#13111C" : "#f0f0f5", borderRight: `1px solid ${css.border}`, padding: "20px 0" }}>
-                <div style={{ padding: "0 16px 16px", fontSize: 12, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" }}>Settings</div>
-                {tabs.map(t => (
-                  <button key={t.id} onClick={() => { setSettingsTab(t.id); setSettingsMsg({ type: "", text: "" }); }} style={{
-                    display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 16px",
-                    border: "none", background: settingsTab === t.id ? css.accentBg : "transparent",
-                    color: settingsTab === t.id ? css.accent : css.text2, cursor: "pointer",
-                    fontSize: 12, fontWeight: settingsTab === t.id ? 600 : 400, fontFamily: "Inter, sans-serif",
-                    borderLeft: settingsTab === t.id ? `2px solid ${css.accent}` : "2px solid transparent",
-                    textAlign: "left",
-                  }}>{t.icon} {t.label}</button>
-                ))}
+        return (
+          <div onClick={() => setShowSettings(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: isMobile ? "stretch" : "center", justifyContent: "center", zIndex: 2000, padding: isMobile ? 0 : 20 }}>
+            <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: isMobile ? 0 : 18, width: "100%", maxWidth: 980, maxHeight: isMobile ? "100vh" : "92vh", display: "flex", flexDirection: "column", boxShadow: "0 24px 80px rgba(0,0,0,0.4)", overflow: "hidden" }}>
+              {/* Header */}
+              <div style={{ padding: isMobile ? "18px 18px 14px" : "22px 28px 18px", borderBottom: `1px solid ${C.line}`, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 14 }}>
+                <div style={{ minWidth: 0 }}>
+                  <h2 style={{ margin: 0, fontFamily: "'Inter Tight', sans-serif", fontSize: isMobile ? 22 : 26, fontWeight: 700, color: C.ink, letterSpacing: "-0.02em" }}>Settings</h2>
+                  <div style={{ marginTop: 4, fontSize: 11, color: C.stone, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.04em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.email || ""}</div>
+                </div>
+                <button onClick={() => setShowSettings(false)} style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${C.border}`, background: "#fff", color: C.taupe, cursor: "pointer", display: "grid", placeItems: "center", flexShrink: 0 }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                </button>
               </div>
 
-              {/* Content */}
-              <div style={{ flex: 1, padding: 28, overflowY: "auto" }}>
-                {settingsMsg.text && (
-                  <div style={{ padding: "9px 12px", borderRadius: 6, marginBottom: 18, fontSize: 12, fontFamily: "Inter, sans-serif", background: settingsMsg.type === "success" ? "rgba(16,185,129,0.1)" : "rgba(200,85,61,0.1)", color: settingsMsg.type === "success" ? "#10b981" : "#C8553D", border: `1px solid ${settingsMsg.type === "success" ? "#10b98130" : "#C8553D30"}` }}>
-                    {settingsMsg.text}
-                  </div>
-                )}
+              {/* Tabs */}
+              <div style={{ padding: isMobile ? "12px 18px 0" : "14px 28px 0", display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {tabs.map(t => {
+                  const on = settingsTab === t.id;
+                  return (
+                    <button key={t.id} onClick={() => { setSettingsTab(t.id); setSettingsMsg({ type: "", text: "" }); }} style={{
+                      padding: "8px 16px", borderRadius: 100,
+                      border: `1px solid ${on ? C.ink : C.border}`,
+                      background: on ? C.ink : "transparent",
+                      color: on ? "#fff" : C.taupe,
+                      fontFamily: "'Inter Tight', sans-serif", fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all 0.18s",
+                    }}>{t.label}</button>
+                  );
+                })}
+              </div>
 
-                {/* PROFILE */}
-                {settingsTab === "profile" && (
-                  <div>
-                    <div style={sectionHead}>Profile</div>
-                    <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
-                      <label style={{ flex: 1 }}><span style={lbl}>First Name</span><input value={settingsForm.firstName} onChange={e => setSettingsForm(f => ({ ...f, firstName: e.target.value }))} style={sf} /></label>
-                      <label style={{ flex: 1 }}><span style={lbl}>Last Name</span><input value={settingsForm.lastName} onChange={e => setSettingsForm(f => ({ ...f, lastName: e.target.value }))} style={sf} /></label>
+              {settingsMsg.text && (
+                <div style={{
+                  margin: isMobile ? "12px 18px 0" : "14px 28px 0", padding: "10px 14px", borderRadius: 10, fontSize: 12, fontFamily: "'Inter Tight', sans-serif",
+                  background: settingsMsg.type === "success" ? "rgba(107,122,90,0.10)" : "rgba(200,85,61,0.10)",
+                  color: settingsMsg.type === "success" ? "#6B7A5A" : "#C8553D",
+                  border: `1px solid ${settingsMsg.type === "success" ? "rgba(107,122,90,0.25)" : "rgba(200,85,61,0.25)"}`,
+                }}>{settingsMsg.text}</div>
+              )}
+
+              {/* Body — two-column on desktop, stacked on mobile */}
+              <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "16px 18px 24px" : "20px 28px 28px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "300px 1fr", gap: 18 }}>
+                  {/* LEFT: profile summary */}
+                  <div style={{ background: "#fff", border: `1px solid ${C.border}`, borderRadius: 14, padding: isMobile ? 18 : 22, alignSelf: "start" }}>
+                    <div style={{ width: 64, height: 64, borderRadius: 14, background: `linear-gradient(135deg, ${css.accent}, #E8883A)`, color: "#fff", display: "grid", placeItems: "center", fontSize: 24, fontWeight: 700, fontFamily: "'Inter Tight', sans-serif", marginBottom: 14, boxShadow: "0 4px 14px rgba(212,116,45,0.30)" }}>{initials}</div>
+                    <div style={{ fontFamily: "'Fraunces', serif", fontSize: 19, fontWeight: 500, color: C.ink, lineHeight: 1.15 }}>{userName}</div>
+                    <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 8, padding: "3px 10px", borderRadius: 100, background: "rgba(107,122,90,0.10)", color: "#6B7A5A", fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 600 }}>
+                      <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#6B7A5A" }} /> Active
                     </div>
-                    <button onClick={saveProfile} disabled={settingsSaving} style={{ padding: "9px 20px", borderRadius: 6, border: "none", background: css.accent, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", opacity: settingsSaving ? 0.7 : 1, fontFamily: "Inter, sans-serif" }}>
-                      {settingsSaving ? "Saving..." : "Save Name"}
-                    </button>
-
-                    {/* Authorized Forwarding Emails */}
-                    <div style={{ ...sectionHead, marginTop: 28 }}>Forwarding Emails</div>
-                    <p style={{ fontSize: 11, color: css.text3, marginBottom: 12, lineHeight: 1.5, fontFamily: "Inter, sans-serif" }}>
-                      Add email addresses that can forward booking confirmations and expense receipts to your Continuum inbox. Forward to: <strong style={{ color: css.accent, fontFamily: "'Geist Mono', monospace" }}>{userForwardingAddress}@trips.gocontinuum.app</strong>
-                    </p>
-                    <div style={{ marginBottom: 12 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", background: D ? "#13111C" : "#f4f4f8", borderRadius: 6, marginBottom: 6 }}>
-                        <span style={{ fontSize: 12, color: css.text, fontFamily: "Inter, sans-serif", flex: 1 }}>{user?.email}</span>
-                        <span style={{ fontSize: 11, color: css.success, fontWeight: 700, textTransform: "uppercase" }}>Primary</span>
+                    <div style={{ marginTop: 20, paddingTop: 18, borderTop: `1px solid ${C.line}` }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: C.ink, marginBottom: 14, fontFamily: "'Inter Tight', sans-serif" }}>Personal Information</div>
+                      <div style={{ display: "grid", gap: 13 }}>
+                        <div><div style={lbl}>Email</div><div style={{ fontSize: 13, color: C.ink, marginTop: 3, wordBreak: "break-word" }}>{user?.email || "—"}</div></div>
+                        {joinedDate && <div><div style={lbl}>Joined</div><div style={{ fontSize: 13, color: C.ink, marginTop: 3 }}>{joinedDate}</div></div>}
+                        {settingsForm.homeAirport && <div><div style={lbl}>Home Airport</div><div style={{ fontSize: 13, color: C.ink, marginTop: 3, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.06em" }}>{settingsForm.homeAirport}</div></div>}
+                        {settingsForm.passportCountry && <div><div style={lbl}>Passport</div><div style={{ fontSize: 13, color: C.ink, marginTop: 3 }}>{settingsForm.passportCountry}</div></div>}
+                        {settingsForm.defaultCurrency && <div><div style={lbl}>Currency</div><div style={{ fontSize: 13, color: C.ink, marginTop: 3 }}>{settingsForm.defaultCurrency}</div></div>}
                       </div>
-                      {(settingsForm.additionalEmails || []).map((email, idx) => (
-                        <div key={idx} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", background: D ? "#13111C" : "#f4f4f8", borderRadius: 6, marginBottom: 6 }}>
-                          <span style={{ fontSize: 12, color: css.text, fontFamily: "Inter, sans-serif", flex: 1 }}>{email}</span>
+                    </div>
+                  </div>
+
+                  {/* RIGHT: tab content */}
+                  <div style={{ background: "#fff", border: `1px solid ${C.border}`, borderRadius: 14, padding: isMobile ? 18 : 24 }}>
+                    {settingsTab === "profile" && (
+                      <div>
+                        <div style={sectionHead}>Profile</div>
+                        <div style={{ display: "flex", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
+                          <label style={{ flex: 1, minWidth: 140 }}><span style={lbl}>First Name</span><input value={settingsForm.firstName} onChange={e => setSettingsForm(f => ({ ...f, firstName: e.target.value }))} style={sf} /></label>
+                          <label style={{ flex: 1, minWidth: 140 }}><span style={lbl}>Last Name</span><input value={settingsForm.lastName} onChange={e => setSettingsForm(f => ({ ...f, lastName: e.target.value }))} style={sf} /></label>
+                        </div>
+                        <button onClick={saveProfile} disabled={settingsSaving} style={{ ...primaryBtn, opacity: settingsSaving ? 0.7 : 1 }}>{settingsSaving ? "Saving…" : "Save name"}</button>
+
+                        <div style={{ ...sectionHead, marginTop: 28 }}>Forwarding Emails</div>
+                        <p style={{ fontSize: 11, color: C.stone, marginBottom: 12, lineHeight: 1.55, fontFamily: "'Inter Tight', sans-serif" }}>
+                          Add email addresses that can forward booking confirmations to your inbox. Forward to <strong style={{ color: css.accent, fontFamily: "'JetBrains Mono', monospace" }}>{userForwardingAddress}@trips.gocontinuum.app</strong>
+                        </p>
+                        <div style={{ marginBottom: 12 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", background: "#FBF8F3", borderRadius: 10, marginBottom: 6, border: `1px solid ${C.line}` }}>
+                            <span style={{ fontSize: 12, color: C.ink, fontFamily: "'Inter Tight', sans-serif", flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}>{user?.email}</span>
+                            <span style={{ fontSize: 10, color: "#6B7A5A", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>Primary</span>
+                          </div>
+                          {(settingsForm.additionalEmails || []).map((email, idx) => (
+                            <div key={idx} style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", background: "#FBF8F3", borderRadius: 10, marginBottom: 6, border: `1px solid ${C.line}` }}>
+                              <span style={{ fontSize: 12, color: C.ink, fontFamily: "'Inter Tight', sans-serif", flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}>{email}</span>
+                              <button onClick={async () => {
+                                const updated = (settingsForm.additionalEmails || []).filter((_, i) => i !== idx);
+                                setSettingsForm(f => ({ ...f, additionalEmails: updated }));
+                                if (user) {
+                                  const primaryEmail = (user.email || "").toLowerCase();
+                                  if (email.toLowerCase() !== primaryEmail) {
+                                    await supabase.from("user_forwarding_addresses").delete().eq("user_id", user.id).eq("email", email.toLowerCase());
+                                  }
+                                }
+                                setSettingsMsg({ type: "success", text: `Removed ${email}` });
+                              }} style={{ border: "none", background: "transparent", color: "#C8553D", fontSize: 10, fontWeight: 700, cursor: "pointer", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase" }}>Remove</button>
+                            </div>
+                          ))}
+                        </div>
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <input id="add-fwd-email" type="email" placeholder="Add another email…" style={{ ...sf, flex: 1, marginTop: 0 }} />
                           <button onClick={async () => {
-                            const updated = (settingsForm.additionalEmails || []).filter((_, i) => i !== idx);
-                            setSettingsForm(f => ({ ...f, additionalEmails: updated }));
+                            const input = document.getElementById("add-fwd-email");
+                            const email = input?.value?.trim().toLowerCase();
+                            if (!email || !email.includes("@")) { setSettingsMsg({ type: "error", text: "Enter a valid email" }); return; }
+                            if (email === user?.email?.toLowerCase()) { setSettingsMsg({ type: "error", text: "This is already your primary email" }); return; }
+                            if ((settingsForm.additionalEmails || []).includes(email)) { setSettingsMsg({ type: "error", text: "Email already added" }); return; }
                             if (user) {
-                              // Delete the additional row but never delete the primary user-email row
-                              const primaryEmail = (user.email || "").toLowerCase();
-                              if (email.toLowerCase() !== primaryEmail) {
-                                await supabase.from("user_forwarding_addresses")
-                                  .delete()
-                                  .eq("user_id", user.id)
-                                  .eq("email", email.toLowerCase());
+                              const { data: existing } = await supabase.from("user_forwarding_addresses").select("id").eq("user_id", user.id).eq("email", email);
+                              if (!existing || existing.length === 0) {
+                                const { error: insErr } = await supabase.from("user_forwarding_addresses").insert({ user_id: user.id, email: email, forwarding_address: userForwardingAddress, verified: true });
+                                if (insErr) { setSettingsMsg({ type: "error", text: `Failed to add: ${insErr.message}` }); return; }
                               }
                             }
-                            setSettingsMsg({ type: "success", text: `Removed ${email}` });
-                          }} style={{ border: "none", background: "transparent", color: "#C8553D", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>Remove</button>
-                        </div>
-                      ))}
-                    </div>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <input id="add-fwd-email" type="email" placeholder="Add another email..." style={{ ...sf, flex: 1, marginTop: 0 }} />
-                      <button onClick={async () => {
-                        const input = document.getElementById("add-fwd-email");
-                        const email = input?.value?.trim().toLowerCase();
-                        if (!email || !email.includes("@")) { setSettingsMsg({ type: "error", text: "Enter a valid email" }); return; }
-                        if (email === user?.email?.toLowerCase()) { setSettingsMsg({ type: "error", text: "This is already your primary email" }); return; }
-                        if ((settingsForm.additionalEmails || []).includes(email)) { setSettingsMsg({ type: "error", text: "Email already added" }); return; }
-                        // Save to Supabase — query first, then insert only if missing,
-                        // to avoid depending on a specific onConflict target constraint.
-                        if (user) {
-                          const { data: existing } = await supabase
-                            .from("user_forwarding_addresses")
-                            .select("id")
-                            .eq("user_id", user.id)
-                            .eq("email", email);
-                          if (!existing || existing.length === 0) {
-                            const { error: insErr } = await supabase
-                              .from("user_forwarding_addresses")
-                              .insert({
-                                user_id: user.id,
-                                email: email,
-                                forwarding_address: userForwardingAddress,
-                                verified: true,
-                              });
-                            if (insErr) {
-                              setSettingsMsg({ type: "error", text: `Failed to add: ${insErr.message}` });
-                              return;
-                            }
-                          }
-                        }
-                        setSettingsForm(f => ({ ...f, additionalEmails: [...(f.additionalEmails || []), email] }));
-                        if (input) input.value = "";
-                        setSettingsMsg({ type: "success", text: `Added ${email} — forwards will now be received` });
-                      }} style={{ padding: "9px 16px", borderRadius: 6, border: "none", background: css.accent, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "Inter, sans-serif", flexShrink: 0 }}>Add</button>
-                    </div>
-                  </div>
-                )}
-
-                {/* SECURITY */}
-                {settingsTab === "security" && (
-                  <div>
-                    <div style={sectionHead}>Email Address</div>
-                    <label style={{ display: "block", marginBottom: 14 }}><span style={lbl}>Email</span><input type="email" value={settingsForm.email} onChange={e => setSettingsForm(f => ({ ...f, email: e.target.value }))} style={sf} /></label>
-                    <button onClick={saveEmail} disabled={settingsSaving} style={{ padding: "9px 20px", borderRadius: 6, border: "none", background: css.accent, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", opacity: settingsSaving ? 0.7 : 1, fontFamily: "Inter, sans-serif", marginBottom: 28 }}>
-                      {settingsSaving ? "Saving..." : "Update Email"}
-                    </button>
-
-                    <div style={sectionHead}>Change Password</div>
-                    <label style={{ display: "block", marginBottom: 12 }}><span style={lbl}>New Password</span><input type="password" value={settingsForm.newPassword} onChange={e => setSettingsForm(f => ({ ...f, newPassword: e.target.value }))} placeholder="Min 6 characters" style={sf} /></label>
-                    <label style={{ display: "block", marginBottom: 14 }}><span style={lbl}>Confirm Password</span><input type="password" value={settingsForm.confirmPassword} onChange={e => setSettingsForm(f => ({ ...f, confirmPassword: e.target.value }))} style={sf} /></label>
-                    <button onClick={savePassword} disabled={settingsSaving} style={{ padding: "9px 20px", borderRadius: 6, border: "none", background: css.accent, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", opacity: settingsSaving ? 0.7 : 1, fontFamily: "Inter, sans-serif" }}>
-                      {settingsSaving ? "Saving..." : "Change Password"}
-                    </button>
-                  </div>
-                )}
-
-                {/* PREFERENCES */}
-                {settingsTab === "preferences" && (
-                  <div>
-                    <div style={sectionHead}>Travel Preferences</div>
-                    <label style={{ display: "block", marginBottom: 14 }}><span style={lbl}>Home Airport (IATA code)</span><input value={settingsForm.homeAirport} onChange={e => setSettingsForm(f => ({ ...f, homeAirport: e.target.value.toUpperCase().slice(0, 3) }))} placeholder="e.g. JFK, LAX, YYZ" style={sf} maxLength={3} /></label>
-                    <label style={{ display: "block", marginBottom: 14 }}><span style={lbl}>Passport Country</span>
-                      <select value={settingsForm.passportCountry} onChange={e => setSettingsForm(f => ({ ...f, passportCountry: e.target.value }))} style={{ ...sf, cursor: "pointer" }}>
-                        <option value="">Select passport country...</option>
-                        {[["US","United States"],["CA","Canada"],["GB","United Kingdom"],["AU","Australia"],["NZ","New Zealand"],["IE","Ireland"],["DE","Germany"],["FR","France"],["NL","Netherlands"],["IT","Italy"],["ES","Spain"],["PT","Portugal"],["CH","Switzerland"],["AT","Austria"],["BE","Belgium"],["SE","Sweden"],["NO","Norway"],["DK","Denmark"],["FI","Finland"],["JP","Japan"],["KR","South Korea"],["SG","Singapore"],["HK","Hong Kong SAR"],["TW","Taiwan"],["MY","Malaysia"],["TH","Thailand"],["PH","Philippines"],["IN","India"],["CN","China"],["BR","Brazil"],["MX","Mexico"],["AR","Argentina"],["CL","Chile"],["CO","Colombia"],["AE","UAE"],["SA","Saudi Arabia"],["IL","Israel"],["ZA","South Africa"],["NG","Nigeria"],["EG","Egypt"],["KE","Kenya"],["BM","Bermuda (British Overseas)"],["TT","Trinidad & Tobago"],["JM","Jamaica"],["BB","Barbados"]].map(([code, name]) => <option key={code} value={code}>{name}</option>)}
-                      </select>
-                    </label>
-                    <label style={{ display: "block", marginBottom: 20 }}><span style={lbl}>Default Currency</span>
-                      <select value={settingsForm.defaultCurrency} onChange={e => setSettingsForm(f => ({ ...f, defaultCurrency: e.target.value }))} style={{ ...sf, cursor: "pointer" }}>
-                        {["USD","CAD","GBP","EUR","AUD","JPY","SGD","HKD"].map(c => <option key={c} value={c} style={{ background: css.surface }}>{c}</option>)}
-                      </select>
-                    </label>
-
-                    <div style={{ ...sectionHead, marginTop: 8 }}>Notifications</div>
-                    {[
-                      { key: "statusMilestones", label: "Status milestone alerts", desc: "Notify when you're close to reaching the next tier" },
-                      { key: "expiringMiles", label: "Expiring miles/points alerts", desc: "Warn when points are about to expire" },
-                      { key: "newPrograms", label: "New program announcements", desc: "Get notified when Continuum adds new loyalty programs" },
-                    ].map(n => (
-                      <div key={n.key} onClick={() => setSettingsForm(f => ({ ...f, notifications: { ...f.notifications, [n.key]: !f.notifications[n.key] } }))} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: `1px solid ${css.border}`, cursor: "pointer" }}>
-                        <div>
-                          <div style={{ fontSize: 13, color: css.text, fontFamily: "Inter, sans-serif", fontWeight: 500 }}>{n.label}</div>
-                          <div style={{ fontSize: 11, color: css.text3, fontFamily: "Inter, sans-serif", marginTop: 2 }}>{n.desc}</div>
-                        </div>
-                        <div style={{ width: 36, height: 20, borderRadius: 10, background: settingsForm.notifications[n.key] ? css.accent : css.border, position: "relative", transition: "background 0.2s", flexShrink: 0 }}>
-                          <div style={{ position: "absolute", top: 2, left: settingsForm.notifications[n.key] ? 18 : 2, width: 16, height: 16, borderRadius: "50%", background: "#fff", transition: "left 0.2s" }} />
+                            setSettingsForm(f => ({ ...f, additionalEmails: [...(f.additionalEmails || []), email] }));
+                            if (input) input.value = "";
+                            setSettingsMsg({ type: "success", text: `Added ${email} — forwards will now be received` });
+                          }} style={{ ...primaryBtn, flexShrink: 0 }}>Add</button>
                         </div>
                       </div>
-                    ))}
-                    <button onClick={savePreferences} disabled={settingsSaving} style={{ marginTop: 20, padding: "9px 20px", borderRadius: 6, border: "none", background: css.accent, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", opacity: settingsSaving ? 0.7 : 1, fontFamily: "Inter, sans-serif" }}>
-                      {settingsSaving ? "Saving..." : "Save Preferences"}
-                    </button>
+                    )}
 
-                    <div style={{ ...sectionHead, marginTop: 28 }}>Help & Setup</div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: `1px solid ${css.border}` }}>
+                    {settingsTab === "security" && (
                       <div>
-                        <div style={{ fontSize: 13, color: css.text, fontFamily: "Inter, sans-serif", fontWeight: 500 }}>Re-run setup wizard</div>
-                        <div style={{ fontSize: 11, color: css.text3, fontFamily: "Inter, sans-serif", marginTop: 2 }}>Five-step setup: home airport, programs, cards</div>
+                        <div style={sectionHead}>Email Address</div>
+                        <label style={{ display: "block", marginBottom: 14 }}><span style={lbl}>Email</span><input type="email" value={settingsForm.email} onChange={e => setSettingsForm(f => ({ ...f, email: e.target.value }))} style={sf} /></label>
+                        <button onClick={saveEmail} disabled={settingsSaving} style={{ ...primaryBtn, opacity: settingsSaving ? 0.7 : 1, marginBottom: 28 }}>{settingsSaving ? "Saving…" : "Update email"}</button>
+
+                        <div style={sectionHead}>Change Password</div>
+                        <label style={{ display: "block", marginBottom: 12 }}><span style={lbl}>New Password</span><input type="password" value={settingsForm.newPassword} onChange={e => setSettingsForm(f => ({ ...f, newPassword: e.target.value }))} placeholder="Min 6 characters" style={sf} /></label>
+                        <label style={{ display: "block", marginBottom: 14 }}><span style={lbl}>Confirm Password</span><input type="password" value={settingsForm.confirmPassword} onChange={e => setSettingsForm(f => ({ ...f, confirmPassword: e.target.value }))} style={sf} /></label>
+                        <button onClick={savePassword} disabled={settingsSaving} style={{ ...primaryBtn, opacity: settingsSaving ? 0.7 : 1 }}>{settingsSaving ? "Saving…" : "Change password"}</button>
                       </div>
-                      <button onClick={() => { setShowSettings(false); setTimeout(() => setShowOnboarding(true), 250); }} style={{
-                        padding: "8px 14px", border: `1px solid ${css.accent}`, background: "transparent", color: css.accent,
-                        fontFamily: "'JetBrains Mono', monospace", fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase",
-                        cursor: "pointer", transition: "all 0.2s",
-                      }}
-                        onMouseEnter={e => { e.currentTarget.style.background = css.accent; e.currentTarget.style.color = "#F4F1EC"; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = css.accent; }}>
-                        Start Setup
-                      </button>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: `1px solid ${css.border}` }}>
+                    )}
+
+                    {settingsTab === "preferences" && (
                       <div>
-                        <div style={{ fontSize: 13, color: css.text, fontFamily: "Inter, sans-serif", fontWeight: 500 }}>Re-run product tour</div>
-                        <div style={{ fontSize: 11, color: css.text3, fontFamily: "Inter, sans-serif", marginTop: 2 }}>Eight-step walkthrough of the app's main features</div>
+                        <div style={sectionHead}>Travel Preferences</div>
+                        <label style={{ display: "block", marginBottom: 14 }}><span style={lbl}>Home Airport (IATA)</span><input value={settingsForm.homeAirport} onChange={e => setSettingsForm(f => ({ ...f, homeAirport: e.target.value.toUpperCase().slice(0, 3) }))} placeholder="e.g. JFK, LAX, YYZ" style={sf} maxLength={3} /></label>
+                        <label style={{ display: "block", marginBottom: 14 }}><span style={lbl}>Passport Country</span>
+                          <select value={settingsForm.passportCountry} onChange={e => setSettingsForm(f => ({ ...f, passportCountry: e.target.value }))} style={{ ...sf, cursor: "pointer" }}>
+                            <option value="">Select passport country…</option>
+                            {[["US","United States"],["CA","Canada"],["GB","United Kingdom"],["AU","Australia"],["NZ","New Zealand"],["IE","Ireland"],["DE","Germany"],["FR","France"],["NL","Netherlands"],["IT","Italy"],["ES","Spain"],["PT","Portugal"],["CH","Switzerland"],["AT","Austria"],["BE","Belgium"],["SE","Sweden"],["NO","Norway"],["DK","Denmark"],["FI","Finland"],["JP","Japan"],["KR","South Korea"],["SG","Singapore"],["HK","Hong Kong SAR"],["TW","Taiwan"],["MY","Malaysia"],["TH","Thailand"],["PH","Philippines"],["IN","India"],["CN","China"],["BR","Brazil"],["MX","Mexico"],["AR","Argentina"],["CL","Chile"],["CO","Colombia"],["AE","UAE"],["SA","Saudi Arabia"],["IL","Israel"],["ZA","South Africa"],["NG","Nigeria"],["EG","Egypt"],["KE","Kenya"],["BM","Bermuda (British Overseas)"],["TT","Trinidad & Tobago"],["JM","Jamaica"],["BB","Barbados"]].map(([code, name]) => <option key={code} value={code}>{name}</option>)}
+                          </select>
+                        </label>
+                        <label style={{ display: "block", marginBottom: 20 }}><span style={lbl}>Default Currency</span>
+                          <select value={settingsForm.defaultCurrency} onChange={e => setSettingsForm(f => ({ ...f, defaultCurrency: e.target.value }))} style={{ ...sf, cursor: "pointer" }}>
+                            {["USD","CAD","GBP","EUR","AUD","JPY","SGD","HKD"].map(c => <option key={c} value={c}>{c}</option>)}
+                          </select>
+                        </label>
+
+                        <div style={{ ...sectionHead, marginTop: 8 }}>Notifications</div>
+                        {[
+                          { key: "statusMilestones", label: "Status milestone alerts", desc: "Notify when you're close to reaching the next tier" },
+                          { key: "expiringMiles", label: "Expiring miles/points alerts", desc: "Warn when points are about to expire" },
+                          { key: "newPrograms", label: "New program announcements", desc: "Get notified when Continuum adds new loyalty programs" },
+                        ].map(n => (
+                          <div key={n.key} onClick={() => setSettingsForm(f => ({ ...f, notifications: { ...f.notifications, [n.key]: !f.notifications[n.key] } }))} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: `1px solid ${C.line}`, cursor: "pointer", gap: 14 }}>
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ fontSize: 13, color: C.ink, fontFamily: "'Inter Tight', sans-serif", fontWeight: 600 }}>{n.label}</div>
+                              <div style={{ fontSize: 11, color: C.stone, fontFamily: "'Inter Tight', sans-serif", marginTop: 2 }}>{n.desc}</div>
+                            </div>
+                            <div style={{ width: 38, height: 22, borderRadius: 12, background: settingsForm.notifications[n.key] ? css.accent : C.border, position: "relative", transition: "background 0.2s", flexShrink: 0 }}>
+                              <div style={{ position: "absolute", top: 2, left: settingsForm.notifications[n.key] ? 18 : 2, width: 18, height: 18, borderRadius: "50%", background: "#fff", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
+                            </div>
+                          </div>
+                        ))}
+                        <button onClick={savePreferences} disabled={settingsSaving} style={{ ...primaryBtn, marginTop: 20, opacity: settingsSaving ? 0.7 : 1 }}>{settingsSaving ? "Saving…" : "Save preferences"}</button>
+
+                        <div style={{ ...sectionHead, marginTop: 28 }}>Help & Setup</div>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: `1px solid ${C.line}`, gap: 14 }}>
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontSize: 13, color: C.ink, fontFamily: "'Inter Tight', sans-serif", fontWeight: 600 }}>Re-run setup wizard</div>
+                            <div style={{ fontSize: 11, color: C.stone, fontFamily: "'Inter Tight', sans-serif", marginTop: 2 }}>Home airport, programs, cards</div>
+                          </div>
+                          <button onClick={() => { setShowSettings(false); setTimeout(() => setShowOnboarding(true), 250); }} style={ghostBtn}>Start setup</button>
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: `1px solid ${C.line}`, gap: 14 }}>
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontSize: 13, color: C.ink, fontFamily: "'Inter Tight', sans-serif", fontWeight: 600 }}>Re-run product tour</div>
+                            <div style={{ fontSize: 11, color: C.stone, fontFamily: "'Inter Tight', sans-serif", marginTop: 2 }}>Eight-step walkthrough</div>
+                          </div>
+                          <button onClick={() => { setShowSettings(false); setActiveView("dashboard"); setDashSubTab("overview"); setTripDetailId(null); setTimeout(() => setShowTour(true), 250); }} style={ghostBtn}>Start tour</button>
+                        </div>
                       </div>
-                      <button onClick={() => { setShowSettings(false); setActiveView("dashboard"); setDashSubTab("overview"); setTripDetailId(null); setTimeout(() => setShowTour(true), 250); }} style={{
-                        padding: "8px 14px", border: `1px solid ${css.accent}`, background: "transparent", color: css.accent,
-                        fontFamily: "'JetBrains Mono', monospace", fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase",
-                        cursor: "pointer", transition: "all 0.2s",
-                      }}
-                        onMouseEnter={e => { e.currentTarget.style.background = css.accent; e.currentTarget.style.color = "#F4F1EC"; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = css.accent; }}>
-                        Start Tour
-                      </button>
-                    </div>
-                  </div>
-                )}
+                    )}
 
-                {/* SUBSCRIPTION tab removed — there are no tiers. */}
+                    {settingsTab === "account" && (
+                      <div>
+                        <div style={sectionHead}>Account</div>
+                        <div style={{ fontSize: 11, color: C.stone, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 4 }}>Signed in as</div>
+                        <div style={{ fontSize: 14, color: C.ink, fontFamily: "'Inter Tight', sans-serif", fontWeight: 500, marginBottom: 22 }}>{user?.email}</div>
 
-                {/* ACCOUNT */}
-                {settingsTab === "account" && (
-                  <div>
-                    <div style={sectionHead}>Account</div>
-                    <div style={{ fontSize: 12, color: css.text3, fontFamily: "Inter, sans-serif", marginBottom: 6 }}>Signed in as</div>
-                    <div style={{ fontSize: 14, color: css.text, fontFamily: "Inter, sans-serif", fontWeight: 500, marginBottom: 20 }}>{user?.email}</div>
+                        <div style={{ marginBottom: 18 }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: C.ink, fontFamily: "'Inter Tight', sans-serif", marginBottom: 6 }}>Export my data</div>
+                          <div style={{ fontSize: 12, color: C.stone, fontFamily: "'Inter Tight', sans-serif", marginBottom: 10 }}>Download a copy of all your trips and linked programs.</div>
+                          <button onClick={() => {
+                            const data = { trips, linkedAccounts, exportedAt: new Date().toISOString() };
+                            const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement("a"); a.href = url; a.download = "continuum-data.json"; a.click();
+                            URL.revokeObjectURL(url);
+                          }} style={{ padding: "8px 16px", borderRadius: 10, border: `1px solid ${C.border}`, background: "transparent", color: C.ink, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'Inter Tight', sans-serif" }}>Download JSON</button>
+                        </div>
 
-                    <div style={{ marginBottom: 12 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: css.text, fontFamily: "Inter, sans-serif", marginBottom: 6 }}>Export My Data</div>
-                      <div style={{ fontSize: 12, color: css.text3, fontFamily: "Inter, sans-serif", marginBottom: 10 }}>Download a copy of all your trips and linked programs.</div>
-                      <button onClick={() => {
-                        const data = { trips, linkedAccounts, exportedAt: new Date().toISOString() };
-                        const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement("a"); a.href = url; a.download = "continuum-data.json"; a.click();
-                        URL.revokeObjectURL(url);
-                      }} style={{ padding: "8px 16px", borderRadius: 6, border: `1px solid ${css.border}`, background: "transparent", color: css.text2, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>
-                        Download JSON
-                      </button>
-                    </div>
-
-                    {/* Demo mode toggle — populates the app with sample trips/expenses
-                         so a brand-new user can explore everything without entering data */}
-                    <div style={{ marginTop: 28, padding: "16px", borderRadius: 8, border: `1px solid ${css.border}`, background: css.surface2 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-                        <div>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: css.text, fontFamily: "Inter, sans-serif", marginBottom: 4 }}>Show sample data</div>
-                          <div style={{ fontSize: 12, color: css.text3, fontFamily: "Inter, sans-serif" }}>
-                            Layer in two example trips, a few expenses, and a split group so you can see what a populated app looks like. Nothing is saved to your account.
+                        <div style={{ marginTop: 22, padding: 16, borderRadius: 12, border: `1px solid ${C.border}`, background: "#FBF8F3" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 14 }}>
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: C.ink, fontFamily: "'Inter Tight', sans-serif", marginBottom: 4 }}>Show sample data</div>
+                              <div style={{ fontSize: 11, color: C.stone, fontFamily: "'Inter Tight', sans-serif" }}>Layer in two example trips, a few expenses, and a split group. Nothing is saved to your account.</div>
+                            </div>
+                            <button onClick={() => { const next = !demoMode; setDemoMode(next); writeDemoMode(next); }} style={{ flexShrink: 0, width: 44, height: 24, borderRadius: 12, border: "none", background: demoMode ? css.accent : C.border, position: "relative", cursor: "pointer", transition: "background 0.2s" }}>
+                              <span style={{ position: "absolute", top: 2, left: demoMode ? 22 : 2, width: 20, height: 20, borderRadius: "50%", background: "#fff", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
+                            </button>
                           </div>
                         </div>
-                        <button onClick={() => { const next = !demoMode; setDemoMode(next); writeDemoMode(next); }} style={{
-                          flexShrink: 0, width: 44, height: 24, borderRadius: 12, border: "none",
-                          background: demoMode ? css.accent : css.border,
-                          position: "relative", cursor: "pointer", transition: "background 0.2s",
-                        }}>
-                          <span style={{
-                            position: "absolute", top: 2, left: demoMode ? 22 : 2,
-                            width: 20, height: 20, borderRadius: "50%", background: "#fff",
-                            transition: "left 0.2s",
-                          }} />
-                        </button>
-                      </div>
-                    </div>
 
-                    <div style={{ marginTop: 16, padding: "16px", borderRadius: 8, border: "1px solid rgba(200,85,61,0.3)", background: "rgba(200,85,61,0.05)" }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#C8553D", fontFamily: "Inter, sans-serif", marginBottom: 4 }}>Danger Zone</div>
-                      <div style={{ fontSize: 12, color: css.text3, fontFamily: "Inter, sans-serif", marginBottom: 12 }}>Sign out clears your local session — your data stays. Delete Account is permanent.</div>
-                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                        <button onClick={() => { setShowSettings(false); handleLogout(); }} style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid rgba(200,85,61,0.4)", background: "transparent", color: "#C8553D", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>
-                          Sign Out
-                        </button>
-                        <button onClick={() => setShowDeleteAccount(true)} style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid #C8553D", background: "#C8553D", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>
-                          Delete Account
-                        </button>
+                        <div style={{ marginTop: 18, padding: 16, borderRadius: 12, border: "1px solid rgba(200,85,61,0.30)", background: "rgba(200,85,61,0.05)" }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: "#C8553D", fontFamily: "'Inter Tight', sans-serif", marginBottom: 4 }}>Danger zone</div>
+                          <div style={{ fontSize: 11, color: C.stone, fontFamily: "'Inter Tight', sans-serif", marginBottom: 12 }}>Sign out clears your local session — your data stays. Delete account is permanent.</div>
+                          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                            <button onClick={() => { setShowSettings(false); handleLogout(); }} style={{ padding: "9px 18px", borderRadius: 10, border: "1px solid rgba(200,85,61,0.45)", background: "transparent", color: "#C8553D", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Inter Tight', sans-serif" }}>Sign out</button>
+                            <button onClick={() => setShowDeleteAccount(true)} style={{ padding: "9px 18px", borderRadius: 10, border: "1px solid #C8553D", background: "#C8553D", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Inter Tight', sans-serif" }}>Delete account</button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
             </div>
           </div>
         );
       })()}
+
 
       {/* Profile Setup Modal */}
       {showProfileSetup && (

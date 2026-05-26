@@ -556,7 +556,7 @@ function ReportsPage(s) {
               <div style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: dv.accentSoft, display: "flex", alignItems: "center", gap: 8 }}>
                 <div style={{ width: 6, height: 6, borderRadius: "50%", background: css.accent, boxShadow: `0 0 12px ${css.accent}` }} /> Featured City
               </div>
-              <span style={{ fontFamily: dv.mono, fontSize: 10, color: dv.stone, letterSpacing: "0.1em" }}>{String(featIdx + 1).padStart(2, "0")} / {String(cityList.length).padStart(2, "0")}</span>
+              <span style={{ fontFamily: dv.mono, fontSize: 10, color: dv.stone, letterSpacing: "0.1em" }}>{String(featIdx + 1)} / {String(cityList.length)}</span>
             </div>
             {/* Photo */}
             {featPhoto && (
@@ -593,7 +593,7 @@ function ReportsPage(s) {
           { lbl: "Cities Visited", val: String(cityList.length), unit: "pl", sub: `${uniqueCountries} countries.` },
           { lbl: "Flights", val: String(flightPaths.length), unit: "seg", sub: "Segments flown." },
         ].map((m, i) => (
-          <div key={i} style={{ background: dv.paper, border: `1px solid ${dv.cream}`, padding: isMobile ? 20 : 28, position: "relative", overflow: "hidden" }}>
+          <div key={i} style={{ background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, padding: isMobile ? 20 : 28, position: "relative", overflow: "hidden" }}>
             <div style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: dv.taupe, marginBottom: 14 }}>{m.lbl}</div>
             <div style={{ fontFamily: dv.serif, fontSize: 40, fontWeight: 300, lineHeight: 1, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}>{m.val}<span style={{ fontSize: 18, color: dv.taupe, fontStyle: "italic", marginLeft: 4 }}>{m.unit}</span></div>
             <div style={{ fontFamily: dv.serif, fontStyle: "italic", fontSize: 13, color: dv.taupe, marginTop: 8 }}>{m.sub}</div>
@@ -610,7 +610,7 @@ function ReportsPage(s) {
       {/* Timeline + Chart */}
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.2fr 1fr", gap: 20, marginBottom: 40 }}>
         {/* Timeline */}
-        <div style={{ background: dv.paper, border: `1px solid ${dv.cream}`, padding: isMobile ? 20 : 28 }}>
+        <div style={{ background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, padding: isMobile ? 20 : 28 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", paddingBottom: 14, borderBottom: `1px solid ${dv.cream}`, marginBottom: 16 }}>
             <div style={{ fontFamily: dv.serif, fontSize: 20, fontWeight: 400 }}>Timeline <em style={{ fontStyle: "italic", color: dv.taupe, fontSize: 14 }}>· last {Math.min(recentTrips.length, 8)} trips</em></div>
             <span style={{ fontFamily: dv.mono, fontSize: 10, color: dv.taupe, letterSpacing: "0.1em" }}>LIVE</span>
@@ -619,7 +619,7 @@ function ReportsPage(s) {
             <div style={{ position: "absolute", left: 7, top: 6, bottom: 6, width: 1, background: dv.cream }} />
             {recentTrips.slice(0, 8).map((t, i) => (
               <div key={i} style={{ position: "relative", padding: "12px 0", borderBottom: i < Math.min(recentTrips.length, 8) - 1 ? `1px solid ${dv.cream}` : "none" }}>
-                <div style={{ position: "absolute", left: -24, top: 18, width: 7, height: 7, borderRadius: "50%", background: dv.bone, border: `1.5px solid ${dv.stone}` }} />
+                <div style={{ position: "absolute", left: -24, top: 18, width: 7, height: 7, borderRadius: "50%", background: dv.bone, borderRadius: 12, border: `1.5px solid ${dv.stone}` }} />
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
                   <div style={{ fontFamily: dv.serif, fontSize: 18, fontWeight: 400 }}>{t.name}</div>
                   <div style={{ fontFamily: dv.mono, fontSize: 10, color: dv.taupe, letterSpacing: "0.08em" }}>{t.date}</div>
@@ -635,7 +635,7 @@ function ReportsPage(s) {
         </div>
 
         {/* Chart */}
-        <div style={{ background: dv.paper, border: `1px solid ${dv.cream}`, padding: isMobile ? 20 : 28 }}>
+        <div style={{ background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, padding: isMobile ? 20 : 28 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", paddingBottom: 14, borderBottom: `1px solid ${dv.cream}`, marginBottom: 16 }}>
             <div style={{ fontFamily: dv.serif, fontSize: 20, fontWeight: 400 }}>Trips by Month</div>
             <span style={{ fontFamily: dv.mono, fontSize: 10, color: dv.taupe, letterSpacing: "0.1em" }}>NTS / MO</span>
@@ -666,14 +666,14 @@ function ReportsPage(s) {
       {/* Airlines + Hotels */}
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 20, marginBottom: 40 }}>
         {/* Airlines */}
-        <div style={{ background: dv.paper, border: `1px solid ${dv.cream}`, padding: isMobile ? 20 : 28 }}>
+        <div style={{ background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, padding: isMobile ? 20 : 28 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", paddingBottom: 14, borderBottom: `1px solid ${dv.cream}`, marginBottom: 16 }}>
             <div style={{ fontFamily: dv.serif, fontSize: 20, fontWeight: 400 }}>Airlines <em style={{ fontStyle: "italic", color: dv.taupe, fontSize: 14 }}>· by segments</em></div>
             <span style={{ fontFamily: dv.mono, fontSize: 10, color: dv.taupe, letterSpacing: "0.1em" }}>S 03.A</span>
           </div>
           {airlineList.length > 0 ? airlineList.map((a, i) => (
             <div key={i} style={{ display: "grid", gridTemplateColumns: "auto 1fr auto auto", gap: 14, alignItems: "center", padding: "12px 0", borderBottom: i < airlineList.length - 1 ? `1px solid ${dv.cream}` : "none" }}>
-              <span style={{ fontFamily: dv.mono, fontSize: 11, color: dv.stone, width: 20 }}>{String(i + 1).padStart(2, "0")}</span>
+              <span style={{ fontFamily: dv.mono, fontSize: 11, color: dv.stone, width: 20 }}>{String(i + 1)}</span>
               <span style={{ fontFamily: dv.serif, fontSize: 16, fontWeight: 400 }}>{a.name}</span>
               <div style={{ width: 100, height: 3, background: dv.cream, position: "relative" }}><div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${(a.segs / maxAirSeg) * 100}%`, background: dv.ink, transition: "width 1s ease" }} /></div>
               <span style={{ fontFamily: dv.mono, fontSize: 12, color: dv.taupe, fontVariantNumeric: "tabular-nums", textAlign: "right", minWidth: 50 }}>{a.segs} <em style={{ fontStyle: "italic", fontSize: 10 }}>seg</em></span>
@@ -681,14 +681,14 @@ function ReportsPage(s) {
           )) : <div style={{ fontFamily: dv.serif, fontStyle: "italic", fontSize: 14, color: dv.taupe, padding: "24px 0", textAlign: "center" }}>Add flights to see airlines.</div>}
         </div>
         {/* Hotels */}
-        <div style={{ background: dv.paper, border: `1px solid ${dv.cream}`, padding: isMobile ? 20 : 28 }}>
+        <div style={{ background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, padding: isMobile ? 20 : 28 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", paddingBottom: 14, borderBottom: `1px solid ${dv.cream}`, marginBottom: 16 }}>
             <div style={{ fontFamily: dv.serif, fontSize: 20, fontWeight: 400 }}>Hotels <em style={{ fontStyle: "italic", color: dv.taupe, fontSize: 14 }}>· by nights</em></div>
             <span style={{ fontFamily: dv.mono, fontSize: 10, color: dv.taupe, letterSpacing: "0.1em" }}>S 03.B</span>
           </div>
           {hotelList.length > 0 ? hotelList.map((h, i) => (
             <div key={i} style={{ display: "grid", gridTemplateColumns: "auto 1fr auto auto", gap: 14, alignItems: "center", padding: "12px 0", borderBottom: i < hotelList.length - 1 ? `1px solid ${dv.cream}` : "none" }}>
-              <span style={{ fontFamily: dv.mono, fontSize: 11, color: dv.stone, width: 20 }}>{String(i + 1).padStart(2, "0")}</span>
+              <span style={{ fontFamily: dv.mono, fontSize: 11, color: dv.stone, width: 20 }}>{String(i + 1)}</span>
               <span style={{ fontFamily: dv.serif, fontSize: 16, fontWeight: 400 }}>{h.name}</span>
               <div style={{ width: 100, height: 3, background: dv.cream, position: "relative" }}><div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${(h.nights / maxHotelNts) * 100}%`, background: dv.ink, transition: "width 1s ease" }} /></div>
               <span style={{ fontFamily: dv.mono, fontSize: 12, color: dv.taupe, fontVariantNumeric: "tabular-nums", textAlign: "right", minWidth: 50 }}>{h.nights} <em style={{ fontStyle: "italic", fontSize: 10 }}>nts</em></span>

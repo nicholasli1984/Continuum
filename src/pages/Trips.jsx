@@ -4,6 +4,10 @@ import { LOUNGE_DATABASE, AMENITY_ICONS, AMENITY_LABELS } from "../constants/lou
 import { expenseUSD } from "../utils/expenseUsd";
 import SegmentDropZone from "../components/SegmentDropZone";
 import ReportedBadge from "../components/ReportedBadge";
+import DayTimeline from "../components/DayTimeline";
+import TripSelector from "../components/TripSelector";
+import TripSearchBar from "../components/TripSearchBar";
+import { cityPhoto } from "../constants/cityPhotos";
 
 export function renderTrips(s) {
   const {
@@ -116,7 +120,7 @@ export function renderTrips(s) {
 
       // Editorial palette matching itinerary.html
       const ev = {
-        bone: D ? "#1a1a1a" : "#F4F1EC", paper: D ? "#222" : "#EBE6DD", cream: D ? "rgba(255,255,255,0.08)" : "#E2DCCE",
+        bone: D ? "#1a1a1a" : "#fff", paper: D ? "#222" : "#fff", cream: D ? "rgba(255,255,255,0.08)" : "#E2DCCE",
         stone: D ? "#8a8a8a" : "#857A66", taupe: D ? "#999" : "#6B6458", graphite: D ? "#ccc" : "#2C2A26", ink: D ? "#f0ece6" : "#15130F",
         accent: "#C8553D", accentWash: D ? "rgba(200,85,61,0.12)" : "#F5E4DC",
         sky: "#6B8BA3", skyWash: D ? "rgba(107,139,163,0.12)" : "#DCE4EB",
@@ -391,80 +395,7 @@ export function renderTrips(s) {
             );
           })()}
 
-          {/* ── Floating Day Pills Nav — single-day view switcher with prev/next ── */}
-          {sortedDates.length > 0 && (() => {
-            const curIdx = tripDetailSegIdx || 0;
-            const goTo = (newIdx) => {
-              if (newIdx < 0 || newIdx >= sortedDates.length) return;
-              setTripDetailSegIdx(newIdx);
-              // After React re-renders, scroll the newly-active pill into the center of the scroller
-              setTimeout(() => {
-                const navEl = document.getElementById(`day-pills-${trip.id}`);
-                const pillEl = document.getElementById(`day-pill-${trip.id}-${newIdx}`);
-                if (navEl && pillEl) {
-                  const navRect = navEl.getBoundingClientRect();
-                  const pillRect = pillEl.getBoundingClientRect();
-                  const offset = pillRect.left - navRect.left - (navRect.width / 2) + (pillRect.width / 2);
-                  navEl.scrollBy({ left: offset, behavior: "smooth" });
-                }
-              }, 30);
-            };
-            const prevDisabled = curIdx <= 0;
-            const nextDisabled = curIdx >= sortedDates.length - 1;
-            const arrowBtn = (dir, disabled) => ({
-              flexShrink: 0, width: 36, height: 36, borderRadius: "50%",
-              border: `1px solid ${disabled ? ev.cream : ev.stone}`,
-              background: disabled ? "transparent" : ev.bone,
-              color: disabled ? ev.stone : ev.ink,
-              cursor: disabled ? "default" : "pointer",
-              display: "grid", placeItems: "center",
-              opacity: disabled ? 0.4 : 1,
-              transition: "all 0.2s",
-            });
-            return (
-              <div style={{ position: "sticky", top: 0, zIndex: 50, marginBottom: 24, display: "flex", alignItems: "center", gap: 8, background: D ? "rgba(26,26,26,0.95)" : "rgba(244,241,236,0.95)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", padding: "8px 10px", border: `1px solid ${ev.cream}`, borderRadius: 100, boxShadow: "0 4px 20px rgba(0,0,0,0.08)" }}>
-                <button onClick={() => goTo(curIdx - 1)} disabled={prevDisabled} title="Previous day" style={arrowBtn("prev", prevDisabled)}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-                </button>
-                <nav id={`day-pills-${trip.id}`} style={{ flex: 1, minWidth: 0, display: "flex", gap: 6, overflowX: "auto", scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
-                  <style>{`#day-pills-${trip.id}::-webkit-scrollbar { display: none; }`}</style>
-                  {sortedDates.map((dateStr, dayIdx) => {
-                    const dd = dateStr !== "undated" ? new Date(dateStr + "T12:00:00") : null;
-                    const dn = dd && tripStartDate ? Math.floor((dd - new Date(tripStartDate + "T12:00:00")) / 86400000) + 1 : dayIdx + 1;
-                    const dlabel = dd ? dd.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }) : "Undated";
-                    const isActive = curIdx === dayIdx;
-                    return (
-                      <button key={dateStr} id={`day-pill-${trip.id}-${dayIdx}`} onClick={() => goTo(dayIdx)} style={{ flexShrink: 0, padding: "8px 14px", borderRadius: 100, background: isActive ? ev.ink : "transparent", border: "1px solid transparent", fontFamily: ev.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: isActive ? ev.bone : ev.taupe, cursor: "pointer", transition: "all 0.25s", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: 8 }}
-                        onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = ev.paper; e.currentTarget.style.color = ev.ink; } }}
-                        onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = ev.taupe; } }}>
-                        <span style={{ fontFamily: ev.serif, fontSize: 13, fontWeight: 500, fontStyle: "italic" }}>{String(dn).padStart(2, "0")}</span>
-                        {dlabel}
-                      </button>
-                    );
-                  })}
-                </nav>
-                <button onClick={() => goTo(curIdx + 1)} disabled={nextDisabled || tripDetailFullView} title="Next day" style={arrowBtn("next", nextDisabled || tripDetailFullView)}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-                </button>
-                <button onClick={() => setTripDetailFullView?.(!tripDetailFullView)} title={tripDetailFullView ? "Show one day at a time" : "Show all days at once"} style={{
-                  flexShrink: 0, height: 36, padding: "0 14px", borderRadius: 100,
-                  border: `1px solid ${tripDetailFullView ? ev.accent : ev.stone}`,
-                  background: tripDetailFullView ? ev.accent : ev.bone,
-                  color: tripDetailFullView ? "#fff" : ev.ink,
-                  fontFamily: ev.mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase",
-                  cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, transition: "all 0.2s",
-                }}>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    {tripDetailFullView
-                      ? <><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></>
-                      : <><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></>}
-                  </svg>
-                  {tripDetailFullView ? "All days" : "One day"}
-                </button>
-              </div>
-            );
-          })()}
-          {/* ── Add Event Button + Drop Zone ── */}
+          {/* ── Add flight / hotel / meeting / activity (between summary and timeline) ── */}
           {canEdit && (
             <SegmentDropZone
               ev={ev}
@@ -478,387 +409,64 @@ export function renderTrips(s) {
             />
           )}
 
-          {/* ── Temperature Toggle ── */}
-          {realSegs.length > 0 && (
-            <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
-              <div style={{ display: "inline-flex", border: `1px solid ${ev.cream}`, overflow: "hidden" }}>
-                {["F", "C"].map(u => (
-                  <button key={u} onClick={() => setTempUnit(u)} style={{
-                    padding: "4px 12px", border: "none", fontSize: 11, fontWeight: 500, cursor: "pointer",
-                    fontFamily: ev.mono, transition: "all 0.12s",
-                    background: tempUnit === u ? ev.ink : "transparent",
-                    color: tempUnit === u ? ev.bone : ev.taupe,
-                  }}>°{u}</button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ── Day-by-day Timeline ── */}
-          {realSegs.length === 0 ? (
+          {/* ── By the hour — daily timeline (replaces the old day-by-day view) ── */}
+          {realSegs.length > 0 ? (
+            <DayTimeline
+              ev={ev} isMobile={isMobile} D={D} trip={trip} realSegs={realSegs}
+              sortedDates={sortedDates} tripStartDate={tripStartDate}
+              AIRPORT_CITY={AIRPORT_CITY} SegIcon={SegIcon}
+              segTypeInfo={segTypeInfo} segTitle={segTitle} segSubtitle={segSubtitle}
+              resolveArrivalDate={resolveArrivalDate} resolveCityForDate={resolveCityForDate} resolveHotelForDate={resolveHotelForDate}
+              onOpenSeg={(idx) => setExpandedSegmentKey?.(`${trip.id}|${idx}`)}
+            />
+          ) : (
             <div style={{ padding: "48px 20px", textAlign: "center", background: ev.paper, border: `1px solid ${ev.cream}` }}>
               <p style={{ fontFamily: ev.serif, fontStyle: "italic", fontSize: 16, color: ev.taupe, margin: "0 0 8px" }}>No itinerary items yet</p>
               <p style={{ fontFamily: ev.mono, fontSize: 10, color: ev.stone, letterSpacing: "0.08em", textTransform: "uppercase", margin: 0 }}>Add flights, hotels, restaurants and more to build your day-by-day plan</p>
             </div>
-          ) : (
-            <div>
-              {/* Day-by-day timeline with layover connectors */}
-              {(() => {
-                // Build timeline from ALL segments (including hotels)
-                const byDate = {};
-                realSegs.forEach(seg => { const d = seg.date || "undated"; if (!byDate[d]) byDate[d] = []; byDate[d].push(seg); });
-
-                // Fan hotels out across every night of the stay so each day shows
-                // "Hotel · night N of M" instead of an empty day. The check-in
-                // date already has the hotel from the loop above; we only add
-                // virtual entries for nights 2..N (excluding checkout day).
-                const hotelStays = realSegs.filter(s => s.type === "hotel" || s.type === "accommodation");
-                hotelStays.forEach(h => {
-                  const checkin = h.date || "";
-                  if (!checkin) return;
-                  const checkout = h.checkoutDate || (h.nights ? (() => {
-                    const d = new Date(checkin + "T12:00:00");
-                    d.setDate(d.getDate() + (parseInt(h.nights) || 1));
-                    return d.toISOString().slice(0, 10);
-                  })() : "");
-                  if (!checkout || checkout <= checkin) return;
-                  // Walk every date strictly between checkin (exclusive) and checkout (exclusive)
-                  const cur = new Date(checkin + "T12:00:00");
-                  cur.setDate(cur.getDate() + 1);
-                  const end = new Date(checkout + "T12:00:00");
-                  while (cur < end) {
-                    const dStr = cur.toISOString().slice(0, 10);
-                    if (!byDate[dStr]) byDate[dStr] = [];
-                    const alreadyListed = byDate[dStr].some(s => (s.type === "hotel" || s.type === "accommodation") && s.property === h.property && s.date === h.date);
-                    if (!alreadyListed) {
-                      const stayNight = Math.floor((cur - new Date(checkin + "T12:00:00")) / 86400000) + 1;
-                      byDate[dStr].push({ ...h, _virtualStay: true, _stayNight: stayNight });
-                    }
-                    cur.setDate(cur.getDate() + 1);
-                  }
-                });
-
-                Object.values(byDate).forEach(segs => segs.sort((a, b) => (a.departureTime || a.startTime || a.time || a.checkinTime || a.pickupTime || "99:99").localeCompare(b.departureTime || b.startTime || b.time || b.checkinTime || b.pickupTime || "99:99")));
-                const dates = Object.keys(byDate).sort();
-
-                // Pre-calculate layovers
-                const allTimeline = realSegs.filter(s => s.type !== "hotel" && s.type !== "accommodation");
-                const flatFlights = allTimeline.filter(s => s.type === "flight").sort((a, b) => (a.date || "").localeCompare(b.date || "") || (a.departureTime || "").localeCompare(b.departureTime || ""));
-                const layoverMap = new Map();
-                for (let i = 0; i < flatFlights.length - 1; i++) {
-                  const curr = flatFlights[i];
-                  const next = flatFlights[i + 1];
-                  if (!curr._bookingGroup || !next._bookingGroup || curr._bookingGroup !== next._bookingGroup) continue;
-                  const resolvedArrDate = resolveArrivalDate(curr);
-                  if (curr.date && next.date && curr.arrivalTime && resolvedArrDate) {
-                    const arrDate = new Date(`${resolvedArrDate}T${curr.arrivalTime}:00`);
-                    const depDate = new Date(`${next.date}T${next.departureTime || "00:00"}:00`);
-                    const diffMs = depDate - arrDate;
-                    if (diffMs > 0) {
-                      const totalMins = Math.round(diffMs / 60000);
-                      const days = Math.floor(totalMins / 1440);
-                      const hrs = Math.floor((totalMins % 1440) / 60);
-                      const mins = totalMins % 60;
-                      let durText = "";
-                      if (days > 0) durText += `${days}d `;
-                      if (hrs > 0) durText += `${hrs}h `;
-                      if (mins > 0 && days === 0) durText += `${mins}m`;
-                      const airports = (curr.route || "").split("→").map(s => s.trim());
-                      const layoverAirport = airports[airports.length - 1] || curr.arrivalAirport || "?";
-                      layoverMap.set(curr, { duration: durText.trim(), airport: layoverAirport, arrivalTime: curr.arrivalTime });
-                    }
-                  }
-                }
-
-                // Pills use `sortedDates` (every day from trip start → end), but
-                // `dates` only includes days that have segments. Indexing into `dates`
-                // by tripDetailSegIdx caused the wrong day's content to render when a
-                // gap day was selected. Source of truth is the pill's date string.
-                const pillDateStr = sortedDates && sortedDates.length > 0
-                  ? sortedDates[Math.min(tripDetailSegIdx || 0, sortedDates.length - 1)]
-                  : dates[Math.min(tripDetailSegIdx || 0, dates.length - 1)];
-                // Full-view mode renders every day in sequence; default mode renders
-                // just the active day from the pill bar.
-                const datesToRender = tripDetailFullView
-                  ? (sortedDates && sortedDates.length > 0 ? sortedDates : dates)
-                  : [pillDateStr].filter(Boolean);
-                return datesToRender.map((dateStr, _) => {
-                const dayIdx = sortedDates ? sortedDates.indexOf(dateStr) : (tripDetailSegIdx || 0);
-                const daySegs = byDate[dateStr] || [];
-                // Gap day with no segments — render a thin "open day" placeholder
-                // instead of going blank, so the user sees they're on the day they clicked.
-                if (daySegs.length === 0) {
-                  const dayDateLocal = dateStr !== "undated" ? new Date(dateStr + "T12:00:00") : null;
-                  const dayNumLocal = dayDateLocal && tripStartDate ? Math.floor((dayDateLocal - new Date(tripStartDate + "T12:00:00")) / 86400000) + 1 : dayIdx + 1;
-                  const dayLabel = dayDateLocal ? dayDateLocal.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" }) : "Undated";
-                  return (
-                    <div key={dateStr} style={{ padding: isMobile ? "32px 16px" : "44px 28px", background: ev.bone, border: `1px solid ${ev.cream}`, marginBottom: 24 }}>
-                      <div style={{ display: "flex", alignItems: "baseline", gap: 16, marginBottom: 18 }}>
-                        <span style={{ fontFamily: ev.mono, fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: ev.accent, fontWeight: 500 }}>Day {dayNumLocal}</span>
-                        <span style={{ fontFamily: ev.serif, fontSize: isMobile ? 32 : 44, fontWeight: 300, lineHeight: 1, color: ev.ink, fontVariantNumeric: "tabular-nums" }}>{String(dayNumLocal).padStart(2, "0")}</span>
-                      </div>
-                      <div style={{ fontFamily: ev.serif, fontStyle: "italic", color: ev.taupe, fontSize: 16, lineHeight: 1.4, marginBottom: 6 }}>
-                        {dayLabel} — no events scheduled.
-                      </div>
-                      <div style={{ fontFamily: ev.mono, fontSize: 10, letterSpacing: "0.06em", color: ev.stone, textTransform: "uppercase" }}>
-                        Use "Add flight, hotel, meeting, or activity" above to fill this day.
-                      </div>
-                    </div>
-                  );
-                }
-                const dayDate = dateStr !== "undated" ? new Date(dateStr + "T12:00:00") : null;
-                const dayNum = dayDate && tripStartDate ? Math.floor((dayDate - new Date(tripStartDate + "T12:00:00")) / 86400000) + 1 : dayIdx + 1;
-                const dayHotel = dateStr !== "undated" ? resolveHotelForDate(realSegs, dateStr) : null;
-                const dayCity = dateStr !== "undated" ? resolveCityForDate(realSegs, dateStr) : { city: "", airportCode: "" };
-                const weatherCity = dayCity.airportCode || dayCity.city || (dayHotel?.location ? dayHotel.location.split(",")[0].trim() : "") || trip.location?.split(",")[0]?.trim() || "";
-                const wxKey = `${weatherCity}_${dateStr}`;
-                const wx = weatherCache[wxKey] || null;
-                const toF = (c) => Math.round(c * 9 / 5 + 32);
-                const fmtTemp = (c) => tempUnit === "F" ? `${toF(c)}°` : `${Math.round(c)}°`;
-                const dayLocationLabel = dayHotel?.name || dayCity.city || "";
-                const dayTitle = (() => {
-                  const flights = daySegs.filter(s => s.type === "flight");
-                  const hotels = daySegs.filter(s => s.type === "hotel" || s.type === "accommodation");
-                  if (flights.length > 0) {
-                    const dep = flights[0].departureAirport || flights[0].route?.split("→")[0]?.trim() || "";
-                    const arr = flights[flights.length - 1].arrivalAirport || flights[flights.length - 1].route?.split("→").pop()?.trim() || "";
-                    if (dep && arr) return { main: `${AIRPORT_CITY?.[dep] || dep} to ${AIRPORT_CITY?.[arr] || arr}`, sub: "" };
-                    return { main: "Travel Day", sub: "" };
-                  }
-                  if (hotels.length > 0 && hotels.some(h => h.date === dateStr)) return { main: "Arrival", sub: dayLocationLabel ? `— ${dayLocationLabel}` : "" };
-                  return { main: dayLocationLabel || "Free Day", sub: "" };
-                })();
-
-                return (
-                  <section key={dateStr} id={`day-${dateStr}`} style={{ marginBottom: 48, position: "relative" }}>
-                    {/* Day Header — editorial */}
-                    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "auto 1fr" : "100px 1fr auto", gap: isMobile ? 16 : 32, alignItems: "baseline", paddingBottom: 20, marginBottom: 24, borderBottom: `2px solid ${ev.ink}` }}>
-                      {/* Day number */}
-                      <div>
-                        <span style={{ display: "block", fontFamily: ev.mono, fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: ev.accent, marginBottom: 8, fontWeight: 500 }}>Day {dayWords[dayNum] || dayNum}</span>
-                        <span style={{ fontFamily: ev.serif, fontSize: isMobile ? 38 : 64, fontWeight: 300, lineHeight: 0.85, letterSpacing: "-0.04em", color: ev.ink, fontVariantNumeric: "tabular-nums" }}>{String(dayNum).padStart(2, "0")}</span>
-                      </div>
-                      {/* Day info */}
-                      <div>
-                        <h2 style={{ fontFamily: ev.serif, fontSize: isMobile ? 22 : 28, fontWeight: 400, letterSpacing: "-0.02em", lineHeight: 1.1, margin: "0 0 6px" }}>
-                          {dayTitle.main}{dayTitle.sub && <em style={{ fontStyle: "italic", color: ev.taupe, fontSize: isMobile ? 16 : 20 }}> {dayTitle.sub}</em>}
-                        </h2>
-                        <div style={{ fontFamily: ev.mono, fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: ev.taupe }}>
-                          {dayDate ? dayDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" }) : "Undated"}
-                        </div>
-                      </div>
-                      {/* Weather */}
-                      {wx && (
-                        <div style={{ display: "flex", alignItems: "center", gap: 14, fontFamily: ev.serif, ...(isMobile ? { gridColumn: "1 / -1", paddingTop: 16, borderTop: `1px solid ${ev.cream}` } : {}) }}>
-                          <div style={{ width: 40, height: 40, background: ev.goldWash, borderRadius: "50%", display: "grid", placeItems: "center" }}>
-                            <span style={{ fontSize: 20 }}>{weatherIcon(wx.code).icon}</span>
-                          </div>
-                          <div>
-                            <div style={{ fontSize: 22, fontWeight: 400, letterSpacing: "-0.02em" }}>
-                              <span>{fmtTemp(wx.high)}</span><span style={{ color: ev.stone, marginLeft: 4 }}>{fmtTemp(wx.low)}</span>
-                            </div>
-                            <div style={{ fontFamily: ev.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: ev.taupe, marginTop: 2 }}>{weatherCity} · {wx.isHistorical ? "expected" : "forecast"}</div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Timeline */}
-                    <div style={{ position: "relative", paddingLeft: isMobile ? 92 : 120 }}>
-                      {/* Vertical line — runs alongside the card, through the dots */}
-                      <div style={{ position: "absolute", left: isMobile ? 80 : 93, top: 12, bottom: 12, width: 1, background: ev.cream }} />
-
-                      {daySegs.map((seg, segIdx) => {
-                        const info = segTypeInfo(seg.type);
-                        const time = segTime(seg);
-                        const title = segTitle(seg);
-                        const subtitle = segSubtitle(seg);
-                        const isTransit = seg.type === "transfer" || seg.type === "transit";
-                        const liveStatus = seg.type === "flight" ? getFlightLiveStatus(seg) : null;
-                        const liveStatusColor = liveStatus?.status === "Landed" ? "#10b981" : liveStatus?.status === "EnRoute" ? ev.sky : liveStatus?.status === "Canceled" ? "#C8553D" : (liveStatus?.departureDelay > 15 || liveStatus?.arrivalDelay > 15) ? ev.gold : liveStatus ? "#10b981" : null;
-                        const liveStatusLabel = liveStatus?.status === "Landed" ? "Landed" : liveStatus?.status === "EnRoute" ? "In Flight" : liveStatus?.status === "Canceled" ? "Cancelled" : (liveStatus?.departureDelay > 15) ? `Delayed ${liveStatus.departureDelay}m` : liveStatus?.status === "Scheduled" ? "On Time" : null;
-
-                        return (
-                          <React.Fragment key={segIdx}>
-                          <div style={{ position: "relative", marginBottom: 16, transition: "transform 0.3s" }}
-                            onMouseEnter={e => e.currentTarget.style.transform = "translateX(2px)"}
-                            onMouseLeave={e => e.currentTarget.style.transform = "none"}>
-                            {/* Time — left column. On mobile the gutter is wider
-                                and the right padding is tighter so "2:18 pm" fits
-                                on one line and clears the timeline dot. */}
-                            <div style={{ position: "absolute", left: isMobile ? -92 : -120, top: 20, width: isMobile ? 68 : 90, textAlign: "right", paddingRight: isMobile ? 4 : 16 }}>
-                              {time && <>
-                                <div style={{ fontFamily: ev.serif, fontSize: isMobile ? 15 : 20, fontWeight: 400, color: ev.ink, lineHeight: 1.15, letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{time}</div>
-                                <div style={{ fontFamily: ev.mono, fontSize: 10, letterSpacing: "0.1em", color: ev.taupe, marginTop: 4, textTransform: "uppercase" }}>
-                                  {seg.type === "hotel" || seg.type === "accommodation"
-                                    ? (seg.checkoutDate === dateStr ? "Check-out"
-                                       : seg._virtualStay ? `Night ${seg._stayNight}${seg.nights ? ` of ${seg.nights}` : ""}`
-                                       : "Check-in")
-                                    : seg.type === "flight" ? "Depart"
-                                    : seg.type === "restaurant" || seg.type === "dining" ? "Dinner"
-                                    : ""}
-                                </div>
-                              </>}
-                            </div>
-                            {/* Dot — hugs the card (sits on the vertical line). */}
-                            <div style={{ position: "absolute", left: isMobile ? (isTransit ? -17 : -20) : -34, top: 22, width: isTransit ? 10 : 16, height: isTransit ? 10 : 16, borderRadius: "50%", background: info.color, border: `3px solid ${ev.bone}`, zIndex: 2 }} />
-                            {/* Event card */}
-                            {(() => { const _segKey = `${trip.id}|${realSegs.indexOf(seg)}`; const _isExpanded = expandedSegmentKey === _segKey; return (
-                            <div id={`seg-card-${_segKey.replace("|", "-")}`} onClick={isTransit ? undefined : () => setExpandedSegmentKey?.(_isExpanded ? null : _segKey)}
-                              style={{ background: isTransit ? "transparent" : (_isExpanded ? ev.bone : ev.paper), border: `1px ${isTransit ? "dashed" : "solid"} ${seg.cancelled ? "#C8553D" : (_isExpanded ? ev.stone : ev.cream)}`, padding: isTransit ? "12px 20px" : "20px 24px", position: "relative", overflow: "hidden", cursor: isTransit ? "default" : "pointer", transition: "all 0.3s", opacity: seg.cancelled ? 0.7 : 1 }}
-                              onMouseEnter={e => { if (!isTransit && !_isExpanded && !seg.cancelled) { e.currentTarget.style.borderColor = ev.stone; e.currentTarget.style.background = ev.bone; } }}
-                              onMouseLeave={e => { if (!isTransit && !_isExpanded && !seg.cancelled) { e.currentTarget.style.borderColor = ev.cream; e.currentTarget.style.background = ev.paper; } }}>
-                              {/* Colored left border */}
-                              {!isTransit && <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: info.color }} />}
-                              <div style={{ display: "grid", gridTemplateColumns: "auto 1fr auto", gap: 16, alignItems: "start" }}>
-                                {/* Icon */}
-                                <div style={{ width: isTransit ? 28 : 40, height: isTransit ? 28 : 40, borderRadius: "50%", background: isTransit ? "transparent" : info.wash, display: "grid", placeItems: "center", flexShrink: 0 }}>
-                                  <SegIcon type={seg.type} size={isTransit ? 14 : 20} color={isTransit ? ev.stone : info.color} />
-                                </div>
-                                {/* Body */}
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  {/* Type label */}
-                                  <div style={{ fontFamily: ev.mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: info.color, marginBottom: 4, fontWeight: 500, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                                    <span>{info.label}{seg.type === "flight" && seg.airline ? ` · ${seg.airline}` : ""}{seg.type === "hotel" && seg.location ? ` · ${seg.location.split(",")[0]}` : ""}</span>
-                                    {seg.cancelled && (
-                                      <span style={{ background: "#C8553D", color: "#fff", padding: "2px 7px", letterSpacing: "0.14em", fontWeight: 600, fontSize: 9 }}>CANCELLED</span>
-                                    )}
-                                  </div>
-                                  {/* Title */}
-                                  <div style={{ fontFamily: isTransit ? ev.serif : ev.serif, fontSize: isTransit ? 14 : 22, fontWeight: isTransit ? 400 : 500, letterSpacing: "-0.015em", color: isTransit ? ev.taupe : ev.ink, lineHeight: 1.2, marginBottom: 6, fontStyle: isTransit ? "italic" : "normal", textDecoration: seg.cancelled ? "line-through" : "none", textDecorationColor: seg.cancelled ? "#C8553D" : "inherit" }}>
-                                    {seg.type === "flight" && seg.flightNumber ? `${seg.flightNumber} — ` : ""}{title}
-                                  </div>
-                                  {/* Description */}
-                                  {!isTransit && (() => {
-                                    const loc = segLocation(seg);
-                                    const locQuery = `${seg.property || seg.activityName || seg.restaurantName || seg.loungeName || ""} ${loc}`.trim();
-                                    return (
-                                    <div style={{ fontSize: 14, color: ev.taupe, lineHeight: 1.5 }}>
-                                      {seg.type === "flight" && seg.departureAirport && seg.arrivalAirport && (
-                                        <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontFamily: ev.mono, fontSize: 13, color: ev.ink, marginRight: 12, fontWeight: 500, letterSpacing: "0.02em" }}>
-                                          {seg.departureAirport} <span style={{ color: ev.accent }}>→</span> {seg.arrivalAirport}
-                                        </span>
-                                      )}
-                                      {seg.type === "flight" && seg.arrivalTime && <span>Arrives {seg.arrivalTime}{seg.arrivalTerminal ? ` · Terminal ${seg.arrivalTerminal}` : ""}</span>}
-                                      {(seg.type === "hotel" || seg.type === "accommodation") && (
-                                        loc ? <>{subtitle.split(loc).map((part, pi, arr) => (
-                                          <React.Fragment key={pi}>{part}{pi < arr.length - 1 && <LocationLink location={locQuery}>{loc}</LocationLink>}</React.Fragment>
-                                        ))}</> : subtitle
-                                      )}
-                                      {seg.type !== "flight" && seg.type !== "hotel" && seg.type !== "accommodation" && (
-                                        loc ? <>{subtitle.split(loc).map((part, pi, arr) => (
-                                          <React.Fragment key={pi}>{part}{pi < arr.length - 1 && <LocationLink location={locQuery}>{loc}</LocationLink>}</React.Fragment>
-                                        ))}</> : subtitle
-                                      )}
-                                    </div>
-                                    );
-                                  })()}
-                                  {/* Live flight info */}
-                                  {liveStatus && !liveStatus.error && (
-                                    <div style={{ fontFamily: ev.mono, fontSize: 10, color: ev.taupe, marginTop: 6, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", letterSpacing: "0.06em" }}>
-                                      {liveStatus.departureGate && <span>Gate <strong style={{ color: ev.ink }}>{liveStatus.departureGate}</strong></span>}
-                                      {liveStatus.departureTerminal && !seg.departureTerminal && <span>Terminal <strong style={{ color: ev.ink }}>{liveStatus.departureTerminal}</strong></span>}
-                                      {liveStatus.arrivalGate && <span>Arr. Gate <strong style={{ color: ev.ink }}>{liveStatus.arrivalGate}</strong></span>}
-                                      {liveStatus.baggageBelt && <span>Baggage <strong style={{ color: ev.ink }}>{liveStatus.baggageBelt}</strong></span>}
-                                      {liveStatus.departureDelay > 0 && <span style={{ color: ev.gold }}>Now departs {liveStatus.departureRevised?.split(" ").pop()?.replace(/[+-]\d{2}:\d{2}$/, "") || ""}</span>}
-                                    </div>
-                                  )}
-                                  {/* Meta chips */}
-                                  {!isTransit && (
-                                    <div style={{ display: "flex", gap: 8, marginTop: 12, paddingTop: 12, borderTop: `1px solid ${ev.cream}`, flexWrap: "wrap" }}>
-                                      {seg.type === "flight" && seg.departureTime && seg.arrivalTime && (() => {
-                                        const dep = seg.departureTime.replace(/[ap]m/i, "").trim().split(":").map(Number);
-                                        const arr = seg.arrivalTime.replace(/[ap]m/i, "").trim().split(":").map(Number);
-                                        let depMins = (dep[0] || 0) * 60 + (dep[1] || 0);
-                                        let arrMins = (arr[0] || 0) * 60 + (arr[1] || 0);
-                                        if (/pm/i.test(seg.departureTime) && dep[0] !== 12) depMins += 720;
-                                        if (/pm/i.test(seg.arrivalTime) && arr[0] !== 12) arrMins += 720;
-                                        if (arrMins <= depMins) arrMins += 1440;
-                                        const diff = arrMins - depMins;
-                                        const h = Math.floor(diff / 60);
-                                        const m = diff % 60;
-                                        return (
-                                          <span style={{ fontFamily: ev.mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", color: ev.taupe, background: ev.bone, padding: "4px 10px", border: `1px solid ${ev.cream}`, display: "inline-flex", alignItems: "center", gap: 6 }}>
-                                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={ev.taupe} strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                                            {h}h {m > 0 ? `${m}m` : ""}
-                                          </span>
-                                        );
-                                      })()}
-                                      {seg.seat && <span style={{ fontFamily: ev.mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", color: ev.taupe, background: ev.bone, padding: "4px 10px", border: `1px solid ${ev.cream}` }}>Seat {seg.seat}{seg.fareClass ? ` · ${seg.fareClass === "business_first" ? "Business" : seg.fareClass === "premium_economy" ? "Premium" : seg.fareClass === "first" ? "First" : seg.fareClass}` : ""}</span>}
-                                      {seg.confirmationCode && <span style={{ fontFamily: ev.mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", color: ev.taupe, background: ev.bone, padding: "4px 10px", border: `1px solid ${ev.cream}` }}>Confirmation: {seg.confirmationCode}</span>}
-                                      {(seg.cost || seg.totalCost || seg.ticketPrice) && <span style={{ fontFamily: ev.mono, fontSize: 10, letterSpacing: "0.08em", color: ev.accent, background: ev.bone, padding: "4px 10px", border: `1px solid ${ev.accent}40` }}>{parseFloat(seg.cost || seg.totalCost || seg.ticketPrice || 0).toLocaleString()} {seg.currency || "USD"}</span>}
-                                      {liveStatusLabel && <span style={{ fontFamily: ev.mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", color: liveStatusColor, background: `${liveStatusColor}12`, padding: "4px 10px", border: `1px solid ${liveStatusColor}30` }}>{liveStatusLabel}</span>}
-                                      {segLocation(seg) && <a href={mapsUrl(`${seg.property || seg.activityName || seg.restaurantName || seg.loungeName || ""} ${segLocation(seg)}`.trim())} target="_blank" rel="noopener noreferrer" style={{ fontFamily: ev.mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", color: ev.accent, background: ev.bone, padding: "4px 10px", border: `1px solid ${ev.accent}40`, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6, transition: "all 0.2s" }}
-                                        onMouseEnter={e => { e.currentTarget.style.background = ev.accentWash; e.currentTarget.style.borderColor = ev.accent; }}
-                                        onMouseLeave={e => { e.currentTarget.style.background = ev.bone; e.currentTarget.style.borderColor = `${ev.accent}40`; }}
-                                        onClick={e => e.stopPropagation()}>
-                                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={ev.accent} strokeWidth="1.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                                        {segLocation(seg)}
-                                      </a>}
-                                    </div>
-                                  )}
-                                </div>
-                                {/* Actions — show on hover */}
-                                {canEdit && !isTransit && (
-                                  <div style={{ display: "flex", gap: 4 }}>
-                                    <button onClick={e => { e.stopPropagation(); editSegment(trip.id, realSegs.indexOf(seg)); }} title="Edit" style={{ width: 28, height: 28, border: `1px solid ${ev.cream}`, background: ev.bone, display: "grid", placeItems: "center", cursor: "pointer", transition: "all 0.2s" }}
-                                      onMouseEnter={e => e.currentTarget.style.borderColor = ev.stone}
-                                      onMouseLeave={e => e.currentTarget.style.borderColor = ev.cream}>
-                                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={ev.taupe} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                                    </button>
-                                    <button onClick={e => { e.stopPropagation(); setShowMoveSegment?.({ tripId: trip.id, segIdx: realSegs.indexOf(seg) }); }} title="Move to another trip" style={{ width: 28, height: 28, border: `1px solid ${ev.cream}`, background: ev.bone, display: "grid", placeItems: "center", cursor: "pointer", transition: "all 0.2s" }}
-                                      onMouseEnter={e => e.currentTarget.style.borderColor = ev.stone}
-                                      onMouseLeave={e => e.currentTarget.style.borderColor = ev.cream}>
-                                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={ev.taupe} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 9l-3 3 3 3"/><path d="M19 15l3-3-3-3"/><path d="M2 12h20"/></svg>
-                                    </button>
-                                    <button onClick={e => { e.stopPropagation(); showConfirm("Delete this item?", () => deleteSegment(trip.id, realSegs.indexOf(seg))); }} title="Delete" style={{ width: 28, height: 28, border: `1px solid ${ev.cream}`, background: ev.bone, display: "grid", placeItems: "center", cursor: "pointer", transition: "all 0.2s" }}
-                                      onMouseEnter={e => e.currentTarget.style.borderColor = ev.stone}
-                                      onMouseLeave={e => e.currentTarget.style.borderColor = ev.cream}>
-                                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={ev.taupe} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
-                              {/* Expanded details panel — opens on click */}
-                              {!isTransit && _isExpanded && (
-                                <div onClick={e => e.stopPropagation()} style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${ev.cream}` }}>
-                                  <SegmentDetailsPanel seg={seg} ev={ev} isMobile={isMobile} liveStatus={liveStatus} />
-                                </div>
-                              )}
-                            </div>
-                            ); })()}
-                          </div>
-                          {/* Layover connector */}
-                          {layoverMap.has(seg) && (() => {
-                            const lo = layoverMap.get(seg);
-                            return (
-                              <div style={{ position: "relative", margin: "-4px 0", marginBottom: 16 }}>
-                                <div style={{ position: "absolute", left: isMobile ? -28 : -31, top: 18, width: 10, height: 10, borderRadius: "50%", background: ev.stone, zIndex: 2 }} />
-                                <div style={{ background: "transparent", border: `1px dashed ${ev.cream}`, padding: "12px 20px" }}>
-                                  <div style={{ display: "grid", gridTemplateColumns: "28px 1fr", gap: 16, alignItems: "center" }}>
-                                    <div style={{ width: 28, height: 28, display: "grid", placeItems: "center" }}>
-                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ev.stone} strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                                    </div>
-                                    <div style={{ fontFamily: ev.serif, fontSize: 14, fontWeight: 400, color: ev.taupe, fontStyle: "italic" }}>
-                                      {lo.duration} layover at {lo.airport}
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })()}
-                          </React.Fragment>
-                        );
-                      })}
-                    </div>
-                  </section>
-                );
-              });
-              })()}
-            </div>
           )}
 
-
+          {/* ── Booking detail modal (opens from the timeline, summary, or booking list) ── */}
+          {(() => {
+            if (!expandedSegmentKey || !String(expandedSegmentKey).startsWith(`${trip.id}|`)) return null;
+            const segIdx = parseInt(String(expandedSegmentKey).split("|")[1], 10);
+            const seg = realSegs[segIdx];
+            if (!seg) return null;
+            const info = segTypeInfo(seg.type);
+            const live = seg.type === "flight" ? getFlightLiveStatus(seg) : null;
+            const close = () => setExpandedSegmentKey?.(null);
+            return (
+              <div onClick={close} style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: isMobile ? "flex-end" : "center", justifyContent: "center", padding: isMobile ? 0 : 24 }}>
+                <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 560, maxHeight: isMobile ? "88vh" : "86vh", overflowY: "auto", background: ev.bone, border: `1px solid ${ev.cream}`, borderRadius: isMobile ? "18px 18px 0 0" : 16, boxShadow: "0 24px 70px rgba(0,0,0,0.4)" }}>
+                  <div style={{ position: "sticky", top: 0, background: ev.bone, borderBottom: `1px solid ${ev.cream}`, padding: isMobile ? "16px 18px" : "18px 22px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+                      <span style={{ width: 38, height: 38, borderRadius: "50%", background: info.wash, display: "grid", placeItems: "center", flexShrink: 0 }}>
+                        <SegIcon type={seg.type} size={18} color={info.color} />
+                      </span>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontFamily: ev.mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: info.color, marginBottom: 3 }}>{info.label}{seg.type === "flight" && seg.airline ? ` · ${seg.airline}` : ""}</div>
+                        <div style={{ fontFamily: ev.serif, fontSize: isMobile ? 19 : 22, fontWeight: 500, color: ev.ink, lineHeight: 1.15 }}>{seg.type === "flight" && seg.flightNumber ? `${seg.flightNumber} — ` : ""}{segTitle(seg)}</div>
+                      </div>
+                    </div>
+                    <button onClick={close} style={{ width: 32, height: 32, flexShrink: 0, borderRadius: "50%", border: `1px solid ${ev.cream}`, background: "transparent", color: ev.taupe, cursor: "pointer", display: "grid", placeItems: "center" }}>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                  </div>
+                  <div style={{ padding: isMobile ? "16px 18px 22px" : "18px 22px 24px" }}>
+                    <SegmentDetailsPanel seg={seg} ev={ev} isMobile={isMobile} liveStatus={live} />
+                    {seg.notes && <div style={{ marginTop: 14, fontFamily: ev.serif, fontSize: 14, color: ev.taupe, lineHeight: 1.5 }}>{seg.notes}</div>}
+                    {canEdit && (
+                      <div style={{ display: "flex", gap: 8, marginTop: 18 }}>
+                        <button onClick={() => { close(); editSegment(trip.id, segIdx); }} style={{ flex: 1, padding: "11px 0", border: `1px solid ${ev.cream}`, background: ev.paper, color: ev.ink, fontFamily: ev.mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", borderRadius: 8 }}>Edit</button>
+                        <button onClick={() => { close(); setShowMoveSegment?.({ tripId: trip.id, segIdx }); }} style={{ flex: 1, padding: "11px 0", border: `1px solid ${ev.cream}`, background: ev.paper, color: ev.ink, fontFamily: ev.mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", borderRadius: 8 }}>Move</button>
+                        <button onClick={() => { showConfirm("Delete this item?", () => { deleteSegment(trip.id, segIdx); close(); }); }} style={{ flex: 1, padding: "11px 0", border: `1px solid rgba(200,85,61,0.3)`, background: "rgba(200,85,61,0.06)", color: "#C8553D", fontFamily: ev.mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", borderRadius: 8 }}>Delete</button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
           {/* ── Booking Management — editorial ── */}
           {realSegs.length > 0 && (() => {
             const bookings = [];
@@ -1097,23 +705,16 @@ export function renderTrips(s) {
       );
     }
 
-    const dv = { serif: "'Fraunces', serif", sans: "'Inter Tight', sans-serif", mono: "'JetBrains Mono', monospace", cream: D ? "rgba(255,255,255,0.06)" : "#E2DCCE", taupe: D ? "#999" : "#6B6458", stone: D ? "#8a8a8a" : "#857A66", paper: D ? "#222" : "#EBE6DD", bone: D ? "#1a1a1a" : "#F4F1EC", moss: "#6B7A5A", gold: "#B8924A" };
+    const dv = { serif: "'Fraunces', serif", sans: "'Inter Tight', sans-serif", mono: "'JetBrains Mono', monospace", cream: D ? "rgba(255,255,255,0.06)" : "#E2DCCE", taupe: D ? "#999" : "#6B6458", stone: D ? "#8a8a8a" : "#857A66", paper: D ? "#222" : "#fff", bone: D ? "#1a1a1a" : "#fff", moss: "#6B7A5A", gold: "#B8924A" };
     const confirmedCount = trips.filter(t => t.status === "confirmed").length;
     const daysToNextTrip = upcomingTripsFiltered[0]?.date ? Math.max(0, Math.ceil((new Date(upcomingTripsFiltered[0].date + "T12:00:00") - new Date()) / 86400000)) : null;
 
     return (
     <div>
-      {/* ── Hero banner ── */}
-      <div style={{ margin: isMobile ? "0 -16px 0" : "0 -40px 0", position: "relative", height: isMobile ? 200 : 320, overflow: "hidden", background: "#2C2A26" }}>
-        <div style={{ position: "absolute", inset: 0, backgroundImage: "url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=2000&q=80&fit=crop')", backgroundSize: "cover", backgroundPosition: "center", filter: "saturate(0.85) contrast(1.05)", animation: "kenburns 24s ease-in-out infinite alternate" }} />
-        <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to bottom, ${D ? "rgba(15,15,15,0)" : "rgba(244,241,236,0)"} 55%, ${D ? "rgba(15,15,15,0.9)" : "rgba(244,241,236,0.9)"} 90%, ${css.bg} 100%)`, zIndex: 1 }} />
-        <div style={{ position: "absolute", top: 18, left: isMobile ? 16 : 48, zIndex: 3, fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.15em", textTransform: "uppercase", color: "#F4F1EC", opacity: 0.85 }}>
-          <span style={{ color: css.accent }}>&#9679; </span>Continuum
-        </div>
-      </div>
+      {/* Hero banner removed per request. */}
 
       {/* ── Editorial page header ── */}
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr auto", gap: isMobile ? 20 : 40, alignItems: "end", marginTop: -20, marginBottom: 32, paddingBottom: 28, borderBottom: `1px solid ${dv.cream}`, position: "relative", zIndex: 5 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr auto", gap: isMobile ? 20 : 40, alignItems: "end", marginTop: isMobile ? 8 : 16, marginBottom: 32, paddingBottom: 28, borderBottom: `1px solid ${dv.cream}`, position: "relative", zIndex: 5 }}>
         <div>
           <div style={{ fontFamily: dv.mono, fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: css.accent, marginBottom: 16, display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{ width: 28, height: 1, background: css.accent }} /> The Getaways · S02
@@ -1126,8 +727,9 @@ export function renderTrips(s) {
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end", paddingBottom: 8 }}>
+          <TripSearchBar css={css} dv={dv} isMobile={isMobile} trips={trips} value={searchQuery} onChange={setSearchQuery} onSelect={(t) => { setTripDetailId(t.id); setTripDetailSegIdx(0); }} />
           <div style={{ position: "relative" }}>
-            <button onClick={() => document.getElementById("cal-month-picker")?.showPicker?.()} style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "11px 18px", fontFamily: dv.mono, fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", border: `1px solid ${dv.cream}`, background: dv.paper, color: css.text, cursor: "pointer", transition: "all 0.25s" }}
+            <button onClick={() => document.getElementById("cal-month-picker")?.showPicker?.()} style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "11px 18px", fontFamily: dv.mono, fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", border: `1px solid ${dv.cream}`, background: dv.paper, color: css.text, cursor: "pointer", transition: "all 0.25s", borderRadius: 10 }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = css.text; }} onMouseLeave={e => { e.currentTarget.style.borderColor = dv.cream; }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
               Export PDF
@@ -1135,9 +737,9 @@ export function renderTrips(s) {
             <input id="cal-month-picker" type="month" defaultValue={new Date().toISOString().slice(0, 7)} onChange={e => { if (e.target.value) exportMonthPDF(e.target.value); }}
               style={{ position: "absolute", top: 0, left: 0, opacity: 0, pointerEvents: "none", width: "100%", height: "100%" }} />
           </div>
-          <div style={{ display: "inline-flex", border: `1px solid ${dv.cream}`, background: dv.paper }}>
+          <div style={{ display: "inline-flex", border: `1px solid ${dv.cream}`, background: dv.paper, borderRadius: 10, overflow: "hidden" }}>
             {[{ v: "list", icon: <><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></> }, { v: "calendar", icon: <><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></> }].map(({ v, icon }) => (
-              <button key={v} onClick={() => setTripsView(v)} style={{ padding: "11px 14px", color: tripsView === v ? css.accent : dv.taupe, cursor: "pointer", background: tripsView === v ? dv.bone : "transparent", display: "grid", placeItems: "center", borderRight: `1px solid ${dv.cream}`, border: "none", transition: "all 0.25s" }}>
+              <button key={v} onClick={() => setTripsView(v)} style={{ padding: "11px 14px", color: tripsView === v ? css.accent : dv.taupe, cursor: "pointer", background: tripsView === v ? dv.bone : "transparent", display: "grid", placeItems: "center", borderRight: `1px solid ${dv.cream}`, border: "none", borderRadius: 0, transition: "all 0.25s" }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{icon}</svg>
               </button>
             ))}
@@ -1156,21 +758,7 @@ export function renderTrips(s) {
         </div>
       </div>
 
-      {/* ── Metrics band ── */}
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 0, background: dv.paper, border: `1px solid ${dv.cream}`, marginBottom: 32 }}>
-        {[
-          { lbl: "Trips on Books", val: String(trips.length).padStart(2, "0"), sub: `Through ${new Date().getFullYear()}.` },
-          { lbl: "Confirmed", val: `${String(confirmedCount).padStart(2, "0")}`, unit: `of ${String(trips.length).padStart(2, "0")}`, sub: trips.length - confirmedCount > 0 ? `${trips.length - confirmedCount} pending.` : "All confirmed." },
-          { lbl: "Total Spend · YTD", val: grandTotal > 0 ? grandTotal.toLocaleString() : "--", unit: grandTotal > 0 ? " USD" : "", sub: grandTotal > 0 ? `Avg $${Math.round(grandTotal / Math.max(trips.length, 1)).toLocaleString()} per trip.` : "No expenses yet." },
-          { lbl: "Next Departure", val: daysToNextTrip !== null ? String(daysToNextTrip) : "--", unit: "d", sub: upcomingTripsFiltered[0] ? `${(upcomingTripsFiltered[0].tripName || upcomingTripsFiltered[0].location || "Trip").slice(0, 25)}.` : "No upcoming trips." },
-        ].map((m, i) => (
-          <div key={i} style={{ padding: isMobile ? "20px 18px" : "24px 26px", borderRight: (!isMobile && i < 3) ? `1px solid ${dv.cream}` : "none", borderBottom: (isMobile && i < 2) ? `1px solid ${dv.cream}` : "none", position: "relative", overflow: "hidden" }}>
-            <div style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: dv.taupe, marginBottom: 12 }}>{m.lbl}</div>
-            <div style={{ fontFamily: dv.serif, fontSize: 36, fontWeight: 300, lineHeight: 1, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums", color: css.text }}>{m.val}{m.unit && <span style={{ fontSize: 14, color: dv.taupe, fontStyle: "italic", marginLeft: 3 }}>{m.unit}</span>}</div>
-            <div style={{ fontFamily: dv.serif, fontStyle: "italic", fontSize: 12, color: dv.taupe, marginTop: 6 }}>{m.sub}</div>
-          </div>
-        ))}
-      </div>
+      {/* Metrics band (Trips on Books / Confirmed / Spend YTD / Next Departure) removed per request — felt cluttered. */}
 
       {/* Flighty instructions banner */}
 
@@ -1306,34 +894,14 @@ export function renderTrips(s) {
 
       {/* Filters + List (only in list view) */}
       {tripsView === "list" && <>
-      {/* Editorial filter row */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "stretch", marginBottom: 28, gap: 16, flexWrap: "wrap" }}>
-        <div style={{ flex: 1, minWidth: 240, position: "relative" }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={dv.taupe} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)" }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="SEARCH TRIPS, CITIES, REFERENCES..."
-            style={{ width: "100%", padding: "14px 16px 14px 42px", background: dv.paper, border: `1px solid ${dv.cream}`, fontFamily: dv.mono, fontSize: 12, letterSpacing: "0.04em", color: css.text, outline: "none", transition: "border-color 0.25s" }}
-            onFocus={e => e.currentTarget.style.borderColor = css.accent} onBlur={e => e.currentTarget.style.borderColor = dv.cream} />
-        </div>
-        <div style={{ display: "inline-flex", border: `1px solid ${dv.cream}`, background: dv.paper }}>
-          {["all", "confirmed", "planned", "wishlist"].map(s => (
-            <button key={s} onClick={() => setFilterStatus(s)} style={{
-              padding: "14px 22px", fontFamily: dv.mono, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase",
-              color: filterStatus === s ? css.text : dv.taupe, cursor: "pointer", background: filterStatus === s ? dv.bone : "transparent",
-              borderRight: `1px solid ${dv.cream}`, border: "none", borderRight: `1px solid ${dv.cream}`, transition: "all 0.25s", position: "relative",
-            }}>
-              {filterStatus === s && <div style={{ position: "absolute", left: 0, right: 0, bottom: -1, height: 2, background: css.accent }} />}
-              {s} <span style={{ color: css.accent, marginLeft: 6, fontSize: 10 }}>{s === "all" ? trips.length : trips.filter(t => t.status === s).length}</span>
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* Filter row removed per request — search moved to the header. */}
 
       {/* Section separator — Upcoming */}
       {upcomingTripsFiltered.length > 0 && (
         <div style={{ display: "flex", alignItems: "center", gap: 16, margin: "0 0 16px", fontFamily: dv.mono, fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: dv.taupe, flexWrap: "wrap" }}>
           <div style={{ width: 28, height: 1, background: css.accent }} />
-          <strong style={{ color: css.text, fontWeight: 500 }}>S 01 · Upcoming</strong>
-          <span style={{ color: css.accent, background: dv.paper, border: `1px solid ${dv.cream}`, padding: "2px 8px", marginLeft: 4 }}>{String(upcomingTripsFiltered.length).padStart(2, "0")} entries</span>
+          <strong style={{ color: css.text, fontWeight: 500 }}>S 1 · Upcoming</strong>
+          <span style={{ color: css.accent, background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, padding: "2px 8px", marginLeft: 4 }}>{String(upcomingTripsFiltered.length).padStart(2, "0")} entries</span>
           {/* Hide-shared toggle — only when user has any shared trips at all */}
           {(sharedTrips || []).length > 0 && (
             <button onClick={() => setHideShared?.(!hideShared)}
@@ -1354,216 +922,25 @@ export function renderTrips(s) {
         </div>
       )}
       <div style={{ marginBottom: pastTripsFiltered.length > 0 ? 0 : 32 }}>
-        {upcomingTripsFiltered.map((trip, tIdx) => {
-          const canEdit = !trip._shared || trip._permission === "edit";
-          const prog = allPrograms.find(p => p.id === trip.program);
-          const statusColors = { confirmed: dv.moss, planned: dv.gold, wishlist: "#8BA3B8" };
-          const sColor = statusColors[trip.status] || dv.taupe;
-          const tripExps = getTripExpenses(trip.id);
-          const tripTotal = getTripTotal(trip.id);
-          const isExpanded = expenseViewTrip === trip.id;
-          const catBreakdown = EXPENSE_CATEGORIES.map(cat => ({
-            ...cat, total: tripExps.filter(e => e.category === cat.id).reduce((s, e) => s + expenseUSD(e), 0),
-          })).filter(c => c.total > 0);
-          const confCode = trip.confirmationCode || trip.confirmation_code || (trip.segments && trip.segments.map(s => s.confirmationCode).filter(Boolean)[0]) || "";
-          const tripName = trip.tripName || trip.trip_name || "Trip";
-          const tripLoc = trip.location || "";
-
-          return (
-            <div key={trip.id} style={{
-              background: dv.paper,
-              border: `1px solid ${dv.cream}`,
-              marginBottom: tIdx < upcomingTripsFiltered.length - 1 ? 3 : 0,
-              transition: "background 0.3s",
+        {upcomingTripsFiltered.length > 0 && (
+          <TripSelector
+            trips={upcomingTripsFiltered}
+            css={css} dv={dv} isMobile={isMobile} D={D}
+            SegIcon={SegIcon}
+            formatTripDates={formatTripDates}
+            photoFor={(t) => {
+              const segs = (t.segments || []).filter(s => !s._isMeta);
+              const lastArr = segs.filter(s => s.type === "flight").map(s => s.arrivalAirport).filter(Boolean).pop();
+              const city = (lastArr && AIRPORT_CITY?.[lastArr]) || (t.location || "").split(",")[0].trim() || t.tripName || "";
+              return cityPhoto(city);
             }}
-              onMouseEnter={e => e.currentTarget.style.background = dv.bone}
-              onMouseLeave={e => e.currentTarget.style.background = dv.paper}>
-              {/* Trip row */}
-              <div style={{
-                display: "grid", gridTemplateColumns: isMobile ? "auto 1fr auto" : "auto auto 1fr auto auto auto",
-                gap: isMobile ? 14 : 22, alignItems: "center", padding: isMobile ? "18px 16px" : "20px 28px", cursor: "pointer",
-              }} onClick={() => setExpenseViewTrip(isExpanded ? null : trip.id)}>
-                {/* Index */}
-                {!isMobile && <span style={{ fontFamily: dv.mono, fontSize: 11, color: dv.stone, letterSpacing: "0.08em", width: 24 }}>{String(tIdx + 1).padStart(2, "0")}</span>}
-                {/* Icon */}
-                <div style={{ width: 42, height: 42, border: `1px solid ${dv.cream}`, background: dv.bone, display: "grid", placeItems: "center", flexShrink: 0, transition: "border-color 0.3s, color 0.3s" }}
-                  onClick={e => { e.stopPropagation(); setTripDetailId(trip.id); setTripDetailSegIdx(0); }}>
-                  <SegIcon type={(() => { const segs = (trip.segments || []).filter(s => !s._isMeta); if (segs.length === 0) return "pin"; if (segs.some(s => s.type === "flight")) return "flight"; if (segs.some(s => s.type === "hotel" || s.type === "accommodation")) return "hotel"; return "pin"; })()} size={18} color={dv.taupe} />
-                </div>
-                {/* Main */}
-                <div style={{ minWidth: 0 }} onClick={e => { e.stopPropagation(); setTripDetailId(trip.id); setTripDetailSegIdx(0); }}>
-                  <div style={{ fontFamily: dv.serif, fontSize: isMobile ? 18 : 22, fontWeight: 400, letterSpacing: "-0.015em", color: css.text, lineHeight: 1.15, marginBottom: 5 }}>{tripName}</div>
-                  <div style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: css.accent, marginBottom: 5, fontWeight: 500 }}>{tripLoc || tripName}</div>
-                  <div style={{ fontFamily: dv.mono, fontSize: 11, letterSpacing: "0.04em", color: dv.taupe, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                    <span style={{ color: css.text }}>{formatTripDates(trip)}</span>
-                    {confCode && <><span style={{ color: dv.stone }}>·</span><span>Ref {confCode}</span></>}
-                    {trip._shared && <span style={{ color: "#3b82f6", fontWeight: 500 }}>Shared by {trip._sharedBy || "Someone"}</span>}
-                  </div>
-                </div>
-                {/* Spend */}
-                {!isMobile && (
-                  <div style={{ textAlign: "right", minWidth: 100 }}>
-                    <div style={{ fontFamily: dv.serif, fontSize: 20, fontWeight: 400, color: tripTotal > 0 ? css.text : dv.stone, letterSpacing: "-0.01em", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
-                      {tripTotal > 0 ? <><span style={{ fontFamily: dv.mono, fontSize: 10, color: dv.taupe, letterSpacing: "0.1em", marginRight: 3 }}>USD</span>{tripTotal.toLocaleString()}</> : "—"}
-                    </div>
-                    <span style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: dv.taupe, marginTop: 5, display: "block" }}>
-                      {tripExps.length > 0 ? `${tripExps.length} expense${tripExps.length !== 1 ? "s" : ""}` : "No expenses yet"}
-                    </span>
-                  </div>
-                )}
-                {/* Status (+ mobile quick actions) */}
-                {isMobile ? (
-                  <div style={{ display: "flex", alignItems: "center", gap: 7, justifySelf: "end" }}>
-                    <span style={{ fontFamily: dv.mono, fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", padding: "4px 10px", border: `1px solid ${sColor}`, color: sColor, whiteSpace: "nowrap" }}>{trip.status || "planned"}</span>
-                    <button onClick={e => { e.stopPropagation(); openEditTrip(trip); }} title="Edit" style={{ width: 34, height: 34, borderRadius: 9, border: `1px solid ${dv.cream}`, background: dv.bone, color: dv.taupe, display: "grid", placeItems: "center", cursor: "pointer", flexShrink: 0 }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.85 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
-                    </button>
-                    <button onClick={e => { e.stopPropagation(); removeTrip(trip); }} title={trip._shared ? "Remove shared trip" : "Delete trip"} style={{ width: 34, height: 34, borderRadius: 9, border: `1px solid ${D ? "rgba(200,85,61,0.28)" : "rgba(200,85,61,0.2)"}`, background: "rgba(200,85,61,0.07)", color: "#C8553D", display: "grid", placeItems: "center", cursor: "pointer", flexShrink: 0 }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                    </button>
-                  </div>
-                ) : (
-                  <span style={{ fontFamily: dv.mono, fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", padding: "4px 10px", border: `1px solid ${sColor}`, color: sColor, whiteSpace: "nowrap" }}>{trip.status || "planned"}</span>
-                )}
-                  {/* Actions — editorial style */}
-                  {!isMobile && (
-                    <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
-                      <button onClick={e => { e.stopPropagation(); setShowAddExpense(trip.id); }} style={{ padding: "7px 12px", fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: css.accent, border: `1px solid ${dv.cream}`, background: "transparent", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", transition: "all 0.25s" }}
-                        onMouseEnter={e => { e.currentTarget.style.borderColor = css.accent; e.currentTarget.style.background = dv.paper; }} onMouseLeave={e => { e.currentTarget.style.borderColor = dv.cream; e.currentTarget.style.background = "transparent"; }}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Exp
-                      </button>
-                      <button onClick={e => { e.stopPropagation(); const r = e.currentTarget.getBoundingClientRect(); setCalendarPopover(calendarPopover?.id === trip.id ? null : { id: trip.id, top: r.bottom + 6, right: window.innerWidth - r.right }); }} style={{ padding: "7px 12px", fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: dv.taupe, border: `1px solid ${dv.cream}`, background: "transparent", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, transition: "all 0.25s" }}
-                        onMouseEnter={e => { e.currentTarget.style.color = css.text; e.currentTarget.style.borderColor = css.text; }} onMouseLeave={e => { e.currentTarget.style.color = dv.taupe; e.currentTarget.style.borderColor = dv.cream; }}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Calendar
-                      </button>
-                      <button onClick={e => { e.stopPropagation(); openEditTrip(trip); }} title="Edit" style={{ width: 30, height: 30, border: `1px solid ${dv.cream}`, background: "transparent", color: dv.taupe, display: "grid", placeItems: "center", cursor: "pointer", transition: "all 0.25s" }}
-                        onMouseEnter={e => { e.currentTarget.style.color = css.text; e.currentTarget.style.borderColor = css.text; }} onMouseLeave={e => { e.currentTarget.style.color = dv.taupe; e.currentTarget.style.borderColor = dv.cream; }}>
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.85 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
-                      </button>
-                      <button onClick={e => { e.stopPropagation(); removeTrip(trip); }} title="Delete" style={{ width: 30, height: 30, border: `1px solid ${dv.cream}`, background: "transparent", color: dv.taupe, display: "grid", placeItems: "center", cursor: "pointer", transition: "all 0.25s" }}
-                        onMouseEnter={e => { e.currentTarget.style.color = "#C8553D"; e.currentTarget.style.borderColor = "#C8553D"; }} onMouseLeave={e => { e.currentTarget.style.color = dv.taupe; e.currentTarget.style.borderColor = dv.cream; }}>
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-              {/* Expense drawer — expands inline */}
-              {isExpanded && (
-                <div style={{ borderTop: `1px solid ${css.border}`, background: css.surface2 }}>
-                  {/* Drawer header */}
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 20px", gap: 10, flexWrap: "wrap" }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: css.text2 }}>
-                      {tripExps.length > 0
-                        ? <><span style={{ color: css.text, fontFamily: "'Geist Mono', monospace" }}>${tripTotal.toLocaleString()} USD</span> · {tripExps.length} expense{tripExps.length !== 1 ? "s" : ""}</>
-                        : "No expenses yet"}
-                      {isMobile && trip.estimatedPoints > 0 && <span style={{ marginLeft: 8, color: css.gold, fontFamily: "'Geist Mono', monospace" }}>· +{trip.estimatedPoints.toLocaleString()} pts</span>}
-                    </div>
-                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                      <button onClick={e => { e.stopPropagation(); setShowExpenseReport(trip.id); }} style={{
-                        padding: "5px 12px", borderRadius: 7, border: `1px solid ${css.border}`,
-                        background: "transparent", color: css.text2, fontSize: 11, fontWeight: 600, cursor: "pointer",
-                      }}>Export Report ↗</button>
-                      {isMobile && <>
-                        <button onClick={e => { e.stopPropagation(); const r = e.currentTarget.getBoundingClientRect(); setCalendarPopover(calendarPopover?.id === trip.id ? null : { id: trip.id, top: r.bottom + 6, right: window.innerWidth - r.right }); }} style={{
-                          width: 30, height: 30, borderRadius: 8, border: `1px solid ${css.border}`, background: "transparent", color: css.text2, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                        }} title="Add to calendar">📅</button>
-                        <button onClick={e => { e.stopPropagation(); openEditTrip(trip); }} style={{
-                          width: 30, height: 30, borderRadius: 8, border: `1px solid ${css.border}`, background: css.surface2, color: css.text2, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                        }} title="Edit trip">✎</button>
-                        <button onClick={e => { e.stopPropagation(); removeTrip(trip); }} style={{
-                          width: 30, height: 30, borderRadius: 8, border: `1px solid ${D ? "rgba(200,85,61,0.2)" : "rgba(200,85,61,0.15)"}`, background: "rgba(200,85,61,0.06)", color: "#C8553D", fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                        }} title="Delete trip">×</button>
-                      </>}
-                    </div>
-                  </div>
-
-                  {/* Category breakdown bar */}
-                  {tripTotal > 0 && (
-                    <div style={{ padding: "0 20px 10px" }}>
-                      <div style={{ display: "flex", height: 5, borderRadius: 4, overflow: "hidden", marginBottom: 8 }}>
-                        {catBreakdown.map((cat, i) => (
-                          <div key={i} style={{ width: `${(cat.total / tripTotal) * 100}%`, background: cat.color }} title={`${cat.label}: $${cat.total}`} />
-                        ))}
-                      </div>
-                      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-                        {catBreakdown.map((cat, i) => (
-                          <span key={i} style={{ fontSize: 10, color: css.text3, display: "flex", alignItems: "center", gap: 4 }}>
-                            <span style={{ width: 6, height: 6, borderRadius: "50%", background: cat.color, flexShrink: 0, display: "inline-block" }} />
-                            {cat.label} <span style={{ fontFamily: "'Geist Mono', monospace", color: css.text2 }}>${cat.total.toLocaleString()}</span>
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Expense rows */}
-                  <div style={{ padding: "0 20px 16px", display: "flex", flexDirection: "column", gap: 6 }}>
-                    {tripExps.sort((a, b) => new Date(a.date) - new Date(b.date)).map(exp => {
-                      const cat = EXPENSE_CATEGORIES.find(c => c.id === exp.category);
-                      const usdAmt = expenseUSD(exp);
-                      const isForeign = exp.currency && exp.currency !== "USD";
-                      return (
-                        <div key={exp.id} style={{
-                          display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10,
-                          background: css.surface, borderRadius: 8, padding: "9px 12px", border: `1px solid ${css.border}`,
-                        }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
-                            <span style={{ fontSize: 15, flexShrink: 0 }}>{cat?.icon || "•"}</span>
-                            <div style={{ minWidth: 0 }}>
-                              <div style={{ fontSize: 12, fontWeight: 500, color: css.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.description}</div>
-                              <div style={{ fontSize: 10, color: css.text3, fontFamily: "'Geist Mono', monospace", display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                                <span>{exp.date}{exp.paymentMethod ? ` · ${exp.paymentMethod}` : ""}{exp.receipt ? " · 🧾" : ""}{isForeign ? ` · ${exp.currency} @ ${exp.fxRate}` : ""}</span>
-                                <ReportedBadge reports={expenseReportMembership?.get(exp.id)} onOpen={openReport} compact />
-                              </div>
-                            </div>
-                          </div>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                            <div style={{ textAlign: "right" }}>
-                              <div style={{ fontSize: 13, fontWeight: 700, color: usdAmt === 0 ? css.success : css.text, fontFamily: "'Geist Mono', monospace" }}>
-                                {usdAmt === 0 ? "Free" : `$${usdAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                              </div>
-                              {isForeign && (
-                                <div style={{ fontSize: 11, color: css.text3, fontFamily: "'Geist Mono', monospace" }}>
-                                  {exp.amount.toLocaleString()} {exp.currency}
-                                </div>
-                              )}
-                            </div>
-                            {canEdit && <button onClick={() => {
-                              setNewExpense({ ...exp, amount: String(exp.amount), fxRate: exp.fxRate || 1 });
-                              setEditExpenseId(exp.id);
-                              setShowAddExpense(exp.tripId);
-                            }} style={{
-                              width: 22, height: 22, borderRadius: 6, border: "none",
-                              background: css.accentBg, color: css.accent,
-                              fontSize: 11, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                            }}>✎</button>}
-                            {canEdit && <button onClick={() => {
-                              const label = exp.description || exp.merchant || "this expense";
-                              const amt = exp.amount ? ` (${exp.currency || "USD"} ${Number(exp.amount).toFixed(2)})` : "";
-                              showConfirm?.(`Delete ${label}${amt}? This can't be undone.`, () => removeExpense(exp.id));
-                            }} style={{
-                              width: 22, height: 22, borderRadius: 6, border: "none",
-                              background: "rgba(200,85,61,0.08)", color: "#C8553D",
-                              fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                            }}>×</button>}
-                          </div>
-                        </div>
-                      );
-                    })}
-                    {/* Add expense CTA in drawer */}
-                    {canEdit && <button onClick={e => { e.stopPropagation(); setShowAddExpense(trip.id); }} style={{
-                      width: "100%", padding: "8px 0", borderRadius: 8, border: `1px dashed ${css.border}`,
-                      background: "transparent", color: css.text3, fontSize: 12, cursor: "pointer", marginTop: 4,
-                    }}>+ Add expense</button>}
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
+            onOpenTrip={(t) => { setTripDetailId(t.id); setTripDetailSegIdx(0); }}
+            openEditTrip={openEditTrip}
+            removeTrip={removeTrip}
+          />
+        )}
         {upcomingTripsFiltered.length === 0 && pastTripsFiltered.length === 0 && (
-          <div style={{ textAlign: "center", padding: "60px 20px", background: dv.paper, border: `1px solid ${dv.cream}` }}>
+          <div style={{ textAlign: "center", padding: "60px 20px", background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}` }}>
             {trips.length === 0 ? (
               <>
                 <h3 style={{ fontFamily: dv.serif, fontSize: 24, fontWeight: 400, color: css.text, margin: "0 0 8px", letterSpacing: "-0.01em" }}>No trips yet.</h3>
@@ -1588,177 +965,28 @@ export function renderTrips(s) {
             fontFamily: dv.mono, fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: dv.taupe,
           }}>
             <div style={{ width: 28, height: 1, background: css.accent }} />
-            <strong style={{ color: css.text, fontWeight: 500 }}>S 02 · Past</strong>
-            <span style={{ color: css.accent, background: dv.paper, border: `1px solid ${dv.cream}`, padding: "2px 8px" }}>{String(pastTripsFiltered.length).padStart(2, "0")} entries</span>
+            <strong style={{ color: css.text, fontWeight: 500 }}>S 2 · Past</strong>
+            <span style={{ color: css.accent, background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, padding: "2px 8px" }}>{String(pastTripsFiltered.length).padStart(2, "0")} entries</span>
             <div style={{ flex: 1, height: 1, background: dv.cream }} />
             <span style={{ fontSize: 12, color: dv.taupe, transform: pastTripsExpanded ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>&#9662;</span>
           </button>
           {pastTripsExpanded && (
             <div>
-              {pastTripsFiltered.map((trip, tIdx) => {
-                const canEdit = !trip._shared || trip._permission === "edit";
-                const statusColors = { confirmed: dv.moss, planned: dv.gold, wishlist: "#8BA3B8" };
-                const sColor = statusColors[trip.status] || dv.taupe;
-                const tripExps = getTripExpenses(trip.id);
-                const tripTotal = getTripTotal(trip.id);
-                const isExpanded = expenseViewTrip === trip.id;
-                const catBreakdown = EXPENSE_CATEGORIES.map(cat => ({
-                  ...cat, total: tripExps.filter(e => e.category === cat.id).reduce((s, e) => s + expenseUSD(e), 0),
-                })).filter(c => c.total > 0);
-                const confCode = trip.confirmationCode || trip.confirmation_code || (trip.segments && trip.segments.map(s => s.confirmationCode).filter(Boolean)[0]) || "";
-                const tripName = trip.tripName || trip.trip_name || "Trip";
-                const tripLoc = trip.location || "";
-                return (
-                  <div key={trip.id} style={{ background: dv.paper, border: `1px solid ${dv.cream}`, marginBottom: tIdx < pastTripsFiltered.length - 1 ? 3 : 0, transition: "background 0.3s" }}
-                    onMouseEnter={e => e.currentTarget.style.background = dv.bone} onMouseLeave={e => e.currentTarget.style.background = dv.paper}>
-                    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "auto 1fr auto" : "auto auto 1fr auto auto auto", gap: isMobile ? 14 : 22, alignItems: "center", padding: isMobile ? "18px 16px" : "20px 28px", cursor: "pointer" }}
-                      onClick={() => setExpenseViewTrip(isExpanded ? null : trip.id)}>
-                      {!isMobile && <span style={{ fontFamily: dv.mono, fontSize: 11, color: dv.stone, letterSpacing: "0.08em", width: 24 }}>{String(tIdx + 1 + upcomingTripsFiltered.length).padStart(2, "0")}</span>}
-                      <div style={{ width: 42, height: 42, border: `1px solid ${dv.cream}`, background: dv.bone, display: "grid", placeItems: "center", flexShrink: 0, transition: "border-color 0.3s" }}
-                        onClick={e => { e.stopPropagation(); setTripDetailId(trip.id); setTripDetailSegIdx(0); }}>
-                        <SegIcon type={(() => { const segs = (trip.segments || []).filter(s => !s._isMeta); if (segs.length === 0) return "pin"; if (segs.some(s => s.type === "flight")) return "flight"; if (segs.some(s => s.type === "hotel" || s.type === "accommodation")) return "hotel"; return "pin"; })()} size={18} color={dv.taupe} />
-                      </div>
-                      <div style={{ minWidth: 0 }} onClick={e => { e.stopPropagation(); setTripDetailId(trip.id); setTripDetailSegIdx(0); }}>
-                        <div style={{ fontFamily: dv.serif, fontSize: isMobile ? 18 : 22, fontWeight: 400, letterSpacing: "-0.015em", color: css.text, lineHeight: 1.15, marginBottom: 5 }}>{tripName}</div>
-                        <div style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: css.accent, marginBottom: 5, fontWeight: 500 }}>{tripLoc || tripName}</div>
-                        <div style={{ fontFamily: dv.mono, fontSize: 11, letterSpacing: "0.04em", color: dv.taupe, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                          <span style={{ color: css.text }}>{formatTripDates(trip)}</span>
-                          {confCode && <><span style={{ color: dv.stone }}>·</span><span>Ref {confCode}</span></>}
-                          {trip._shared && <span style={{ color: "#3b82f6", fontWeight: 500 }}>Shared by {trip._sharedBy || "Someone"}</span>}
-                        </div>
-                      </div>
-                      {!isMobile && (
-                        <div style={{ textAlign: "right", minWidth: 100 }}>
-                          <div style={{ fontFamily: dv.serif, fontSize: 20, fontWeight: 400, color: tripTotal > 0 ? css.text : dv.stone, letterSpacing: "-0.01em", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
-                            {tripTotal > 0 ? <><span style={{ fontFamily: dv.mono, fontSize: 10, color: dv.taupe, letterSpacing: "0.1em", marginRight: 3 }}>USD</span>{tripTotal.toLocaleString()}</> : "—"}
-                          </div>
-                          <span style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: dv.taupe, marginTop: 5, display: "block" }}>
-                            {tripExps.length > 0 ? `${tripExps.length} expense${tripExps.length !== 1 ? "s" : ""}` : "No expenses"}
-                          </span>
-                        </div>
-                      )}
-                      {isMobile ? (
-                        <div style={{ display: "flex", alignItems: "center", gap: 7, justifySelf: "end" }}>
-                          <span style={{ fontFamily: dv.mono, fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", padding: "4px 10px", border: `1px solid ${sColor}`, color: sColor, whiteSpace: "nowrap" }}>{trip.status || "confirmed"}</span>
-                          <button onClick={e => { e.stopPropagation(); openEditTrip(trip); }} title="Edit" style={{ width: 34, height: 34, borderRadius: 9, border: `1px solid ${dv.cream}`, background: dv.bone, color: dv.taupe, display: "grid", placeItems: "center", cursor: "pointer", flexShrink: 0 }}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.85 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
-                          </button>
-                          <button onClick={e => { e.stopPropagation(); removeTrip(trip); }} title={trip._shared ? "Remove shared trip" : "Delete trip"} style={{ width: 34, height: 34, borderRadius: 9, border: `1px solid ${D ? "rgba(200,85,61,0.28)" : "rgba(200,85,61,0.2)"}`, background: "rgba(200,85,61,0.07)", color: "#C8553D", display: "grid", placeItems: "center", cursor: "pointer", flexShrink: 0 }}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                          </button>
-                        </div>
-                      ) : (
-                        <span style={{ fontFamily: dv.mono, fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", padding: "4px 10px", border: `1px solid ${sColor}`, color: sColor, whiteSpace: "nowrap" }}>{trip.status || "confirmed"}</span>
-                      )}
-                      {!isMobile && (
-                        <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
-                          <button onClick={e => { e.stopPropagation(); setShowAddExpense(trip.id); }} style={{ padding: "7px 12px", fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: css.accent, border: `1px solid ${dv.cream}`, background: "transparent", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, transition: "all 0.25s" }}
-                            onMouseEnter={e => { e.currentTarget.style.borderColor = css.accent; }} onMouseLeave={e => { e.currentTarget.style.borderColor = dv.cream; }}>
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Exp
-                          </button>
-                          <button onClick={e => { e.stopPropagation(); openEditTrip(trip); }} title="Edit" style={{ width: 30, height: 30, border: `1px solid ${dv.cream}`, background: "transparent", color: dv.taupe, display: "grid", placeItems: "center", cursor: "pointer", transition: "all 0.25s" }}
-                            onMouseEnter={e => { e.currentTarget.style.color = css.text; e.currentTarget.style.borderColor = css.text; }} onMouseLeave={e => { e.currentTarget.style.color = dv.taupe; e.currentTarget.style.borderColor = dv.cream; }}>
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.85 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
-                          </button>
-                          <button onClick={e => { e.stopPropagation(); removeTrip(trip); }} title="Delete" style={{ width: 30, height: 30, border: `1px solid ${dv.cream}`, background: "transparent", color: dv.taupe, display: "grid", placeItems: "center", cursor: "pointer", transition: "all 0.25s" }}
-                            onMouseEnter={e => { e.currentTarget.style.color = "#C8553D"; e.currentTarget.style.borderColor = "#C8553D"; }} onMouseLeave={e => { e.currentTarget.style.color = dv.taupe; e.currentTarget.style.borderColor = dv.cream; }}>
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    {isExpanded && (
-                      <div style={{ borderTop: `1px solid ${css.border}`, background: css.surface2 }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 20px", gap: 10, flexWrap: "wrap" }}>
-                          <div style={{ fontSize: 12, fontWeight: 600, color: css.text2 }}>
-                            {tripExps.length > 0
-                              ? <><span style={{ color: css.text, fontFamily: "'Geist Mono', monospace" }}>${tripTotal.toLocaleString()} USD</span> · {tripExps.length} expense{tripExps.length !== 1 ? "s" : ""}</>
-                              : "No expenses yet"}
-                            {isMobile && trip.estimatedPoints > 0 && <span style={{ marginLeft: 8, color: css.gold, fontFamily: "'Geist Mono', monospace" }}>· +{trip.estimatedPoints.toLocaleString()} pts</span>}
-                          </div>
-                          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                            <button onClick={e => { e.stopPropagation(); setShowExpenseReport(trip.id); }} style={{
-                              padding: "5px 12px", borderRadius: 7, border: `1px solid ${css.border}`,
-                              background: "transparent", color: css.text2, fontSize: 11, fontWeight: 600, cursor: "pointer",
-                            }}>Export Report ↗</button>
-                            {isMobile && <>
-                              <button onClick={e => { e.stopPropagation(); openEditTrip(trip); }} style={{
-                                width: 30, height: 30, borderRadius: 8, border: `1px solid ${css.border}`, background: css.surface2, color: css.text2, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                              }} title="Edit trip">✎</button>
-                              <button onClick={e => { e.stopPropagation(); removeTrip(trip); }} style={{
-                                width: 30, height: 30, borderRadius: 8, border: `1px solid ${D ? "rgba(200,85,61,0.2)" : "rgba(200,85,61,0.15)"}`, background: "rgba(200,85,61,0.06)", color: "#C8553D", fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                              }} title="Delete trip">×</button>
-                            </>}
-                          </div>
-                        </div>
-                        {tripTotal > 0 && (
-                          <div style={{ padding: "0 20px 10px" }}>
-                            <div style={{ display: "flex", height: 5, borderRadius: 4, overflow: "hidden", marginBottom: 8 }}>
-                              {catBreakdown.map((cat, i) => (
-                                <div key={i} style={{ width: `${(cat.total / tripTotal) * 100}%`, background: cat.color }} title={`${cat.label}: $${cat.total}`} />
-                              ))}
-                            </div>
-                            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-                              {catBreakdown.map((cat, i) => (
-                                <span key={i} style={{ fontSize: 10, color: css.text3, display: "flex", alignItems: "center", gap: 4 }}>
-                                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: cat.color, flexShrink: 0, display: "inline-block" }} />
-                                  {cat.label} <span style={{ fontFamily: "'Geist Mono', monospace", color: css.text2 }}>${cat.total.toLocaleString()}</span>
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        <div style={{ padding: "0 20px 16px", display: "flex", flexDirection: "column", gap: 6 }}>
-                          {tripExps.sort((a, b) => new Date(a.date) - new Date(b.date)).map(exp => {
-                            const cat = EXPENSE_CATEGORIES.find(c => c.id === exp.category);
-                            const usdAmt = expenseUSD(exp);
-                            const isForeign = exp.currency && exp.currency !== "USD";
-                            return (
-                              <div key={exp.id} style={{
-                                display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10,
-                                background: css.surface, borderRadius: 8, padding: "9px 12px", border: `1px solid ${css.border}`,
-                              }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
-                                  <span style={{ fontSize: 15, flexShrink: 0 }}>{cat?.icon || "•"}</span>
-                                  <div style={{ minWidth: 0 }}>
-                                    <div style={{ fontSize: 12, fontWeight: 600, color: css.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{exp.description}</div>
-                                    <div style={{ fontSize: 10, color: css.text3, fontFamily: "'Geist Mono', monospace", display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                                      <span>{exp.date}{exp.paymentMethod ? ` · ${exp.paymentMethod}` : ""}{exp.receipt ? " · 🧾" : ""}{isForeign ? ` · ${exp.currency} @ ${exp.fxRate}` : ""}</span>
-                                      <ReportedBadge reports={expenseReportMembership?.get(exp.id)} onOpen={openReport} compact />
-                                    </div>
-                                  </div>
-                                </div>
-                                <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                                  <div style={{ textAlign: "right" }}>
-                                    <div style={{ fontSize: 13, fontWeight: 700, color: usdAmt === 0 ? css.success : css.text, fontFamily: "'Geist Mono', monospace" }}>
-                                      {usdAmt === 0 ? "Free" : `$${usdAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                                    </div>
-                                    {isForeign && <div style={{ fontSize: 11, color: css.text3, fontFamily: "'Geist Mono', monospace" }}>{exp.amount.toLocaleString()} {exp.currency}</div>}
-                                  </div>
-                                  <button onClick={() => { setNewExpense({ ...exp, amount: String(exp.amount), fxRate: exp.fxRate || 1 }); setEditExpenseId(exp.id); setShowAddExpense(exp.tripId); }} style={{
-                                    width: 22, height: 22, borderRadius: 6, border: "none",
-                                    background: css.accentBg, color: css.accent,
-                                    fontSize: 11, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                                  }}>✎</button>
-                                  <button onClick={() => {
-                                    const label = exp.description || exp.merchant || "this expense";
-                                    const amt = exp.amount ? ` (${exp.currency || "USD"} ${Number(exp.amount).toFixed(2)})` : "";
-                                    showConfirm?.(`Delete ${label}${amt}? This can't be undone.`, () => removeExpense(exp.id));
-                                  }} style={{
-                                    width: 22, height: 22, borderRadius: 6, border: "none",
-                                    background: "rgba(200,85,61,0.08)", color: "#C8553D",
-                                    fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                                  }}>×</button>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              <TripSelector
+                trips={pastTripsFiltered}
+                css={css} dv={dv} isMobile={isMobile} D={D}
+                SegIcon={SegIcon}
+                formatTripDates={formatTripDates}
+                photoFor={(t) => {
+                  const segs = (t.segments || []).filter(s => !s._isMeta);
+                  const lastArr = segs.filter(s => s.type === "flight").map(s => s.arrivalAirport).filter(Boolean).pop();
+                  const city = (lastArr && AIRPORT_CITY?.[lastArr]) || (t.location || "").split(",")[0].trim() || t.tripName || "";
+                  return cityPhoto(city);
+                }}
+                onOpenTrip={(t) => { setTripDetailId(t.id); setTripDetailSegIdx(0); }}
+                openEditTrip={openEditTrip}
+                removeTrip={removeTrip}
+              />
             </div>
           )}
         </div>

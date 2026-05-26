@@ -262,7 +262,7 @@ export function renderExpenseReports(s) {
     const inputStyle = { display: "block", width: "100%", marginTop: 5, padding: "8px 10px", background: "rgba(255,255,255,0.03)", border: `1px solid ${css.border}`, borderRadius: 7, color: css.text, fontSize: 12, fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box" };
     const labelStyle = { fontSize: 10, fontWeight: 600, color: css.text3, textTransform: "uppercase", letterSpacing: 1, fontFamily: "Inter, sans-serif" };
 
-    const dv = { serif: "'Fraunces', serif", sans: "'Inter Tight', sans-serif", mono: "'JetBrains Mono', monospace", cream: D ? "rgba(255,255,255,0.06)" : "#E2DCCE", taupe: D ? "#999" : "#6B6458", stone: D ? "#8a8a8a" : "#857A66", paper: D ? "#222" : "#EBE6DD", bone: D ? "#1a1a1a" : "#F4F1EC", moss: "#6B7A5A", gold: "#B8924A" };
+    const dv = { serif: "'Fraunces', serif", sans: "'Inter Tight', sans-serif", mono: "'JetBrains Mono', monospace", cream: D ? "rgba(255,255,255,0.06)" : "#E2DCCE", taupe: D ? "#999" : "#6B6458", stone: D ? "#8a8a8a" : "#857A66", paper: D ? "#222" : "#fff", bone: D ? "#1a1a1a" : "#fff", moss: "#6B7A5A", gold: "#B8924A" };
     const totalAllExpenses = expenses.reduce((s, e) => s + expenseUSD(e), 0);
     const unfiledExpenses = expenses.filter(e => !e.tripId);
     const unfiledCount = unfiledExpenses.length;
@@ -315,12 +315,12 @@ export function renderExpenseReports(s) {
         </div>
 
         {/* ── Metrics band ── */}
-        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 0, background: dv.paper, border: `1px solid ${dv.cream}`, marginBottom: 32 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 0, background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, marginBottom: 32 }}>
           {[
             { lbl: "Total Spend · YTD", val: totalAllExpenses > 0 ? totalAllExpenses.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0}) : "0", prefix: "USD ", sub: `Across ${expenses.length} expenses.` },
-            { lbl: "Reports Filed", val: String(standaloneReports.length).padStart(2, "0"), sub: reportsTotal > 0 ? `$${reportsTotal.toLocaleString(undefined, {minimumFractionDigits: 0})} USD reported.` : "No reports yet." },
-            { lbl: "Unfiled Receipts", val: String(unfiledCount).padStart(2, "0"), unit: "items", sub: unfiledCount > 0 ? "Awaiting assignment." : "All filed." },
-            { lbl: "Categories", val: String(catAlloc.length).padStart(2, "0"), sub: catAlloc[0] ? `Top: ${catAlloc[0].label}.` : "No expenses yet." },
+            { lbl: "Reports Filed", val: String(standaloneReports.length), sub: reportsTotal > 0 ? `$${reportsTotal.toLocaleString(undefined, {minimumFractionDigits: 0})} USD reported.` : "No reports yet." },
+            { lbl: "Unfiled Receipts", val: String(unfiledCount), unit: "items", sub: unfiledCount > 0 ? "Awaiting assignment." : "All filed." },
+            { lbl: "Categories", val: String(catAlloc.length), sub: catAlloc[0] ? `Top: ${catAlloc[0].label}.` : "No expenses yet." },
           ].map((m, i) => (
             <div key={i} style={{ padding: isMobile ? "20px 18px" : "24px 26px", borderRight: (!isMobile && i < 3) ? `1px solid ${dv.cream}` : "none", borderBottom: (isMobile && i < 2) ? `1px solid ${dv.cream}` : "none", position: "relative", overflow: "hidden" }}>
               <div style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: dv.taupe, marginBottom: 12 }}>{m.lbl}</div>
@@ -335,7 +335,7 @@ export function renderExpenseReports(s) {
 
         {/* ── Allocation bar ── */}
         {catTotal > 0 && (
-          <div style={{ background: dv.paper, border: `1px solid ${dv.cream}`, padding: isMobile ? 20 : 28, marginBottom: 32 }}>
+          <div style={{ background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, padding: isMobile ? 20 : 28, marginBottom: 32 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 20 }}>
               <div style={{ fontFamily: dv.serif, fontSize: 20, fontWeight: 400, letterSpacing: "-0.015em" }}>Allocation <em style={{ fontStyle: "italic", color: dv.taupe, fontSize: 14, marginLeft: 4 }}>— where the money went.</em></div>
               <div style={{ fontFamily: dv.mono, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: dv.taupe }}>YTD · <strong style={{ color: css.text, fontWeight: 500 }}>USD {catTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</strong></div>
@@ -367,7 +367,7 @@ export function renderExpenseReports(s) {
         <div style={{ display: "flex", alignItems: "center", gap: 16, margin: "0 0 16px", fontFamily: dv.mono, fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: dv.taupe }}>
           <div style={{ width: 28, height: 1, background: css.accent }} />
           <strong style={{ color: css.text, fontWeight: 500 }}>S 01 · Reports</strong>
-          <span style={{ color: css.accent, background: dv.paper, border: `1px solid ${dv.cream}`, padding: "2px 8px" }}>{String(standaloneReports.length).padStart(2, "0")} entries</span>
+          <span style={{ color: css.accent, background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, padding: "2px 8px" }}>{String(standaloneReports.length)} entries</span>
           <div style={{ flex: 1, height: 1, background: dv.cream }} />
         </div>
 
@@ -380,7 +380,7 @@ export function renderExpenseReports(s) {
             <button onClick={() => openBuilder()} style={{ background: "none", border: "none", color: css.accent, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>Create your first report →</button>
           </div>
         ) : (
-          <div style={{ background: dv.paper, border: `1px solid ${dv.cream}`, marginBottom: 32 }}>
+          <div style={{ background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, marginBottom: 32 }}>
             {standaloneReports.map((report, ri) => {
               const exps = getReportExpenses(report);
               const total = exps.reduce((s, e) => s + expenseUSD(e), 0);
@@ -421,7 +421,7 @@ export function renderExpenseReports(s) {
 
         {/* ── Receipts Queue ── */}
         {unfiledExpenses.length > 0 && (
-          <div style={{ background: dv.paper, border: `1px solid ${dv.cream}`, padding: isMobile ? 20 : 28, marginBottom: 32 }}>
+          <div style={{ background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, padding: isMobile ? 20 : 28, marginBottom: 32 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", paddingBottom: 14, borderBottom: `1px solid ${dv.cream}`, marginBottom: 16 }}>
               <div style={{ fontFamily: dv.serif, fontSize: 20, fontWeight: 400, letterSpacing: "-0.015em" }}>
                 Receipts Queue <em style={{ fontStyle: "italic", color: dv.taupe, fontSize: 14, marginLeft: 4 }}>· awaiting assignment</em>
@@ -436,14 +436,14 @@ export function renderExpenseReports(s) {
               return (
                 <div key={exp.id} style={{ display: "grid", gridTemplateColumns: "auto 1fr auto auto", gap: 14, alignItems: "center", padding: "12px 0", borderBottom: ei < unfiledExpenses.length - 1 ? `1px solid ${dv.cream}` : "none" }}>
                   {/* Thumb */}
-                  <div style={{ width: 36, height: 36, background: dv.bone, border: `1px solid ${dv.cream}`, display: "grid", placeItems: "center", fontFamily: dv.serif, fontStyle: "italic", fontSize: 16, color: css.accent }}>
+                  <div style={{ width: 36, height: 36, background: dv.bone, borderRadius: 12, border: `1px solid ${dv.cream}`, display: "grid", placeItems: "center", fontFamily: dv.serif, fontStyle: "italic", fontSize: 16, color: css.accent }}>
                     {(exp.description || exp.category || "E")[0].toUpperCase()}
                   </div>
                   {/* Info */}
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontFamily: dv.serif, fontSize: 14, color: css.text, lineHeight: 1.2, letterSpacing: "-0.005em" }}>{exp.description || "Unnamed expense"}</div>
                     <div style={{ fontFamily: dv.mono, fontSize: 10, color: dv.taupe, letterSpacing: "0.04em", marginTop: 2, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                      {cat && <span style={{ padding: "1px 6px", background: dv.bone, border: `1px solid ${dv.cream}`, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase" }}>{cat.label}</span>}
+                      {cat && <span style={{ padding: "1px 6px", background: dv.bone, borderRadius: 12, border: `1px solid ${dv.cream}`, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase" }}>{cat.label}</span>}
                       <span>{exp.date || ""}</span>
                       <ReportedBadge reports={expenseReportMembership?.get(exp.id)} onOpen={openReport} compact />
                     </div>

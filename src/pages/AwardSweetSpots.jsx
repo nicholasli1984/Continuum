@@ -103,7 +103,7 @@ function AwardSweetSpotsPage({ css, isMobile, darkMode, userPointCurrencies }) {
 
       {/* Empty state */}
       {filteredSpots.length === 0 && (
-        <div style={{ background: dv.paper, border: `1px solid ${dv.cream}`, padding: isMobile ? "32px 22px" : "48px 32px", textAlign: "center" }}>
+        <div style={{ background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, padding: isMobile ? "32px 22px" : "48px 32px", textAlign: "center" }}>
           <h3 style={{ fontFamily: FONTS.serif, fontSize: 22, fontWeight: 400, color: dv.ink, margin: "0 0 8px", letterSpacing: "-0.01em" }}>
             Nothing here for that combination.
           </h3>
@@ -135,7 +135,7 @@ function SpotCard({ spot, dv, isMobile }) {
   const cabinLabel = CABIN_LABELS[spot.cabin] || spot.cabin;
   return (
     <article style={{
-      background: dv.paper, border: `1px solid ${dv.cream}`, padding: isMobile ? "20px 18px" : "24px 22px",
+      background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, padding: isMobile ? "20px 18px" : "24px 22px",
       display: "flex", flexDirection: "column", gap: 14, position: "relative",
     }}>
       {/* Currency + cabin badges */}
@@ -265,8 +265,8 @@ function SectionEyebrow({ dv, title }) {
 
 function palette(D) {
   return {
-    bone: D ? "#1a1a1a" : "#F4F1EC",
-    paper: D ? "#222" : "#EBE6DD",
+    bone: D ? "#1a1a1a" : "#fff",
+    paper: D ? "#222" : "#fff",
     cream: D ? "rgba(255,255,255,0.08)" : "#E2DCCE",
     stone: D ? "#8a8a8a" : "#857A66",
     taupe: D ? "#999" : "#6B6458",

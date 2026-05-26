@@ -558,7 +558,7 @@ export const REDEMPTION_VALUES = {
   marriott:       { cpp: 0.7, best: "Peak award nights at Category 8 properties, Points+Cash", avoid: "Low-category properties (cash rates are often cheaper)", partners: ["ua","dl","aa","ba_avios"] },
   hilton:         { cpp: 0.5, best: "Aspirational luxury properties, 5th night free on 5-night stays", avoid: "Mid-range properties (cash rates similar or better)", partners: [] },
   ihg:            { cpp: 0.5, best: "Flagship InterContinental hotels, PointBreaks sales", avoid: "Budget Holiday Inn / Staybridge (poor redemption value)", partners: [] },
-  hyatt:          { cpp: 1.7, best: "Category 7–8 luxury (Park Hyatt, Alila), Points+Cash deals", avoid: "Low-category standard rooms at limited-service properties", partners: ["amex_plat","chase_sapphire","bilt"] },
+  hyatt:          { cpp: 1.65, best: "Category 7–8 luxury (Park Hyatt, Alila), Points+Cash deals", avoid: "Low-category standard rooms at limited-service properties", partners: ["amex_plat","chase_sapphire","bilt"] },
   amex_plat:      { cpp: 2.0, best: "Transfer to Aeroplan/Singapore for biz class, or Virgin for PE", avoid: "Statement credits (0.6¢/pt) or gift cards", partners: ["dl","ba_avios","flying_blue","aeroplan","singapore_kf","emirates_skywards","cathay_mp","virgin_fc","marriott","hilton"] },
   chase_sapphire: { cpp: 2.0, best: "Transfer to Hyatt for luxury hotels, or Aeroplan for biz class", avoid: "Cash back via Pay Yourself Back (1–1.5¢/pt max)", partners: ["ua","sw","ba_avios","flying_blue","aeroplan","singapore_kf","emirates_skywards","virgin_fc","marriott","hyatt","ihg"] },
 };

@@ -28,7 +28,7 @@ export default function TransferBonusBand({ bonuses, userBonuses, lastUpdated, i
 
   return (
     <div style={{
-      background: dv.paper, border: `1px solid ${personal ? dv.accent : dv.cream}`,
+      background: dv.paper, borderRadius: 12, border: `1px solid ${personal ? dv.accent : dv.cream}`,
       marginBottom: variant === "full" ? 32 : 20, position: "relative",
     }}>
       {/* Header row */}
@@ -41,7 +41,7 @@ export default function TransferBonusBand({ bonuses, userBonuses, lastUpdated, i
           borderBottom: expanded ? `1px solid ${dv.cream}` : "none",
         }}
       >
-        <div style={{ width: 28, height: 28, background: dv.bone, border: `1px solid ${personal ? dv.accent : dv.cream}`, color: personal ? dv.accent : dv.taupe, display: "grid", placeItems: "center", flexShrink: 0 }}>
+        <div style={{ width: 28, height: 28, background: dv.bone, borderRadius: 12, border: `1px solid ${personal ? dv.accent : dv.cream}`, color: personal ? dv.accent : dv.taupe, display: "grid", placeItems: "center", flexShrink: 0 }}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="17 1 21 5 17 9" /><path d="M3 11V9a4 4 0 0 1 4-4h14" /><polyline points="7 23 3 19 7 15" /><path d="M21 13v2a4 4 0 0 1-4 4H3" />
           </svg>
@@ -126,8 +126,8 @@ function BonusRow({ bonus, dv, isMobile, personal, isLast }) {
 
 function palette(D) {
   return {
-    bone: D ? "#1a1a1a" : "#F4F1EC",
-    paper: D ? "#222" : "#EBE6DD",
+    bone: D ? "#1a1a1a" : "#fff",
+    paper: D ? "#222" : "#fff",
     cream: D ? "rgba(255,255,255,0.08)" : "#E2DCCE",
     stone: D ? "#8a8a8a" : "#857A66",
     taupe: D ? "#999" : "#6B6458",

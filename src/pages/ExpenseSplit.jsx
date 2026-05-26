@@ -39,8 +39,8 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
 
   // Divvy palette — adapts to dark/light
   const dv = {
-    bone: D ? "#1a1a1a" : "#F4F1EC",
-    paper: D ? "#222" : "#EBE6DD",
+    bone: D ? "#1a1a1a" : "#fff",
+    paper: D ? "#222" : "#fff",
     cream: D ? "rgba(255,255,255,0.06)" : "#E2DCCE",
     stone: D ? "#8a8a8a" : "#857A66",
     taupe: D ? "#999" : "#6B6458",
@@ -888,7 +888,7 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
                             {expenseForm.splitType === "exact" && <span style={{ fontFamily: dv.mono, fontSize: 12, color: dv.stone }}>{symFor(ccy)}</span>}
                             <input type="number" step="0.01" value={v} placeholder={inputPlaceholder}
                               onChange={e => setExpenseForm(p => ({ ...p, splitInputs: { ...p.splitInputs, [m.email]: e.target.value } }))}
-                              style={{ width: 84, padding: "6px 8px", background: dv.bone, border: `1px solid ${dv.cream}`, color: dv.ink, fontFamily: dv.mono, fontSize: 13, textAlign: "right", outline: "none" }} />
+                              style={{ width: 84, padding: "6px 8px", background: dv.bone, borderRadius: 12, border: `1px solid ${dv.cream}`, color: dv.ink, fontFamily: dv.mono, fontSize: 13, textAlign: "right", outline: "none" }} />
                             {expenseForm.splitType !== "exact" && <span style={{ fontFamily: dv.mono, fontSize: 11, color: dv.taupe }}>{suffix.trim()}</span>}
                           </div>
                           <span style={{ fontFamily: dv.mono, fontSize: 11, color: dv.taupe, minWidth: 70, textAlign: "right" }}>
@@ -1093,7 +1093,7 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
                           {shares.map((sh, si) => (
                             <div key={sh.id} style={{
                               display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 10px 5px 5px",
-                              background: dv.paper, border: `1px solid ${dv.cream}`, borderRadius: 100, fontSize: 12,
+                              background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, borderRadius: 100, fontSize: 12,
                             }}>
                               <div style={{ width: 18, height: 18, borderRadius: "50%", background: CHIP_COLORS[si % 5], color: "#F4F1EC", display: "grid", placeItems: "center", fontSize: 10, fontWeight: 600 }}>
                                 {initials(memberName(sh.email))}
@@ -1139,7 +1139,7 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
                           </button>
                         </div>
                       ) : (
-                        <div style={{ padding: "12px 14px", background: dv.paper, border: `1px solid ${dv.cream}`, marginTop: 4 }}>
+                        <div style={{ padding: "12px 14px", background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, marginTop: 4 }}>
                           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 10 }}>
                             <div>
                               <label style={{ display: "block", fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: dv.taupe, marginBottom: 6 }}>Description</label>
@@ -1236,7 +1236,7 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
           <AnimatePresence>
             {addMemberForm.show && (
               <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} style={{ overflow: "hidden", marginBottom: 12 }}>
-                <div style={{ padding: "16px 18px", background: dv.paper, border: `1px solid ${dv.cream}`, marginBottom: 8 }}>
+                <div style={{ padding: "16px 18px", background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, marginBottom: 8 }}>
                   {/* Quick-pick from existing companions */}
                   {(() => {
                     const inGroupEmails = new Set(groupMembers.map(m => (m.email || "").toLowerCase()));
@@ -1436,7 +1436,7 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
               <strong style={{ color: dv.ink, fontWeight: 500 }}>The tally · across every group</strong>
               <div style={{ flex: 1, height: 1, background: dv.cream }} />
             </div>
-            <div style={{ background: dv.paper, border: `1px solid ${dv.cream}`, padding: isMobile ? "20px 18px" : "26px 28px" }}>
+            <div style={{ background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, padding: isMobile ? "20px 18px" : "26px 28px" }}>
               {ccys.map((ccy, ci) => {
                 const buc = allBalances.byCurrency[ccy];
                 const sym = symFor(ccy);
@@ -1498,8 +1498,8 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
           <div style={{ display: "flex", alignItems: "center", gap: 14, margin: "0 0 18px", fontFamily: dv.mono, fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: dv.taupe }}>
             <div style={{ width: 28, height: 1, background: dv.accent }} />
             <strong style={{ color: dv.ink, fontWeight: 500 }}>Companions · your address book</strong>
-            <span style={{ color: dv.accent, background: dv.paper, border: `1px solid ${dv.cream}`, padding: "2px 8px" }}>
-              {String(contacts.length).padStart(2, "0")}
+            <span style={{ color: dv.accent, background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, padding: "2px 8px" }}>
+              {String(contacts.length)}
             </span>
             <div style={{ flex: 1, height: 1, background: dv.cream }} />
             <button onClick={() => { setContactForm({ email: "", name: "" }); setShowAddContact(true); }} style={{
@@ -1514,16 +1514,16 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
           </div>
 
           {showAddContact && (
-            <div style={{ background: dv.paper, border: `1px solid ${dv.cream}`, padding: "16px 18px", marginBottom: 12, display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr auto auto", gap: 10, alignItems: "end" }}>
+            <div style={{ background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, padding: "16px 18px", marginBottom: 12, display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr auto auto", gap: 10, alignItems: "end" }}>
               <div>
                 <label style={{ display: "block", fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: dv.taupe, marginBottom: 6 }}>Email</label>
                 <input autoFocus type="email" value={contactForm.email} onChange={e => setContactForm(f => ({ ...f, email: e.target.value }))} placeholder="friend@email.com"
-                  style={{ width: "100%", background: dv.bone, border: `1px solid ${dv.cream}`, padding: "8px 10px", fontFamily: dv.sans, fontSize: 13, color: dv.ink, outline: "none" }} />
+                  style={{ width: "100%", background: dv.bone, borderRadius: 12, border: `1px solid ${dv.cream}`, padding: "8px 10px", fontFamily: dv.sans, fontSize: 13, color: dv.ink, outline: "none" }} />
               </div>
               <div>
                 <label style={{ display: "block", fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: dv.taupe, marginBottom: 6 }}>Name</label>
                 <input value={contactForm.name} onChange={e => setContactForm(f => ({ ...f, name: e.target.value }))} placeholder="Optional"
-                  style={{ width: "100%", background: dv.bone, border: `1px solid ${dv.cream}`, padding: "8px 10px", fontFamily: dv.sans, fontSize: 13, color: dv.ink, outline: "none" }} />
+                  style={{ width: "100%", background: dv.bone, borderRadius: 12, border: `1px solid ${dv.cream}`, padding: "8px 10px", fontFamily: dv.sans, fontSize: 13, color: dv.ink, outline: "none" }} />
               </div>
               <button onClick={async () => {
                 if (!contactForm.email.includes("@")) return;
@@ -1542,13 +1542,13 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
           )}
 
           {contacts.length === 0 ? (
-            <div style={{ background: dv.paper, border: `1px solid ${dv.cream}`, padding: "32px 24px", textAlign: "center" }}>
+            <div style={{ background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, padding: "32px 24px", textAlign: "center" }}>
               <p style={{ fontFamily: dv.serif, fontStyle: "italic", color: dv.taupe, margin: 0 }}>
                 No companions yet — add the people you usually travel with so you can pick them when creating a trip.
               </p>
             </div>
           ) : (
-            <div style={{ background: dv.paper, border: `1px solid ${dv.cream}` }}>
+            <div style={{ background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}` }}>
               {contacts.map((c, ci) => {
                 const last = ci === contacts.length - 1;
                 const isEditing = editingContactId === c.id;
@@ -1570,7 +1570,7 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
                           if (e.key === "Enter") { e.preventDefault(); await renameContact(c.id, editingContactName); setEditingContactId(null); }
                           if (e.key === "Escape") { setEditingContactId(null); }
                         }}
-                        style={{ background: dv.bone, border: `1px solid ${dv.accent}`, padding: "6px 10px", fontFamily: dv.serif, fontSize: 15, color: dv.ink, outline: "none" }} />
+                        style={{ background: dv.bone, borderRadius: 12, border: `1px solid ${dv.accent}`, padding: "6px 10px", fontFamily: dv.serif, fontSize: 15, color: dv.ink, outline: "none" }} />
                     ) : (
                       <div onClick={() => { setEditingContactId(c.id); setEditingContactName(c.display_name || ""); }}
                         title="Click to rename"
