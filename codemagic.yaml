@@ -281,7 +281,10 @@ workflows:
         # immediately. Set `submit_to_app_store: true` when you're ready to
         # ship a release for App Store review (typically after TestFlight QA).
         submit_to_testflight: true
-        # Add internal testers to a TestFlight group named "Continuum" in
-        # App Store Connect to have them auto-receive new builds.
-        beta_groups:
-          - Continuum Internal
+        # NOTE: `beta_groups` was previously `- Continuum Internal`, but Apple's
+        # API no longer lets you programmatically assign builds to INTERNAL
+        # TestFlight groups — the post-step always fails with "Cannot add
+        # internal group to a build". Internal testers (anyone on the Apple
+        # Developer team) get the build automatically once it's processed, so
+        # this line isn't needed for them. Re-add `beta_groups: - {name}` only
+        # if you create an EXTERNAL beta group later.
