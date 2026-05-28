@@ -5054,7 +5054,13 @@ Start by introducing yourself briefly in-character with personality, and give an
   // background — the <main> scroller then gets the wrong height and "sticks"
   // until a tab switch forces a reflow. Recomputing on mount + resize +
   // orientation + resume guarantees a correct height without manual nudging.
+  //
+  // NATIVE EXCEPTION: in the Capacitor WebView, window.innerHeight EXCLUDES the
+  // bottom safe-area, so pinning to it shrinks the shell and exposes a black
+  // gap under the nav. The native WebView sizes itself correctly, so there we
+  // leave the CSS 100dvh fallback in place and never set --app-height.
   useEffect(() => {
+    if (isNative()) return;
     const setH = () => {
       document.documentElement.style.setProperty("--app-height", `${window.innerHeight}px`);
     };
