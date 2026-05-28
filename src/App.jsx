@@ -5048,6 +5048,36 @@ Start by introducing yourself briefly in-character with personality, and give an
     meta.setAttribute("content", bg);
   }, [darkMode]);
 
+  // Pin the app shell to a concrete pixel height (--app-height) measured from
+  // window.innerHeight, instead of trusting CSS 100dvh. On iOS standalone PWAs,
+  // 100dvh is frequently mis-measured on first paint and when resuming from the
+  // background — the <main> scroller then gets the wrong height and "sticks"
+  // until a tab switch forces a reflow. Recomputing on mount + resize +
+  // orientation + resume guarantees a correct height without manual nudging.
+  useEffect(() => {
+    const setH = () => {
+      document.documentElement.style.setProperty("--app-height", `${window.innerHeight}px`);
+    };
+    setH();
+    // A couple of deferred passes catch the case where innerHeight isn't settled
+    // on the very first paint (toolbar/safe-area still resolving).
+    const raf = requestAnimationFrame(setH);
+    const t = setTimeout(setH, 300);
+    const onVis = () => { if (document.visibilityState === "visible") setH(); };
+    window.addEventListener("resize", setH);
+    window.addEventListener("orientationchange", setH);
+    window.addEventListener("pageshow", setH);
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(t);
+      window.removeEventListener("resize", setH);
+      window.removeEventListener("orientationchange", setH);
+      window.removeEventListener("pageshow", setH);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, []);
+
   // ── Push notification subscription ──
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushSupported, setPushSupported] = useState(false);
@@ -6690,7 +6720,7 @@ Start by introducing yourself briefly in-character with personality, and give an
 
   return (
     <div data-theme={D ? "dark" : "light"} style={{
-      height: "100dvh", overflow: "hidden", background: css.bg, display: "flex", flexDirection: "column",
+      height: "var(--app-height, 100dvh)", overflow: "hidden", background: css.bg, display: "flex", flexDirection: "column",
       fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Instrument Sans', sans-serif", color: css.text, position: "relative",
       transition: "background 0.3s ease, color 0.3s ease",
     }}>

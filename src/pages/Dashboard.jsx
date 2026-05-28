@@ -138,25 +138,56 @@ function DestinationWeather({ css, dv, isMobile, city, compact }) {
 }
 
 // "Ask Continuum" — natural-language travel assistant (Claude via /api/ask).
-// Next-flight boarding-pass card(s) — shows flights within 3 days of departure.
+// Next-flight boarding-pass card(s) — shows flights within 4 days of departure.
 // A single flight renders the full boarding pass; multiple flights stack like
 // wallet cards that expand on tap. Includes destination weather and lounges.
 function NextFlightCard({ css, dv, D, isMobile, trips, getFlightLiveStatus, AIRPORT_CITY, linkedAccounts, user, setActiveView, setTripDetailId, setTripDetailSegIdx, openDirections }) {
   const [expanded, setExpanded] = useState(null); // null = wallet stack; index = that flight expanded
 
-  // Every flight departing within the next 3 days, across all trips.
+  // Flight-card lifecycle:
+  //   • APPEARS within 4 days counting today (today + the next 3 calendar days,
+  //     i.e. daysUntil <= 3). This is a clean CALENDAR-day count that flips at
+  //     local midnight — never at the flight's time-of-day — so two flights the
+  //     same number of days out always behave identically.
+  //   • DISAPPEARS at the EARLIER of (a) the next flight's departure, or
+  //     (b) this flight's departure + 24h — so the card lingers through the
+  //     flight (incl. overnight legs) but yields the moment the next leg
+  //     departs, and never sticks around more than a day past a one-off flight.
+  const now = new Date();
   const _t0 = new Date(); _t0.setHours(0, 0, 0, 0);
-  const upcoming = [];
+  const DAY = 86400000;
+  const APPEAR_WITHIN_DAYS = 3; // today + next 3 calendar days = "4 days" counting today
+
+  // 1) Collect every flight across all trips with a parseable departure
+  //    datetime so we can find each flight's "next flight" globally.
+  const allFlights = [];
   for (const trip of (trips || [])) {
     const segs = (trip.segments || []).filter(x => !x._isMeta && x.type === "flight" && (x.flightNumber || x.route));
-    for (let si = 0; si < segs.length; si++) {
-      const seg = segs[si];
+    segs.forEach((seg, si) => {
       const d = seg.date || trip.date;
-      if (!d) continue;
-      const days = Math.round((new Date(d + "T00:00:00") - _t0) / 86400000);
-      if (days < 0 || days > 3) continue;
-      upcoming.push({ seg, trip, days, segIdx: si, sortKey: `${d} ${seg.departureTime || ""}` });
-    }
+      if (!d) return;
+      const depDT = new Date(`${d}T${(seg.departureTime || "00:00")}:00`);
+      if (isNaN(depDT.getTime())) return;
+      allFlights.push({ seg, trip, segIdx: si, depDT, date: d });
+    });
+  }
+  allFlights.sort((a, b) => a.depDT - b.depDT);
+
+  // 2) Keep the flights whose visible window contains "now".
+  const upcoming = [];
+  for (let k = 0; k < allFlights.length; k++) {
+    const f = allFlights[k];
+    // Appearance — calendar-day count. daysUntil is negative for a flight
+    // that's already departed, which still passes this check and is then
+    // governed purely by the dismissal rule below.
+    const daysUntil = Math.round((new Date(f.date + "T00:00:00") - _t0) / DAY);
+    if (daysUntil > APPEAR_WITHIN_DAYS) continue;
+    // Dismissal — precise: earlier of the next flight's departure or +24h.
+    const nextDep = k + 1 < allFlights.length ? allFlights[k + 1].depDT : null;
+    const plus24 = new Date(f.depDT.getTime() + DAY);
+    const dismissAt = nextDep ? new Date(Math.min(nextDep.getTime(), plus24.getTime())) : plus24;
+    if (now >= dismissAt) continue;
+    upcoming.push({ seg: f.seg, trip: f.trip, days: daysUntil, segIdx: f.segIdx, sortKey: `${f.date} ${f.seg.departureTime || ""}` });
   }
   upcoming.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
   if (upcoming.length === 0) return null;
@@ -176,21 +207,31 @@ function NextFlightCard({ css, dv, D, isMobile, trips, getFlightLiveStatus, AIRP
     const fnum = (fl.flightNumber || "").trim();
     const carrier = (fnum.match(/^[A-Z][A-Z0-9]/) || [])[0] || "";
     const logo = carrier ? `https://images.kiwi.com/airlines/128/${carrier}.png` : "";
+    // Terminal and gate are tracked separately so both can show at once. Both
+    // come from the live flight-status feed (assigned hours-to-a-day out) and
+    // fall back to anything entered manually on the segment.
     const term = live?.departureTerminal || fl.departureTerminal || "";
-    const gateDisplay = live?.departureGate || (term ? (/^\d/.test(String(term)) ? `T${term}` : String(term)) : "—");
+    const termDisplay = term ? (/^\d/.test(String(term)) ? `T${term}` : String(term)) : "—";
+    const gate = live?.departureGate || fl.departureGate || "—";
     const aircraft = live?.aircraft || fl.aircraft || "Aircraft to be assigned";
     const aircraftReg = live?.aircraftReg || "";
     const seat = fl.seat || "—";
     const cls = CLS[fl.fareClass] || fl.fareClass || fl.class || "—";
     const refDate = fl.date || trip.date;
     const fdate = new Date(refDate + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short" });
-    const boards = live?.boardingTime || "—";
     const baggage = live?.baggageBelt || "";
     const depTime = fl.departureTime || "";
     const arrTime = fl.arrivalTime || "";
     const overnight = fl.arrivalDate && fl.date && fl.arrivalDate > fl.date;
-    const countdown = days === 0 ? "Today" : days === 1 ? "Tomorrow" : `In ${days} days`;
-    return { fl, trip, segIdx, dep, arr, depCity, arrCity, live, fnum, carrier, logo, term, gateDisplay, aircraft, aircraftReg, seat, cls, fdate, boards, baggage, depTime, arrTime, overnight, countdown };
+    // Once a flight is in the post-departure tail of its window, switch the
+    // countdown to a status word rather than "In -1 days".
+    const depDT = new Date(`${refDate}T${(fl.departureTime || "00:00")}:00`);
+    const departed = !isNaN(depDT.getTime()) && depDT < new Date();
+    const liveStatus = (live?.status || "").toLowerCase();
+    const countdown = departed
+      ? ((liveStatus.includes("route") || liveStatus.includes("air") || liveStatus.includes("active")) ? "In flight" : "Departed")
+      : days === 0 ? "Today" : days === 1 ? "Tomorrow" : `In ${days} days`;
+    return { fl, trip, segIdx, dep, arr, depCity, arrCity, live, fnum, carrier, logo, term, termDisplay, gate, aircraft, aircraftReg, seat, cls, fdate, baggage, depTime, arrTime, overnight, countdown };
   };
 
   const loungesFor = (f) => {
@@ -267,9 +308,9 @@ function NextFlightCard({ css, dv, D, isMobile, trips, getFlightLiveStatus, AIRP
           {/* Flight grid */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "14px 10px", marginTop: 14, paddingTop: 14, borderTop: `1px solid ${dv.cream}` }}>
             <Field label="Date" val={f.fdate} />
-            <Field label={f.live?.departureGate ? "Gate" : "Terminal"} val={f.gateDisplay} />
+            <Field label="Terminal" val={f.termDisplay} />
+            <Field label="Gate" val={f.gate} />
             <Field label="Flight" val={f.fnum || "—"} />
-            <Field label="Boarding" val={f.boards} />
             <Field label="Seat" val={f.seat} />
             <Field label="Class" val={f.cls} />
             {f.baggage && <Field label="Baggage" val={f.baggage} />}
@@ -1368,7 +1409,7 @@ export function renderDashboard(s) {
 
         {/* Next 30 Days rail removed — merged into the Upcoming Trips horizontal rail below. */}
 
-        {/* ── Up next — boarding-pass card (within 3 days) ── */}
+        {/* ── Up next — boarding-pass card (within 4 days) ── */}
         <NextFlightCard css={css} dv={dv} D={D} isMobile={isMobile} trips={trips} getFlightLiveStatus={getFlightLiveStatus} AIRPORT_CITY={AIRPORT_CITY} linkedAccounts={linkedAccounts} user={user} setActiveView={setActiveView} setTripDetailId={setTripDetailId} setTripDetailSegIdx={setTripDetailSegIdx} openDirections={openDirections} />
 
         {/* ── Upcoming Trips — Editorial Timeline ── */}

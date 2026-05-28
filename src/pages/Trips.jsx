@@ -291,6 +291,19 @@ export function renderTrips(s) {
               byDate.get(d).push({ seg, i });
             });
             const dayGroups = [...byDate.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+            // Within each day, order events chronologically by their own time
+            // (departure for flights, check-in for hotels, start/pickup for the
+            // rest). Robust to "20:05", "7:00", and "7:00 AM" formats.
+            const toMins = (seg) => {
+              const raw = (seg.departureTime || seg.startTime || seg.time || seg.checkinTime || seg.pickupTime || "").toString().trim();
+              const m = raw.match(/(\d{1,2}):(\d{2})/);
+              if (!m) return 9999;
+              let h = parseInt(m[1], 10); const min = parseInt(m[2], 10);
+              if (/pm/i.test(raw) && h < 12) h += 12;
+              if (/am/i.test(raw) && h === 12) h = 0;
+              return h * 60 + min;
+            };
+            dayGroups.forEach(([, items]) => items.sort((a, b) => toMins(a.seg) - toMins(b.seg)));
             if (dayGroups.length === 0) return null;
 
             const renderEvent = ({ seg, i }) => {
@@ -438,8 +451,10 @@ export function renderTrips(s) {
             const close = () => setExpandedSegmentKey?.(null);
             return (
               <div onClick={close} style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: isMobile ? "flex-end" : "center", justifyContent: "center", padding: isMobile ? 0 : 24 }}>
-                <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 560, maxHeight: isMobile ? "88vh" : "86vh", overflowY: "auto", background: ev.bone, border: `1px solid ${ev.cream}`, borderRadius: isMobile ? "18px 18px 0 0" : 16, boxShadow: "0 24px 70px rgba(0,0,0,0.4)" }}>
-                  <div style={{ position: "sticky", top: 0, background: ev.bone, borderBottom: `1px solid ${ev.cream}`, padding: isMobile ? "16px 18px" : "18px 22px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+                <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 560, maxHeight: isMobile ? "88vh" : "86vh", display: "flex", flexDirection: "column", overflow: "hidden", background: ev.bone, border: `1px solid ${ev.cream}`, borderRadius: isMobile ? "18px 18px 0 0" : 16, boxShadow: "0 24px 70px rgba(0,0,0,0.4)" }}>
+                  {/* Header — now carries a quick Edit affordance next to Close so
+                      it's discoverable without scrolling to the bottom. */}
+                  <div style={{ flexShrink: 0, background: ev.bone, borderBottom: `1px solid ${ev.cream}`, padding: isMobile ? "16px 18px" : "18px 22px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
                       <span style={{ width: 38, height: 38, borderRadius: "50%", background: info.wash, display: "grid", placeItems: "center", flexShrink: 0 }}>
                         <SegIcon type={seg.type} size={18} color={info.color} />
@@ -449,21 +464,33 @@ export function renderTrips(s) {
                         <div style={{ fontFamily: ev.serif, fontSize: isMobile ? 19 : 22, fontWeight: 500, color: ev.ink, lineHeight: 1.15 }}>{seg.type === "flight" && seg.flightNumber ? `${seg.flightNumber} — ` : ""}{segTitle(seg)}</div>
                       </div>
                     </div>
-                    <button onClick={close} style={{ width: 32, height: 32, flexShrink: 0, borderRadius: "50%", border: `1px solid ${ev.cream}`, background: "transparent", color: ev.taupe, cursor: "pointer", display: "grid", placeItems: "center" }}>
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                    </button>
+                    <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                      {canEdit && (
+                        <button onClick={() => { close(); editSegment(trip.id, segIdx); }} title="Edit"
+                          style={{ width: 32, height: 32, borderRadius: "50%", border: `1px solid ${ev.cream}`, background: "transparent", color: ev.ink, cursor: "pointer", display: "grid", placeItems: "center", transition: "all 0.18s" }}
+                          onMouseEnter={e => { e.currentTarget.style.borderColor = ev.ink; }}
+                          onMouseLeave={e => { e.currentTarget.style.borderColor = ev.cream; }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.85 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                        </button>
+                      )}
+                      <button onClick={close} title="Close" style={{ width: 32, height: 32, borderRadius: "50%", border: `1px solid ${ev.cream}`, background: "transparent", color: ev.taupe, cursor: "pointer", display: "grid", placeItems: "center" }}>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                      </button>
+                    </div>
                   </div>
-                  <div style={{ padding: isMobile ? "16px 18px 22px" : "18px 22px 24px" }}>
+                  {/* Scrollable detail body */}
+                  <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: isMobile ? "16px 18px 18px" : "18px 22px 20px" }}>
                     <SegmentDetailsPanel seg={seg} ev={ev} isMobile={isMobile} liveStatus={live} />
                     {seg.notes && <div style={{ marginTop: 14, fontFamily: ev.serif, fontSize: 14, color: ev.taupe, lineHeight: 1.5 }}>{seg.notes}</div>}
-                    {canEdit && (
-                      <div style={{ display: "flex", gap: 8, marginTop: 18 }}>
-                        <button onClick={() => { close(); editSegment(trip.id, segIdx); }} style={{ flex: 1, padding: "11px 0", border: `1px solid ${ev.cream}`, background: ev.paper, color: ev.ink, fontFamily: ev.mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", borderRadius: 8 }}>Edit</button>
-                        <button onClick={() => { close(); setShowMoveSegment?.({ tripId: trip.id, segIdx }); }} style={{ flex: 1, padding: "11px 0", border: `1px solid ${ev.cream}`, background: ev.paper, color: ev.ink, fontFamily: ev.mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", borderRadius: 8 }}>Move</button>
-                        <button onClick={() => { showConfirm("Delete this item?", () => { deleteSegment(trip.id, segIdx); close(); }); }} style={{ flex: 1, padding: "11px 0", border: `1px solid rgba(200,85,61,0.3)`, background: "rgba(200,85,61,0.06)", color: "#C8553D", fontFamily: ev.mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", borderRadius: 8 }}>Delete</button>
-                      </div>
-                    )}
                   </div>
+                  {/* Sticky action footer — always visible, no scrolling needed. */}
+                  {canEdit && (
+                    <div style={{ flexShrink: 0, display: "flex", gap: 8, padding: isMobile ? "12px 18px calc(12px + env(safe-area-inset-bottom))" : "14px 22px", borderTop: `1px solid ${ev.cream}`, background: ev.bone }}>
+                      <button onClick={() => { close(); editSegment(trip.id, segIdx); }} style={{ flex: 1, padding: "12px 0", border: "none", background: ev.ink, color: ev.bone, fontFamily: ev.mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", borderRadius: 8, fontWeight: 600 }}>Edit</button>
+                      <button onClick={() => { close(); setShowMoveSegment?.({ tripId: trip.id, segIdx }); }} style={{ flex: 1, padding: "12px 0", border: `1px solid ${ev.cream}`, background: ev.paper, color: ev.ink, fontFamily: ev.mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", borderRadius: 8 }}>Move</button>
+                      <button onClick={() => { showConfirm("Delete this item?", () => { deleteSegment(trip.id, segIdx); close(); }); }} style={{ flex: 1, padding: "12px 0", border: `1px solid rgba(200,85,61,0.3)`, background: "rgba(200,85,61,0.06)", color: "#C8553D", fontFamily: ev.mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", borderRadius: 8 }}>Delete</button>
+                    </div>
+                  )}
                 </div>
               </div>
             );
