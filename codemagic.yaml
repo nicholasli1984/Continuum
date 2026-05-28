@@ -219,11 +219,12 @@ workflows:
           # HIGHER marketing version than the last released one — otherwise the
           # upload fails with "train version 'X' is closed" (error 90186/90062).
           # Override via the MARKETING_VERSION env var in Codemagic and bump it
-          # after each App Store release. History: 1.0 released → 1.0.1 → 1.0.2
-          # all closed on the App Store. Each release closes that train, so the
-          # next upload fails with 90186 "train version 'X' is closed" until you
-          # bump again. Now defaulting to 1.0.3.
-          MV="${MARKETING_VERSION:-1.0.3}"
+          # after each App Store release. History: 1.0 → 1.0.1 → 1.0.2 → 1.0.3
+          # all released and closed on the App Store. Each release closes that
+          # train, so the next upload fails (silently — Apple drops the binary
+          # and Codemagic's post-step polls forever) until you bump again.
+          # Now defaulting to 1.0.4.
+          MV="${MARKETING_VERSION:-1.0.4}"
           echo "Setting marketing version (CFBundleShortVersionString) to: $MV"
           agvtool new-marketing-version "$MV"
 
