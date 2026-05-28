@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { LANDMARK_FALLBACK_PHOTOS } from "../constants/airline-data";
 import { airlineIdFromFn, isInternational, loungeAccessSummary, computeLoungeAccess } from "../constants/loungeAccess";
 import { AIRLINE_ALLIANCE } from "../constants/lounges";
+import { picksForCity, resyUrl, openTableUrl, googleUrl } from "../constants/michelinPicks";
 import TransferBonusBand from "../components/transferBonuses/TransferBonusBand";
 import ReportedBadge from "../components/ReportedBadge";
 import { isLandingDemo, DEMO_FIRST_NAME } from "../utils/landingDemo";
@@ -140,7 +141,7 @@ function DestinationWeather({ css, dv, isMobile, city, compact }) {
 // Next-flight boarding-pass card(s) — shows flights within 3 days of departure.
 // A single flight renders the full boarding pass; multiple flights stack like
 // wallet cards that expand on tap. Includes destination weather and lounges.
-function NextFlightCard({ css, dv, D, isMobile, trips, getFlightLiveStatus, AIRPORT_CITY, linkedAccounts, user, setActiveView, setTripDetailId, setTripDetailSegIdx }) {
+function NextFlightCard({ css, dv, D, isMobile, trips, getFlightLiveStatus, AIRPORT_CITY, linkedAccounts, user, setActiveView, setTripDetailId, setTripDetailSegIdx, openDirections }) {
   const [expanded, setExpanded] = useState(null); // null = wallet stack; index = that flight expanded
 
   // Every flight departing within the next 3 days, across all trips.
@@ -206,7 +207,9 @@ function NextFlightCard({ css, dv, D, isMobile, trips, getFlightLiveStatus, AIRP
       for (const it of pool) {
         if (seen.has(it.lounge.name)) continue; seen.add(it.lounge.name);
         const l = it.lounge; const gm = String(l.location || "").match(/gate\s+([A-Za-z]?\d+[A-Za-z]?)/i);
-        out.push({ name: l.name, rating: l.rating || 0, where: gm ? `Gate ${gm[1].toUpperCase()}` : (l.terminal ? (/^\d/.test(String(l.terminal)) ? `T${l.terminal}` : String(l.terminal)) : "") });
+        // Keep the raw lounge object on the row so the Walk Here button can
+        // pass it (with placeQuery) into the directions modal.
+        out.push({ name: l.name, rating: l.rating || 0, where: gm ? `Gate ${gm[1].toUpperCase()}` : (l.terminal ? (/^\d/.test(String(l.terminal)) ? `T${l.terminal}` : String(l.terminal)) : ""), lounge: l });
         if (out.length >= 2) break;
       }
       return out;
@@ -302,7 +305,7 @@ function NextFlightCard({ css, dv, D, isMobile, trips, getFlightLiveStatus, AIRP
                     <span style={{ width: 24, height: 24, borderRadius: 7, background: css.accentBg, border: `1px solid ${css.accentBorder}`, display: "grid", placeItems: "center", flexShrink: 0 }}>
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={css.accent} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                     </span>
-                    <div style={{ minWidth: 0, display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+                    <div style={{ minWidth: 0, flex: 1, display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
                       <span style={{ fontFamily: "'Fraunces', serif", fontSize: isMobile ? 15 : 16, color: dv.ink }}>{l.name}</span>
                       {l.rating > 0 && (
                         <span style={{ display: "inline-flex", alignItems: "center", gap: 3, transform: "translateY(1px)" }}>
@@ -312,6 +315,30 @@ function NextFlightCard({ css, dv, D, isMobile, trips, getFlightLiveStatus, AIRP
                       )}
                       {l.where && <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: css.accent }}>{l.where}</span>}
                     </div>
+                    {openDirections && l.lounge?.placeQuery && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); openDirections(l.lounge, f.dep); }}
+                        style={{
+                          flexShrink: 0,
+                          padding: "6px 11px",
+                          border: `1px solid ${dv.cream}`,
+                          background: "transparent",
+                          color: dv.ink,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          fontSize: 9.5, letterSpacing: "0.12em", textTransform: "uppercase",
+                          borderRadius: 100,
+                          cursor: "pointer",
+                          display: "inline-flex", alignItems: "center", gap: 5,
+                          transition: "all 0.18s",
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.borderColor = dv.ink; }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor = dv.cream; }}>
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M5 9l4-2 6 2 4-2v10l-4 2-6-2-4 2z" /><line x1="9" y1="7" x2="9" y2="17" /><line x1="15" y1="9" x2="15" y2="19" />
+                        </svg>
+                        Walk
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -376,6 +403,438 @@ function NextFlightCard({ css, dv, D, isMobile, trips, getFlightLiveStatus, AIRP
   );
 }
 
+// "Top tables ahead" — surfaces a curated set of Michelin-recognized restaurants
+// for each city the user is travelling to soon. Toggle the horizon between
+// 30 / 60 / 90 days to let people start planning reservations further out.
+// One city's horizontal restaurant rail. Lives in its own component so the
+// scroll ref + arrow-button enable/disable state are scoped per city.
+// Builds the proxy URL for the Google Places photo. The cuisine-generic image
+// is passed in as `fallback` so the card always renders something even if the
+// API has no result, no key, or fails.
+function photoEndpoint(r, city, fallbackUrl) {
+  const qs = new URLSearchParams({
+    name: r.name || "",
+    city: city || "",
+    fallback: fallbackUrl || "",
+  });
+  return `/api/restaurant-photo?${qs.toString()}`;
+}
+
+// Pulls the official website for every pick in this rail. Cached in localStorage
+// per (name|city) for 30 days, then edge-cached on Vercel — so this fans out
+// once and then is effectively free.
+function useRestaurantWebsites(city, picks) {
+  const [sites, setSites] = useState({}); // { [restaurantName]: url | null }
+
+  useEffect(() => {
+    let cancelled = false;
+    const TTL = 30 * 86400 * 1000;
+    const fetchAll = async () => {
+      const out = {};
+      await Promise.all((picks || []).slice(0, 10).map(async (r) => {
+        const cacheKey = `restWeb:${r.name}|${city}`;
+        try {
+          const raw = typeof localStorage !== "undefined" ? localStorage.getItem(cacheKey) : null;
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed?.t && Date.now() - parsed.t < TTL) {
+              out[r.name] = parsed.url || null;
+              return;
+            }
+          }
+        } catch { /* localStorage parse error — fall through to network */ }
+        try {
+          const qs = new URLSearchParams({ name: r.name, city: city || "" });
+          const res = await fetch(`/api/restaurant-website?${qs}`);
+          const data = await res.json();
+          const url = data?.url || null;
+          out[r.name] = url;
+          try { localStorage.setItem(cacheKey, JSON.stringify({ url, t: Date.now() })); } catch { /* quota exceeded — ignore */ }
+        } catch {
+          out[r.name] = null;
+        }
+      }));
+      if (!cancelled) setSites(out);
+    };
+    fetchAll();
+    return () => { cancelled = true; };
+  }, [city, picks]);
+
+  return sites;
+}
+
+function CityRail({ city, tripName, daysAway, picks, css, dv, isMobile, restaurantPhoto, ActionLink }) {
+  const railRef = useRef(null);
+  const [canLeft, setCanLeft] = useState(false);
+  const [canRight, setCanRight] = useState(true);
+  const websites = useRestaurantWebsites(city, picks);
+
+  const updateArrows = () => {
+    const el = railRef.current;
+    if (!el) return;
+    setCanLeft(el.scrollLeft > 4);
+    setCanRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  };
+
+  useEffect(() => {
+    const el = railRef.current;
+    if (!el) return;
+    updateArrows();
+    el.addEventListener("scroll", updateArrows, { passive: true });
+    window.addEventListener("resize", updateArrows);
+    return () => {
+      el.removeEventListener("scroll", updateArrows);
+      window.removeEventListener("resize", updateArrows);
+    };
+  }, []);
+
+  const scrollBy = (dir) => {
+    const el = railRef.current;
+    if (!el) return;
+    // Roughly one card + gap per click.
+    const delta = (isMobile ? 220 : 240) * dir;
+    el.scrollBy({ left: delta, behavior: "smooth" });
+  };
+
+  const ArrowBtn = ({ dir, enabled }) => (
+    <button
+      onClick={() => scrollBy(dir)}
+      disabled={!enabled}
+      aria-label={dir < 0 ? "Scroll left" : "Scroll right"}
+      style={{
+        position: "absolute", top: "50%", transform: "translateY(-50%)",
+        [dir < 0 ? "left" : "right"]: -14,
+        width: 36, height: 36, borderRadius: 999,
+        background: dv.paper, border: `1px solid ${dv.cream}`,
+        color: enabled ? css.text : css.text3,
+        display: "grid", placeItems: "center",
+        cursor: enabled ? "pointer" : "default",
+        opacity: enabled ? 1 : 0.4,
+        boxShadow: "0 2px 10px rgba(0,0,0,0.12)",
+        transition: "opacity 0.2s, transform 0.2s",
+        zIndex: 4,
+      }}
+      onMouseEnter={e => { if (enabled) e.currentTarget.style.transform = "translateY(-50%) scale(1.06)"; }}
+      onMouseLeave={e => { e.currentTarget.style.transform = "translateY(-50%)"; }}
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        {dir < 0 ? <polyline points="15 18 9 12 15 6" /> : <polyline points="9 18 15 12 9 6" />}
+      </svg>
+    </button>
+  );
+
+  return (
+    // minWidth: 0 lets this grid item shrink to its track width — without it
+    // the inner overflow-x scroller can't activate because the grid item itself
+    // expands to fit the rail's natural width (~1800px on a 390px viewport).
+    <div style={{ minWidth: 0 }}>
+      {/* Section header */}
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: css.accent, marginBottom: 4 }}>{city}</div>
+          <div style={{ fontFamily: "'Fraunces', serif", fontSize: isMobile ? 17 : 19, color: css.text, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tripName}</div>
+        </div>
+        {daysAway !== null && (
+          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: css.text3, letterSpacing: "0.08em", textTransform: "uppercase" }}>in {daysAway} {daysAway === 1 ? "day" : "days"}</div>
+        )}
+      </div>
+
+      {/* Rail wrapper holds the arrows. minWidth: 0 here too — needed because
+          this div is the immediate parent of the scroller. */}
+      <div style={{ position: "relative", minWidth: 0 }}>
+        <div ref={railRef} style={{
+          display: "flex", gap: 12, overflowX: "auto", overflowY: "hidden",
+          paddingBottom: 6, scrollSnapType: "x proximity", WebkitOverflowScrolling: "touch",
+          scrollbarWidth: "none",
+          // Explicit touch-action keeps iOS from getting confused between the
+          // page's vertical scroll and the rail's horizontal one.
+          touchAction: "pan-x pan-y",
+          marginLeft: isMobile ? -16 : 0, marginRight: isMobile ? -16 : 0,
+          paddingLeft: isMobile ? 16 : 0, paddingRight: isMobile ? 16 : 0,
+        }}>
+          {picks.slice(0, 10).map((r) => (
+            <div key={r.name}
+              style={{
+                position: "relative", flexShrink: 0, scrollSnapAlign: "start",
+                width: isMobile ? 180 : 220,
+                height: isMobile ? 200 : 230,
+                borderRadius: 14, overflow: "hidden",
+                background: "#1a1a1a", border: `1px solid ${dv.cream}`,
+                boxShadow: "0 1px 8px rgba(0,0,0,0.08)",
+                transition: "transform 0.25s ease, box-shadow 0.25s ease",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 10px 26px rgba(0,0,0,0.14)"; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 1px 8px rgba(0,0,0,0.08)"; }}>
+              <img
+                src={photoEndpoint(r, city, restaurantPhoto(r))}
+                alt={r.name}
+                loading="lazy"
+                onError={(e) => {
+                  // If our proxy ever 5xxs, fall back to the cuisine image directly.
+                  const fb = restaurantPhoto(r);
+                  if (e.currentTarget.src !== fb) e.currentTarget.src = fb;
+                }}
+                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", filter: "saturate(0.92) contrast(1.04)" }} />
+              <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(18,15,11,0.94) 0%, rgba(18,15,11,0.55) 42%, rgba(18,15,11,0.14) 72%, rgba(18,15,11,0.06) 100%)" }} />
+
+              {/* Top-right — stars + 50 Best */}
+              <div style={{ position: "absolute", top: 10, right: 10, display: "flex", gap: 5, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end", maxWidth: "calc(100% - 20px)" }}>
+                {r.stars > 0 && (
+                  <span style={{ display: "inline-flex", gap: 2, alignItems: "center", background: "rgba(0,0,0,0.32)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", border: "1px solid rgba(255,255,255,0.26)", borderRadius: 999, padding: "3px 7px" }}>
+                    {Array.from({ length: r.stars }).map((_, i) => (
+                      <svg key={i} width="9" height="9" viewBox="0 0 24 24" fill={dv.gold || "#B8924A"} stroke="none"><path d="M12 2l2.9 6.3 6.9.7-5.2 4.6 1.5 6.8L12 17.8 5.9 21l1.5-6.8L2.2 9l6.9-.7z" /></svg>
+                    ))}
+                  </span>
+                )}
+                {r.bestList && (
+                  <span style={{
+                    fontFamily: "'JetBrains Mono', monospace", fontSize: 8, letterSpacing: "0.12em", textTransform: "uppercase",
+                    color: "#F4F1EC", background: "rgba(0,0,0,0.32)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
+                    border: "1px solid rgba(255,255,255,0.26)", borderRadius: 999, padding: "3px 7px",
+                  }}>50 Best</span>
+                )}
+              </div>
+
+              {/* Bottom — name, meta, book buttons */}
+              <div style={{ position: "absolute", left: 12, right: 12, bottom: 12 }}>
+                <div style={{ fontFamily: "'Fraunces', serif", fontSize: isMobile ? 15 : 17, fontWeight: 500, lineHeight: 1.1, letterSpacing: "-0.01em", color: "#FBF8F3", textShadow: "0 1px 12px rgba(0,0,0,0.45)", marginBottom: 4, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{r.name}</div>
+                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.04em", color: "rgba(244,241,236,0.85)", marginBottom: 9, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {[r.cuisine, r.area].filter(Boolean).join(" · ")}
+                </div>
+                <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                  <ActionLink href={resyUrl(r.name, city)} label="Resy" />
+                  <ActionLink href={openTableUrl(r.name, city)} label="OpenTable" />
+                  {websites[r.name]
+                    ? <ActionLink href={websites[r.name]} label="Website" />
+                    : <ActionLink href={googleUrl(r.name, city)} label="Google" />}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Arrow buttons — hidden on mobile (native scroll is fine). */}
+        {!isMobile && <ArrowBtn dir={-1} enabled={canLeft} />}
+        {!isMobile && <ArrowBtn dir={1} enabled={canRight} />}
+      </div>
+    </div>
+  );
+}
+
+function DiningPicks({ css, dv, isMobile, trips }) {
+  const [horizon, setHorizon] = useState(90);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+
+  const upcoming = (trips || []).filter(t => {
+    const ts = t.date || (t.segments || []).map(s => s.date).filter(Boolean).sort()[0] || "";
+    if (!ts) return false;
+    const d = Math.ceil((new Date(ts + "T12:00:00") - today) / 86400000);
+    return d >= 0 && d <= horizon;
+  }).sort((a, b) => {
+    const da = a.date || (a.segments || []).map(s => s.date).filter(Boolean).sort()[0] || "";
+    const db = b.date || (b.segments || []).map(s => s.date).filter(Boolean).sort()[0] || "";
+    return da.localeCompare(db);
+  });
+  if (upcoming.length === 0) return null;
+
+  // One card per city — if two trips both go to Tokyo we don't show the same picks twice.
+  const seen = new Set();
+  const cityCards = [];
+  upcoming.forEach(t => {
+    const loc = t.location || t.tripName || t.trip_name || "";
+    const pick = picksForCity(loc);
+    if (!pick || seen.has(pick.city)) return;
+    seen.add(pick.city);
+    cityCards.push({ trip: t, city: pick.city, picks: pick.picks });
+  });
+
+  const HorizonPill = ({ days, label }) => {
+    const on = horizon === days;
+    return (
+      <button onClick={() => setHorizon(days)} style={{
+        padding: "6px 12px", borderRadius: 100,
+        border: `1px solid ${on ? css.text : css.border}`,
+        background: on ? css.text : "transparent",
+        color: on ? dv.bone : css.text2,
+        fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.12em",
+        textTransform: "uppercase", cursor: "pointer", transition: "all 0.18s",
+      }}>{label}</button>
+    );
+  };
+
+  const Stars = ({ n }) => n > 0 ? (
+    <span style={{ display: "inline-flex", gap: 2, transform: "translateY(1px)" }}>
+      {Array.from({ length: n }).map((_, i) => (
+        <svg key={i} width="11" height="11" viewBox="0 0 24 24" fill={dv.gold || "#B8924A"} stroke="none"><path d="M12 2l2.9 6.3 6.9.7-5.2 4.6 1.5 6.8L12 17.8 5.9 21l1.5-6.8L2.2 9l6.9-.7z" /></svg>
+      ))}
+    </span>
+  ) : null;
+
+  const BestChip = () => (
+    <span style={{
+      fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase",
+      color: dv.ink, background: "transparent",
+      border: `1px solid ${dv.cream}`, borderRadius: 100,
+      padding: "2px 7px", whiteSpace: "nowrap",
+    }}>50 Best</span>
+  );
+
+  const ActionLink = ({ href, label }) => (
+    <a href={href} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
+      style={{
+        fontFamily: "'JetBrains Mono', monospace", fontSize: 8.5, letterSpacing: "0.1em", textTransform: "uppercase",
+        color: "#F4F1EC", textDecoration: "none",
+        background: "rgba(0,0,0,0.32)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
+        border: "1px solid rgba(255,255,255,0.26)", borderRadius: 999,
+        padding: "3px 8px", whiteSpace: "nowrap", transition: "all 0.18s",
+      }}
+      onMouseEnter={e => { e.currentTarget.style.background = "rgba(0,0,0,0.55)"; }}
+      onMouseLeave={e => { e.currentTarget.style.background = "rgba(0,0,0,0.32)"; }}>
+      {label}
+    </a>
+  );
+
+  // Cuisine-themed Unsplash photos. Picked deterministically per restaurant so
+  // each card in the rail looks distinct without needing 200 per-restaurant shots.
+  // w=520 is plenty for the small ~220px cards (2x DPR) and keeps payloads small.
+  const Q = "?w=520&q=75&auto=format&fit=crop";
+  const CUISINE_PHOTOS = {
+    japanese: [
+      "https://images.unsplash.com/photo-1553621042-f6e147245754" + Q, // sushi
+      "https://images.unsplash.com/photo-1579871494447-9811cf80d66c" + Q, // omakase
+      "https://images.unsplash.com/photo-1580822184713-fc5400e7fe10" + Q, // kaiseki
+      "https://images.unsplash.com/photo-1617196034796-73dfa7b1fd56" + Q, // sushi counter
+    ],
+    french: [
+      "https://images.unsplash.com/photo-1414235077428-338989a2e8c0" + Q, // plated
+      "https://images.unsplash.com/photo-1559339352-11d035aa65de" + Q, // french bistro
+      "https://images.unsplash.com/photo-1551782450-a2132b4ba21d" + Q, // tasting
+    ],
+    italian: [
+      "https://images.unsplash.com/photo-1473093295043-cdd812d0e601" + Q, // pasta
+      "https://images.unsplash.com/photo-1551183053-bf91a1d81141" + Q, // italian fine
+      "https://images.unsplash.com/photo-1574071318508-1cdbab80d002" + Q, // pizza/italian
+    ],
+    spanish: [
+      "https://images.unsplash.com/photo-1515443961218-a51367888e4b" + Q, // tapas
+      "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb" + Q, // paella
+    ],
+    chinese: [
+      "https://images.unsplash.com/photo-1525755662778-989d0524087e" + Q, // dim sum
+      "https://images.unsplash.com/photo-1496116218417-1a781b1c416c" + Q, // chinese plated
+    ],
+    indian: [
+      "https://images.unsplash.com/photo-1585937421612-70a008356fbe" + Q, // indian thali
+      "https://images.unsplash.com/photo-1601050690597-df0568f70950" + Q, // indian plated
+    ],
+    thai: [
+      "https://images.unsplash.com/photo-1559314809-0d155014e29e" + Q,
+      "https://images.unsplash.com/photo-1569718212165-3a8278d5f624" + Q,
+    ],
+    korean: [
+      "https://images.unsplash.com/photo-1583224964978-2257b960c3d3" + Q,
+      "https://images.unsplash.com/photo-1498654896293-37aacf113fd9" + Q,
+    ],
+    mexican: [
+      "https://images.unsplash.com/photo-1551504734-5ee1c4a1479b" + Q,
+      "https://images.unsplash.com/photo-1565299585323-38d6b0865b47" + Q,
+    ],
+    nordic: [
+      "https://images.unsplash.com/photo-1432139509613-5c4255815697" + Q, // nordic plate
+      "https://images.unsplash.com/photo-1559847844-5315695dadae" + Q, // foraged
+    ],
+    steakhouse: [
+      "https://images.unsplash.com/photo-1546964124-0cce460f38ef" + Q, // steak
+      "https://images.unsplash.com/photo-1558030006-450675393462" + Q,
+    ],
+    seafood: [
+      "https://images.unsplash.com/photo-1559339352-11d035aa65de" + Q,
+      "https://images.unsplash.com/photo-1599491048894-39bd11ce63cd" + Q,
+    ],
+    default: [
+      "https://images.unsplash.com/photo-1414235077428-338989a2e8c0" + Q, // fine dining
+      "https://images.unsplash.com/photo-1552566626-52f8b828add9" + Q, // dim restaurant
+      "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4" + Q, // restaurant interior
+      "https://images.unsplash.com/photo-1559925393-8be0ec4767c8" + Q, // plate art
+      "https://images.unsplash.com/photo-1592861956120-e524fc739696" + Q, // tasting menu
+    ],
+  };
+
+  const cuisineKey = (c) => {
+    const s = String(c || "").toLowerCase();
+    if (s.includes("sushi") || s.includes("kaiseki") || s.includes("japanese") || s.includes("omakase") || s.includes("yakitori") || s.includes("tempura")) return "japanese";
+    if (s.includes("french") || s.includes("bistro") || s.includes("brasserie")) return "french";
+    if (s.includes("italian") || s.includes("pasta") || s.includes("trattoria")) return "italian";
+    if (s.includes("spanish") || s.includes("basque") || s.includes("catalan") || s.includes("tapas")) return "spanish";
+    if (s.includes("cantonese") || s.includes("chinese") || s.includes("sichuan") || s.includes("dim sum")) return "chinese";
+    if (s.includes("indian")) return "indian";
+    if (s.includes("thai")) return "thai";
+    if (s.includes("korean")) return "korean";
+    if (s.includes("mexican")) return "mexican";
+    if (s.includes("nordic") || s.includes("scandinavian") || s.includes("danish") || s.includes("swedish")) return "nordic";
+    if (s.includes("steak") || s.includes("chophouse")) return "steakhouse";
+    if (s.includes("seafood") || s.includes("fish")) return "seafood";
+    return "default";
+  };
+
+  // Stable string hash (djb2-ish) so each restaurant gets a consistent photo.
+  const hashStr = (s) => {
+    let h = 5381;
+    for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+    return Math.abs(h);
+  };
+
+  const restaurantPhoto = (r) => {
+    const pool = CUISINE_PHOTOS[cuisineKey(r.cuisine)] || CUISINE_PHOTOS.default;
+    return pool[hashStr(r.name) % pool.length];
+  };
+
+  return (
+    <div style={{ marginBottom: 32 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", margin: "32px 0 20px", paddingBottom: 14, borderBottom: `1px solid ${css.border}`, flexWrap: "wrap", gap: 12 }}>
+        <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: isMobile ? 22 : 28, fontWeight: 400, letterSpacing: "-0.02em", color: css.text, margin: 0 }}>
+          Top Restaurants Ahead <em style={{ fontStyle: "italic", color: css.text3, fontSize: isMobile ? 13 : 18, marginLeft: 4 }}>— start booking the reservations.</em>
+        </h2>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          <HorizonPill days={30} label="30d" />
+          <HorizonPill days={90} label="90d" />
+          <HorizonPill days={180} label="6mo" />
+          <HorizonPill days={365} label="1yr" />
+        </div>
+      </div>
+
+      {cityCards.length === 0 ? (
+        <div style={{ padding: "32px 20px", textAlign: "center", background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}` }}>
+          <p style={{ fontFamily: "'Fraunces', serif", fontStyle: "italic", fontSize: 15, color: dv.taupe, margin: 0 }}>
+            No Michelin or 50 Best picks yet for the cities in your next {horizon} days. The guide is being added to over time.
+          </p>
+        </div>
+      ) : (
+        <div style={{ display: "grid", gap: 28 }}>
+          {cityCards.map(({ trip, city, picks }) => {
+            const ts = trip.date || (trip.segments || []).map(s => s.date).filter(Boolean).sort()[0] || "";
+            const daysAway = ts ? Math.max(0, Math.ceil((new Date(ts + "T12:00:00") - today) / 86400000)) : null;
+            const tripName = trip.tripName || trip.trip_name || trip.location || "Trip";
+            return (
+              <CityRail
+                key={trip.id + "_" + city}
+                city={city} tripName={tripName} daysAway={daysAway} picks={picks}
+                css={css} dv={dv} isMobile={isMobile}
+                restaurantPhoto={restaurantPhoto}
+                ActionLink={ActionLink}
+              />
+            );
+          })}
+        </div>
+      )}
+
+      <p style={{ fontFamily: "'Fraunces', serif", fontStyle: "italic", fontSize: 12, color: dv.stone, marginTop: 18, textAlign: "center" }}>
+        Sourced from recent Michelin Guides and the World's 50 Best top 100. Photos are cuisine-illustrative, not of each venue. Verify ratings and availability before you book.
+      </p>
+    </div>
+  );
+}
+
 export function renderDashboard(s) {
   const {
     css, isMobile, user, trips, expenses, sharedTrips, darkMode,
@@ -404,6 +863,7 @@ export function renderDashboard(s) {
     setPendingTripJump,
     vouchers = [], setShowVoucherModal, markVoucherRedeemed,
     expenseReportMembership, openReport,
+    openDirections,
   } = s;
   const D = darkMode;
   // When `embeddedTab` is passed (e.g. the My Trips hub renders the Packing
@@ -726,91 +1186,8 @@ export function renderDashboard(s) {
           );
         })()}
 
-        {/* ── Search bar + menu pill (Travel Analytics · + · Inbox) ──
-            One line: search opens the global overlay; the pill holds the two
-            dashboard sub-views plus a (+) that drops down Add Trip / Add
-            Expense / Add Booking. Sticky so it stays reachable while scrolling.
-            Shown on all dashboard sub-views (not embedded packing). ── */}
-        {!embeddedTab && (() => {
-          const isAnalytics = dashSubTab === "reports";
-          const isInbox = dashSubTab === "inbox";
-          const inboxBadge = (savedItineraries.length + expenses.filter(e => !e.tripId && !e._demo).length) || 0;
-          const addItems = [
-            { label: "Add Trip", color: "#3b82f6", onClick: () => { setShowCreateTrip(true); setQuickAddOpen?.(false); },
-              icon: <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1L11 12l-2 3H6l-2 2 4-1 4-1 2 7.5 2-2v-3l-3-2 4.8-7.3" /> },
-            { label: "Add Expense", color: "#B8924A", onClick: () => { setShowAddExpense(true); setQuickAddOpen?.(false); },
-              icon: <><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></> },
-            { label: "Add Booking", color: "#14b8a6", onClick: () => { setShowPasteItinerary(true); setQuickAddOpen?.(false); },
-              icon: <><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></> },
-          ];
-          const circle = (active, activeColor) => ({
-            width: 38, height: 38, flexShrink: 0, borderRadius: "50%", border: "none", cursor: "pointer",
-            display: "grid", placeItems: "center", transition: "all 0.2s", position: "relative",
-            background: active ? activeColor : "transparent", color: active ? "#fff" : css.text3,
-          });
-          return (
-            <div style={{
-              position: "sticky", top: 0, zIndex: 100, marginBottom: 24, marginTop: -4,
-              paddingTop: 8, paddingBottom: 8,
-              display: "flex", alignItems: "center", gap: 10,
-              background: D ? "rgba(15,15,15,0.92)" : "rgba(255,255,255,0.92)",
-              backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
-            }}>
-              {/* Search bar — opens the global search overlay */}
-              <button onClick={() => setShowSearch?.(true)} style={{
-                flex: 1, display: "flex", alignItems: "center", gap: 10, minWidth: 0,
-                padding: "13px 16px", borderRadius: 999,
-                border: `1px solid ${css.border}`, background: css.surface,
-                cursor: "pointer", textAlign: "left", transition: "border-color 0.2s",
-                boxShadow: css.shadow,
-              }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = css.accent; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = css.border; }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={css.text3} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <span style={{ color: css.text3, fontSize: 14, fontFamily: "'Inter Tight', sans-serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{isMobile ? "Search…" : "Search trips, expenses, programs, airports…"}</span>
-              </button>
-              {/* Menu pill — Travel Analytics · + · Inbox */}
-              <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0, padding: 5, borderRadius: 999, border: `1px solid ${css.border}`, background: css.surface, boxShadow: css.shadow }}>
-                {/* Travel Analytics */}
-                <button title="Travel Analytics" onClick={() => { setDashSubTab(isAnalytics ? "overview" : "reports"); setQuickAddOpen?.(false); }} style={circle(isAnalytics, "#14b8a6")}
-                  onMouseEnter={e => { if (!isAnalytics) e.currentTarget.style.background = D ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)"; }}
-                  onMouseLeave={e => { if (!isAnalytics) e.currentTarget.style.background = "transparent"; }}>
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="6" y1="20" x2="6" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="14"/></svg>
-                </button>
-                {/* + with dropdown */}
-                <div style={{ position: "relative" }}>
-                  <button title="Quick add" onClick={() => setQuickAddOpen?.(!quickAddOpen)} style={{ ...circle(false), background: quickAddOpen ? css.accent : (D ? css.text : "#15130F"), color: quickAddOpen ? "#fff" : (D ? "#15130F" : "#F4F1EC") }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" style={{ transform: quickAddOpen ? "rotate(45deg)" : "none", transition: "transform 0.25s" }}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                  </button>
-                  {quickAddOpen && (
-                    <>
-                      <div onClick={() => setQuickAddOpen?.(false)} style={{ position: "fixed", inset: 0, zIndex: 150 }} />
-                      <div style={{ position: "absolute", top: "calc(100% + 10px)", right: 0, zIndex: 200, background: css.surface, border: `1px solid ${css.border}`, borderRadius: 12, boxShadow: css.shadowHover, padding: 6, minWidth: 190, animation: "c-fade-up 0.2s ease" }}>
-                        {addItems.map(item => (
-                          <button key={item.label} onClick={item.onClick} style={{ display: "flex", alignItems: "center", gap: 11, width: "100%", padding: "11px 12px", border: "none", background: "transparent", cursor: "pointer", borderRadius: 8, color: css.text, fontFamily: "'JetBrains Mono', 'Geist Mono', monospace", fontSize: 11, fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", textAlign: "left" }}
-                            onMouseEnter={e => e.currentTarget.style.background = D ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)"}
-                            onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                            <span style={{ width: 30, height: 30, flexShrink: 0, borderRadius: 8, display: "grid", placeItems: "center", background: `${item.color}14`, color: item.color }}>
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">{item.icon}</svg>
-                            </span>
-                            {item.label}
-                          </button>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </div>
-                {/* Inbox */}
-                <button title="Inbox" onClick={() => { setDashSubTab(isInbox ? "overview" : "inbox"); setQuickAddOpen?.(false); }} style={circle(isInbox, "#22c55e")}
-                  onMouseEnter={e => { if (!isInbox) e.currentTarget.style.background = D ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)"; }}
-                  onMouseLeave={e => { if (!isInbox) e.currentTarget.style.background = "transparent"; }}>
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg>
-                  {inboxBadge > 0 && <span style={{ position: "absolute", top: -1, right: -1, minWidth: 16, height: 16, padding: "0 4px", borderRadius: 8, background: css.accent, color: "#fff", fontSize: 9, fontWeight: 700, display: "grid", placeItems: "center", fontFamily: "'JetBrains Mono', monospace" }}>{inboxBadge}</span>}
-                </button>
-              </div>
-            </div>
-          );
-        })()}
+        {/* Top-of-dashboard search + menu pill are gone — the Ask Continuum bar
+            and the Analytics/+/Inbox pill both live at the bottom of every page. */}
 
         {/* Alert bar */}
         {pushSupported && !pushEnabled && dashSubTab === "overview" && (
@@ -992,7 +1369,7 @@ export function renderDashboard(s) {
         {/* Next 30 Days rail removed — merged into the Upcoming Trips horizontal rail below. */}
 
         {/* ── Up next — boarding-pass card (within 3 days) ── */}
-        <NextFlightCard css={css} dv={dv} D={D} isMobile={isMobile} trips={trips} getFlightLiveStatus={getFlightLiveStatus} AIRPORT_CITY={AIRPORT_CITY} linkedAccounts={linkedAccounts} user={user} setActiveView={setActiveView} setTripDetailId={setTripDetailId} setTripDetailSegIdx={setTripDetailSegIdx} />
+        <NextFlightCard css={css} dv={dv} D={D} isMobile={isMobile} trips={trips} getFlightLiveStatus={getFlightLiveStatus} AIRPORT_CITY={AIRPORT_CITY} linkedAccounts={linkedAccounts} user={user} setActiveView={setActiveView} setTripDetailId={setTripDetailId} setTripDetailSegIdx={setTripDetailSegIdx} openDirections={openDirections} />
 
         {/* ── Upcoming Trips — Editorial Timeline ── */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", margin: "32px 0 20px", paddingBottom: 14, borderBottom: `1px solid ${css.border}` }}>
@@ -1121,7 +1498,10 @@ export function renderDashboard(s) {
           })()}
         </div>
 
-        {/* Ask Continuum (AI assistant) removed per request — the top search bar covers lookups. */}
+        {/* ── Top tables ahead — Michelin picks for upcoming trip cities ── */}
+        <DiningPicks css={css} dv={dv} isMobile={isMobile} trips={trips} />
+
+        {/* Ask Continuum is now a global floating pill (see AskContinuumPill in App.jsx). */}
 
         {/* Trip Highlights rail removed per request. */}
 

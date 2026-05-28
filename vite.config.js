@@ -61,6 +61,10 @@ export default defineConfig({
         // Only precache static assets (icons, images) — NOT JS/CSS bundles
         // JS/CSS have content hashes in filenames and are fetched fresh via NetworkFirst
         globPatterns: ['**/*.{ico,png,svg,woff2}'],
+        // Large landing-page screenshots (image*.png at 1290x2796) blow past the
+        // 2 MiB precache cap. They're marketing-only and fetched on demand — let
+        // the runtime cache pick them up rather than baking them into the SW.
+        globIgnores: ['image*.png', 'ipad*.png'],
         navigateFallback: null,
         // Clean up old precaches on activate
         cleanupOutdatedCaches: true,

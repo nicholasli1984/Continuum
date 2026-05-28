@@ -6,7 +6,8 @@ import SegmentDropZone from "../components/SegmentDropZone";
 import ReportedBadge from "../components/ReportedBadge";
 import DayTimeline from "../components/DayTimeline";
 import TripSelector from "../components/TripSelector";
-import TripSearchBar from "../components/TripSearchBar";
+// TripSearchBar removed — the global Ask Continuum bar at the bottom of the
+// app handles trip lookup ("show me my Tokyo trip") plus open-ended Q&A.
 import { cityPhoto } from "../constants/cityPhotos";
 
 export function renderTrips(s) {
@@ -727,7 +728,6 @@ export function renderTrips(s) {
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end", paddingBottom: 8 }}>
-          <TripSearchBar css={css} dv={dv} isMobile={isMobile} trips={trips} value={searchQuery} onChange={setSearchQuery} onSelect={(t) => { setTripDetailId(t.id); setTripDetailSegIdx(0); }} />
           <div style={{ position: "relative" }}>
             <button onClick={() => document.getElementById("cal-month-picker")?.showPicker?.()} style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "11px 18px", fontFamily: dv.mono, fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", border: `1px solid ${dv.cream}`, background: dv.paper, color: css.text, cursor: "pointer", transition: "all 0.25s", borderRadius: 10 }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = css.text; }} onMouseLeave={e => { e.currentTarget.style.borderColor = dv.cream; }}>

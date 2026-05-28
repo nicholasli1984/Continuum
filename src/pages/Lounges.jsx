@@ -19,7 +19,8 @@ export function renderLounges(s) {
     loungeAccessRoute, setLoungeAccessRoute, loungePhotos, loungeVisits,
     getLoungeAccess, saveLoungeVisit,
     AIRPORT_CITY, trips, sharedTrips,
-    loungeShowAllTerminals, setLoungeShowAllTerminals } = s;
+    loungeShowAllTerminals, setLoungeShowAllTerminals,
+    openDirections } = s;
   const D = darkMode;
 
   const dv = {
@@ -412,6 +413,7 @@ export function renderLounges(s) {
               renderStars={renderStars}
               networkAccent={networkAccent}
               saveLoungeVisit={saveLoungeVisit}
+              openDirections={openDirections}
               hasAccess
             />
           )}
@@ -436,6 +438,7 @@ export function renderLounges(s) {
                 renderStars={renderStars}
                 networkAccent={networkAccent}
                 saveLoungeVisit={saveLoungeVisit}
+                openDirections={openDirections}
                 hasAccess={false}
               />
             </>
@@ -497,7 +500,7 @@ function selectStyle(dv) {
   };
 }
 
-function LoungeLedger({ dv, isMobile, lounges, expandedId, setExpandedId, loungePhotos, loungeAirport, renderStars, networkAccent, saveLoungeVisit, hasAccess }) {
+function LoungeLedger({ dv, isMobile, lounges, expandedId, setExpandedId, loungePhotos, loungeAirport, renderStars, networkAccent, saveLoungeVisit, hasAccess, openDirections }) {
   return (
     <div style={{ background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, marginBottom: 40 }}>
       {lounges.map((lounge, idx) => {
@@ -625,6 +628,21 @@ function LoungeLedger({ dv, isMobile, lounges, expandedId, setExpandedId, lounge
                       onMouseLeave={e => e.currentTarget.style.background = dv.ink}
                     >Log visit</button>
                   )}
+                  {lounge.placeQuery && openDirections && (
+                    <button onClick={(e) => { e.stopPropagation(); openDirections(lounge, loungeAirport); }}
+                      style={{
+                        padding: "11px 18px", border: `1px solid ${dv.cream}`, background: "transparent",
+                        color: dv.ink, fontFamily: dv.mono, fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase",
+                        cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8, transition: "all 0.25s",
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = dv.ink; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = dv.cream; }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M5 9l4-2 6 2 4-2v10l-4 2-6-2-4 2z" /><line x1="9" y1="7" x2="9" y2="17" /><line x1="15" y1="9" x2="15" y2="19" />
+                      </svg>
+                      Walk Here
+                    </button>
+                  )}
                   {lounge.placeQuery && (
                     <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lounge.placeQuery)}`} target="_blank" rel="noopener noreferrer" style={{
                       padding: "11px 18px", border: `1px solid ${dv.cream}`, background: "transparent",
@@ -634,7 +652,7 @@ function LoungeLedger({ dv, isMobile, lounges, expandedId, setExpandedId, lounge
                       onMouseEnter={e => { e.currentTarget.style.color = dv.ink; e.currentTarget.style.borderColor = dv.ink; }}
                       onMouseLeave={e => { e.currentTarget.style.color = dv.taupe; e.currentTarget.style.borderColor = dv.cream; }}
                     >
-                      Google Maps
+                      Open in Maps
                       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" />
                       </svg>

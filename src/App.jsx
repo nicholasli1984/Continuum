@@ -27,6 +27,9 @@ import { renderAwardSweetSpots as renderAwardSweetSpotsPage } from "./pages/Awar
 // Premium / paid-tier system removed — see git history if reintroducing.
 import Tour from "./components/tour/Tour";
 import VoucherModal from "./components/VoucherModal";
+import AskContinuumPill from "./components/AskContinuumPill";
+import LoungeDirectionsModal from "./components/LoungeDirectionsModal";
+import { FormModal, FormRow, FormGrid, fmInputStyle, FormPillGroup } from "./components/FormModal";
 import { snapReceiptNative, isNative } from "./utils/nativeCamera";
 import { registerNativePush, openAppSettings } from "./utils/nativePush";
 import { nativeSignIn, nativeGoogleEnabled } from "./utils/nativeAuth";
@@ -1546,6 +1549,9 @@ export default function EliteStatusTracker() {
   const [loungeSubTab, setLoungeSubTab] = useState("directory");
   const [loungePhotos, setLoungePhotos] = useState({});
   const [loungeExpandedId, setLoungeExpandedId] = useState(null);
+  // Lounge currently displayed in the in-app walking-directions modal (or null).
+  // Stored as { lounge, airport } so we don't have to re-look-up by id.
+  const [loungeDirections, setLoungeDirections] = useState(null);
   const [loungeVisits, setLoungeVisits] = useState(() => { try { return JSON.parse(localStorage.getItem("continuum_lounge_visits") || "[]"); } catch { return []; } });
   const [loungeAccessAirline, setLoungeAccessAirline] = useState(""); // kept for backward compat
   const [loungeAccessTier, setLoungeAccessTier] = useState(""); // kept for backward compat
@@ -5996,15 +6002,14 @@ Start by introducing yourself briefly in-character with personality, and give an
 
     // ?v= bumped whenever the JPEGs are replaced in /public so phones don't
     // serve the stale cached version after a re-screenshot session.
-    const _imgV = "3";
+    const _imgV = "5";
     const LANDING_SCREENS = [
-      { src: `/Platform5.jpeg?v=${_imgV}`,    alt: "Dashboard" },
-      { src: `/Platform3.jpeg?v=${_imgV}`,    alt: "Trips" },
-      { src: `/Platform%204.jpeg?v=${_imgV}`, alt: "Forwarding Desk" },
-      { src: `/Platform2.jpeg?v=${_imgV}`,    alt: "Expense Split" },
-      { src: `/Platform7.jpeg?v=${_imgV}`,    alt: "Expense Split detail" },
-      { src: `/Platform1.jpeg?v=${_imgV}`,    alt: "Lounges" },
-      { src: `/Platform6.jpeg?v=${_imgV}`,    alt: "Alliances" },
+      { src: `/image6.png?v=${_imgV}`, alt: "Dashboard" },
+      { src: `/image7.png?v=${_imgV}`, alt: "My Trips" },
+      { src: `/image3.png?v=${_imgV}`, alt: "Trip itinerary" },
+      { src: `/image5.png?v=${_imgV}`, alt: "Programs" },
+      { src: `/image4.png?v=${_imgV}`, alt: "Lounges" },
+      { src: `/image2.png?v=${_imgV}`, alt: "Feedback" },
     ];
 
     return (
@@ -6356,6 +6361,7 @@ Start by introducing yourself briefly in-character with personality, and give an
     EXPENSE_CATEGORIES, SegIcon,
     nextTrip, upcomingTripsFiltered, allTripsWithShared,
     pushSupported, pushEnabled, enablePushNotifications, pushStatus,
+    openDirections: (lounge, airport) => setLoungeDirections({ lounge, airport }),
     addTripFromItinerary, dismissItinerary, updateItinSeg: (itinId, segIdx, updates) => {
       setSavedItineraries(prev => prev.map(it => it.id !== itinId ? it : { ...it, parsed_segments: it.parsed_segments.map((s, i) => i === segIdx ? { ...s, ...updates } : s) }));
     },
@@ -6426,7 +6432,7 @@ Start by introducing yourself briefly in-character with personality, and give an
   const renderAlliances = () => renderAlliancesPage({ css, isMobile, darkMode, user, linkedAccounts, allPrograms, ProgramLogo, getProjectedStatus, allianceMyProgram, setAllianceMyProgram, allianceMyTierOverride, setAllianceMyTierOverride, allianceCompare, setAllianceCompare, setActiveView });
   const renderInsights = (_previewTab = null) => renderInsightsPage({ css, isMobile, darkMode, user, trips, expenses, linkedAccounts, allPrograms, EXPENSE_CATEGORIES, formatTripDates, getTripExpenses, getTripTotal, getTripName, AIRPORT_CITY, setActiveView, ProgramLogo, transferGoal, setTransferGoal, EXPIRATION_RULES, REDEMPTION_VALUES, CC_TRANSFER_PARTNERS, motion, CARD_BENEFITS_DATA }, _previewTab);
   const renderNews = () => renderNewsPage({ css, isMobile, darkMode, newsLoading, fetchNews, NEWS_SOURCES, newsArticles, newsSourceFilter, setNewsSourceFilter, newsFetched });
-  const renderLounges = () => renderLoungesPage({ css, isMobile, darkMode, user, linkedAccounts, loungeAirport, setLoungeAirport, loungeSearchCode, setLoungeSearchCode, loungeDropdownOpen, setLoungeDropdownOpen, loungeExpandedId, setLoungeExpandedId, loungeFlightAirline, setLoungeFlightAirline, loungeFlightClass, setLoungeFlightClass, loungeAccessRoute, setLoungeAccessRoute, loungePhotos, loungeVisits, setLoungeVisits, getLoungeAccess, saveLoungeVisit, removeLoungeVisit, fetchLoungePhoto, AIRPORT_CITY, showConfirm, trips, sharedTrips, loungeShowAllTerminals, setLoungeShowAllTerminals });
+  const renderLounges = () => renderLoungesPage({ css, isMobile, darkMode, user, linkedAccounts, loungeAirport, setLoungeAirport, loungeSearchCode, setLoungeSearchCode, loungeDropdownOpen, setLoungeDropdownOpen, loungeExpandedId, setLoungeExpandedId, loungeFlightAirline, setLoungeFlightAirline, loungeFlightClass, setLoungeFlightClass, loungeAccessRoute, setLoungeAccessRoute, loungePhotos, loungeVisits, setLoungeVisits, getLoungeAccess, saveLoungeVisit, removeLoungeVisit, fetchLoungePhoto, AIRPORT_CITY, showConfirm, trips, sharedTrips, loungeShowAllTerminals, setLoungeShowAllTerminals, openDirections: (lounge, airport) => setLoungeDirections({ lounge, airport }) });
   const renderExpenseSplit = () => renderExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTimestamp });
   const renderWallet = () => renderWalletPage({ css, isMobile, darkMode, linkedAccounts, ProgramLogo, setActiveView, transferBonuses, userPointCurrencies, benefitsSummary, allCreditCards: LOYALTY_PROGRAMS.creditCards, onEditCardBenefits: (cardId) => { setActiveView("programs"); setExpandedCardId(cardId); }, vouchers, setShowVoucherModal, markVoucherRedeemed });
   const renderAwardSweetSpots = () => renderAwardSweetSpotsPage({ css, isMobile, darkMode, userPointCurrencies });
@@ -6755,14 +6761,9 @@ Start by introducing yourself briefly in-character with personality, and give an
                 {hideShared ? "Shared Off" : "Shared On"}
               </HoverGlowButton>
             )}
-            {/* Global search — opens an overlay that searches trips, expenses,
-                programs, and airports from any hub. */}
-            <button onClick={() => { setShowSearch(true); setGlobalQuery(""); }} title="Search"
-              style={{ width: 34, height: 34, border: `1px solid ${D ? "rgba(255,255,255,0.08)" : "#E2DCCE"}`, background: "transparent", color: D ? "#666" : "#6B6458", cursor: "pointer", display: "grid", placeItems: "center", transition: "all 0.25s" }}
-              onMouseEnter={e => { e.currentTarget.style.color = css.accent; e.currentTarget.style.borderColor = css.accent; e.currentTarget.style.background = css.surface; }}
-              onMouseLeave={e => { e.currentTarget.style.color = D ? "#666" : "#6B6458"; e.currentTarget.style.borderColor = D ? "rgba(255,255,255,0.08)" : "#E2DCCE"; e.currentTarget.style.background = "transparent"; }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            </button>
+            {/* Global search button removed — the floating "Ask Continuum" pill
+                replaces it. The trip filter on the My Trips tab is still there
+                for fast local trip lookup. */}
             {/* Refresh — spins on click */}
             <button id="refreshBtn" onClick={async (e) => { const btn = e.currentTarget; btn.style.transition = "transform 0.6s ease"; btn.style.transform = "rotate(360deg)"; setTimeout(() => { btn.style.transition = "none"; btn.style.transform = ""; }, 650); try { const v = activeView || "dashboard"; const t = tripDetailId ? `&t=${encodeURIComponent(String(tripDetailId))}` : ""; history.replaceState(null, "", `${window.location.pathname}${window.location.search}#v=${v}${t}`); } catch {} if ('serviceWorker' in navigator) { const regs = await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map(r => r.unregister())); } if ('caches' in window) { const keys = await caches.keys(); await Promise.all(keys.map(k => caches.delete(k))); } setTimeout(() => window.location.reload(true), 700); }} title="Refresh"
               style={{ width: 34, height: 34, border: `1px solid ${D ? "rgba(255,255,255,0.08)" : "#E2DCCE"}`, background: "transparent", color: D ? "#666" : "#6B6458", cursor: "pointer", display: "grid", placeItems: "center", transition: "all 0.25s" }}
@@ -6813,7 +6814,7 @@ Start by introducing yourself briefly in-character with personality, and give an
           sideways. Inner sections that need horizontal scrolling (e.g. the
           Trip Highlights rail) declare their own overflowX inside themselves. */}
       <main style={{ flex: 1, overflowY: "auto", overflowX: "hidden", position: "relative", overscrollBehavior: "none", WebkitOverflowScrolling: "touch" }}>
-        <div style={{ maxWidth: 2200, margin: "0 auto", padding: isMobile ? "20px 16px calc(90px + env(safe-area-inset-bottom))" : "32px 40px calc(90px + env(safe-area-inset-bottom))", overflowX: tripDetailId ? "visible" : "clip" }}>
+        <div style={{ maxWidth: 2200, margin: "0 auto", padding: isMobile ? "20px 16px calc(160px + env(safe-area-inset-bottom))" : "32px 40px calc(160px + env(safe-area-inset-bottom))", overflowX: tripDetailId ? "visible" : "clip" }}>
           {viewRenderers[activeView]?.()}
         </div>
       </main>
@@ -6826,6 +6827,90 @@ Start by introducing yourself briefly in-character with personality, and give an
         borderTop: `1px solid ${D ? "rgba(255,255,255,0.08)" : "rgba(200,200,200,0.6)"}`,
         boxShadow: D ? "none" : "0 -2px 20px rgba(0,0,0,0.04)",
       }}>
+        {/* Ask Continuum bar — top row of the nav, above the tab buttons.
+            Hidden in the unauthenticated landing demo. The menu pill (Analytics
+            · + · Inbox) used to live at the top of the Dashboard; it now sits
+            inline with the Ask bar so it's reachable from every page. */}
+        {!isLandingDemo() && (() => {
+          const isAnalytics = activeView === "dashboard" && dashSubTab === "reports";
+          const isInbox = activeView === "dashboard" && dashSubTab === "inbox";
+          const inboxBadge = (savedItineraries.length + expenses.filter(e => !e.tripId && !e._demo).length) || 0;
+          const goDashTab = (tab) => {
+            setActiveView("dashboard");
+            setDashSubTab(tab);
+            setQuickAddOpen(false);
+          };
+          const circle = (active, activeColor) => ({
+            width: 36, height: 36, flexShrink: 0, borderRadius: "50%", border: "none", cursor: "pointer",
+            display: "grid", placeItems: "center", transition: "all 0.2s", position: "relative",
+            background: active ? activeColor : "transparent", color: active ? "#fff" : css.text3,
+          });
+          const addItems = [
+            { label: "Add Trip", color: "#3b82f6", onClick: () => { setShowCreateTrip(true); setQuickAddOpen(false); },
+              icon: <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1L11 12l-2 3H6l-2 2 4-1 4-1 2 7.5 2-2v-3l-3-2 4.8-7.3" /> },
+            { label: "Add Expense", color: "#B8924A", onClick: () => { setShowAddExpense(true); setQuickAddOpen(false); },
+              icon: <><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></> },
+            { label: "Add Booking", color: "#14b8a6", onClick: () => { setShowPasteItinerary(true); setQuickAddOpen(false); },
+              icon: <><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></> },
+          ];
+          const menuPill = (
+            <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0, padding: 4, borderRadius: 999, border: `1px solid ${css.border}`, background: css.surface, boxShadow: css.shadow }}>
+              {/* Travel Analytics */}
+              <button title="Travel Analytics" onClick={() => goDashTab(isAnalytics ? "overview" : "reports")} style={circle(isAnalytics, "#14b8a6")}
+                onMouseEnter={e => { if (!isAnalytics) e.currentTarget.style.background = D ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)"; }}
+                onMouseLeave={e => { if (!isAnalytics) e.currentTarget.style.background = "transparent"; }}>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="6" y1="20" x2="6" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="14"/></svg>
+              </button>
+              {/* + with dropdown (opens upward since we're at the bottom of the screen) */}
+              <div style={{ position: "relative" }}>
+                <button title="Quick add" onClick={() => setQuickAddOpen(!quickAddOpen)}
+                  style={{ ...circle(false), background: quickAddOpen ? css.accent : (D ? css.text : "#15130F"), color: quickAddOpen ? "#fff" : (D ? "#15130F" : "#F4F1EC") }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" style={{ transform: quickAddOpen ? "rotate(45deg)" : "none", transition: "transform 0.25s" }}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </button>
+                {quickAddOpen && (
+                  <>
+                    <div onClick={() => setQuickAddOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 150 }} />
+                    <div style={{ position: "absolute", bottom: "calc(100% + 10px)", right: 0, zIndex: 200, background: css.surface, border: `1px solid ${css.border}`, borderRadius: 12, boxShadow: css.shadowHover, padding: 6, minWidth: 190 }}>
+                      {addItems.map(item => (
+                        <button key={item.label} onClick={item.onClick}
+                          style={{ display: "flex", alignItems: "center", gap: 11, width: "100%", padding: "11px 12px", border: "none", background: "transparent", cursor: "pointer", borderRadius: 8, color: css.text, fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", textAlign: "left" }}
+                          onMouseEnter={e => e.currentTarget.style.background = D ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)"}
+                          onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                          <span style={{ width: 30, height: 30, flexShrink: 0, borderRadius: 8, display: "grid", placeItems: "center", background: `${item.color}14`, color: item.color }}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">{item.icon}</svg>
+                          </span>
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+              {/* Inbox */}
+              <button title="Inbox" onClick={() => goDashTab(isInbox ? "overview" : "inbox")} style={circle(isInbox, "#22c55e")}
+                onMouseEnter={e => { if (!isInbox) e.currentTarget.style.background = D ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)"; }}
+                onMouseLeave={e => { if (!isInbox) e.currentTarget.style.background = "transparent"; }}>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg>
+                {inboxBadge > 0 && <span style={{ position: "absolute", top: -1, right: -1, minWidth: 16, height: 16, padding: "0 4px", borderRadius: 8, background: css.accent, color: "#fff", fontSize: 9, fontWeight: 700, display: "grid", placeItems: "center", fontFamily: "'JetBrains Mono', monospace" }}>{inboxBadge}</span>}
+              </button>
+            </div>
+          );
+          return (
+            <AskContinuumPill
+              css={css}
+              dv={{
+                paper: D ? "rgba(255,255,255,0.04)" : "#fff",
+                cream: D ? "rgba(255,255,255,0.10)" : "#E2DCCE",
+                ink: D ? "#f0ece6" : "#15130F",
+                taupe: D ? "#999" : "#6B6458",
+                bone: D ? "#1a1a1a" : "#fff",
+              }}
+              isMobile={isMobile}
+              trips={trips}
+              rightSlot={menuPill}
+            />
+          );
+        })()}
         <div style={{
           maxWidth: 2200, margin: "0 auto",
           padding: isMobile ? "10px 8px" : "12px 48px 14px",
@@ -7114,103 +7199,95 @@ Start by introducing yourself briefly in-character with personality, and give an
       )}
 
       {/* ── Create Trip Modal (simplified) ── */}
-      {showCreateTrip && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", display: "flex", alignItems: isMobile ? "flex-end" : "center", justifyContent: "center", padding: isMobile ? 0 : 20 }}>
-          <div style={{
-            width: "100%", maxWidth: 520, background: D ? "#141414" : "#fff", borderRadius: isMobile ? "0" : 0,
-            border: `2px solid ${D ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"}`, padding: "32px",
-          }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28 }}>
-              <h2 style={{ fontSize: 22, fontWeight: 800, color: css.text, margin: 0, letterSpacing: "-0.02em" }}>{editingTripId ? "Edit Trip" : "Create Trip"}</h2>
-              <button onClick={() => { setShowCreateTrip(false); setEditingTripId(null); setCreateTripForm({ name: "", destination: "", startDate: "", endDate: "", status: "planned" }); setCreateTripError(""); setCreateTripSaving(false); }} style={{ width: 36, height: 36, border: `1px solid ${css.border}`, background: "transparent", color: css.text3, fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
-            </div>
-
-            {/* Trip Name */}
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ fontSize: 11, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>Trip Name</label>
+      {showCreateTrip && (() => {
+        const close = () => {
+          setShowCreateTrip(false);
+          setEditingTripId(null);
+          setCreateTripForm({ name: "", destination: "", startDate: "", endDate: "", status: "planned" });
+          setCreateTripError("");
+          setCreateTripSaving(false);
+        };
+        const isEdit = !!editingTripId;
+        return (
+          <FormModal
+            open
+            onClose={close}
+            darkMode={darkMode}
+            isMobile={isMobile}
+            eyebrow={isEdit ? "Edit" : "New trip"}
+            title={isEdit ? "Edit trip" : "Create trip"}
+            subtitle={isEdit ? "Update the basics — segments can be edited from the trip detail." : "Just the basics — flights, hotels and activities can be added once it's created."}
+            accentColor={css.accent}
+            error={createTripError}
+            primaryAction={{
+              label: isEdit ? "Save changes" : "Create trip",
+              onClick: handleCreateTrip,
+              disabled: !createTripForm.name.trim(),
+              loading: createTripSaving,
+            }}
+            secondaryAction={{ label: "Cancel", onClick: close }}
+          >
+            <FormRow label="Trip name" isMobile={isMobile}
+              hint="Used as the headline on cards.">
               <input value={createTripForm.name} onChange={e => setCreateTripForm(f => ({ ...f, name: e.target.value }))}
-                placeholder="e.g. Japan Summer 2026, London Business Trip"
-                style={{ display: "block", width: "100%", padding: "14px 16px", background: css.surface2, border: `1px solid ${css.border}`, color: css.text, fontSize: 16, fontWeight: 600, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
-                autoFocus />
-            </div>
+                placeholder="e.g. Japan Summer 2026"
+                autoFocus
+                style={fmInputStyle({ darkMode })} />
+            </FormRow>
 
-            {/* Destination */}
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ fontSize: 11, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>Destination</label>
+            <FormRow label="Destination" isMobile={isMobile}
+              hint="City and country if you've decided.">
               <input value={createTripForm.destination} onChange={e => setCreateTripForm(f => ({ ...f, destination: e.target.value }))}
                 placeholder="e.g. Tokyo, Japan"
-                style={{ display: "block", width: "100%", padding: "14px 16px", background: css.surface2, border: `1px solid ${css.border}`, color: css.text, fontSize: 15, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }} />
-            </div>
+                style={fmInputStyle({ darkMode })} />
+            </FormRow>
 
-            {/* Dates */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
-              <div>
-                <label style={{ fontSize: 11, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>Start Date</label>
-                <input type="date" value={createTripForm.startDate} onChange={e => { if (e.target.value) lastDateRef.current = e.target.value; setCreateTripForm(f => ({ ...f, startDate: e.target.value })); }}
+            <FormRow label="Dates" isMobile={isMobile}
+              hint="Approximate is fine.">
+              <FormGrid isMobile={isMobile}>
+                <input type="date" value={createTripForm.startDate}
+                  onChange={e => { if (e.target.value) lastDateRef.current = e.target.value; setCreateTripForm(f => ({ ...f, startDate: e.target.value })); }}
                   onFocus={e => { if (!e.target.value && lastDateRef.current) setCreateTripForm(f => ({ ...f, startDate: lastDateRef.current })); }}
-                  style={{ display: "block", width: "100%", padding: "12px 16px", background: css.surface2, border: `1px solid ${css.border}`, color: css.text, fontSize: 14, fontFamily: "'Geist Mono', monospace", outline: "none", boxSizing: "border-box" }} />
-              </div>
-              <div>
-                <label style={{ fontSize: 11, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>End Date</label>
-                <input type="date" value={createTripForm.endDate} onChange={e => { if (e.target.value) lastDateRef.current = e.target.value; setCreateTripForm(f => ({ ...f, endDate: e.target.value })); }}
+                  style={fmInputStyle({ darkMode })} />
+                <input type="date" value={createTripForm.endDate}
+                  onChange={e => { if (e.target.value) lastDateRef.current = e.target.value; setCreateTripForm(f => ({ ...f, endDate: e.target.value })); }}
                   onFocus={e => { if (!e.target.value && lastDateRef.current) setCreateTripForm(f => ({ ...f, endDate: lastDateRef.current })); }}
-                  style={{ display: "block", width: "100%", padding: "12px 16px", background: css.surface2, border: `1px solid ${css.border}`, color: css.text, fontSize: 14, fontFamily: "'Geist Mono', monospace", outline: "none", boxSizing: "border-box" }} />
-              </div>
-            </div>
+                  style={fmInputStyle({ darkMode })} />
+              </FormGrid>
+            </FormRow>
 
-            {/* Status */}
-            <div style={{ marginBottom: 28 }}>
-              <label style={{ fontSize: 11, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>Status</label>
-              <div style={{ display: "flex", gap: 0, border: `1px solid ${css.border}` }}>
-                {[["planned","Planned"],["confirmed","Confirmed"],["wishlist","Wishlist"]].map(([val, label]) => (
-                  <button key={val} onClick={() => setCreateTripForm(f => ({ ...f, status: val }))} style={{
-                    flex: 1, padding: "10px 0", border: "none", cursor: "pointer",
-                    background: createTripForm.status === val ? css.accent : "transparent",
-                    color: createTripForm.status === val ? "#fff" : css.text3,
-                    fontSize: 12, fontWeight: 700, fontFamily: "inherit", textTransform: "uppercase", letterSpacing: "0.04em",
-                    transition: "all 0.12s",
-                  }}>{label}</button>
-                ))}
-              </div>
-            </div>
-
-            {/* Error message */}
-            {createTripError && (
-              <div style={{ padding: "12px 14px", background: "rgba(200,85,61,0.08)", border: `1px solid ${css.accent}`, color: css.accent, fontSize: 13, fontFamily: "inherit", marginBottom: 14, lineHeight: 1.4 }}>
-                {createTripError}
-              </div>
-            )}
-
-            {/* Create button */}
-            <button onClick={handleCreateTrip} disabled={!createTripForm.name.trim() || createTripSaving} style={{
-              width: "100%", padding: "14px 0", border: "none",
-              background: createTripForm.name.trim() && !createTripSaving ? css.accent : css.surface2,
-              color: createTripForm.name.trim() && !createTripSaving ? "#fff" : css.text3,
-              fontSize: 14, fontWeight: 800, cursor: createTripForm.name.trim() && !createTripSaving ? "pointer" : "default",
-              fontFamily: "inherit", textTransform: "uppercase", letterSpacing: "0.06em",
-              transition: "all 0.12s",
-            }}>{createTripSaving ? "Saving…" : (editingTripId ? "Save Changes" : "Create Trip")}</button>
-          </div>
-        </div>
-      )}
+            <FormRow label="Status" isMobile={isMobile}>
+              <FormPillGroup
+                value={createTripForm.status}
+                onChange={(v) => setCreateTripForm(f => ({ ...f, status: v }))}
+                options={[["planned", "Planned"], ["confirmed", "Confirmed"], ["wishlist", "Wishlist"]]}
+              />
+            </FormRow>
+          </FormModal>
+        );
+      })()}
 
       {/* ── Add Segment Modal ── */}
-      {showAddSegment && addSegmentType && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", display: "flex", alignItems: isMobile ? "flex-end" : "center", justifyContent: "center", padding: isMobile ? 0 : 20 }}>
-          <div style={{
-            width: "100%", maxWidth: 560, maxHeight: isMobile ? "92vh" : "85vh", overflowY: "auto",
-            background: D ? "#141414" : "#fff", border: `2px solid ${D ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"}`,
-            padding: "32px", position: "relative",
-          }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, position: "sticky", top: -32, zIndex: 10, background: D ? "#141414" : "#fff", margin: "-32px -32px 24px", padding: "20px 32px", borderBottom: `1px solid ${css.border}` }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <SegIcon type={addSegmentType} size={20} color={SEGMENT_TYPES.find(t => t.id === addSegmentType)?.color || css.accent} />
-                <h2 style={{ fontSize: 18, fontWeight: 800, color: css.text, margin: 0, letterSpacing: "-0.01em" }}>
-                  {editingSegIdx !== null ? "Edit" : "Add"} {SEGMENT_TYPES.find(t => t.id === addSegmentType)?.label}
-                </h2>
-              </div>
-              <button onClick={() => { setAddSegmentType(null); setSegmentForm({}); setEditingSegIdx(null); }} style={{ width: 36, height: 36, border: `1px solid ${css.border}`, background: "transparent", color: css.text3, fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
-            </div>
+      {showAddSegment && addSegmentType && (() => {
+        const typeMeta = SEGMENT_TYPES.find(t => t.id === addSegmentType);
+        const close = () => { setAddSegmentType(null); setSegmentForm({}); setEditingSegIdx(null); };
+        const isEdit = editingSegIdx !== null;
+        return (
+        <FormModal
+          open
+          onClose={close}
+          darkMode={darkMode}
+          isMobile={isMobile}
+          eyebrow={isEdit ? "Edit" : "Add to trip"}
+          title={`${isEdit ? "Edit" : "Add"} ${typeMeta?.label || "segment"}`}
+          subtitle={addSegmentType === "flight" ? "Enter the flight number for auto-fill, or fill in the details manually." : "Capture the essentials — you can always edit later."}
+          accentColor={typeMeta?.color || css.accent}
+          primaryAction={{
+            label: isEdit ? "Save changes" : `Save ${typeMeta?.label || ""}`,
+            onClick: () => handleAddSegmentToTrip(showAddSegment),
+          }}
+          secondaryAction={{ label: "Cancel", onClick: close }}
+        >
 
             {/* Flight form — booking-style: One Way / Round Trip / Multi City */}
             {addSegmentType === "flight" && (
@@ -7492,60 +7569,69 @@ Start by introducing yourself briefly in-character with personality, and give an
               );
             })}
 
-            {/* Save button */}
-            <button onClick={() => handleAddSegmentToTrip(showAddSegment)} style={{
-              width: "100%", padding: "14px 0", border: "none", marginTop: 8,
-              background: css.accent, color: "#fff",
-              fontSize: 14, fontWeight: 800, cursor: "pointer",
-              fontFamily: "inherit", textTransform: "uppercase", letterSpacing: "0.06em",
-            }}>{editingSegIdx !== null ? "Save Changes" : `Save ${SEGMENT_TYPES.find(t => t.id === addSegmentType)?.label || ""}`}</button>
-          </div>
-        </div>
-      )}
+            {/* Save button replaced by FormModal's primary footer action. */}
+        </FormModal>
+        );
+      })()}
 
       {/* ── Segment Type Picker (shown when user clicks "Add" on a trip) ── */}
       {showAddSegment && !addSegmentType && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", display: "flex", alignItems: isMobile ? "flex-end" : "center", justifyContent: "center", padding: isMobile ? 0 : 20 }}>
-          <div style={{
-            width: "100%", maxWidth: 480, background: D ? "#141414" : "#fff",
-            border: `2px solid ${D ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"}`, padding: "32px",
-          }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: css.text, margin: 0, letterSpacing: "-0.01em" }}>Add to Trip</h2>
-              <button onClick={() => setShowAddSegment(null)} style={{ width: 36, height: 36, border: `1px solid ${css.border}`, background: "transparent", color: css.text3, fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-              {SEGMENT_TYPES.map(type => (
-                <button key={type.id} onClick={() => { setAddSegmentType(type.id); setSegmentForm({}); setFlightType("roundtrip"); setFlightLegs([{ id: 1, flightNumber: "", date: "", arrivalDate: "", departureTime: "", arrivalTime: "", departureAirport: "", arrivalAirport: "", departureTerminal: "", arrivalTerminal: "", airline: "", aircraft: "", lookupMsg: "" }]); }} style={{
-                  padding: "16px", border: `1px solid ${css.border}`, background: "transparent",
-                  cursor: "pointer", display: "flex", alignItems: "center", gap: 10,
-                  transition: "all 0.12s", textAlign: "left",
-                }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = type.color; e.currentTarget.style.background = `${type.color}10`; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = css.border; e.currentTarget.style.background = "transparent"; }}>
-                  <span style={{ width: 32, display: "flex", alignItems: "center", justifyContent: "center" }}><SegIcon type={type.id} size={20} color={type.color} /></span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: css.text, fontFamily: "inherit" }}>{type.label}</span>
-                </button>
-              ))}
-            </div>
+        <FormModal
+          open
+          onClose={() => setShowAddSegment(null)}
+          darkMode={darkMode}
+          isMobile={isMobile}
+          eyebrow="Add to trip"
+          title="What are you adding?"
+          subtitle="Pick a type — we'll show the right fields for it."
+          accentColor={css.accent}
+        >
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr", gap: 8, padding: "8px 0 16px" }}>
+            {SEGMENT_TYPES.map(type => (
+              <button key={type.id} onClick={() => { setAddSegmentType(type.id); setSegmentForm({}); setFlightType("roundtrip"); setFlightLegs([{ id: 1, flightNumber: "", date: "", arrivalDate: "", departureTime: "", arrivalTime: "", departureAirport: "", arrivalAirport: "", departureTerminal: "", arrivalTerminal: "", airline: "", aircraft: "", lookupMsg: "" }]); }} style={{
+                padding: "16px 14px",
+                border: `1px solid var(--fm-border)`,
+                background: "var(--fm-bg-raised)",
+                color: "var(--fm-text)",
+                borderRadius: 12,
+                cursor: "pointer",
+                display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 10,
+                transition: "all 0.18s", textAlign: "left",
+                fontFamily: "inherit",
+              }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = type.color; e.currentTarget.style.transform = "translateY(-1px)"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--fm-border)"; e.currentTarget.style.transform = "none"; }}>
+                <span style={{ width: 32, height: 32, borderRadius: 9, background: `${type.color}22`, color: type.color, display: "grid", placeItems: "center" }}>
+                  <SegIcon type={type.id} size={18} color={type.color} />
+                </span>
+                <span style={{ fontFamily: "'Fraunces', serif", fontSize: 15, fontWeight: 500 }}>{type.label}</span>
+              </button>
+            ))}
           </div>
-        </div>
+        </FormModal>
       )}
 
       {/* ── Add Booking Modal — paste, upload .eml, or share ── */}
       {showPasteItinerary && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", display: "flex", alignItems: isMobile ? "flex-end" : "center", justifyContent: "center", padding: isMobile ? 0 : 20 }}>
-          <div style={{
-            width: "100%", maxWidth: 560, maxHeight: isMobile ? "92vh" : "85vh", overflowY: "auto",
-            background: D ? "#111113" : "#fff", borderRadius: isMobile ? "20px 20px 0 0" : 20,
-            border: `1px solid ${D ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"}`,
-            boxShadow: "0 -8px 40px rgba(0,0,0,0.4)", padding: "24px", position: "relative",
-          }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, position: "sticky", top: -24, zIndex: 10, background: D ? "#111113" : "#fff", margin: "-24px -24px 16px", padding: "16px 24px", borderRadius: isMobile ? "20px 20px 0 0" : "20px 20px 0 0" }}>
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: css.text, margin: 0 }}>Add Booking</h3>
-              <button onClick={() => setShowPasteItinerary(false)} style={{ width: 32, height: 32, borderRadius: 10, border: `1px solid ${css.border}`, background: D ? "#1a1a1e" : "#f0f0f0", color: css.text3, fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
-            </div>
-
+        <FormModal
+          open
+          onClose={() => setShowPasteItinerary(false)}
+          darkMode={darkMode}
+          isMobile={isMobile}
+          eyebrow="Add booking"
+          title="Forward, upload, or paste"
+          subtitle="Drop an email confirmation or paste the text — we'll parse the segments."
+          accentColor={css.accent}
+          primaryAction={{
+            label: "Save to inbox",
+            onClick: handlePasteAndParse,
+            disabled: !pasteText.trim(),
+          }}
+          secondaryAction={{
+            label: "Cancel",
+            onClick: () => { setShowPasteItinerary(false); setPasteText(""); setPasteLabel(""); },
+          }}
+        >
             {/* Upload .eml file */}
             <div style={{ marginBottom: 16 }}>
               <label style={{
@@ -7618,24 +7704,8 @@ Start by introducing yourself briefly in-character with personality, and give an
               );
             })()}
 
-            {/* Actions */}
-            <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
-              <button onClick={handlePasteAndParse} disabled={!pasteText.trim()} style={{
-                flex: 1, padding: "12px 0", borderRadius: 10, border: "none",
-                background: pasteText.trim() ? "#0EA5A0" : css.surface2,
-                color: pasteText.trim() ? "#fff" : css.text3,
-                fontSize: 13, fontWeight: 600, cursor: pasteText.trim() ? "pointer" : "default",
-                transition: "opacity 0.15s",
-              }} onMouseEnter={e => { if (pasteText.trim()) e.currentTarget.style.opacity = "0.85"; }} onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
-                Save to Inbox
-              </button>
-              <button onClick={() => { setShowPasteItinerary(false); setPasteText(""); setPasteLabel(""); }} style={{
-                padding: "12px 18px", borderRadius: 10, border: `1px solid ${css.border}`,
-                background: "transparent", color: css.text2, fontSize: 13, fontWeight: 500, cursor: "pointer",
-              }}>Cancel</button>
-            </div>
-          </div>
-        </div>
+            {/* Action buttons moved to FormModal footer (primaryAction / secondaryAction). */}
+        </FormModal>
       )}
 
       {/* ── Trip Summary Popup (from Dashboard) ── */}
@@ -8644,77 +8714,27 @@ Start by introducing yourself briefly in-character with personality, and give an
         );
       })()}
 
-      {/* Voucher Modal */}
-      {/* ── Global Search Overlay ── command-palette style; searches trips,
-          expenses, loyalty programs, and airports from any hub. ── */}
-      {showSearch && (() => {
-        const q = globalQuery.trim().toLowerCase();
-        const close = () => { setShowSearch(false); setGlobalQuery(""); };
-        // Build a wide searchable string per trip: name/location + every
-        // segment's route, airports, airline, flight #, confirmation, named
-        // venues, AND the city each airport code resolves to (so "taipei"
-        // matches a flight into TPE, and "TPE" does too).
-        const tripHaystack = (t) => {
-          const parts = [t.tripName, t.trip_name, t.location, t.confirmationCode, t.confirmation_code];
-          (t.segments || []).forEach(s => {
-            parts.push(s.route, s.departureAirport, s.arrivalAirport, s.airline, s.flightNumber, s.confirmationCode,
-              s.location, s.activityName, s.restaurantName, s.operator, s.company, s.loungeName,
-              s.hotelName, s.propertyName, s.property, s.name, s.notes, s.type);
-            [s.departureAirport, s.arrivalAirport].forEach(code => { if (code) parts.push(AIRPORT_CITY?.[String(code).toUpperCase()]); });
-          });
-          return parts.filter(Boolean).join(" ").toLowerCase();
-        };
-        const tripHits = !q ? [] : (trips || []).filter(t => tripHaystack(t).includes(q)).slice(0, 6);
-        const expHits = !q ? [] : (expenses || []).filter(e => `${e.description || ""} ${e.merchant || ""} ${e.category || ""}`.toLowerCase().includes(q)).slice(0, 6);
-        const allProgs = [...(LOYALTY_PROGRAMS.airlines || []), ...(LOYALTY_PROGRAMS.hotels || []), ...(LOYALTY_PROGRAMS.rentals || []), ...(LOYALTY_PROGRAMS.creditCards || [])];
-        const progHits = !q ? [] : allProgs.filter(p => (p.name || "").toLowerCase().includes(q)).slice(0, 6);
-        const airHits = !q ? [] : Object.entries(AIRPORT_CITY || {}).filter(([code, city]) => code.toLowerCase().includes(q) || (city || "").toLowerCase().includes(q)).slice(0, 6);
-        const total = tripHits.length + expHits.length + progHits.length + airHits.length;
+      {/* Global Search Overlay removed — the Ask Continuum bar at the bottom
+          of every page handles search + Q&A together. */}
 
-        const goTrip = (t) => { setActiveView("trips"); setTripDetailId(t.id); close(); };
-        const goExpense = (e) => { if (e.tripId) { setActiveView("trips"); setTripDetailId(e.tripId); } else { setActiveView("dashboard"); setDashSubTab("inbox"); } close(); };
-        const goProgram = () => { setActiveView("programs"); close(); };
-        const goAirport = (code) => { setLoungeAirport(code); setActiveView("lounges"); close(); };
-
-        const rowStyle = { display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", cursor: "pointer", borderRadius: 8, transition: "background 0.12s" };
-        const sectionLabel = { fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: css.text3, padding: "14px 16px 6px" };
-        const dot = (c) => ({ width: 30, height: 30, flexShrink: 0, borderRadius: 8, display: "grid", placeItems: "center", background: `${c}14`, color: c });
-        const Row = ({ onClick, color, icon, title, sub }) => (
-          <div onClick={onClick} style={rowStyle}
-            onMouseEnter={e => e.currentTarget.style.background = D ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)"}
-            onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-            <span style={dot(color)}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{icon}</svg></span>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{ fontFamily: "'Inter Tight', sans-serif", fontSize: 14, fontWeight: 500, color: css.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{title}</div>
-              {sub && <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: css.text3, marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sub}</div>}
-            </div>
-          </div>
-        );
-
-        return (
-          <div onClick={close} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(2px)", zIndex: 2000, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: isMobile ? "70px 12px 12px" : "90px 20px 20px" }}>
-            <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 600, background: css.surface, border: `1px solid ${css.border}`, borderRadius: 14, boxShadow: css.shadowHover, overflow: "hidden", maxHeight: "80vh", display: "flex", flexDirection: "column" }}>
-              {/* Search input */}
-              <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 18px", borderBottom: `1px solid ${css.border}` }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={css.text3} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <input autoFocus value={globalQuery} onChange={e => setGlobalQuery(e.target.value)} onKeyDown={e => { if (e.key === "Escape") close(); }}
-                  placeholder="Search trips, expenses, programs, airports…"
-                  style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontFamily: "'Inter Tight', sans-serif", fontSize: 16, color: css.text }} />
-                <button onClick={close} style={{ background: "none", border: `1px solid ${css.border}`, borderRadius: 6, color: css.text3, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: "0.1em", padding: "4px 8px", cursor: "pointer" }}>ESC</button>
-              </div>
-              {/* Results */}
-              <div style={{ overflowY: "auto", padding: "4px 6px 10px" }}>
-                {!q && <div style={{ padding: "32px 16px", textAlign: "center", fontFamily: "'Fraunces', serif", fontStyle: "italic", color: css.text3, fontSize: 15 }}>Start typing to search across everything.</div>}
-                {q && total === 0 && <div style={{ padding: "32px 16px", textAlign: "center", fontFamily: "'Fraunces', serif", fontStyle: "italic", color: css.text3, fontSize: 15 }}>No matches for “{globalQuery}”.</div>}
-                {tripHits.length > 0 && <><div style={sectionLabel}>Trips</div>{tripHits.map(t => <Row key={`t${t.id}`} onClick={() => goTrip(t)} color="#3b82f6" icon={<path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1L11 12l-2 3H6l-2 2 4-1 4-1 2 7.5 2-2v-3l-3-2 4.8-7.3" />} title={t.tripName || t.trip_name || t.location || "Trip"} sub={formatTripDates ? formatTripDates(t) : (t.date || "")} />)}</>}
-                {expHits.length > 0 && <><div style={sectionLabel}>Expenses</div>{expHits.map((e, i) => <Row key={`e${e.id || i}`} onClick={() => goExpense(e)} color="#B8924A" icon={<><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></>} title={e.description || e.merchant || "Expense"} sub={`${e.category || ""}${e.amount ? ` · ${e.currency || "$"}${e.amount}` : ""}`} />)}</>}
-                {progHits.length > 0 && <><div style={sectionLabel}>Programs</div>{progHits.map(p => <Row key={`p${p.id}`} onClick={goProgram} color="#9333ea" icon={<><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></>} title={p.name} sub={linkedAccounts?.[p.id] ? "Linked" : "Tap to view in Programs"} />)}</>}
-                {airHits.length > 0 && <><div style={sectionLabel}>Airports · Lounges</div>{airHits.map(([code, city]) => <Row key={`a${code}`} onClick={() => goAirport(code)} color="#14b8a6" icon={<path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1L11 12l-2 3H6l-2 2 4-1 4-1 2 7.5 2-2v-3l-3-2 4.8-7.3" />} title={`${code} · ${city}`} sub="View lounges" />)}</>}
-              </div>
-            </div>
-          </div>
-        );
-      })()}
+      {/* Lounge walking-directions modal (in-app embedded Google Maps). */}
+      {loungeDirections && (
+        <LoungeDirectionsModal
+          lounge={loungeDirections.lounge}
+          airport={loungeDirections.airport}
+          embedApiKey={import.meta.env.VITE_GOOGLE_MAPS_EMBED_KEY}
+          css={css}
+          dv={{
+            paper: D ? "#1f1f1f" : "#fff",
+            cream: D ? "rgba(255,255,255,0.10)" : "#E2DCCE",
+            ink: D ? "#f0ece6" : "#15130F",
+            taupe: D ? "#999" : "#6B6458",
+            bone: D ? "#0f0f0f" : "#fff",
+          }}
+          isMobile={isMobile}
+          onClose={() => setLoungeDirections(null)}
+        />
+      )}
 
       {showVoucherModal && <VoucherModal
         css={css}

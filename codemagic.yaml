@@ -143,6 +143,19 @@ workflows:
           gem list -i xcodeproj >/dev/null 2>&1 || gem install xcodeproj --no-document
           ruby -e 'require "xcodeproj"; p=Xcodeproj::Project.open("ios/App/App.xcodeproj"); t=p.targets.find{|x| x.name=="App"}; t.build_configurations.each{|c| c.build_settings["CODE_SIGN_ENTITLEMENTS"]="App/App.entitlements"}; p.save; puts "CODE_SIGN_ENTITLEMENTS wired to App/App.entitlements"'
 
+      - name: Declare location-permission strings in Info.plist
+        script: |
+          # `navigator.geolocation` inside the Capacitor WKWebView triggers the
+          # iOS authorization prompt — but iOS will instantly crash the app
+          # with "missing NSLocationWhenInUseUsageDescription" if the key isn't
+          # declared. The lounge "Walk Here" directions feature is the only
+          # caller today. Use PlistBuddy so we don't lose any other keys.
+          PLIST="ios/App/App/Info.plist"
+          DESC="Continuum uses your location to show walking directions from where you're standing to your airport lounge. Location is only read while you're using the app."
+          /usr/libexec/PlistBuddy -c "Add :NSLocationWhenInUseUsageDescription string $DESC" "$PLIST" 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Set :NSLocationWhenInUseUsageDescription $DESC" "$PLIST"
+          echo "NSLocationWhenInUseUsageDescription set."
+
       - name: Add Google sign-in URL scheme (if configured)
         script: |
           # Native Google sign-in needs the reversed iOS client id registered as
