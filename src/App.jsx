@@ -6548,14 +6548,14 @@ Start by introducing yourself briefly in-character with personality, and give an
     );
   };
 
-  // Travel hub (formerly "Loyalty"): Programs / Alliances / Wallet / Awards
-  // plus Lounges, which moved here off the bottom nav.
+  // Travel hub (formerly "Loyalty"): Programs / Lounges / Alliances / Wallet /
+  // Awards. Lounges sits right after Programs — it's one of the most-used tabs.
   const LOYALTY_SUBTABS = [
     { id: "programs", label: "Programs", hoverColor: "#9333ea" },
+    { id: "lounges", label: "Lounges", hoverColor: "#14b8a6" },
     { id: "alliances", label: "Alliances", hoverColor: "#B8924A" },
     { id: "wallet", label: "Wallet", hoverColor: "#6B7A5A" },
     { id: "awards", label: "Awards", hoverColor: "#C8553D" },
-    { id: "lounges", label: "Lounges", hoverColor: "#14b8a6" },
   ];
   const renderLoyalty = () => {
     const subActive = ["alliances", "wallet", "awards", "lounges"].includes(activeView) ? activeView : "programs";
@@ -6586,7 +6586,7 @@ Start by introducing yourself briefly in-character with personality, and give an
     // My Trips — Trips + Packing
     { id: "mytrips", label: "My Trips", icon: <NavIcon d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1L11 12l-2 3H6l-2 2 4-1 4-1 2 7.5 2-2v-3l-3-2 4.8-7.3" />, gradient: "radial-gradient(circle, rgba(59,130,246,0.18) 0%, rgba(59,130,246,0.06) 50%, transparent 100%)", hoverColor: "#3b82f6", subViews: ["trips", "packing"], defaultSubView: "trips" },
     // Travel — Programs / Alliances / Wallet / Awards / Lounges
-    { id: "travel", label: "Travel", icon: <NavIcon d={<><circle cx="12" cy="12" r="3"/><path d="M12 2a10 10 0 0 1 10 10"/><path d="M22 12a10 10 0 0 1-10 10"/><path d="M12 22A10 10 0 0 1 2 12"/><path d="M2 12A10 10 0 0 1 12 2"/></>} />, gradient: "radial-gradient(circle, rgba(184,146,74,0.18) 0%, rgba(184,146,74,0.06) 50%, transparent 100%)", hoverColor: "#B8924A", subViews: ["programs", "alliances", "wallet", "awards", "lounges"], defaultSubView: "programs" },
+    { id: "travel", label: "Travel", icon: <NavIcon d={<><circle cx="12" cy="12" r="3"/><path d="M12 2a10 10 0 0 1 10 10"/><path d="M22 12a10 10 0 0 1-10 10"/><path d="M12 22A10 10 0 0 1 2 12"/><path d="M2 12A10 10 0 0 1 12 2"/></>} />, gradient: "radial-gradient(circle, rgba(184,146,74,0.18) 0%, rgba(184,146,74,0.06) 50%, transparent 100%)", hoverColor: "#B8924A", subViews: ["programs", "lounges", "alliances", "wallet", "awards"], defaultSubView: "programs" },
     // Expenses — Expense Split + Expense Reports
     { id: "expenses", label: "Expenses", icon: <NavIcon d={<><path d="M16 3h5v5"/><line x1="21" y1="3" x2="14" y2="10"/><path d="M8 21H3v-5"/><line x1="3" y1="21" x2="10" y2="14"/><line x1="12" y1="2" x2="12" y2="22"/></>} />, gradient: "radial-gradient(circle, rgba(200,85,61,0.18) 0%, rgba(200,85,61,0.06) 50%, transparent 100%)", hoverColor: "#C8553D", subViews: ["expensesplit", "expensereports"], defaultSubView: "expensesplit" },
     // Feedback — suggest a feature / share feedback / report a bug
