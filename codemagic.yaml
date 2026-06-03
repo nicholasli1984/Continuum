@@ -137,6 +137,8 @@ workflows:
             '  <array>' \
             '    <string>Default</string>' \
             '  </array>' \
+            '  <key>com.apple.developer.usernotifications.time-sensitive</key>' \
+            '  <true/>' \
             '</dict>' \
             '</plist>' > "$ENT"
           echo "Wrote $ENT:"; cat "$ENT"
