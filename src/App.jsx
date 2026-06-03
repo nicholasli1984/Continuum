@@ -10,20 +10,63 @@ import { CABIN_LABELS, AIRLINE_BOOKING_CLASS_MAP, BOOKING_CLASS_MAP_GENERIC, BOO
 import { PROGRAM_DIRECTORY, LOYALTY_PROGRAMS, PROGRAM_LOGO_DOMAINS } from "./constants/programs";
 import { LOUNGE_DATABASE, CARD_LOUNGE_ACCESS, ELITE_LOUNGE_ACCESS, ELITE_ALLIANCE_MAP, AIRLINE_ALLIANCE, ALLIANCE_LOUNGE_ACCESS, AMENITY_ICONS, AMENITY_LABELS } from "./constants/lounges";
 import { ALLIANCE_MBR, ALLIANCE_LABELS, ALLIANCE_TIER_LABELS, ALLIANCE_TIER_COLORS, BENEFIT_ROWS, HOME_BENEFITS, RECIP_BENEFITS, SAMPLE_USER, CREDIT_CARD_OFFERS, EXPIRATION_RULES, REDEMPTION_VALUES } from "./constants/benefits";
-import { renderOptimizer as renderOptimizerPage } from "./pages/Optimizer";
-import { renderTrips as renderTripsPage } from "./pages/Trips";
-import { renderDashboard as renderDashboardPage } from "./pages/Dashboard";
-import { renderInsights as renderInsightsPage } from "./pages/Insights";
-import { renderExpenseReports as renderExpenseReportsPage } from "./pages/ExpenseReports";
-import { renderLounges as renderLoungesPage } from "./pages/Lounges";
-import { renderPrograms as renderProgramsPage } from "./pages/Programs";
-import { renderAlliances as renderAlliancesPage } from "./pages/Alliances";
-import { renderReports as renderReportsPage } from "./pages/Reports";
-import { renderNews as renderNewsPage } from "./pages/News";
+// ── Lazy page loading ──
+// Pages are heavy in source (Dashboard 195K, ExpenseSplit 117K, Trips 99K,
+// Optimizer 81K, etc). Splitting each into its own Vite chunk cuts the initial
+// JS bundle from ~2.3MB → ~700KB, which is the single biggest win for
+// cold-start time (especially on the iOS WebView). Each chunk is fetched on
+// first navigation to that page, then cached by the browser.
+//
+// Pages export named render functions (renderDashboard, renderTrips, …)
+// rather than default-exported React components, so React.lazy doesn't fit
+// directly — this helper loads the module on first mount, calls the named
+// export, and re-renders subscribers when the module arrives.
+const lazyRender = (loader, exportName) => {
+  let mod = null, pending = null;
+  const subscribers = new Set();
+  const triggerLoad = () => {
+    if (mod || pending) return;
+    pending = loader()
+      .then(m => { mod = m; subscribers.forEach(fn => fn()); })
+      .catch(err => { console.error(`[lazy] ${exportName} failed`, err); pending = null; });
+  };
+  return function LazyPage({ args }) {
+    const [, force] = React.useReducer(x => x + 1, 0);
+    React.useEffect(() => {
+      triggerLoad();
+      if (!mod) { subscribers.add(force); return () => subscribers.delete(force); }
+    }, []);
+    if (!mod) return null;
+    return mod[exportName](...args);
+  };
+};
+const _OptimizerPage = lazyRender(() => import("./pages/Optimizer"), "renderOptimizer");
+const renderOptimizerPage = (...args) => <_OptimizerPage args={args} />;
+const _TripsPage = lazyRender(() => import("./pages/Trips"), "renderTrips");
+const renderTripsPage = (...args) => <_TripsPage args={args} />;
+const _DashboardPage = lazyRender(() => import("./pages/Dashboard"), "renderDashboard");
+const renderDashboardPage = (...args) => <_DashboardPage args={args} />;
+const _InsightsPage = lazyRender(() => import("./pages/Insights"), "renderInsights");
+const renderInsightsPage = (...args) => <_InsightsPage args={args} />;
+const _ExpenseReportsPage = lazyRender(() => import("./pages/ExpenseReports"), "renderExpenseReports");
+const renderExpenseReportsPage = (...args) => <_ExpenseReportsPage args={args} />;
+const _LoungesPage = lazyRender(() => import("./pages/Lounges"), "renderLounges");
+const renderLoungesPage = (...args) => <_LoungesPage args={args} />;
+const _ProgramsPage = lazyRender(() => import("./pages/Programs"), "renderPrograms");
+const renderProgramsPage = (...args) => <_ProgramsPage args={args} />;
+const _AlliancesPage = lazyRender(() => import("./pages/Alliances"), "renderAlliances");
+const renderAlliancesPage = (...args) => <_AlliancesPage args={args} />;
+const _ReportsPage = lazyRender(() => import("./pages/Reports"), "renderReports");
+const renderReportsPage = (...args) => <_ReportsPage args={args} />;
+const _NewsPage = lazyRender(() => import("./pages/News"), "renderNews");
+const renderNewsPage = (...args) => <_NewsPage args={args} />;
 // Premium page removed — every feature is available to every signed-in user.
-import { renderExpenseSplit as renderExpenseSplitPage } from "./pages/ExpenseSplit";
-import { renderWallet as renderWalletPage } from "./pages/Wallet";
-import { renderAwardSweetSpots as renderAwardSweetSpotsPage } from "./pages/AwardSweetSpots";
+const _ExpenseSplitPage = lazyRender(() => import("./pages/ExpenseSplit"), "renderExpenseSplit");
+const renderExpenseSplitPage = (...args) => <_ExpenseSplitPage args={args} />;
+const _WalletPage = lazyRender(() => import("./pages/Wallet"), "renderWallet");
+const renderWalletPage = (...args) => <_WalletPage args={args} />;
+const _AwardSweetSpotsPage = lazyRender(() => import("./pages/AwardSweetSpots"), "renderAwardSweetSpots");
+const renderAwardSweetSpotsPage = (...args) => <_AwardSweetSpotsPage args={args} />;
 // Premium / paid-tier system removed — see git history if reintroducing.
 import Tour from "./components/tour/Tour";
 import VoucherModal from "./components/VoucherModal";
@@ -33,7 +76,13 @@ import { FormModal, FormRow, FormGrid, fmInputStyle, FormPillGroup } from "./com
 import { snapReceiptNative, isNative } from "./utils/nativeCamera";
 import { registerNativePush, openAppSettings } from "./utils/nativePush";
 import { nativeSignIn, nativeGoogleEnabled } from "./utils/nativeAuth";
-import FeedbackPage from "./pages/Feedback";
+// FeedbackPage is a default-exported React component (not a renderX function),
+// so use React.lazy + Suspense. The wrapper keeps the existing <FeedbackPage />
+// usage site unchanged.
+const _FeedbackPage = React.lazy(() => import("./pages/Feedback"));
+function FeedbackPage(props) {
+  return <React.Suspense fallback={null}><_FeedbackPage {...props} /></React.Suspense>;
+}
 import { expenseUSD } from "./utils/expenseUsd";
 import { isLandingDemo, getDemoTrip } from "./utils/landingDemo";
 import LandingPhoneCarousel from "./components/LandingPhoneCarousel";
@@ -2576,30 +2625,57 @@ export default function EliteStatusTracker() {
     }
   };
 
+  // Columns we always need for the expense list. Crucially this OMITS
+  // receipt_image — that column stores entire base64-encoded PDFs/photos
+  // inline as JSONB and is slow enough to read in bulk that the Postgres
+  // statement timeout kills the query (saw "canceling statement due to
+  // statement timeout" with 11 users / many MB of receipts). Receipts are
+  // fetched lazily per-expense via loadExpenseReceipt below.
+  const EXPENSE_META_COLS = "id, user_id, trip_id, category, description, amount, currency, fx_rate, usd_reimbursement, individuals, date, payment_method, receipt, notes";
+
   const loadExpenses = async (userId) => {
     const { data, error } = await supabase
       .from("expenses")
-      .select("*")
+      .select(EXPENSE_META_COLS)
       .eq("user_id", userId)
       .order("date", { ascending: true });
-    if (!error && data) {
-      setExpenses(data.map(row => ({
-        id: row.id,
-        tripId: row.trip_id,
-        category: row.category,
-        description: row.description,
-        amount: row.amount,
-        currency: row.currency || "USD",
-        fxRate: row.fx_rate || 1,
-        usdReimbursement: row.usd_reimbursement || null,
-        individuals: row.individuals || "Self",
-        date: row.date,
-        paymentMethod: row.payment_method,
-        receipt: row.receipt,
-        receiptImage: row.receipt_image || null,
-        notes: row.notes,
-      })));
-    }
+    if (error) { console.error("loadExpenses", error.message); return; }
+    if (!data) return;
+    setExpenses(data.map(row => ({
+      id: row.id,
+      tripId: row.trip_id,
+      category: row.category,
+      description: row.description,
+      amount: row.amount,
+      currency: row.currency || "USD",
+      fxRate: row.fx_rate || 1,
+      usdReimbursement: row.usd_reimbursement || null,
+      individuals: row.individuals || "Self",
+      date: row.date,
+      paymentMethod: row.payment_method,
+      receipt: row.receipt,
+      receiptImage: null, // lazy-loaded — see loadExpenseReceipt
+      notes: row.notes,
+    })));
+  };
+
+  // Fetch the receipt_image blob for a single expense and patch it into state.
+  // Cheap to call repeatedly: if the blob is already in memory we no-op.
+  const loadExpenseReceipt = async (expenseId) => {
+    if (!expenseId || !user) return null;
+    const existing = (typeof expenses !== "undefined" ? expenses : []).find(e => e.id === expenseId);
+    if (existing?.receiptImage) return existing.receiptImage;
+    try {
+      const { data, error } = await supabase
+        .from("expenses")
+        .select("id, receipt_image")
+        .eq("id", expenseId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (error || !data?.receipt_image) return null;
+      setExpenses(prev => prev.map(e => e.id === expenseId ? { ...e, receiptImage: data.receipt_image } : e));
+      return data.receipt_image;
+    } catch { return null; }
   };
 
   const loadExpenseReports = async (userId) => {
@@ -2900,7 +2976,7 @@ Start by introducing yourself briefly in-character with personality, and give an
     const report = standaloneReports.find(r => r.id === reportId);
     if (!report) return;
     const exps = getReportExpenses(report, trips, expenses);
-    const html = await buildPrintReport({ title: report.title, expsForReport: exps, trips, EXPENSE_CATEGORIES });
+    const html = await buildPrintReport({ title: report.title, expsForReport: exps, trips, EXPENSE_CATEGORIES, supabase });
     const isStandalonePWA = typeof window !== "undefined" && (
       window.matchMedia?.("(display-mode: standalone)")?.matches ||
       window.navigator?.standalone === true
@@ -5119,6 +5195,17 @@ Start by introducing yourself briefly in-character with personality, and give an
     checkPush();
   }, [isLoggedIn]);
 
+  // Lazy-load the receipt blob for whichever expense the user has opened. The
+  // bulk loadExpenses fetch deliberately omits receipt_image (it's huge JSONB
+  // and the bulk read was timing out Postgres). When the user views, edits or
+  // crops an expense, fetch JUST that row's receipt_image and patch it into
+  // state — every existing consumer (preview modal, export, crop) then sees
+  // the populated value via the same exp.receiptImage path it already used.
+  useEffect(() => {
+    const id = viewExpenseId || editExpenseId || cropExpenseId;
+    if (id) loadExpenseReceipt(id);
+  }, [viewExpenseId, editExpenseId, cropExpenseId]);
+
   // Native push: refresh the device token on each login (no permission prompt —
   // only re-registers if the user already granted notifications). The native
   // "Enable notifications" tap handles the first-time prompt via enablePushNotifications.
@@ -5126,6 +5213,27 @@ Start by introducing yourself briefly in-character with personality, and give an
     if (!isLoggedIn || !isNative() || !user?.id) return;
     setPushSupported(true);
     registerNativePush(user.id, { silent: true }).then(r => { if (r.ok) setPushEnabled(true); }).catch(() => {});
+  }, [isLoggedIn, user?.id]);
+
+  // Web push (PWA): silently re-validate the subscription on every app open.
+  // Browsers (especially iOS Safari) rotate or evict subscriptions out from
+  // under us — without this, the server's stored endpoint goes stale and push
+  // silently stops working until the user manually re-enables. By re-upserting
+  // the current pushManager subscription on every mount we self-heal whenever
+  // the rotation event missed the service worker handler.
+  useEffect(() => {
+    if (!isLoggedIn || isNative() || !user?.id) return;
+    if (typeof navigator === "undefined" || !("serviceWorker" in navigator) || !("PushManager" in window)) return;
+    (async () => {
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        if (!sub) return; // user hasn't enabled push yet — leave the banner showing
+        setPushSupported(true);
+        const ok = await storePushSubscription(sub.toJSON());
+        if (ok) setPushEnabled(true);
+      } catch { /* swallow — non-critical */ }
+    })();
   }, [isLoggedIn, user?.id]);
 
   const [pushStatus, setPushStatus] = useState(null);
@@ -9716,7 +9824,21 @@ Start by introducing yourself briefly in-character with personality, and give an
         })).filter(c => c.totalUSD > 0);
 
         const printReport = async () => {
-          const expensesWithReceipts = tripExps.filter(e => e.receiptImage?.data);
+          // Hydrate receipts that haven't been lazy-loaded yet. loadExpenses
+          // omits receipt_image to avoid Postgres statement timeouts, so any
+          // expense the user hasn't opened in a view/edit/crop modal still has
+          // receiptImage=null in state — without this, the print would skip
+          // every receipt. Single bulk fetch keyed by id is safe (PK lookup).
+          const needIds = tripExps.filter(e => e.receipt && !e.receiptImage).map(e => e.id);
+          let hydrated = tripExps;
+          if (needIds.length) {
+            try {
+              const { data } = await supabase.from("expenses").select("id, receipt_image").in("id", needIds);
+              const byId = Object.fromEntries((data || []).map(r => [r.id, r.receipt_image]));
+              hydrated = tripExps.map(e => !e.receiptImage && byId[e.id] ? { ...e, receiptImage: byId[e.id] } : e);
+            } catch { /* print whatever we have */ }
+          }
+          const expensesWithReceipts = hydrated.filter(e => e.receiptImage?.data);
           const pdfPageImages = {};
           for (const exp of expensesWithReceipts) {
             if (exp.receiptImage.type === "application/pdf") {
