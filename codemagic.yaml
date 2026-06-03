@@ -230,8 +230,11 @@ workflows:
           # previously approved version [1.0.4]") because 1.0.4 is already live.
           # This file is now the single source of truth: bump the literal below
           # whenever you ship a public App Store release.
-          # History: 1.0 → 1.0.1 → 1.0.2 → 1.0.3 → 1.0.4 all released & closed.
-          MV="1.0.5"
+          # History: 1.0 → 1.0.1 → 1.0.2 → 1.0.3 → 1.0.4 → 1.0.5 all released & closed.
+          # 1.0.5 was approved & live 2026-05-20. Bumped to 1.0.6 for the
+          # 2026-06-03 release that adds time-sensitive notification entitlements
+          # + lazy-loaded page bundles for faster cold start.
+          MV="1.0.6"
           echo "Setting marketing version (CFBundleShortVersionString) to: $MV"
           agvtool new-marketing-version "$MV"
 
