@@ -47,13 +47,25 @@ async function fetchStatus(fn, date, depAirport, arrAirport) {
   });
   if (!resp.ok) return { error: `HTTP ${resp.status}` };
   const data = await resp.json();
+  // AeroDataBox returns multiple entries when an earlier instance of the same
+  // flight number ARRIVED on `date` (e.g. asking for BA7 on 2026-06-01 returns
+  // both the May 31 flight that landed today AND today's actual departure).
+  // Without date-disambiguation the matcher picks the first airport-matching
+  // entry — usually the already-Arrived one — and we miss boarding / delay /
+  // gate events for the real upcoming flight. So: prefer entries whose
+  // scheduled departure date matches `date`, then airport-only matches,
+  // then anything.
+  const airportsMatch = (d) => {
+    const di = d?.departure?.airport?.iata || "", ai = d?.arrival?.airport?.iata || "";
+    if (depAirport && di && di !== depAirport) return false;
+    if (arrAirport && ai && ai !== arrAirport) return false;
+    return true;
+  };
+  const depDateOf = (d) => (d?.departure?.scheduledTime?.local || d?.departure?.scheduledTimeLocal || "").slice(0, 10);
   const fd = Array.isArray(data)
-    ? (data.find(d => {
-        const di = d?.departure?.airport?.iata || "", ai = d?.arrival?.airport?.iata || "";
-        if (depAirport && di && di !== depAirport) return false;
-        if (arrAirport && ai && ai !== arrAirport) return false;
-        return true;
-      }) || data[0])
+    ? (data.find(d => airportsMatch(d) && depDateOf(d) === date)
+        || data.find(airportsMatch)
+        || data[0])
     : data;
   if (!fd) return { error: "No data" };
   const dep = fd.departure || {}, arr = fd.arrival || {};
@@ -63,12 +75,17 @@ async function fetchStatus(fn, date, depAirport, arrAirport) {
   const schedLocalRaw = dep.scheduledTime?.local || dep.scheduledTimeLocal || null;
   let schedUtc = null;
   if (schedLocalRaw) { const d = new Date(String(schedLocalRaw).replace(" ", "T")); if (!isNaN(d.getTime())) schedUtc = d.toISOString(); }
+  // AeroDataBox's actual JSON puts revisedTime in a NESTED object
+  // (`dep.revisedTime.local`), not a flat `revisedTimeLocal` field. Previous
+  // code only checked the flat name and silently always got `null`, so neither
+  // delay nor earlier-departure events ever fired correctly. Read both shapes.
+  const revisedLocalRaw = dep.revisedTime?.local || dep.revisedTimeLocal || null;
   return {
     status: fd.status || "Unknown",
     departureGate: dep.gate || null,
     departureTerminal: dep.terminal || null,
     departureDelay: dep.delay || 0,
-    departureRevised: dep.revisedTimeLocal || null,
+    departureRevised: revisedLocalRaw,
     arrivalAirport: arr.airport?.iata || "",
     arrivalDelay: arr.delay || 0,
     baggageBelt: arr.baggageBelt || null,
@@ -91,15 +108,34 @@ function fmtLocal(localStr) {
 
 export default async function handler(req, res) {
   // ── Auth ── Vercel Cron sends "Authorization: Bearer <CRON_SECRET>".
-  // Manual/external triggers can pass ?secret=<CRON_SECRET>. If no secret is
-  // configured, allow (dev only).
+  // Manual/external triggers can pass ?secret=<CRON_SECRET>. Admins (the
+  // hardcoded whitelist) can also trigger via a Supabase JWT so we can
+  // diagnose without needing the cron secret.
+  const ADMIN_EMAILS = new Set(["nicholas.sh.li@gmail.com", "christineandnicholas2014@gmail.com"]);
+  let authorized = false;
   if (CRON_SECRET) {
     const auth = req.headers.authorization || "";
     const qs = req.query.secret || "";
-    if (auth !== `Bearer ${CRON_SECRET}` && qs !== CRON_SECRET) {
-      return res.status(401).json({ error: "Unauthorized" });
+    if (auth === `Bearer ${CRON_SECRET}` || qs === CRON_SECRET) authorized = true;
+  } else {
+    authorized = true; // no secret configured → dev mode
+  }
+  if (!authorized) {
+    const bearer = (req.headers.authorization || "").replace(/^Bearer\s+/i, "");
+    if (bearer && bearer !== CRON_SECRET) {
+      try {
+        const supaUrl0 = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+        const supaService0 = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        if (supaUrl0 && supaService0) {
+          const { createClient: cc } = await import("@supabase/supabase-js");
+          const sc = cc(supaUrl0, supaService0);
+          const { data: { user: u } } = await sc.auth.getUser(bearer);
+          if (u?.email && ADMIN_EMAILS.has(String(u.email).toLowerCase())) authorized = true;
+        }
+      } catch { /* fall through to 401 */ }
     }
   }
+  if (!authorized) return res.status(401).json({ error: "Unauthorized" });
   if (!AERO_KEY) return res.status(500).json({ error: "AeroDataBox key missing" });
   if (!VAPID_PUBLIC || !VAPID_PRIVATE) return res.status(500).json({ error: "VAPID keys missing" });
 
@@ -427,6 +463,25 @@ export default async function handler(req, res) {
         if (fresh.departureDelay > 15 && (old.departureDelay || 0) <= 15) {
           const rev = fresh.departureRevised ? `New departure ${fresh.departureRevised.split(" ").pop()?.replace(/[+-]\d{2}:\d{2}$/, "")}` : "";
           for (const u of f.users) await notify(u, `${pf} delayed ${fresh.departureDelay} min`, withRoute(rev), f.fn, `${f.fn}-delay`);
+        }
+        // Earlier departure — flights occasionally move forward (e.g., crew
+        // ready early, weather window). AeroDataBox's `delay` field is
+        // positive-only, so we compute the offset from scheduled vs revised
+        // times directly. Fires once when the move first exceeds 10 min so the
+        // user doesn't accidentally miss the flight.
+        const earlyMin = (s, r) => {
+          if (!s || !r) return 0;
+          const sd = new Date(String(s).replace(" ", "T")).getTime();
+          const rd = new Date(String(r).replace(" ", "T")).getTime();
+          if (isNaN(sd) || isNaN(rd)) return 0;
+          return Math.round((sd - rd) / 60000); // positive when revised is BEFORE scheduled
+        };
+        const freshEarly = earlyMin(fresh.schedLocal, fresh.departureRevised);
+        const oldEarly = earlyMin(old.schedLocal, old.departureRevised);
+        if (freshEarly > 10 && oldEarly <= 10) {
+          const newDep = fresh.departureRevised?.split(" ").pop()?.replace(/[+-]\d{2}:\d{2}$/, "") || "";
+          const oldDep = fresh.schedLocal?.split(" ").pop()?.replace(/[+-]\d{2}:\d{2}$/, "") || "";
+          for (const u of f.users) await notify(u, `${pf} moved up ${freshEarly} min`, withRoute(`Now departs ${newDep} (was ${oldDep})`), f.fn, `${f.fn}-early`);
         }
         // Cancellation
         if (fresh.status === "Canceled" && old.status !== "Canceled")

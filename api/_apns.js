@@ -108,7 +108,17 @@ export function createApnsSender() {
     let payload;
     try {
       payload = JSON.stringify({
-        aps: { alert: { title, body: body || "" }, sound: "default", "thread-id": data?.tag || data?.flightNumber || "flight" },
+        aps: {
+          alert: { title, body: body || "" },
+          sound: "default",
+          "thread-id": data?.tag || data?.flightNumber || "flight",
+          // "time-sensitive" makes the notification break through Focus mode,
+          // appear with a distinctive style on the lock screen, and stay
+          // visible longer before auto-fading. Requires the app's entitlements
+          // to include com.apple.developer.usernotifications.time-sensitive,
+          // which the next iOS build will add to App.entitlements.
+          "interruption-level": "time-sensitive",
+        },
         ...(data || {}),
       });
     } catch { return { ok: false, status: 0, reason: "payload" }; }
