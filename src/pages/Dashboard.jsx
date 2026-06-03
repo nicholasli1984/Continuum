@@ -219,7 +219,7 @@ function NextFlightCard({ css, dv, D, isMobile, trips, getFlightLiveStatus, AIRP
     const cls = CLS[fl.fareClass] || fl.fareClass || fl.class || "—";
     const refDate = fl.date || trip.date;
     const fdate = new Date(refDate + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short" });
-    const baggage = live?.baggageBelt || "";
+    const baggage = live?.baggageBelt || "—";
     const depTime = fl.departureTime || "";
     const arrTime = fl.arrivalTime || "";
     const overnight = fl.arrivalDate && fl.date && fl.arrivalDate > fl.date;
@@ -313,7 +313,7 @@ function NextFlightCard({ css, dv, D, isMobile, trips, getFlightLiveStatus, AIRP
             <Field label="Flight" val={f.fnum || "—"} />
             <Field label="Seat" val={f.seat} />
             <Field label="Class" val={f.cls} />
-            {f.baggage && <Field label="Baggage" val={f.baggage} />}
+            <Field label="Baggage" val={f.baggage} />
           </div>
 
           {/* Aircraft — clean monoline icon + type */}
