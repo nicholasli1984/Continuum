@@ -46,7 +46,17 @@ async function fetchStatus(fn, date, depAirport, arrAirport) {
     headers: { "X-RapidAPI-Key": AERO_KEY, "X-RapidAPI-Host": "aerodatabox.p.rapidapi.com" },
   });
   if (!resp.ok) return { error: `HTTP ${resp.status}` };
-  const data = await resp.json();
+  // AeroDataBox occasionally answers HTTP 200 with an EMPTY body (seen during
+  // RapidAPI rate-limit / quota edge cases — the proxy still 200s but the
+  // payload is zero bytes). resp.json() then throws "Unexpected end of JSON
+  // input", which used to crash the entire serverless function and surface as
+  // a generic Vercel FUNCTION_INVOCATION_FAILED. Read text first and guard
+  // against empty / non-JSON, returning a structured error like any other
+  // failed lookup so the cron continues with the rest of its work.
+  const text = await resp.text();
+  if (!text) return { error: "Empty body" };
+  let data;
+  try { data = JSON.parse(text); } catch { return { error: "Bad JSON" }; }
   // AeroDataBox returns multiple entries when an earlier instance of the same
   // flight number ARRIVED on `date` (e.g. asking for BA7 on 2026-06-01 returns
   // both the May 31 flight that landed today AND today's actual departure).
