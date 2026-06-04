@@ -160,13 +160,32 @@ function NextFlightCard({ css, dv, D, isMobile, trips, getFlightLiveStatus, AIRP
 
   // 1) Collect every flight across all trips with a parseable departure
   //    datetime so we can find each flight's "next flight" globally.
+  // Some itinerary-paste / email-parsed entries land with depTime "06:25 pm"
+  // instead of "18:25", which used to silently drop the segment because
+  // `new Date("...T06:25 pm:00")` is NaN. Accept both shapes — and any other
+  // common quirk — so segments aren't lost based on how they were added.
+  const to24h = (raw) => {
+    if (!raw) return "00:00";
+    const s = String(raw).trim();
+    const ampm = s.match(/^(\d{1,2}):(\d{2})\s*([ap])\.?m?\.?$/i);
+    if (ampm) {
+      let h = +ampm[1];
+      if (ampm[3].toLowerCase() === "p" && h !== 12) h += 12;
+      if (ampm[3].toLowerCase() === "a" && h === 12) h = 0;
+      return `${String(h).padStart(2, "0")}:${ampm[2]}`;
+    }
+    const hhmm = s.match(/^(\d{1,2}):(\d{2})$/);
+    if (hhmm) return `${hhmm[1].padStart(2, "0")}:${hhmm[2]}`;
+    return null;
+  };
   const allFlights = [];
   for (const trip of (trips || [])) {
     const segs = (trip.segments || []).filter(x => !x._isMeta && x.type === "flight" && (x.flightNumber || x.route));
     segs.forEach((seg, si) => {
       const d = seg.date || trip.date;
       if (!d) return;
-      const depDT = new Date(`${d}T${(seg.departureTime || "00:00")}:00`);
+      const time = to24h(seg.departureTime) || "00:00";
+      const depDT = new Date(`${d}T${time}:00`);
       if (isNaN(depDT.getTime())) return;
       allFlights.push({ seg, trip, segIdx: si, depDT, date: d });
     });

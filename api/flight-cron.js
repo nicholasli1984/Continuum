@@ -27,6 +27,25 @@ const CRON_SECRET = (process.env.CRON_SECRET || "").trim();
 
 const normFn = (s) => (s || "").replace(/\s+/g, "").toUpperCase();
 
+// Some segments are stored with depTime like "06:25 pm" instead of "18:25"
+// (notably itinerary-paste / email-parsed entries). The old `/\d{1,2}:\d{2}/`
+// regex grabbed "06:25" and silently lost the PM, scheduling notifications
+// 12 hours before the real departure. Accept both shapes.
+const to24h = (raw) => {
+  if (!raw) return null;
+  const s = String(raw).trim();
+  const ampm = s.match(/^(\d{1,2}):(\d{2})\s*([ap])\.?m?\.?$/i);
+  if (ampm) {
+    let h = +ampm[1];
+    if (ampm[3].toLowerCase() === "p" && h !== 12) h += 12;
+    if (ampm[3].toLowerCase() === "a" && h === 12) h = 0;
+    return `${String(h).padStart(2, "0")}:${ampm[2]}`;
+  }
+  const hhmm = s.match(/^(\d{1,2}):(\d{2})$/);
+  if (hhmm) return `${hhmm[1].padStart(2, "0")}:${hhmm[2]}`;
+  return null;
+};
+
 // Tiered polling: how many minutes between checks, by hours-until-departure.
 // The cron itself fires every ~15 min; this gates how often we actually spend
 // an API call on a given flight.
@@ -332,8 +351,8 @@ export default async function handler(req, res) {
     const fn = normFn(fn0);
     if (!fn || !date) return;
     let departAt;
-    const hhmm = (depTime || "").match(/(\d{1,2}):(\d{2})/);
-    departAt = hhmm ? new Date(`${date}T${hhmm[1].padStart(2, "0")}:${hhmm[2]}:00`) : new Date(`${date}T12:00:00`);
+    const t24 = to24h(depTime);
+    departAt = t24 ? new Date(`${date}T${t24}:00`) : new Date(`${date}T12:00:00`);
     if (isNaN(departAt.getTime())) departAt = new Date(`${date}T12:00:00`);
     if (departAt < windowStart || departAt > windowEnd) return;
     const key = `${fn}_${date}`;
@@ -359,7 +378,7 @@ export default async function handler(req, res) {
   // risk). Times at one connecting airport share a timezone, so the gap math is
   // offset-independent.
   const connections = {}; // conn_key -> { userId, aFn, bFn, airport, scheduledGap, aKey }
-  const tMs = (date, timeStr) => { const m = (timeStr || "").match(/(\d{1,2}):(\d{2})/); if (!m || !date) return null; const d = new Date(`${date}T${m[1].padStart(2, "0")}:${m[2]}:00Z`); return isNaN(d.getTime()) ? null : d.getTime(); };
+  const tMs = (date, timeStr) => { const t = to24h(timeStr); if (!t || !date) return null; const d = new Date(`${date}T${t}:00Z`); return isNaN(d.getTime()) ? null : d.getTime(); };
   const addConnections = (userId, fs) => {
     for (let i = 0; i < fs.length - 1; i++) {
       const A = fs[i], B = fs[i + 1];
