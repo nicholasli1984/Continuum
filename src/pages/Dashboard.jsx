@@ -1479,7 +1479,12 @@ export function renderDashboard(s) {
               const ts = t.date || (t.segments && t.segments.map(s => s.date).filter(Boolean).sort()[0]) || "";
               if (!ts) return false;
               const d = Math.ceil((new Date(ts + "T12:00:00") - new Date()) / 86400000);
-              return d >= 0 && d <= 30;
+              // Include trips starting in the next 30 days, AND trips already in
+              // progress (negative `d`). upcomingTripsFiltered already drops
+              // trips whose end date < today, so any trip with d <= 0 here is
+              // a current one — belongs on this rail just as much as one that
+              // hasn't started yet.
+              return d <= 30;
             });
             if (within30.length === 0) return (
               <div style={{ flexShrink: 0, width: "100%", padding: "40px 20px", textAlign: "center", background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}` }}>
@@ -1488,7 +1493,9 @@ export function renderDashboard(s) {
             );
             return within30.slice(0, 12).map((trip, tIdx) => {
               const tripStart = trip.date || (trip.segments && trip.segments.map(s => s.date).filter(Boolean).sort()[0]) || "";
-              const daysAway = tripStart ? Math.max(0, Math.ceil((new Date(tripStart + "T12:00:00") - new Date()) / 86400000)) : null;
+              const daysAwayRaw = tripStart ? Math.ceil((new Date(tripStart + "T12:00:00") - new Date()) / 86400000) : null;
+              const inProgress = daysAwayRaw !== null && daysAwayRaw <= 0;
+              const daysAway = inProgress ? null : daysAwayRaw;
               const confCode = trip.confirmationCode || trip.confirmation_code || (trip.segments && trip.segments.map(s => s.confirmationCode).filter(Boolean)[0]) || "";
               const realSegs = (trip.segments || []).filter(s => !s._isMeta);
               const tripName = trip.tripName || trip.trip_name || trip.location || "Trip";
@@ -1544,9 +1551,18 @@ export function renderDashboard(s) {
                   </div>
                   {/* Bottom-right — days out + arrow */}
                   <div style={{ position: "absolute", right: 16, bottom: 16, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 10 }}>
-                    {daysAway !== null && <div style={{ textAlign: "right", lineHeight: 1 }}>
-                      <span style={{ fontFamily: "'Fraunces', serif", fontSize: 28, fontWeight: 400, color: "#FBF8F3", fontVariantNumeric: "tabular-nums" }}>{daysAway}</span>
-                      <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(244,241,236,0.8)", marginTop: 3 }}>days out</div>
+                    {(inProgress || daysAway !== null) && <div style={{ textAlign: "right", lineHeight: 1 }}>
+                      {inProgress ? (
+                        <>
+                          <div style={{ fontFamily: "'Fraunces', serif", fontStyle: "italic", fontSize: 22, fontWeight: 400, color: "#FBF8F3" }}>now</div>
+                          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(244,241,236,0.8)", marginTop: 4 }}>on trip</div>
+                        </>
+                      ) : (
+                        <>
+                          <span style={{ fontFamily: "'Fraunces', serif", fontSize: 28, fontWeight: 400, color: "#FBF8F3", fontVariantNumeric: "tabular-nums" }}>{daysAway}</span>
+                          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(244,241,236,0.8)", marginTop: 3 }}>days out</div>
+                        </>
+                      )}
                     </div>}
                     <span style={{ width: 44, height: 44, borderRadius: 13, background: "rgba(0,0,0,0.30)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", border: "1px solid rgba(255,255,255,0.26)", display: "grid", placeItems: "center", flexShrink: 0 }}>
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F4F1EC" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
