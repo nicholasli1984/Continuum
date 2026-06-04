@@ -253,6 +253,32 @@ export default async function handler(req, res) {
     const { data, error } = await supabase.from("device_push_tokens").select("user_id, token, platform, updated_at").order("updated_at", { ascending: false });
     return res.json({ tableError: error?.message || null, count: data?.length || 0, rows: (data || []).map(r => ({ user_id: r.user_id, token: r.token.slice(0, 10) + "…", platform: r.platform, updated_at: r.updated_at })) });
   }
+  // ?debugTrips=<user_id>  → dump every trip's flight segments for that user
+  // so we can see exactly what the dashboard / cron is filtering on. Returns
+  // only the fields that drive the dashboard's NextFlightCard filter — date,
+  // type, flightNumber, route, departureTime, dep/arr airports — so we don't
+  // leak unrelated data.
+  if (req.query.debugTrips) {
+    const userId = String(req.query.debugTrips);
+    const { data, error } = await supabase.from("trips").select("id, date, segments, flight_number").eq("user_id", userId);
+    if (error) return res.json({ error: error.message });
+    const flights = [];
+    (data || []).forEach(t => {
+      const segs = Array.isArray(t.segments) ? t.segments : [];
+      segs.forEach((s, i) => {
+        if (s._isMeta) return;
+        if (s.type !== "flight") return;
+        flights.push({
+          tripId: t.id, segIdx: i,
+          date: s.date || null, tripDate: t.date,
+          type: s.type, flightNumber: s.flightNumber || null, route: s.route || null,
+          dep: s.departureAirport || null, arr: s.arrivalAirport || null,
+          depTime: s.departureTime || null, arrTime: s.arrivalTime || null,
+        });
+      });
+    });
+    return res.json({ debugTrips: userId, tripsCount: data?.length || 0, flightsCount: flights.length, flights });
+  }
   // ?debugSubs=1  → report whether push_subscriptions exists + row count
   if (req.query.debugSubs) {
     const { data, error, count } = await supabase.from("push_subscriptions").select("user_id", { count: "exact" });
