@@ -1137,9 +1137,21 @@ export const LOUNGE_DATABASE = {
     { id: "bkk_oman_air", name: "Oman Air Lounge", terminal: "1", network: "generic_airline", alliance: "oneworld", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Concourse E", placeQuery: "Oman Air Lounge Bangkok Suvarnabhumi" },
   ],
   TPE: [
-    { id: "tpe_plaza_t1", name: "Plaza Premium Lounge", terminal: "T1", network: "plaza_premium", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - Last Departure", location: "Terminal 1", placeQuery: "Plaza Premium Lounge Taiwan Taoyuan Terminal 1" },
-    { id: "tpe_china_dynasty", name: "China Airlines Dynasty Lounge", terminal: "T2", network: "generic_airline", alliance: "skyteam", rating: 4.0, amenities: ["hot_food","bar","wifi","showers","nap_pods"], hours: "5:30 AM - Last Departure", location: "Terminal 2", placeQuery: "China Airlines Dynasty Lounge Taoyuan" },
+    // oneworld
+    { id: "tpe_cathay", name: "Cathay Pacific Lounge", terminal: "T1", network: "cathay_lounge", alliance: "oneworld", rating: 4.2, amenities: ["showers","hot_food","bar","wifi","a_la_carte"], hours: "Varies with CX flights", location: "Terminal 1 near Gate C1", placeQuery: "Cathay Pacific Lounge Taoyuan Terminal 1" },
+    // Star Alliance
     { id: "tpe_eva_infinity", name: "EVA Air Infinity Lounge", terminal: "T2", network: "generic_airline", alliance: "star", rating: 4.2, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - Last Departure", location: "Terminal 2", placeQuery: "EVA Air Infinity Lounge Taoyuan" },
+    { id: "tpe_eva_star", name: "EVA Air The Star Lounge", terminal: "T2", network: "generic_airline", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Terminal 2 near Gate C5", placeQuery: "EVA Air The Star Lounge Taoyuan" },
+    { id: "tpe_singapore", name: "Singapore Airlines SilverKris Lounge", terminal: "T2", network: "singapore_lounge", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with SQ flights", location: "Terminal 2", placeQuery: "Singapore Airlines SilverKris Lounge Taoyuan" },
+    { id: "tpe_thai", name: "Thai Airways Royal Orchid Lounge", terminal: "T1", network: "generic_airline", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies with TG flights", location: "Terminal 1", placeQuery: "Thai Airways Royal Orchid Lounge Taoyuan" },
+    // SkyTeam
+    { id: "tpe_china_dynasty_t1", name: "China Airlines Dynasty Lounge", terminal: "T1", network: "generic_airline", alliance: "skyteam", rating: 4.1, amenities: ["hot_food","bar","wifi","showers","nap_pods"], hours: "5:30 AM - Last Departure", location: "Terminal 1", placeQuery: "China Airlines Dynasty Lounge Taoyuan Terminal 1" },
+    { id: "tpe_china_dynasty", name: "China Airlines Dynasty Lounge", terminal: "T2", network: "generic_airline", alliance: "skyteam", rating: 4.0, amenities: ["hot_food","bar","wifi","showers","nap_pods"], hours: "5:30 AM - Last Departure", location: "Terminal 2", placeQuery: "China Airlines Dynasty Lounge Taoyuan Terminal 2" },
+    { id: "tpe_korean", name: "Korean Air KAL Business Lounge", terminal: "T1", network: "generic_airline", alliance: "skyteam", rating: 3.9, amenities: ["hot_food","bar","wifi"], hours: "Varies with KE flights", location: "Terminal 1", placeQuery: "Korean Air KAL Business Lounge Taoyuan" },
+    // Priority Pass / paid
+    { id: "tpe_plaza_t1", name: "Plaza Premium Lounge", terminal: "T1", network: "plaza_premium", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - Last Departure", location: "Terminal 1", placeQuery: "Plaza Premium Lounge Taiwan Taoyuan Terminal 1" },
+    { id: "tpe_plaza_t2_a", name: "Plaza Premium Lounge", terminal: "T2", network: "plaza_premium", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 2 Zone A", placeQuery: "Plaza Premium Lounge Taiwan Taoyuan Terminal 2 Zone A" },
+    { id: "tpe_plaza_t2_d", name: "Plaza Premium Lounge", terminal: "T2", network: "plaza_premium", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 2 Zone D", placeQuery: "Plaza Premium Lounge Taiwan Taoyuan Terminal 2 Zone D" },
   ],
   KUL: [
     { id: "kul_pp_plaza", name: "Plaza Premium Lounge", terminal: "1", network: "plaza_premium", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "KLIA Main Terminal", placeQuery: "Plaza Premium Lounge KLIA" },
