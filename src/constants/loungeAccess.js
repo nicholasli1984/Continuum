@@ -105,7 +105,7 @@ export const AIRPORT_COUNTRY = {
   CPT: "ZA", ADD: "ET", NBO: "KE", LOS: "NG", TLV: "IL", AMM: "JO",
   // ── Asia ──
   NRT: "JP", HND: "JP", KIX: "JP", NGO: "JP", FUK: "JP", HKG: "HK", SIN: "SG",
-  ICN: "KR", GMP: "KR", BKK: "TH", DMK: "TH", TPE: "TW", KHH: "TW", KUL: "MY",
+  ICN: "KR", GMP: "KR", BKK: "TH", DMK: "TH", TPE: "TW", TSA: "TW", KHH: "TW", RMQ: "TW", KUL: "MY",
   BKI: "MY", PEN: "MY", MNL: "PH", CEB: "PH", DEL: "IN", BOM: "IN", BLR: "IN",
   MAA: "IN", HYD: "IN", PVG: "CN", PEK: "CN", PKX: "CN", CAN: "CN", SHA: "CN",
   CTU: "CN", SZX: "CN", HAN: "VN", SGN: "VN", DPS: "ID", CGK: "ID", SUB: "ID",
