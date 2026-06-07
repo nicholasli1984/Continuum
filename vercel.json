@@ -21,12 +21,6 @@
       ]
     },
     {
-      "source": "/push-sw.js",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
-      ]
-    },
-    {
       "source": "/build-version.json",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
@@ -68,9 +62,6 @@
     "api/render-html-to-png.js": {
       "memory": 1024,
       "maxDuration": 30
-    },
-    "api/flight-cron.js": {
-      "maxDuration": 60
     }
   }
 }

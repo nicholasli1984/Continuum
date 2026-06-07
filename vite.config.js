@@ -10,6 +10,11 @@ export default defineConfig({
   define: {
     '__BUILD_TS__': JSON.stringify(BUILD_TS),
   },
+  // manualChunks split removed — it triggered a black-screen regression on
+  // initial load (likely a chunk-evaluation order issue with @sentry/react
+  // being split into vendor-react via the /react/ regex, creating a circular
+  // load relationship with the @sentry init code). The 2.3 MB single-bundle
+  // approach is slower-to-cold-load but renders reliably.
   plugins: [
     react(),
     // Replace __BUILD_TS__ in index.html and write version file for API
@@ -57,7 +62,8 @@ export default defineConfig({
       workbox: {
         skipWaiting: true,
         clientsClaim: true,
-        importScripts: ['/push-sw.js'],
+        // Push service worker removed alongside the rest of the in-house
+        // notification stack — the airline's own app handles flight alerts now.
         // Only precache static assets (icons, images) — NOT JS/CSS bundles
         // JS/CSS have content hashes in filenames and are fetched fresh via NetworkFirst
         globPatterns: ['**/*.{ico,png,svg,woff2}'],

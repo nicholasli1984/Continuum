@@ -114,7 +114,7 @@
         function listenForUpdates() {
           if (!("serviceWorker" in navigator)) return;
 
-          // Listen for SW_UPDATED message from push-sw.js activate handler
+          // Listen for SW_UPDATED message from the service worker's activate handler
           navigator.serviceWorker.addEventListener("message", function(event) {
             if (event.data && event.data.type === "SW_UPDATED") {
               if (!window._swReloading) { window._swReloading = true; window.location.reload(); }

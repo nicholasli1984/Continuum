@@ -74,7 +74,8 @@ import AskContinuumPill from "./components/AskContinuumPill";
 import LoungeDirectionsModal from "./components/LoungeDirectionsModal";
 import { FormModal, FormRow, FormGrid, fmInputStyle, FormPillGroup } from "./components/FormModal";
 import { snapReceiptNative, isNative } from "./utils/nativeCamera";
-import { registerNativePush, openAppSettings } from "./utils/nativePush";
+// Push subsystem removed — flight notifications come from the airline's own
+// app via the per-flight Track in Airline App button now.
 import { nativeSignIn, nativeGoogleEnabled } from "./utils/nativeAuth";
 // FeedbackPage is a default-exported React component (not a renderX function),
 // so use React.lazy + Suspense. The wrapper keeps the existing <FeedbackPage />
@@ -1408,7 +1409,6 @@ export default function EliteStatusTracker() {
   const [editingSegIdx, setEditingSegIdx] = useState(null); // index of segment being edited within a trip
   const [tempUnit, setTempUnit] = useState(() => localStorage.getItem("continuum_temp_unit") || "F");
   const [weatherCache, setWeatherCache] = useState({}); // { "cityKey": { high, low, code, date } }
-  const [flightStatusCache, setFlightStatusCache] = useState({}); // { "BA158_2026-05-31": { status, departureDelay, ... } }
 
   // ── Packing list state ──
   // ── Visa check state ──
@@ -1491,8 +1491,6 @@ export default function EliteStatusTracker() {
   // Flat list for backward compat
   const getPackingItems = () => Object.values(PACK_CATEGORIES).flatMap(c => c.items);
   const flightStatusFetchedRef = useRef(new Set());
-  const pushSubRef = useRef(null); // current push subscription
-  const prevFlightStatusRef = useRef({}); // previous status for change detection
   const weatherLoading = useRef({}); // track in-flight fetches without re-render
   const [hotelSectionOpen, setHotelSectionOpen] = useState(false);
   const [expandedItinId, setExpandedItinId] = useState(null); // expanded booking inbox item
@@ -5160,41 +5158,6 @@ Start by introducing yourself briefly in-character with personality, and give an
     };
   }, []);
 
-  // ── Push notification subscription ──
-  const [pushEnabled, setPushEnabled] = useState(false);
-  const [pushSupported, setPushSupported] = useState(false);
-  // One-time nudge shown right after a user adds a flight, inviting them to turn
-  // on gate/delay/lounge alerts. Suppressed for the session once acted on.
-  const [flightAlertNudge, setFlightAlertNudge] = useState(false);
-  const flightNudgeDismissedRef = useRef(false);
-
-  useEffect(() => {
-    if (!isLoggedIn) return;
-    const checkPush = async () => {
-      if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) return;
-      setPushSupported(true);
-      if (Notification.permission === "granted") {
-        try {
-          const reg = await navigator.serviceWorker.ready;
-          const sub = await reg.pushManager.getSubscription();
-          if (sub) {
-            pushSubRef.current = sub.toJSON();
-            setPushEnabled(true);
-            // Re-sync to the DB on every load in case it was never stored
-            // (e.g. a prior subscribe succeeded on-device but the save failed).
-            if (user?.id) {
-              apiFetch("/api/push-notify?action=subscribe", {
-                method: "POST", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ userId: user.id, subscription: sub.toJSON() }),
-              }).catch(() => {});
-            }
-          }
-        } catch {}
-      }
-    };
-    checkPush();
-  }, [isLoggedIn]);
-
   // Lazy-load the receipt blob for whichever expense the user has opened. The
   // bulk loadExpenses fetch deliberately omits receipt_image (it's huge JSONB
   // and the bulk read was timing out Postgres). When the user views, edits or
@@ -5206,126 +5169,6 @@ Start by introducing yourself briefly in-character with personality, and give an
     if (id) loadExpenseReceipt(id);
   }, [viewExpenseId, editExpenseId, cropExpenseId]);
 
-  // Native push: refresh the device token on each login (no permission prompt —
-  // only re-registers if the user already granted notifications). The native
-  // "Enable notifications" tap handles the first-time prompt via enablePushNotifications.
-  useEffect(() => {
-    if (!isLoggedIn || !isNative() || !user?.id) return;
-    setPushSupported(true);
-    registerNativePush(user.id, { silent: true }).then(r => { if (r.ok) setPushEnabled(true); }).catch(() => {});
-  }, [isLoggedIn, user?.id]);
-
-  // Web push (PWA): silently re-validate the subscription on every app open.
-  // Browsers (especially iOS Safari) rotate or evict subscriptions out from
-  // under us — without this, the server's stored endpoint goes stale and push
-  // silently stops working until the user manually re-enables. By re-upserting
-  // the current pushManager subscription on every mount we self-heal whenever
-  // the rotation event missed the service worker handler.
-  useEffect(() => {
-    if (!isLoggedIn || isNative() || !user?.id) return;
-    if (typeof navigator === "undefined" || !("serviceWorker" in navigator) || !("PushManager" in window)) return;
-    (async () => {
-      try {
-        const reg = await navigator.serviceWorker.ready;
-        const sub = await reg.pushManager.getSubscription();
-        if (!sub) return; // user hasn't enabled push yet — leave the banner showing
-        setPushSupported(true);
-        const ok = await storePushSubscription(sub.toJSON());
-        if (ok) setPushEnabled(true);
-      } catch { /* swallow — non-critical */ }
-    })();
-  }, [isLoggedIn, user?.id]);
-
-  const [pushStatus, setPushStatus] = useState(null);
-  // VAPID public keys are base64url strings, but pushManager.subscribe wants a
-  // BufferSource for applicationServerKey on iOS/Safari WebKit (Chrome tolerates
-  // the raw string; iOS does not — passing the string makes subscribe throw and
-  // no subscription is ever created). Convert it.
-  const urlBase64ToUint8Array = (base64String) => {
-    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-    const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-    const raw = atob(base64);
-    const arr = new Uint8Array(raw.length);
-    for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
-    return arr;
-  };
-  // Persist a subscription to the DB; returns true on success so callers can
-  // surface failures (the old code swallowed them, leaving "enabled" on the
-  // device but nothing stored server-side).
-  const storePushSubscription = async (sub) => {
-    if (!user) return false;
-    try {
-      const resp = await apiFetch("/api/push-notify?action=subscribe", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id, subscription: sub }),
-      });
-      return resp.ok;
-    } catch { return false; }
-  };
-  const enablePushNotifications = async () => {
-    // Native (Capacitor) app → register with the OS (APNs on iOS) instead of
-    // web-push. More reliable than iOS web push and works without the PWA.
-    if (isNative()) {
-      setPushStatus("Setting up alerts...");
-      const r = await registerNativePush(user?.id);
-      if (r.ok) { setPushEnabled(true); setPushStatus(null); }
-      else if (/permission|denied|blocked/i.test(r.reason || "")) {
-        // iOS won't let us flip the permission — send the user straight to the
-        // app's Settings page so they can turn Notifications back on.
-        setPushStatus("Notifications are off — opening Settings. Turn on Notifications for Continuum, then come back.");
-        openAppSettings();
-      } else {
-        setPushStatus(`Couldn't enable notifications: ${r.reason || "unknown"}`);
-      }
-      return;
-    }
-    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-      setPushStatus("Push notifications are not supported in this browser.");
-      return;
-    }
-    try {
-      setPushStatus("Requesting permission...");
-      const perm = await Notification.requestPermission();
-      if (perm !== "granted") {
-        setPushStatus(perm === "denied" ? "Notifications were blocked. Enable them in your browser settings." : "Permission not granted.");
-        return;
-      }
-      setPushStatus("Setting up alerts...");
-      const reg = await navigator.serviceWorker.ready;
-      const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
-      if (!vapidKey) {
-        setPushStatus("Push not configured. Missing VAPID key.");
-        return;
-      }
-      let sub = await reg.pushManager.getSubscription();
-      if (!sub) {
-        sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(vapidKey) });
-      }
-      pushSubRef.current = sub.toJSON();
-      const stored = await storePushSubscription(sub.toJSON());
-      setPushEnabled(true);
-      setPushStatus(stored ? null : "Alerts on, but couldn't reach the server to save them — pull to refresh and try again.");
-    } catch (e) {
-      setPushStatus("Error: " + e.message);
-    }
-  };
-
-  // Offer flight alerts at the moment of highest intent — just after a flight is
-  // added — but only when they aren't already on, and at most once per session.
-  const maybePromptFlightAlerts = () => {
-    if (!isLoggedIn || pushEnabled || !pushSupported) return;
-    if (flightNudgeDismissedRef.current) return;
-    setFlightAlertNudge(true);
-  };
-  const dismissFlightNudge = () => { flightNudgeDismissedRef.current = true; setFlightAlertNudge(false); };
-  const acceptFlightNudge = () => { flightNudgeDismissedRef.current = true; setFlightAlertNudge(false); enablePushNotifications(); };
-  // Auto-retire the nudge if ignored, so it never lingers on screen.
-  useEffect(() => {
-    if (!flightAlertNudge) return;
-    const t = setTimeout(() => setFlightAlertNudge(false), 13000);
-    return () => clearTimeout(t);
-  }, [flightAlertNudge]);
-
   // Native Apple/Google sign-in (Capacitor). The OS shows a native sheet and the
   // Supabase auth listener updates the session on success; surface real errors
   // (but not user-cancel).
@@ -5336,88 +5179,20 @@ Start by introducing yourself briefly in-character with personality, and give an
     if (!r.ok && !r.cancelled) setAuthError(r.reason || "Sign-in failed. Please try again.");
   };
 
-  // ── Live flight status polling for upcoming flights ──
-  useEffect(() => {
-    if (!isLoggedIn || trips.length === 0) return;
-    const checkFlightStatus = async () => {
-      const now = new Date();
-      const cutoff = new Date(now.getTime() + 72 * 60 * 60 * 1000);
-      const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-      const flightsToCheck = [];
-      trips.forEach(trip => {
-        (trip.segments || []).filter(s => !s._isMeta && s.type === "flight" && s.flightNumber && s.date).forEach(seg => {
-          const segDate = new Date(seg.date + "T12:00:00");
-          if (segDate >= yesterday && segDate <= cutoff) {
-            flightsToCheck.push({
-              flightNumber: seg.flightNumber,
-              date: seg.date,
-              departureAirport: seg.departureAirport || "",
-              arrivalAirport: seg.arrivalAirport || "",
-            });
-          }
-        });
-      });
-      if (flightsToCheck.length === 0) return;
-      try {
-        const resp = await apiFetch("/api/flight-status", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ flights: flightsToCheck }),
-        });
-        if (resp.ok) {
-          const { results } = await resp.json();
-          if (results) {
-            // Detect changes and send push notifications
-            const prev = prevFlightStatusRef.current;
-            const sub = pushSubRef.current;
-            Object.entries(results).forEach(([key, status]) => {
-              if (!status || status.error) return;
-              const old = prev[key];
-              if (!old) { prev[key] = status; return; }
-              const fn = key.split("_")[0];
-              // Gate change
-              if (status.departureGate && status.departureGate !== old.departureGate && sub) {
-                apiFetch("/api/push-notify", { method: "POST", headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ subscription: sub, title: `Gate Assigned: ${fn}`, body: `Gate ${status.departureGate}${status.departureTerminal ? ` · Terminal ${status.departureTerminal}` : ""}`, data: { flightNumber: fn } }),
-                }).catch(() => {});
-              }
-              // Delay
-              if (status.departureDelay > 15 && (!old.departureDelay || old.departureDelay <= 15) && sub) {
-                apiFetch("/api/push-notify", { method: "POST", headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ subscription: sub, title: `Flight Delayed: ${fn}`, body: `Delayed ${status.departureDelay} minutes${status.departureRevised ? ". New departure: " + status.departureRevised.split(" ").pop()?.replace(/[+-]\d{2}:\d{2}$/, "") : ""}`, data: { flightNumber: fn } }),
-                }).catch(() => {});
-              }
-              // Cancellation
-              if (status.status === "Canceled" && old.status !== "Canceled" && sub) {
-                apiFetch("/api/push-notify", { method: "POST", headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ subscription: sub, title: `CANCELLED: ${fn}`, body: `Flight ${fn} has been cancelled. Contact your airline.`, data: { flightNumber: fn } }),
-                }).catch(() => {});
-              }
-              // Landed
-              if (status.status === "Landed" && old.status !== "Landed" && sub) {
-                apiFetch("/api/push-notify", { method: "POST", headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ subscription: sub, title: `Landed: ${fn}`, body: `${status.arrivalAirport || ""}${status.baggageBelt ? " · Baggage belt " + status.baggageBelt : ""}`, data: { flightNumber: fn } }),
-                }).catch(() => {});
-              }
-              prev[key] = status;
-            });
-            prevFlightStatusRef.current = prev;
-            setFlightStatusCache(p => ({ ...p, ...results }));
-          }
-        }
-      } catch {}
-    };
-    const initialTimer = setTimeout(checkFlightStatus, 3000);
-    const interval = setInterval(checkFlightStatus, 5 * 60 * 1000);
-    return () => { clearTimeout(initialTimer); clearInterval(interval); };
-  }, [isLoggedIn, trips.length]);
-
-  // Helper: get live status for a flight segment
-  const getFlightLiveStatus = (seg) => {
-    if (!seg?.flightNumber || !seg?.date) return null;
-    const key = `${seg.flightNumber.replace(/\s+/g, "").toUpperCase()}_${seg.date}`;
-    return flightStatusCache[key] || null;
-  };
+  // ── Live flight status removed ──
+  // The whole gate-change / delay / boarding / landed alert stack used to live
+  // here, fed by /api/flight-status (which polled AeroDataBox). It was deleted
+  // alongside the server-side cron because AeroDataBox's data lag made the
+  // alerts unreliable. Continuum now shows static itinerary fields and surfaces
+  // a per-flight Track in Airline App button that hands notifications off to
+  // the carrier's own app. This stub returns null so call sites that still
+  // read `live?.departureGate` cleanly fall through to the segment's
+  // user-entered value.
+  const getFlightLiveStatus = () => null;
+  // Push-related call sites elsewhere in the file (maybePromptFlightAlerts,
+  // enablePushNotifications etc.) are no-op'd via these stubs so we don't have
+  // to chase every reference at once. They'll be cleaned up over the next pass.
+  const maybePromptFlightAlerts = () => {};
 
   // Fetch Google Places photos for all trip landmarks (delayed, batched, once)
   useEffect(() => {
@@ -6504,7 +6279,6 @@ Start by introducing yourself briefly in-character with personality, and give an
     getFlightLiveStatus, getPackingItems, PACK_CATEGORIES, packingLists, customPackItems, packingViewTripId, setPackingViewTripId, setCustomPackItems, togglePackItem, savePackingLists, timelineDate, setTimelineDate, railActive, setRailActive, renderReports,
     EXPENSE_CATEGORIES, SegIcon,
     nextTrip, upcomingTripsFiltered, allTripsWithShared,
-    pushSupported, pushEnabled, enablePushNotifications, pushStatus,
     openDirections: (lounge, airport) => setLoungeDirections({ lounge, airport }),
     addTripFromItinerary, dismissItinerary, updateItinSeg: (itinId, segIdx, updates) => {
       setSavedItineraries(prev => prev.map(it => it.id !== itinId ? it : { ...it, parsed_segments: it.parsed_segments.map((s, i) => i === segIdx ? { ...s, ...updates } : s) }));
@@ -10137,48 +9911,9 @@ Start by introducing yourself briefly in-character with personality, and give an
         );
       })()}
 
-      {/* Flight-alert opt-in nudge — appears right after a flight is added */}
-      {flightAlertNudge && (
-        <div style={{
-          position: "fixed", left: 0, right: 0, zIndex: 9998,
-          bottom: isMobile ? "calc(88px + env(safe-area-inset-bottom))" : 24,
-          padding: "0 16px", display: "flex", justifyContent: "center", pointerEvents: "none",
-        }}>
-          <div style={{
-            pointerEvents: "all", width: "100%", maxWidth: 440,
-            background: css.surface, border: `1px solid ${css.border}`, borderRadius: 16,
-            padding: "14px 16px", boxShadow: css.shadowHover,
-            display: "flex", flexDirection: isMobile ? "column" : "row",
-            alignItems: isMobile ? "stretch" : "center", gap: isMobile ? 12 : 14,
-            animation: "nudge-up 0.32s cubic-bezier(0.16,1,0.3,1)",
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 13, flex: 1, minWidth: 0 }}>
-              <span style={{
-                width: 38, height: 38, borderRadius: 11, flexShrink: 0,
-                background: css.accentBg, border: `1px solid ${css.accentBorder}`,
-                display: "grid", placeItems: "center",
-              }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={css.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
-              </span>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: css.text, letterSpacing: "-0.01em" }}>Stay ahead of this flight</div>
-                <div style={{ fontSize: 12.5, color: css.text3, marginTop: 2, lineHeight: 1.4 }}>Gate changes, delays &amp; lounge access — even when the app is closed.</div>
-              </div>
-            </div>
-            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexShrink: 0 }}>
-              <button onClick={dismissFlightNudge} style={{
-                padding: "9px 12px", borderRadius: 10, border: "none", background: "transparent",
-                color: css.text3, fontSize: 13, fontWeight: 500, cursor: "pointer",
-              }}>Not now</button>
-              <button onClick={acceptFlightNudge} style={{
-                padding: "9px 18px", borderRadius: 10, border: "none", background: css.accent,
-                color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap",
-              }}>Enable</button>
-            </div>
-          </div>
-          <style>{`@keyframes nudge-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }`}</style>
-        </div>
-      )}
+      {/* Flight-alert opt-in nudge removed — Continuum no longer runs flight
+          notifications; the Track in Airline App button on each flight card
+          hands off to the carrier's app instead. */}
     </div>
   );
 }

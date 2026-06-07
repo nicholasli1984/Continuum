@@ -7,6 +7,7 @@ import { AIRLINE_ALLIANCE } from "../constants/lounges";
 import { picksForCity, resyUrl, openTableUrl, googleUrl } from "../constants/michelinPicks";
 import TransferBonusBand from "../components/transferBonuses/TransferBonusBand";
 import ReportedBadge from "../components/ReportedBadge";
+import TrackInAirlineButton from "../components/TrackInAirlineButton";
 import { isLandingDemo, DEMO_FIRST_NAME } from "../utils/landingDemo";
 
 // Verified destination cover photos (each visually checked). Bermuda uses a
@@ -222,13 +223,14 @@ function NextFlightCard({ css, dv, D, isMobile, trips, getFlightLiveStatus, AIRP
     const arr = codes[codes.length - 1] || ((fl.arrivalAirport || "").toUpperCase().match(/\b[A-Z]{3}\b/) || [])[0] || "";
     const depCity = (dep && AIRPORT_CITY[dep]) || "";
     const arrCity = (arr && AIRPORT_CITY[arr]) || (trip.location || "").split(",")[0].trim() || "";
+    // `live` used to carry the AeroDataBox-fed gate/terminal/baggage data.
+    // That feed was retired with the rest of the in-house notification stack;
+    // getFlightLiveStatus now always returns null and every consumer below
+    // cleanly falls through to whatever the user entered on the segment.
     const live = getFlightLiveStatus ? getFlightLiveStatus(fl) : null;
     const fnum = (fl.flightNumber || "").trim();
     const carrier = (fnum.match(/^[A-Z][A-Z0-9]/) || [])[0] || "";
     const logo = carrier ? `https://images.kiwi.com/airlines/128/${carrier}.png` : "";
-    // Terminal and gate are tracked separately so both can show at once. Both
-    // come from the live flight-status feed (assigned hours-to-a-day out) and
-    // fall back to anything entered manually on the segment.
     const term = live?.departureTerminal || fl.departureTerminal || "";
     const termDisplay = term ? (/^\d/.test(String(term)) ? `T${term}` : String(term)) : "—";
     const gate = live?.departureGate || fl.departureGate || "—";
@@ -250,7 +252,16 @@ function NextFlightCard({ css, dv, D, isMobile, trips, getFlightLiveStatus, AIRP
     const countdown = departed
       ? ((liveStatus.includes("route") || liveStatus.includes("air") || liveStatus.includes("active")) ? "In flight" : "Departed")
       : days === 0 ? "Today" : days === 1 ? "Tomorrow" : `In ${days} days`;
-    return { fl, trip, segIdx, dep, arr, depCity, arrCity, live, fnum, carrier, logo, term, termDisplay, gate, aircraft, aircraftReg, seat, cls, fdate, baggage, depTime, arrTime, overnight, countdown };
+    // Per-segment PNR wins over the trip-level one — multi-leg bookings often
+    // get a single trip-wide confirmation, but tickets that were booked
+    // separately (e.g. an inbound on one airline, an outbound on another)
+    // have distinct PNRs per segment and should each link to its own airline.
+    const pnr = fl.confirmationCode || trip.confirmationCode || trip.confirmation_code || "";
+    const lastName =
+      user?.user_metadata?.last_name ||
+      (user?.user_metadata?.name || "").trim().split(/\s+/).slice(-1)[0] ||
+      "";
+    return { fl, trip, segIdx, dep, arr, depCity, arrCity, live, fnum, carrier, logo, term, termDisplay, gate, aircraft, aircraftReg, seat, cls, fdate, baggage, depTime, arrTime, overnight, countdown, pnr, lastName };
   };
 
   const loungesFor = (f) => {
@@ -346,6 +357,24 @@ function NextFlightCard({ css, dv, D, isMobile, trips, getFlightLiveStatus, AIRP
                 {f.aircraft}{f.aircraftReg && <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, letterSpacing: "0.06em", color: dv.taupe, marginLeft: 8 }}>{f.aircraftReg}</span>}
               </div>
             </div>
+          </div>
+
+          {/* Track in airline app — hands off live notifications to the airline
+              that issued the ticket. Replaces Continuum's removed in-house cron
+              + AeroDataBox stack. Hidden for carriers we don't know. */}
+          <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${dv.cream}` }}>
+            <TrackInAirlineButton
+              flightNumber={f.fnum}
+              pnr={f.pnr}
+              lastName={f.lastName}
+              theme={{ ink: dv.ink, taupe: dv.taupe, cream: dv.cream, paper: dv.paper, accent: css.accent }}
+              onMissingPnr={() => { setTripDetailId(f.trip.id); setTripDetailSegIdx(f.segIdx || 0); setActiveView("trips"); }}
+            />
+            {!f.pnr && (
+              <div style={{ marginTop: 8, fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.08em", textTransform: "uppercase", color: dv.taupe, textAlign: "center" }}>
+                Add a confirmation code to pre-fill the airline lookup
+              </div>
+            )}
           </div>
 
           {/* Weather (compact) */}
@@ -910,7 +939,6 @@ export function renderDashboard(s) {
     getFlightLiveStatus, getPackingItems, PACK_CATEGORIES, packingLists, customPackItems,
     EXPENSE_CATEGORIES, SegIcon,
     nextTrip, upcomingTripsFiltered, allTripsWithShared,
-    pushSupported, pushEnabled, enablePushNotifications, pushStatus,
     addTripFromItinerary, dismissItinerary, updateItinSeg,
     snapReceiptProcessing, handleSnapReceipt, snapReceiptInputRef,
     BLANK_EXPENSE, AIRPORT_CITY,
@@ -1249,24 +1277,9 @@ export function renderDashboard(s) {
         {/* Top-of-dashboard search + menu pill are gone — the Ask Continuum bar
             and the Analytics/+/Inbox pill both live at the bottom of every page. */}
 
-        {/* Alert bar */}
-        {pushSupported && !pushEnabled && dashSubTab === "overview" && (
-          <div onClick={enablePushNotifications} style={{
-            display: "flex", justifyContent: "space-between", alignItems: "center",
-            padding: "14px 18px", background: css.surface, border: `1px solid ${css.border}`,
-            marginBottom: 16, cursor: "pointer", transition: "border-color 0.3s",
-          }}
-            onMouseEnter={e => e.currentTarget.style.borderColor = css.accent}
-            onMouseLeave={e => e.currentTarget.style.borderColor = css.border}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={css.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
-              <span style={{ fontSize: 13, color: css.text, display: "inline-flex", alignItems: "center", gap: 8 }}>
-                Enable flight alerts<em style={{ fontFamily: "'Fraunces', serif", fontStyle: "italic", color: css.text3, marginLeft: 6, fontSize: 13 }}>— track delays, gate changes.</em>
-              </span>
-            </div>
-            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: css.accent, padding: "4px 10px", border: `1px solid ${css.accent}`, transition: "all 0.25s" }}>{pushStatus || "Enable"} &#8594;</span>
-          </div>
-        )}
+        {/* "Enable flight alerts" banner removed — flight notifications now come
+            from the airline's own app via the Track in Airline App button on
+            each flight card, not Continuum's in-house cron. */}
 
         {/* ── (Removed) old sub-tab pill ──
             Travel Analytics + Inbox now live in the menu pill at the top of the
