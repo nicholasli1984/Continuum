@@ -230,16 +230,12 @@ function NextFlightCard({ css, dv, D, isMobile, trips, getFlightLiveStatus, AIRP
     const fnum = (fl.flightNumber || "").trim();
     const carrier = (fnum.match(/^[A-Z][A-Z0-9]/) || [])[0] || "";
     const logo = carrier ? `https://images.kiwi.com/airlines/128/${carrier}.png` : "";
-    const term = live?.departureTerminal || fl.departureTerminal || "";
-    const termDisplay = term ? (/^\d/.test(String(term)) ? `T${term}` : String(term)) : "—";
-    const gate = live?.departureGate || fl.departureGate || "—";
     const aircraft = live?.aircraft || fl.aircraft || "Aircraft to be assigned";
     const aircraftReg = live?.aircraftReg || "";
     const seat = fl.seat || "—";
     const cls = CLS[fl.fareClass] || fl.fareClass || fl.class || "—";
     const refDate = fl.date || trip.date;
     const fdate = new Date(refDate + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short" });
-    const baggage = live?.baggageBelt || "—";
     const depTime = fl.departureTime || "";
     const arrTime = fl.arrivalTime || "";
     const overnight = fl.arrivalDate && fl.date && fl.arrivalDate > fl.date;
@@ -251,7 +247,7 @@ function NextFlightCard({ css, dv, D, isMobile, trips, getFlightLiveStatus, AIRP
     const countdown = departed
       ? ((liveStatus.includes("route") || liveStatus.includes("air") || liveStatus.includes("active")) ? "In flight" : "Departed")
       : days === 0 ? "Today" : days === 1 ? "Tomorrow" : `In ${days} days`;
-    return { fl, trip, segIdx, dep, arr, depCity, arrCity, live, fnum, carrier, logo, term, termDisplay, gate, aircraft, aircraftReg, seat, cls, fdate, baggage, depTime, arrTime, overnight, countdown };
+    return { fl, trip, segIdx, dep, arr, depCity, arrCity, live, fnum, carrier, logo, aircraft, aircraftReg, seat, cls, fdate, depTime, arrTime, overnight, countdown };
   };
 
   const loungesFor = (f) => {
@@ -325,15 +321,15 @@ function NextFlightCard({ css, dv, D, isMobile, trips, getFlightLiveStatus, AIRP
             <Logo src={f.logo} alt={f.carrier} size={36} />
           </div>
 
-          {/* Flight grid */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "14px 10px", marginTop: 14, paddingTop: 14, borderTop: `1px solid ${dv.cream}` }}>
+          {/* Flight grid — Terminal / Gate / Baggage removed; those used to be
+              filled by the live AeroDataBox feed, which is gone, and users
+              don't manually enter them. Cleaner 2x2 of the fields that the
+              segment editor actually populates. */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px 10px", marginTop: 14, paddingTop: 14, borderTop: `1px solid ${dv.cream}` }}>
             <Field label="Date" val={f.fdate} />
-            <Field label="Terminal" val={f.termDisplay} />
-            <Field label="Gate" val={f.gate} />
             <Field label="Flight" val={f.fnum || "—"} />
             <Field label="Seat" val={f.seat} />
             <Field label="Class" val={f.cls} />
-            <Field label="Baggage" val={f.baggage} />
           </div>
 
           {/* Aircraft — clean monoline icon + type */}
