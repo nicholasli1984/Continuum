@@ -50,6 +50,7 @@ export const LOUNGE_DATABASE = {
   BLR: [
     { id: "blr_080_international_t2", name: "080 International Lounge", terminal: "2", network: "priority_pass", rating: 4.3, amenities: ["hot_food","bar","wifi","showers","spa","a_la_carte"], hours: "24 hours", location: "Terminal 2, Level 3 after immigration, international departures", placeQuery: "080 International Lounge Bangalore Airport" },
     { id: "blr_080_domestic_t2", name: "080 Domestic Lounge", terminal: "2", network: "priority_pass", rating: 4.1, amenities: ["hot_food","bar","wifi","spa"], hours: "24 hours", location: "Terminal 2, Level 4 after security, domestic departures", placeQuery: "080 Domestic Lounge Bangalore Airport" },
+    { id: "blr_air_india_t2", name: "Air India Maharaja Lounge", terminal: "2", network: "generic_airline", alliance: "star", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "Varies with AI flights", location: "Terminal 2 departures", placeQuery: "Air India Maharaja Lounge Bangalore Airport" },
   ],
   BNE: [
     { id: "bne_qantas_dom", name: "Qantas Club", terminal: "D", network: "qantas_lounge", alliance: "oneworld", rating: 4, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies", location: "Domestic Terminal, Airside", placeQuery: "Qantas Club Brisbane Airport" },
@@ -76,6 +77,7 @@ export const LOUNGE_DATABASE = {
   CCU: [
     { id: "ccu_travel_club_dom", name: "Travel Club Lounge", terminal: "1", network: "priority_pass", rating: 3.7, amenities: ["hot_food","wifi","bar"], hours: "24 hours", location: "Domestic departures, mezzanine level airside", placeQuery: "Travel Club Lounge Kolkata Airport Domestic" },
     { id: "ccu_travel_club_intl", name: "Travel Club Lounge", terminal: "1", network: "priority_pass", rating: 3.7, amenities: ["hot_food","wifi","bar","showers"], hours: "24 hours", location: "International departures, mezzanine level airside", placeQuery: "Travel Club Lounge Kolkata Airport International" },
+    { id: "ccu_plaza_premium_intl", name: "Plaza Premium Lounge", terminal: "1", network: "plaza_premium", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "International departures airside", placeQuery: "Plaza Premium Lounge Kolkata International" },
   ],
   CEB: [
     { id: "ceb_plaza_premium_t2", name: "Plaza Premium Lounge", terminal: "2", network: "plaza_premium", rating: 3.9, amenities: ["hot_food","wifi","showers","bar"], hours: "24 hours", location: "Terminal 2 international departures, after immigration near Gate 20", placeQuery: "Plaza Premium Lounge Mactan Cebu Airport Terminal 2" },
@@ -111,6 +113,7 @@ export const LOUNGE_DATABASE = {
     { id: "cnx_coral_intl", name: "The Coral Executive Lounge", terminal: "International", network: "priority_pass", rating: 3.7, amenities: ["hot_food","wifi","spa","bar"], hours: "Varies", location: "International Terminal airside", placeQuery: "Coral Executive Lounge Chiang Mai Airport International" },
     { id: "cnx_coral_dom", name: "The Coral Executive Lounge", terminal: "Domestic", network: "priority_pass", rating: 3.6, amenities: ["hot_food","wifi","spa"], hours: "Varies", location: "Domestic Terminal airside", placeQuery: "Coral Executive Lounge Chiang Mai Airport Domestic" },
     { id: "cnx_thai_royal_orchid", name: "Thai Airways Royal Orchid Lounge", terminal: "Domestic", network: "generic_airline", alliance: "star", rating: 3.8, amenities: ["hot_food","wifi","bar"], hours: "Varies", location: "Domestic Terminal, Level 2 near Gate 3", placeQuery: "Thai Airways Royal Orchid Lounge Chiang Mai Airport" },
+    { id: "cnx_bangkok_air", name: "Bangkok Airways Blue Ribbon Lounge", terminal: "Domestic", network: "generic_airline", rating: 3.7, amenities: ["hot_food","wifi","bar"], hours: "Varies with PG flights", location: "Domestic Terminal airside", placeQuery: "Bangkok Airways Blue Ribbon Lounge Chiang Mai Airport" },
   ],
   COK: [
     { id: "cok_earth_t3", name: "Earth Lounge", terminal: "3", network: "priority_pass", rating: 3.9, amenities: ["hot_food","wifi","bar","showers"], hours: "24 hours", location: "Terminal 3 international departures airside", placeQuery: "Earth Lounge Cochin Airport International" },
@@ -157,12 +160,14 @@ export const LOUNGE_DATABASE = {
     { id: "dmk_coral_t1", name: "The Coral Executive Lounge", terminal: "1", network: "priority_pass", rating: 3.6, amenities: ["hot_food","wifi","spa"], hours: "Varies", location: "Terminal 1 international departures, 3rd floor next to VAT refund", placeQuery: "Coral Executive Lounge Don Mueang Airport International" },
     { id: "dmk_coral_t2", name: "The Coral Executive Lounge", terminal: "2", network: "priority_pass", rating: 3.6, amenities: ["hot_food","wifi"], hours: "Varies", location: "Terminal 2 domestic departures, 3rd floor near Gate 51", placeQuery: "Coral Executive Lounge Don Mueang Airport Domestic" },
     { id: "dmk_miracle_t2", name: "Miracle Lounge", terminal: "2", network: "priority_pass", rating: 3.6, amenities: ["hot_food","wifi"], hours: "Varies", location: "Terminal 2 domestic departures, 3rd floor near Gate 51", placeQuery: "Miracle Lounge Don Mueang Airport Domestic" },
+    { id: "dmk_thai_smile", name: "Thai Lion Air Lounge", terminal: "2", network: "generic_airline", rating: 3.5, amenities: ["hot_food","wifi"], hours: "Varies", location: "Terminal 2 domestic departures", placeQuery: "Thai Lion Air Lounge Don Mueang Airport" },
   ],
   DUS: [
     { id: "dus_lufthansa_business", name: "Lufthansa Business Lounge", terminal: "1", network: "generic_airline", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies", location: "Pier A gallery level", placeQuery: "Lufthansa Business Lounge Dusseldorf Airport" },
     { id: "dus_lufthansa_senator", name: "Lufthansa Senator Lounge", terminal: "1", network: "generic_airline", alliance: "star", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies", location: "Pier A gallery level", placeQuery: "Lufthansa Senator Lounge Dusseldorf Airport" },
     { id: "dus_rhein", name: "DUS Rhein Lounge", terminal: "1", network: "priority_pass", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies", location: "Pier B, two levels with runway views", placeQuery: "DUS Rhein Lounge Dusseldorf Airport" },
     { id: "dus_sky", name: "DUS Sky Lounge", terminal: "1", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "Varies", location: "Pier C airside", placeQuery: "DUS Sky Lounge Dusseldorf Airport" },
+    { id: "dus_hugo_junkers", name: "Hugo Junkers Lounge", terminal: "1", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 9:00 PM", location: "Non-Schengen area", placeQuery: "Hugo Junkers Lounge Dusseldorf Airport" },
   ],
   FOR: [
     { id: "for_ambaar_domestic", name: "Ambaar Club (Domestic)", terminal: "1", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "24 hours", location: "Domestic Departures near Gate 8", placeQuery: "Ambaar Club Fortaleza Airport" },
@@ -173,11 +178,14 @@ export const LOUNGE_DATABASE = {
     { id: "fuk_korean_air_intl", name: "Korean Air Lounge", terminal: "International", network: "generic_airline", alliance: "skyteam", rating: 3.6, amenities: ["hot_food","wifi"], hours: "Varies", location: "International Terminal, 3rd floor after immigration in front of Gate 56", placeQuery: "Korean Air Lounge Fukuoka Airport" },
     { id: "fuk_jal_sakura_intl", name: "JAL Sakura Lounge", terminal: "International", network: "generic_airline", alliance: "oneworld", rating: 3.7, amenities: ["hot_food","wifi","bar"], hours: "Varies", location: "International Terminal near Gates 11-12", placeQuery: "JAL Sakura Lounge Fukuoka Airport" },
     { id: "fuk_ana_suite_intl", name: "ANA Suite Lounge", terminal: "International", network: "ana_suite", alliance: "star", rating: 3.8, amenities: ["hot_food","wifi","bar"], hours: "Varies", location: "International Terminal departures, Level 3", placeQuery: "ANA Suite Lounge Fukuoka Airport" },
+    { id: "fuk_china_airlines", name: "China Airlines Dynasty Lounge", terminal: "International", network: "generic_airline", alliance: "skyteam", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "Varies with CI flights", location: "International Terminal", placeQuery: "China Airlines Dynasty Lounge Fukuoka Airport" },
   ],
   GDL: [
     { id: "gdl_aeromexico_salon_premier", name: "Aeromexico Salon Premier", terminal: "1", network: "generic_airline", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies", location: "Terminal 1, Airside upper level near Gate 5", placeQuery: "Aeromexico Salon Premier Guadalajara Airport" },
     { id: "gdl_vip_lounge_west", name: "VIP Lounge West", terminal: "1", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "Varies", location: "Terminal 1, International side before Gate B13", placeQuery: "VIP Lounge Guadalajara Airport International" },
     { id: "gdl_vip_lounge_east", name: "VIP Lounge East", terminal: "1", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies", location: "Terminal 1, Domestic side near Gate D30", placeQuery: "VIP Lounge Guadalajara Airport Domestic" },
+    { id: "gdl_aa_admirals", name: "Admirals Club", terminal: "1", network: "admirals_club", alliance: "oneworld", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "Varies with AA flights", location: "Terminal 1 International concourse", placeQuery: "Admirals Club Guadalajara Airport" },
+    { id: "gdl_delta_sky", name: "Delta Sky Club", terminal: "1", network: "delta_sky_club", alliance: "skyteam", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "Varies with DL flights", location: "Terminal 1 International concourse", placeQuery: "Delta Sky Club Guadalajara Airport" },
   ],
   GDN: [
     { id: "gdn_executive", name: "Executive Lounge", terminal: "1", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "05:00-21:00", location: "Airside left side near Gates 11-18", placeQuery: "Executive Lounge Gdansk Airport" },
@@ -198,6 +206,7 @@ export const LOUNGE_DATABASE = {
     { id: "gmp_sky_hub_intl", name: "Sky Hub Lounge", terminal: "International", network: "priority_pass", rating: 3.7, amenities: ["hot_food","wifi","bar"], hours: "06:30-20:30", location: "International Terminal airside near Gate 35", placeQuery: "Sky Hub Lounge Gimpo Airport" },
     { id: "gmp_korean_air_dom", name: "Korean Air KAL Lounge", terminal: "Domestic", network: "generic_airline", alliance: "skyteam", rating: 3.7, amenities: ["hot_food","wifi","bar"], hours: "Varies", location: "Domestic Terminal airside", placeQuery: "Korean Air KAL Lounge Gimpo Airport Domestic" },
     { id: "gmp_asiana_dom", name: "Asiana Lounge", terminal: "Domestic", network: "generic_airline", alliance: "star", rating: 3.6, amenities: ["hot_food","wifi"], hours: "Varies", location: "Domestic Terminal airside", placeQuery: "Asiana Lounge Gimpo Airport Domestic" },
+    { id: "gmp_asiana_intl", name: "Asiana Business Lounge", terminal: "International", network: "generic_airline", alliance: "star", rating: 3.7, amenities: ["hot_food","wifi","bar"], hours: "Varies with OZ flights", location: "International Terminal airside", placeQuery: "Asiana Business Lounge Gimpo Airport International" },
   ],
   GOT: [
     { id: "got_sas", name: "SAS Lounge", terminal: "1", network: "generic_airline", alliance: "star", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "Varies", location: "Departure area near Gate 19", placeQuery: "SAS Lounge Gothenburg Landvetter Airport" },
@@ -215,16 +224,19 @@ export const LOUNGE_DATABASE = {
   HAM: [
     { id: "ham_lufthansa_business", name: "Lufthansa Business Lounge", terminal: "2", network: "generic_airline", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies", location: "Terminal 2, 2nd floor near Gate A20", placeQuery: "Lufthansa Business Lounge Hamburg Airport" },
     { id: "ham_airport_lounge", name: "Airport Lounge", terminal: "2", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "Varies", location: "Terminal 2 airside (Plaza area)", placeQuery: "Airport Lounge Hamburg Airport" },
+    { id: "ham_emirates", name: "Emirates Lounge", terminal: "1", network: "emirates_lounge", rating: 4.2, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with EK flights", location: "Terminal 1 airside", placeQuery: "Emirates Lounge Hamburg Airport" },
   ],
   HGH: [
     { id: "hgh_first_class_9_t3", name: "First Class Lounge 9", terminal: "3", network: "priority_pass", rating: 3.6, amenities: ["hot_food","wifi"], hours: "06:30-22:00", location: "Terminal 3 domestic departures, 4th floor near Gate B23", placeQuery: "First Class Lounge Hangzhou Xiaoshan Airport Terminal 3" },
     { id: "hgh_vip_no6_t3", name: "VIP No. 6 Lounge", terminal: "3", network: "priority_pass", rating: 3.5, amenities: ["hot_food","wifi"], hours: "06:30-22:00", location: "Terminal 3 domestic departures airside", placeQuery: "VIP No. 6 Lounge Hangzhou Xiaoshan Airport" },
     { id: "hgh_vip_25_t4", name: "VIP Lounge 25", terminal: "4", network: "priority_pass", rating: 3.6, amenities: ["hot_food","wifi"], hours: "06:20-23:00", location: "Terminal 4 international departures airside", placeQuery: "VIP Lounge 25 Hangzhou Xiaoshan Airport Terminal 4" },
     { id: "hgh_vip_16_t4", name: "VIP Lounge 16", terminal: "4", network: "priority_pass", rating: 3.5, amenities: ["hot_food","wifi"], hours: "06:30-22:00", location: "Terminal 4 domestic departures, 2nd floor", placeQuery: "VIP Lounge 16 Hangzhou Xiaoshan Airport Terminal 4" },
+    { id: "hgh_air_china_t4", name: "Air China Lounge", terminal: "4", network: "generic_airline", alliance: "star", rating: 3.7, amenities: ["hot_food","wifi"], hours: "Varies with CA flights", location: "Terminal 4 International Departures", placeQuery: "Air China Lounge Hangzhou Xiaoshan Airport" },
   ],
   HKT: [
     { id: "hkt_coral_intl", name: "The Coral Executive Lounge", terminal: "International", network: "priority_pass", rating: 3.7, amenities: ["hot_food","wifi","showers","bar","spa","a_la_carte"], hours: "06:00-00:00", location: "International Terminal, 4th floor airside", placeQuery: "Coral Executive Lounge Phuket Airport International" },
     { id: "hkt_coral_dom", name: "The Coral Executive Lounge", terminal: "Domestic", network: "priority_pass", rating: 3.6, amenities: ["hot_food","wifi","spa"], hours: "06:00-22:00", location: "Domestic Terminal, level 3 near Gate 8", placeQuery: "Coral Executive Lounge Phuket Airport Domestic" },
+    { id: "hkt_thai_royal_orchid", name: "Thai Airways Royal Orchid Lounge", terminal: "International", network: "generic_airline", alliance: "star", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "Varies with TG flights", location: "International Terminal airside", placeQuery: "Thai Airways Royal Orchid Lounge Phuket Airport" },
   ],
   HYD: [
     { id: "hyd_plaza_premium_intl", name: "Plaza Premium Lounge", terminal: "1", network: "plaza_premium", rating: 3.9, amenities: ["hot_food","wifi","showers","bar"], hours: "24 hours", location: "International departures airside", placeQuery: "Plaza Premium Lounge Hyderabad Airport" },
@@ -236,6 +248,7 @@ export const LOUNGE_DATABASE = {
   ],
   KEF: [
     { id: "kef_saga", name: "Icelandair Saga Lounge", terminal: "1", network: "generic_airline", rating: 4, amenities: ["hot_food","bar","wifi","showers","a_la_carte"], hours: "05:00-17:00", location: "Airside upper level", placeQuery: "Icelandair Saga Lounge Keflavik Airport" },
+    { id: "kef_pp_elda", name: "Elda Lounge", terminal: "1", network: "priority_pass", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies", location: "Airside North Building, near Duty Free", placeQuery: "Elda Lounge Keflavik Airport" },
   ],
   KHH: [
     { id: "khh_homee_kitchen", name: "homee KITCHEN", terminal: "International", network: "priority_pass", rating: 3.6, amenities: ["hot_food","wifi","a_la_carte"], hours: "Varies", location: "International Terminal", placeQuery: "homee KITCHEN Kaohsiung Airport" },
@@ -313,6 +326,7 @@ export const LOUNGE_DATABASE = {
     { id: "mxp_montale", name: "Sala Montale Exclusive Lounge", terminal: "1", network: "priority_pass", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "06:00-22:00", location: "Terminal 1 satellite, non-Schengen near Gates B50-59", placeQuery: "Sala Montale Lounge Milan Malpensa Airport" },
     { id: "mxp_monteverdi", name: "Sala Monteverdi Classic Lounge", terminal: "1", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "06:00-21:30", location: "Terminal 1 southern satellite, Schengen", placeQuery: "Sala Monteverdi Lounge Milan Malpensa Airport" },
     { id: "mxp_pergolesi", name: "Sala Pergolesi Lounge", terminal: "1", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "Varies", location: "Terminal 1 main building airside", placeQuery: "Sala Pergolesi Lounge Milan Malpensa Airport" },
+    { id: "mxp_cathay", name: "Cathay Pacific Lounge", terminal: "1", network: "cathay_lounge", alliance: "oneworld", rating: 4, amenities: ["hot_food","bar","wifi","showers"], hours: "06:00 - 22:00", location: "Terminal 1 Satellite North, non-Schengen", placeQuery: "Cathay Pacific Lounge Milan Malpensa" },
   ],
   NAN: [
     { id: "nan_premier", name: "Fiji Airways Premier Lounge", terminal: "1", network: "priority_pass", rating: 4.2, amenities: ["hot_food","bar","wifi","spa","a_la_carte"], hours: "Varies", location: "International Terminal, Ground Level past Duty Free", placeQuery: "Fiji Airways Premier Lounge Nadi Airport" },
@@ -336,6 +350,7 @@ export const LOUNGE_DATABASE = {
   ],
   NQZ: [
     { id: "nqz_sapar_intl_t1", name: "Sapar Lounge", terminal: "1", network: "priority_pass", rating: 3.6, amenities: ["hot_food","wifi","bar"], hours: "Varies", location: "Terminal 1 international departures near Gates A5-A6", placeQuery: "Sapar Lounge Astana Airport International" },
+    { id: "nqz_air_astana", name: "Air Astana Business Lounge", terminal: "1", network: "generic_airline", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with KC flights", location: "Terminal 1 international departures", placeQuery: "Air Astana Business Lounge Astana Airport" },
   ],
   OKA: [
     { id: "oka_jal_sakura", name: "JAL Sakura Lounge", terminal: "Domestic", network: "generic_airline", alliance: "oneworld", rating: 3.7, amenities: ["hot_food","wifi","bar"], hours: "07:00-21:00", location: "Domestic Terminal near Gate 20", placeQuery: "JAL Sakura Lounge Naha Airport" },
@@ -435,6 +450,8 @@ export const LOUNGE_DATABASE = {
   ],
   STR: [
     { id: "str_aviator_gallery", name: "The Aviator Gallery", terminal: "1", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "Varies", location: "Terminal 3 gallery, airside via lift at Gate 310", placeQuery: "The Aviator Gallery Lounge Stuttgart Airport" },
+    { id: "str_lh_business", name: "Lufthansa Business Lounge", terminal: "1", network: "lufthansa_lounge", alliance: "star", rating: 4, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - 8:30 PM", location: "Terminal 1 airside near Gate 173", placeQuery: "Lufthansa Business Lounge Stuttgart Airport" },
+    { id: "str_lh_senator", name: "Lufthansa Senator Lounge", terminal: "1", network: "lufthansa_lounge", alliance: "star", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - 8:30 PM", location: "Terminal 1 airside near Gate 173", placeQuery: "Lufthansa Senator Lounge Stuttgart Airport" },
   ],
   SVQ: [
     { id: "svq_azahar", name: "Sala VIP Azahar", terminal: "1", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "06:00-22:00", location: "Airside 1st floor, Boarding Area P1 after security", placeQuery: "Sala VIP Azahar Seville Airport" },
@@ -508,6 +525,7 @@ export const LOUNGE_DATABASE = {
   YOW: [
     { id: "yow_maple_leaf", name: "Air Canada Maple Leaf Lounge", terminal: "1", network: "generic_airline", alliance: "star", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "04:30 - 20:00", location: "Domestic Departures, near Gate 18", placeQuery: "Air Canada Maple Leaf Lounge Ottawa Airport" },
     { id: "yow_aspire", name: "Aspire Lounge", terminal: "1", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "Varies", location: "Departures, Airside", placeQuery: "Aspire Lounge Ottawa Airport" },
+    { id: "yow_plaza_premium", name: "Plaza Premium Lounge", terminal: "1", network: "plaza_premium", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "04:30 - Last Departure", location: "International Departures", placeQuery: "Plaza Premium Lounge Ottawa Airport" },
   ],
   YUL: [
     { id: "yul_maple_leaf_dom", name: "Air Canada Maple Leaf Lounge", terminal: "D", network: "generic_airline", alliance: "star", rating: 3.9, amenities: ["hot_food","bar","wifi"], hours: "Varies", location: "Domestic Jetty, Airside", placeQuery: "Air Canada Maple Leaf Lounge Montreal Airport Domestic" },
@@ -524,6 +542,7 @@ export const LOUNGE_DATABASE = {
     { id: "yyc_maple_leaf", name: "Air Canada Maple Leaf Lounge", terminal: "D", network: "generic_airline", alliance: "star", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "04:30 - 00:30", location: "Concourse C Domestic, near Gate 50", placeQuery: "Air Canada Maple Leaf Lounge Calgary Airport" },
     { id: "yyc_westjet_elevation", name: "WestJet Elevation Lounge", terminal: "D", network: "generic_airline", rating: 3.9, amenities: ["hot_food","bar","wifi"], hours: "Varies", location: "Concourse B Domestic, Level 2", placeQuery: "WestJet Elevation Lounge Calgary Airport" },
     { id: "yyc_aspire_westjet_garden", name: "Aspire WestJet Garden Lounge", terminal: "US", network: "priority_pass", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies", location: "Concourse E, US Transborder area", placeQuery: "Aspire WestJet Garden Lounge Calgary Airport" },
+    { id: "yyc_pp_plaza_intl", name: "Plaza Premium Lounge", terminal: "I", network: "plaza_premium", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - 11:00 PM", location: "International Terminal, Concourse E", placeQuery: "Plaza Premium Lounge Calgary Airport International" },
   ],
   ZAG: [
     { id: "zag_primeclass", name: "Primeclass Lounge", terminal: "1", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "06:00-23:00", location: "Schengen Departures, Level 2 after security", placeQuery: "Primeclass Lounge Zagreb Airport" },
@@ -571,6 +590,7 @@ export const LOUNGE_DATABASE = {
   CPT: [
     { id: "cpt_bidvest", name: "Bidvest Premier Lounge", terminal: "1", network: "priority_pass", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - 11:30 PM", location: "International Departures, past Passport Control", placeQuery: "Bidvest Premier Lounge Cape Town Airport" },
     { id: "cpt_slow", name: "SLOW Lounge", terminal: "1", network: "generic_airline", alliance: "oneworld", rating: 4.2, amenities: ["hot_food","bar","wifi","business_center"], hours: "5:00 AM - Last Departure", location: "Domestic Departures, Airside", placeQuery: "SLOW Lounge Cape Town Airport" },
+    { id: "cpt_ba", name: "British Airways Lounge", terminal: "1", network: "generic_airline", alliance: "oneworld", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with BA flights", location: "International Departures airside", placeQuery: "British Airways Lounge Cape Town Airport" },
   ],
   DAR: [
     { id: "dar_twiga", name: "Twiga Business Lounge", terminal: "3", network: "priority_pass", rating: 3.9, amenities: ["hot_food","bar","wifi","nap_pods"], hours: "24 hours", location: "Terminal 3, Airside 2nd Floor opposite Gate C4", placeQuery: "Twiga Business Lounge Dar es Salaam Airport" },
@@ -652,6 +672,8 @@ export const LOUNGE_DATABASE = {
     { id: "ruh_hayyak_t3", name: "Hayyak Lounge", terminal: "3", network: "priority_pass", rating: 3.6, amenities: ["hot_food","wifi","showers"], hours: "24 hours", location: "Terminal 3 airside", placeQuery: "Hayyak Lounge Riyadh Airport" },
     { id: "ruh_nasmiles_t5", name: "naSmiles Lounge", terminal: "5", network: "priority_pass", rating: 3.7, amenities: ["hot_food","wifi","showers"], hours: "24 hours", location: "Terminal 5 airside", placeQuery: "naSmiles Lounge Riyadh Airport" },
     { id: "ruh_hayyak_luxury_t5", name: "Hayyak Luxury Lounge", terminal: "5", network: "priority_pass", rating: 3.8, amenities: ["hot_food","wifi","showers","bar"], hours: "24 hours", location: "Terminal 5 airside", placeQuery: "Hayyak Luxury Lounge Riyadh Airport" },
+    { id: "ruh_alfursan_t2", name: "Saudia Alfursan Lounge", terminal: "2", network: "generic_airline", alliance: "skyteam", rating: 4, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 2", placeQuery: "Saudia Alfursan Lounge Riyadh Airport Terminal 2" },
+    { id: "ruh_wellcome_t2", name: "Wellcome Lounge", terminal: "2", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 2, near Gate 27", placeQuery: "Wellcome Lounge Riyadh Airport" },
   ],
   SEZ: [
     { id: "sez_vallee", name: "Salon Vallee de Mai", terminal: "1", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi","showers","business_center"], hours: "Varies", location: "Airside, 1st floor after security", placeQuery: "Salon Vallee de Mai Seychelles Airport" },
@@ -663,6 +685,7 @@ export const LOUNGE_DATABASE = {
     { id: "tlv_king_david", name: "El Al King David Lounge", terminal: "3", network: "generic_airline", rating: 4.2, amenities: ["hot_food","bar","wifi","showers","a_la_carte"], hours: "Varies", location: "Terminal 3, Departure Hall (duty-free), Concourse D", placeQuery: "El Al King David Lounge Tel Aviv Airport" },
     { id: "tlv_dan", name: "Dan Lounge", terminal: "3", network: "priority_pass", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 3, Duty Free area, Concourse C", placeQuery: "Dan Lounge Tel Aviv Airport" },
     { id: "tlv_aspire", name: "Aspire Lounge", terminal: "3", network: "priority_pass", rating: 3.7, amenities: ["hot_food","wifi","showers","bar"], hours: "Varies", location: "Terminal 3, Concourse E airside", placeQuery: "Aspire Lounge Tel Aviv Airport" },
+    { id: "tlv_turkish", name: "Turkish Airlines Lounge", terminal: "3", network: "turkish_lounge", alliance: "star", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with TK flights", location: "Terminal 3 airside", placeQuery: "Turkish Airlines Lounge Tel Aviv Ben Gurion Airport" },
   ],
   TNR: [
     { id: "tnr_primeclass", name: "Primeclass Lounge", terminal: "C", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal C, Airside Level 1 near Gate 22A", placeQuery: "Primeclass Lounge Antananarivo Ivato Airport" },
@@ -685,6 +708,7 @@ export const LOUNGE_DATABASE = {
     { id: "dfw_admirals_c", name: "Admirals Club", terminal: "C", network: "admirals_club", alliance: "oneworld", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:30 PM", location: "Gate C6", placeQuery: "Admirals Club DFW Terminal C" },
     { id: "dfw_admirals_b", name: "Admirals Club", terminal: "B", network: "admirals_club", alliance: "oneworld", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 8:00 PM", location: "Gate B22", placeQuery: "Admirals Club DFW Terminal B" },
     { id: "dfw_turkish", name: "Turkish Airlines Lounge", terminal: "D", network: "turkish_lounge", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 10:00 PM", location: "Terminal D near Gate D12", placeQuery: "Turkish Airlines Lounge DFW Airport" },
+    { id: "dfw_ba", name: "British Airways Lounge", terminal: "D", network: "generic_airline", alliance: "oneworld", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - 10:15 PM", location: "Terminal D near Gate D24", placeQuery: "British Airways Lounge DFW Airport" },
   ],
   JFK: [
     { id: "jfk_centurion_t4", name: "Amex Centurion Lounge", terminal: "T4", network: "centurion", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","spa","phone_rooms"], hours: "6:00 AM - 11:00 PM", location: "Near Gate B20", placeQuery: "American Express Centurion Lounge JFK Terminal 4" },
@@ -723,6 +747,10 @@ export const LOUNGE_DATABASE = {
     { id: "lax_oneworld", name: "oneworld Lounge", terminal: "TBIT", network: "generic_airline", alliance: "oneworld", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - Last Departure", location: "Tom Bradley Int'l Terminal", placeQuery: "oneworld Lounge LAX" },
     { id: "lax_turkish", name: "Turkish Airlines Lounge", terminal: "TBIT", network: "turkish_lounge", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 11:00 PM", location: "Tom Bradley Int'l Terminal", placeQuery: "Turkish Airlines Lounge LAX" },
     { id: "lax_air_france", name: "Air France / KLM Lounge", terminal: "TBIT", network: "generic_airline", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies with AF/KL flights", location: "Tom Bradley Int'l Terminal", placeQuery: "Air France Lounge LAX" },
+    { id: "lax_air_canada", name: "Air Canada Maple Leaf Lounge", terminal: "T6", network: "generic_airline", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 10:30 PM", location: "Terminal 6 near Gate 65A", placeQuery: "Air Canada Maple Leaf Lounge LAX Terminal 6" },
+    { id: "lax_etihad", name: "Etihad Premium Lounge", terminal: "TBIT", network: "generic_airline", rating: 4, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with EY flights", location: "Tom Bradley Int'l Terminal", placeQuery: "Etihad Premium Lounge LAX" },
+    { id: "lax_admirals_t5", name: "Admirals Club (Gate 39)", terminal: "T4", network: "admirals_club", alliance: "oneworld", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 4 near Gate 49B", placeQuery: "Admirals Club LAX Terminal 4 Gate 49B" },
+    { id: "lax_alaska_t6", name: "Alaska Lounge", terminal: "T6", network: "alaska_lounge", alliance: "oneworld", rating: 3.9, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 6", placeQuery: "Alaska Lounge LAX Terminal 6" },
   ],
   ORD: [
     { id: "ord_cap1", name: "Capital One Lounge", terminal: "T3", network: "capital_one", rating: 4.6, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "5:30 AM - 10:00 PM", location: "Terminal 3", placeQuery: "Capital One Lounge ORD" },
@@ -737,6 +765,7 @@ export const LOUNGE_DATABASE = {
     { id: "ord_ba_lounge", name: "British Airways Lounge", terminal: "T5", network: "generic_airline", alliance: "oneworld", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies with BA flights", location: "Terminal 5 Int'l", placeQuery: "British Airways Lounge ORD" },
     { id: "ord_swiss", name: "SWISS Lounge", terminal: "T5", network: "generic_airline", alliance: "star", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "Varies with LX flights", location: "Terminal 5 Int'l", placeQuery: "SWISS Lounge Chicago O'Hare" },
     { id: "ord_flagship", name: "AA Flagship Lounge", terminal: "T3", network: "flagship", alliance: "oneworld", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Terminal 3 Gate K4", placeQuery: "American Airlines Flagship Lounge ORD" },
+    { id: "ord_air_france", name: "Air France KLM Lounge", terminal: "T5", network: "generic_airline", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies with AF/KL flights", location: "Terminal 5 Int'l, near Gate M17", placeQuery: "Air France KLM Lounge Chicago O'Hare" },
   ],
   SFO: [
     { id: "sfo_centurion", name: "Amex Centurion Lounge", terminal: "T3", network: "centurion", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "6:00 AM - 10:00 PM", location: "Terminal 3", placeQuery: "American Express Centurion Lounge SFO" },
@@ -750,6 +779,7 @@ export const LOUNGE_DATABASE = {
     { id: "sfo_turkish", name: "Turkish Airlines Lounge", terminal: "Int'l A", network: "turkish_lounge", alliance: "star", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with TK flights", location: "Int'l Terminal A", placeQuery: "Turkish Airlines Lounge SFO" },
     { id: "sfo_air_france", name: "Air France / KLM Lounge", terminal: "Int'l A", network: "generic_airline", alliance: "skyteam", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "Varies with AF/KL flights", location: "Int'l Terminal A", placeQuery: "Air France Lounge SFO" },
     { id: "sfo_alaska", name: "Alaska Lounge", terminal: "T2", network: "alaska_lounge", alliance: "oneworld", rating: 3.9, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 2", placeQuery: "Alaska Lounge SFO" },
+    { id: "sfo_ana", name: "ANA Lounge", terminal: "Int'l G", network: "ana_suite", alliance: "star", rating: 4, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with NH flights", location: "International Terminal G", placeQuery: "ANA Lounge SFO" },
   ],
   MIA: [
     { id: "mia_centurion", name: "Amex Centurion Lounge", terminal: "D", network: "centurion", rating: 4.6, amenities: ["showers","hot_food","bar","wifi","spa","outdoor_terrace"], hours: "6:00 AM - 10:00 PM", location: "Concourse D", placeQuery: "American Express Centurion Lounge MIA" },
@@ -760,17 +790,28 @@ export const LOUNGE_DATABASE = {
     { id: "mia_delta_sky", name: "Delta Sky Club", terminal: "H", network: "delta_sky_club", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal J", placeQuery: "Delta Sky Club Miami Airport" },
     { id: "mia_united_club", name: "United Club", terminal: "H", network: "united_club", alliance: "star", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "Varies with UA flights", location: "Terminal J", placeQuery: "United Club Miami Airport" },
     { id: "mia_pp_club", name: "The Club MIA", terminal: "H", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Terminal J", placeQuery: "The Club at Miami Airport" },
+    { id: "mia_avianca", name: "Avianca/TAP VIP Lounge", terminal: "J", network: "generic_airline", alliance: "star", rating: 3.9, amenities: ["hot_food","bar","wifi"], hours: "24 hours", location: "South Terminal Concourse J near Gate J6", placeQuery: "Avianca TAP VIP Lounge Miami Airport Concourse J" },
   ],
   ATL: [
     { id: "atl_sky_club_b", name: "Delta Sky Club", terminal: "B", network: "delta_sky_club", alliance: "skyteam", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","outdoor_terrace"], hours: "5:00 AM - Last Departure", location: "Concourse B", placeQuery: "Delta Sky Club ATL Concourse B" },
     { id: "atl_sky_club_f", name: "Delta Sky Club", terminal: "F", network: "delta_sky_club", alliance: "skyteam", rating: 4.1, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Concourse F Int'l", placeQuery: "Delta Sky Club ATL Concourse F" },
     { id: "atl_centurion", name: "Amex Centurion Lounge", terminal: "F", network: "centurion", rating: 4.4, amenities: ["showers","hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Concourse F", placeQuery: "American Express Centurion Lounge ATL" },
     { id: "atl_pp_club", name: "The Club ATL", terminal: "T", network: "priority_pass", rating: 3.2, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Domestic Terminal", placeQuery: "The Club at ATL Airport" },
+    { id: "atl_sky_club_a", name: "Delta Sky Club", terminal: "A", network: "delta_sky_club", alliance: "skyteam", rating: 4, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Concourse A near Gate A17", placeQuery: "Delta Sky Club ATL Concourse A" },
+    { id: "atl_sky_club_t", name: "Delta Sky Club", terminal: "T", network: "delta_sky_club", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Concourse T near Gate T6", placeQuery: "Delta Sky Club ATL Concourse T" },
+    { id: "atl_sky_club_e", name: "Delta Sky Club", terminal: "E", network: "delta_sky_club", alliance: "skyteam", rating: 4, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Concourse E International across from Gate E15", placeQuery: "Delta Sky Club ATL Concourse E" },
+    { id: "atl_admirals", name: "Admirals Club", terminal: "T", network: "admirals_club", alliance: "oneworld", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "4:30 AM - 8:30 PM", location: "Concourse T across from Gate T11", placeQuery: "Admirals Club ATL Atlanta" },
   ],
   BOS: [
     { id: "bos_cap1", name: "Capital One Lounge", terminal: "B", network: "capital_one", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "5:30 AM - 10:00 PM", location: "Terminal B", placeQuery: "Capital One Lounge BOS" },
     { id: "bos_admirals", name: "Admirals Club", terminal: "B", network: "admirals_club", alliance: "oneworld", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 9:00 PM", location: "Terminal B", placeQuery: "Admirals Club BOS" },
     { id: "bos_delta_sky", name: "Delta Sky Club", terminal: "A", network: "delta_sky_club", alliance: "skyteam", rating: 3.9, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Terminal A", placeQuery: "Delta Sky Club BOS" },
+    { id: "bos_chase_sapphire", name: "Chase Sapphire Lounge by The Club", terminal: "E", network: "chase_sapphire_lounge", rating: 4.4, amenities: ["hot_food","bar","wifi","showers","spa"], hours: "05:00-23:00", location: "B to C connector, accessible airside from Terminal E", placeQuery: "Chase Sapphire Lounge by The Club Boston Logan" },
+    { id: "bos_united_club", name: "United Club", terminal: "B", network: "united_club", alliance: "star", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "04:30-20:45", location: "Terminal B upper level near Gate 24", placeQuery: "United Club Boston Logan" },
+    { id: "bos_air_france_e", name: "Air France Lounge", terminal: "E", network: "generic_airline", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "08:00-23:30", location: "Terminal E international departures", placeQuery: "Air France Lounge Boston Logan Terminal E" },
+    { id: "bos_ba_lounge", name: "British Airways Galleries Lounge", terminal: "E", network: "generic_airline", alliance: "oneworld", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "04:30-22:30", location: "Terminal E mezzanine between gates E11 and E16", placeQuery: "British Airways Galleries Lounge Boston Logan" },
+    { id: "bos_virgin_clubhouse", name: "Virgin Atlantic Clubhouse", terminal: "E", network: "virgin_atlantic_lounge", alliance: "skyteam", rating: 4.2, amenities: ["hot_food","bar","wifi","a_la_carte"], hours: "Varies with VS flights", location: "Terminal E airside, Level 2 near Gate E11", placeQuery: "Virgin Atlantic Clubhouse Boston Logan" },
+    { id: "bos_lufthansa", name: "Lufthansa Business Lounge", terminal: "E", network: "lufthansa_lounge", alliance: "star", rating: 4, amenities: ["hot_food","bar","wifi"], hours: "12:15-21:30", location: "Terminal E Level 4 opposite Gate E11", placeQuery: "Lufthansa Business Lounge Boston Logan" },
   ],
   SEA: [
     { id: "sea_centurion", name: "Amex Centurion Lounge", terminal: "S", network: "centurion", rating: 4.3, amenities: ["showers","hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "South Satellite", placeQuery: "American Express Centurion Lounge SEA" },
@@ -778,6 +819,8 @@ export const LOUNGE_DATABASE = {
     { id: "sea_delta_sky", name: "Delta Sky Club", terminal: "S", network: "delta_sky_club", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "South Satellite", placeQuery: "Delta Sky Club SEA" },
     { id: "sea_alaska_n2", name: "Alaska Lounge (North Satellite)", terminal: "N", network: "alaska_lounge", alliance: "oneworld", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "North Satellite", placeQuery: "Alaska Lounge SEA North Satellite" },
     { id: "sea_alaska_concourse_d", name: "Alaska Lounge (Concourse D)", terminal: "D", network: "alaska_lounge", alliance: "oneworld", rating: 3.9, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Concourse D", placeQuery: "Alaska Lounge SEA Concourse D" },
+    { id: "sea_united_club", name: "United Club", terminal: "A", network: "united_club", alliance: "star", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Concourse A", placeQuery: "United Club SEA" },
+    { id: "sea_british_airways", name: "British Airways Lounge", terminal: "S", network: "generic_airline", alliance: "oneworld", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "9:00 AM - 8:00 PM", location: "South Satellite near Gate S10", placeQuery: "British Airways Lounge SEA" },
   ],
   DEN: [
     { id: "den_centurion", name: "Amex Centurion Lounge", terminal: "C", network: "centurion", rating: 4.4, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "6:00 AM - 10:00 PM", location: "Concourse C", placeQuery: "American Express Centurion Lounge DEN" },
@@ -785,6 +828,7 @@ export const LOUNGE_DATABASE = {
     { id: "den_united_club_a", name: "United Club", terminal: "A", network: "united_club", alliance: "star", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Concourse A", placeQuery: "United Club DEN Concourse A" },
     { id: "den_delta_sky", name: "Delta Sky Club", terminal: "A", network: "delta_sky_club", alliance: "skyteam", rating: 3.9, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Concourse A", placeQuery: "Delta Sky Club DEN" },
     { id: "den_admirals", name: "Admirals Club", terminal: "B", network: "admirals_club", alliance: "oneworld", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Concourse B", placeQuery: "Admirals Club DEN" },
+    { id: "den_cap1", name: "Capital One Lounge", terminal: "A", network: "capital_one_lounge", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "5:00 AM - 9:00 PM", location: "Concourse A near Gate A34, mezzanine level", placeQuery: "Capital One Lounge DEN Denver Airport" },
   ],
   LHR: [
     { id: "lhr_pp_plaza", name: "Plaza Premium Lounge", terminal: "T2", network: "priority_pass", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - 10:00 PM", location: "Terminal 2", placeQuery: "Plaza Premium Lounge Heathrow Terminal 2" },
@@ -802,6 +846,15 @@ export const LOUNGE_DATABASE = {
     { id: "lhr_aa_admirals", name: "American Airlines Admirals Club / Arrivals Lounge", terminal: "T3", network: "admirals_club", alliance: "oneworld", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal 3", placeQuery: "American Airlines Lounge Heathrow Terminal 3" },
     { id: "lhr_emirates", name: "Emirates Lounge", terminal: "T3", network: "generic_airline", alliance: "none", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with EK flights", location: "Terminal 3", placeQuery: "Emirates Lounge Heathrow Terminal 3" },
     { id: "lhr_turkish", name: "Turkish Airlines Lounge", terminal: "T2", network: "turkish_lounge", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - Last Departure", location: "Terminal 2", placeQuery: "Turkish Airlines Lounge Heathrow" },
+    { id: "lhr_qatar_premium_t4", name: "Qatar Airways Premium Lounge", terminal: "T4", network: "generic_airline", alliance: "oneworld", rating: 4.2, amenities: ["showers","hot_food","bar","wifi","a_la_carte"], hours: "Varies with QR flights", location: "Terminal 4 near Gate 10", placeQuery: "Qatar Airways Premium Lounge Heathrow Terminal 4" },
+    { id: "lhr_etihad_t4", name: "Etihad Lounge", terminal: "T4", network: "generic_airline", rating: 4, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with EY flights", location: "Terminal 4 near Gate 10", placeQuery: "Etihad Lounge Heathrow Terminal 4" },
+    { id: "lhr_korean_air_t4", name: "Korean Air KAL Lounge", terminal: "T4", network: "generic_airline", alliance: "skyteam", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "Varies with KE flights", location: "Terminal 4", placeQuery: "Korean Air Lounge Heathrow Terminal 4" },
+    { id: "lhr_saudia_t4", name: "Saudia Alfursan Lounge", terminal: "T4", network: "generic_airline", alliance: "skyteam", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with SV flights", location: "Terminal 4", placeQuery: "Saudia Alfursan Lounge Heathrow Terminal 4" },
+    { id: "lhr_plaza_premium_t4", name: "Plaza Premium Lounge", terminal: "T4", network: "plaza_premium", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - 10:00 PM", location: "Terminal 4", placeQuery: "Plaza Premium Lounge Heathrow Terminal 4" },
+    { id: "lhr_no1_t3", name: "No1 Lounge", terminal: "T3", network: "no1_lounge", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - 10:00 PM", location: "Terminal 3", placeQuery: "No1 Lounge Heathrow Terminal 3" },
+    { id: "lhr_aspire_t5", name: "Plaza Premium Lounge", terminal: "T5", network: "plaza_premium", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - 10:00 PM", location: "Terminal 5", placeQuery: "Plaza Premium Lounge Heathrow Terminal 5" },
+    { id: "lhr_ba_galleries_north_t5", name: "British Airways Galleries North Lounge", terminal: "T5", network: "generic_airline", alliance: "oneworld", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal 5 North", placeQuery: "British Airways Galleries North Lounge Heathrow Terminal 5" },
+    { id: "lhr_ba_first_t3", name: "British Airways First Lounge", terminal: "T3", network: "generic_airline", alliance: "oneworld", tier: "first", rating: 4.1, amenities: ["showers","hot_food","bar","wifi","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Terminal 3", placeQuery: "British Airways First Lounge Heathrow Terminal 3" },
   ],
   NRT: [
     { id: "nrt_ana_lounge", name: "ANA Lounge", terminal: "T1", network: "generic_airline", alliance: "star", rating: 4.4, amenities: ["hot_food","bar","wifi","showers"], hours: "6:30 AM - Last Departure", location: "Terminal 1", placeQuery: "ANA Lounge Narita Airport Terminal 1" },
@@ -814,6 +867,7 @@ export const LOUNGE_DATABASE = {
     { id: "nrt_qantas", name: "Qantas Lounge", terminal: "T2", network: "qantas_lounge", alliance: "oneworld", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies with QF flights", location: "Terminal 2", placeQuery: "Qantas Lounge Narita Airport" },
     { id: "nrt_jal_first", name: "JAL First Class Lounge", terminal: "T2", network: "generic_airline", alliance: "oneworld", tier: "first", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","a_la_carte"], hours: "7:00 AM - Last Departure", location: "Terminal 2", placeQuery: "JAL First Class Lounge Narita" },
     { id: "nrt_singapore", name: "Singapore Airlines SilverKris Lounge", terminal: "T1", network: "singapore_lounge", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with SQ flights", location: "Terminal 1 South Wing", placeQuery: "Singapore Airlines SilverKris Lounge Narita" },
+    { id: "nrt_ana_suite", name: "ANA Suite Lounge", terminal: "T1", network: "ana_suite", alliance: "star", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","a_la_carte"], hours: "7:00 AM - Last Departure", location: "Terminal 1 Satellite 5, near Gate 53", placeQuery: "ANA Suite Lounge Narita Terminal 1" },
   ],
   HND: [
     { id: "hnd_jal_first", name: "JAL First Class Lounge", terminal: "T3", network: "generic_airline", alliance: "oneworld", tier: "first", rating: 4.6, amenities: ["showers","hot_food","bar","wifi","a_la_carte"], hours: "Varies with JL flights", location: "Terminal 3 International", placeQuery: "JAL First Class Lounge Haneda Terminal 3" },
@@ -889,93 +943,136 @@ export const LOUNGE_DATABASE = {
     { id: "ewr_united_club_c3", name: "United Club", terminal: "C", network: "united_club", alliance: "star", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal C Gate C120", placeQuery: "United Club Newark Terminal C Gate C120" },
     { id: "ewr_centurion", name: "Amex Centurion Lounge", terminal: "C", network: "centurion", rating: 4.3, amenities: ["showers","hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Terminal C", placeQuery: "American Express Centurion Lounge Newark" },
     { id: "ewr_chase_sapphire", name: "Chase Sapphire Lounge", terminal: "A", network: "chase_sapphire_lounge", rating: 4.4, amenities: ["showers","hot_food","bar","wifi","phone_rooms"], hours: "5:30 AM - 10:00 PM", location: "Terminal A", placeQuery: "Chase Sapphire Lounge Newark Airport" },
+    { id: "ewr_lufthansa", name: "Lufthansa Lounge", terminal: "B", network: "generic_airline", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with LH flights", location: "Terminal B", placeQuery: "Lufthansa Lounge Newark Airport" },
   ],
   IAH: [
     { id: "iah_centurion", name: "Amex Centurion Lounge", terminal: "D", network: "centurion", rating: 4.4, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "6:00 AM - 10:00 PM", location: "Terminal D", placeQuery: "American Express Centurion Lounge IAH" },
     { id: "iah_united_club_c", name: "United Club", terminal: "C", network: "united_club", alliance: "star", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal C North", placeQuery: "United Club IAH Terminal C" },
     { id: "iah_united_club_e", name: "United Club", terminal: "E", network: "united_club", alliance: "star", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Terminal E", placeQuery: "United Club IAH Terminal E" },
     { id: "iah_pp_club", name: "The Club at IAH", terminal: "A", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Terminal A", placeQuery: "The Club IAH Airport" },
+    { id: "iah_polaris", name: "United Polaris Lounge", terminal: "E", network: "polaris", alliance: "star", rating: 4.4, amenities: ["showers","hot_food","bar","wifi","nap_pods","a_la_carte"], hours: "5:30 AM - 9:00 PM", location: "Terminal E between Gates E11 and E12", placeQuery: "United Polaris Lounge Houston IAH Terminal E" },
+    { id: "iah_klm_af", name: "KLM Crown Lounge", terminal: "D", network: "generic_airline", alliance: "skyteam", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Terminal D near Gate D14", placeQuery: "KLM Crown Lounge Houston IAH" },
   ],
   PHX: [
     { id: "phx_centurion", name: "Amex Centurion Lounge", terminal: "T4", network: "centurion", rating: 4.3, amenities: ["showers","hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Terminal 4", placeQuery: "American Express Centurion Lounge PHX" },
     { id: "phx_admirals", name: "Admirals Club", terminal: "T4", network: "admirals_club", alliance: "oneworld", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:30 PM", location: "Terminal 4 Gate B", placeQuery: "Admirals Club PHX" },
     { id: "phx_pp_club", name: "The Club PHX", terminal: "T4", network: "priority_pass", rating: 3.2, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Terminal 4", placeQuery: "The Club PHX Airport" },
+    { id: "phx_chase_sapphire", name: "Chase Sapphire Lounge by The Club", terminal: "T4", network: "chase_sapphire_lounge", rating: 4.4, amenities: ["hot_food","bar","wifi"], hours: "4:30 AM - 10:30 PM", location: "Terminal 4 South 1 Concourse near Gates D1-D18", placeQuery: "Chase Sapphire Lounge Phoenix PHX" },
+    { id: "phx_delta_sky", name: "Delta Sky Club", terminal: "T3", network: "delta_sky_club", alliance: "skyteam", rating: 3.9, amenities: ["hot_food","bar","wifi"], hours: "4:45 AM - 11:15 PM", location: "Terminal 3 South Concourse across from Gate F8", placeQuery: "Delta Sky Club Phoenix PHX" },
+    { id: "phx_united_club", name: "United Club", terminal: "T3", network: "united_club", alliance: "star", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 9:00 PM", location: "Terminal 3 near Gate E3", placeQuery: "United Club Phoenix PHX" },
   ],
   MSP: [
     { id: "msp_delta_sky_f", name: "Delta Sky Club", terminal: "1", network: "delta_sky_club", alliance: "skyteam", rating: 4.1, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 1 Concourse F", placeQuery: "Delta Sky Club MSP Concourse F" },
     { id: "msp_delta_sky_g", name: "Delta Sky Club", terminal: "1", network: "delta_sky_club", alliance: "skyteam", rating: 4.2, amenities: ["hot_food","bar","wifi","outdoor_terrace"], hours: "5:00 AM - Last Departure", location: "Terminal 1 Concourse G", placeQuery: "Delta Sky Club MSP Concourse G" },
     { id: "msp_pp_espace", name: "Espace Musees Lounge", terminal: "2", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Terminal 2", placeQuery: "Espace Musees Lounge MSP" },
+    { id: "msp_escape_t1", name: "Escape Lounge", terminal: "1", network: "escape_lounge", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "4:00 AM - 9:00 PM", location: "Terminal 1 Mall mezzanine above Concourse E", placeQuery: "Escape Lounge MSP Terminal 1" },
+    { id: "msp_delta_sky_c", name: "Delta Sky Club", terminal: "1", network: "delta_sky_club", alliance: "skyteam", rating: 4, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 1 Concourse C", placeQuery: "Delta Sky Club MSP Concourse C" },
   ],
   DTW: [
     { id: "dtw_delta_sky_a", name: "Delta Sky Club", terminal: "EM", network: "delta_sky_club", alliance: "skyteam", rating: 4.2, amenities: ["showers","hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "McNamara Terminal Concourse A", placeQuery: "Delta Sky Club DTW McNamara" },
     { id: "dtw_centurion", name: "Amex Centurion Lounge", terminal: "EM", network: "centurion", rating: 4.3, amenities: ["hot_food","bar","wifi","spa"], hours: "6:00 AM - 9:00 PM", location: "McNamara Terminal", placeQuery: "American Express Centurion Lounge DTW" },
     { id: "dtw_pp_club", name: "The Club DTW", terminal: "NT", network: "priority_pass", rating: 3.1, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "North Terminal", placeQuery: "The Club DTW Airport" },
+    { id: "dtw_delta_sky_c", name: "Delta Sky Club", terminal: "EM", network: "delta_sky_club", alliance: "skyteam", rating: 4, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "McNamara Terminal Concourse C", placeQuery: "Delta Sky Club DTW McNamara Concourse C" },
   ],
   CLT: [
     { id: "clt_centurion", name: "Amex Centurion Lounge", terminal: "C", network: "centurion", rating: 4.3, amenities: ["showers","hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Concourse C", placeQuery: "American Express Centurion Lounge CLT" },
     { id: "clt_admirals_c", name: "Admirals Club", terminal: "C", network: "admirals_club", alliance: "oneworld", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 9:30 PM", location: "Concourse C", placeQuery: "Admirals Club CLT" },
     { id: "clt_pp_club", name: "The Club CLT", terminal: "B", network: "priority_pass", rating: 3.2, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Concourse B", placeQuery: "The Club CLT Airport" },
+    { id: "clt_admirals_b", name: "Admirals Club", terminal: "B", network: "admirals_club", alliance: "oneworld", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "4:15 AM - 10:45 PM", location: "Concourse B, Level 2 between Gates B3-B5", placeQuery: "Admirals Club CLT Concourse B" },
   ],
   MCO: [
     { id: "mco_pp_club", name: "The Club MCO", terminal: "A", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Terminal A Airside", placeQuery: "The Club MCO Airport" },
     { id: "mco_plaza", name: "Plaza Premium Lounge", terminal: "C", network: "plaza_premium", rating: 3.5, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 10:00 PM", location: "Terminal C", placeQuery: "Plaza Premium Lounge Orlando Airport" },
+    { id: "mco_united_club", name: "United Club", terminal: "B", network: "united_club", alliance: "star", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 8:00 PM", location: "Concourse B near Gate 43", placeQuery: "United Club Orlando MCO" },
   ],
   FLL: [
     { id: "fll_pp_club", name: "The Club FLL", terminal: "1", network: "priority_pass", rating: 3.2, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Terminal 1", placeQuery: "The Club FLL Airport" },
     { id: "fll_admirals", name: "Admirals Club", terminal: "3", network: "admirals_club", alliance: "oneworld", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 8:30 PM", location: "Terminal 3", placeQuery: "Admirals Club FLL" },
+    { id: "fll_delta_sky", name: "Delta Sky Club", terminal: "2", network: "delta_sky_club", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 2", placeQuery: "Delta Sky Club Fort Lauderdale Airport" },
   ],
   SAN: [
     { id: "san_pp_club", name: "The Club SAN", terminal: "2", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Terminal 2 West", placeQuery: "The Club SAN Airport" },
     { id: "san_admirals", name: "Admirals Club", terminal: "2", network: "admirals_club", alliance: "oneworld", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Terminal 2 West", placeQuery: "Admirals Club SAN" },
     { id: "san_delta_sky", name: "Delta Sky Club", terminal: "2", network: "delta_sky_club", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Terminal 2 East", placeQuery: "Delta Sky Club SAN" },
+    { id: "san_united_club", name: "United Club", terminal: "2", network: "united_club", alliance: "star", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:15 AM - 9:00 PM", location: "Terminal 2 West, between gates 47-48", placeQuery: "United Club SAN" },
+    { id: "san_aspire", name: "Aspire Lounge", terminal: "2", network: "swissport_aspire", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - 10:00 PM", location: "Terminal 2 between East and West, near Gate 33", placeQuery: "Aspire Lounge San Diego Airport" },
   ],
   PDX: [
     { id: "pdx_alaska", name: "Alaska Lounge", terminal: "C", network: "alaska_lounge", alliance: "oneworld", rating: 4.0, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Concourse C", placeQuery: "Alaska Lounge PDX" },
     { id: "pdx_pp_capers", name: "Capers Market", terminal: "E", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Concourse E", placeQuery: "Capers Market Lounge PDX" },
+    { id: "pdx_delta_sky", name: "Delta Sky Club", terminal: "Main", network: "delta_sky_club", alliance: "skyteam", rating: 4, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Concourse D between Gates D5-D7", placeQuery: "Delta Sky Club Portland PDX" },
+    { id: "pdx_escape", name: "Escape Lounge", terminal: "Main", network: "escape_lounge", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "4:30 AM - 12:00 AM", location: "Concourse D between Gates D8-D10", placeQuery: "Escape Lounge Portland PDX Airport" },
+    { id: "pdx_united_club", name: "United Club", terminal: "Main", network: "united_club", alliance: "star", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "7:00 AM - 10:00 PM", location: "Concourse E above Gate E1", placeQuery: "United Club Portland PDX" },
   ],
   HNL: [
     { id: "hnl_pp_iass", name: "IASS Hawaii Lounge", terminal: "2", network: "priority_pass", rating: 3.4, amenities: ["bar","wifi"], hours: "7:00 AM - 8:00 PM", location: "Terminal 2", placeQuery: "IASS Hawaii Lounge Honolulu" },
     { id: "hnl_delta_sky", name: "Delta Sky Club", terminal: "2", network: "delta_sky_club", alliance: "skyteam", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "Opening varies by flight", location: "Terminal 2", placeQuery: "Delta Sky Club HNL" },
+    { id: "hnl_hawaiian_premier", name: "Hawaiian Airlines Plumeria Lounge", terminal: "1", network: "generic_airline", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies with HA flights", location: "Terminal 1 3rd floor near Wiki Wiki shuttle", placeQuery: "Hawaiian Airlines Plumeria Lounge Honolulu" },
+    { id: "hnl_admirals", name: "Admirals Club", terminal: "2", network: "admirals_club", alliance: "oneworld", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 9:30 PM", location: "Terminal 2 Central Lobby above The Local restaurant", placeQuery: "Admirals Club Honolulu" },
+    { id: "hnl_united_club", name: "United Club", terminal: "2", network: "united_club", alliance: "star", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 11:00 PM", location: "Terminal 2 above Gates G2-G3", placeQuery: "United Club Honolulu" },
   ],
   YYZ: [
     { id: "yyz_pp_plaza_t1", name: "Plaza Premium Lounge", terminal: "T1", network: "plaza_premium", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - 11:00 PM", location: "Terminal 1 Domestic", placeQuery: "Plaza Premium Lounge Toronto Pearson Terminal 1" },
     { id: "yyz_pp_plaza_t3", name: "Plaza Premium Lounge", terminal: "T3", network: "plaza_premium", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - 10:30 PM", location: "Terminal 3", placeQuery: "Plaza Premium Lounge Toronto Pearson Terminal 3" },
     { id: "yyz_air_canada", name: "Air Canada Maple Leaf Lounge", terminal: "T1", network: "generic_airline", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal 1 Int'l", placeQuery: "Air Canada Maple Leaf Lounge Toronto" },
+    { id: "yyz_ac_maple_leaf_dom", name: "Air Canada Maple Leaf Lounge", terminal: "T1", network: "generic_airline", alliance: "star", rating: 3.9, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 1 Domestic, Gate D", placeQuery: "Air Canada Maple Leaf Lounge Toronto Pearson Domestic" },
+    { id: "yyz_ac_maple_leaf_us", name: "Air Canada Maple Leaf Lounge", terminal: "T1", network: "generic_airline", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 8:00 PM", location: "Terminal 1 US Transborder, Gate E", placeQuery: "Air Canada Maple Leaf Lounge Toronto Pearson US Transborder" },
+    { id: "yyz_ac_cafe", name: "Air Canada Cafe", terminal: "T1", network: "generic_airline", alliance: "star", rating: 3.7, amenities: ["bar","wifi"], hours: "5:00 AM - 9:30 PM", location: "Terminal 1 Domestic, near Gate D20", placeQuery: "Air Canada Cafe Toronto Pearson Terminal 1" },
+    { id: "yyz_delta_sky", name: "Delta Sky Club", terminal: "T3", network: "delta_sky_club", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Terminal 3, near Gate D28", placeQuery: "Delta Sky Club Toronto Pearson" },
   ],
   YVR: [
     { id: "yvr_pp_plaza", name: "Plaza Premium Lounge", terminal: "D", network: "plaza_premium", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - 1:00 AM", location: "International Terminal", placeQuery: "Plaza Premium Lounge Vancouver Airport" },
     { id: "yvr_air_canada", name: "Air Canada Maple Leaf Lounge", terminal: "M", network: "generic_airline", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Domestic Terminal", placeQuery: "Air Canada Maple Leaf Lounge Vancouver" },
     { id: "yvr_cathay", name: "Cathay Pacific Lounge", terminal: "D", network: "cathay_lounge", alliance: "oneworld", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "6:30 AM - 1:30 AM", location: "International Terminal", placeQuery: "Cathay Pacific Lounge Vancouver Airport" },
+    { id: "yvr_ac_maple_leaf_us", name: "Air Canada Maple Leaf Lounge", terminal: "US", network: "generic_airline", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "6:15 AM - 8:45 PM", location: "US Transborder, near Gate 84", placeQuery: "Air Canada Maple Leaf Lounge Vancouver US Transborder" },
+    { id: "yvr_ac_maple_leaf_intl", name: "Air Canada Maple Leaf Lounge", terminal: "D", network: "generic_airline", alliance: "star", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "International Terminal, Level 4 near Gate D64", placeQuery: "Air Canada Maple Leaf Lounge Vancouver International" },
+    { id: "yvr_pp_plaza_us", name: "Plaza Premium Lounge", terminal: "US", network: "plaza_premium", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - 10:00 PM", location: "US Transborder Departures", placeQuery: "Plaza Premium Lounge Vancouver Airport US Transborder" },
+    { id: "yvr_pp_plaza_dom", name: "Plaza Premium Lounge", terminal: "M", network: "plaza_premium", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - 11:00 PM", location: "Domestic Terminal, near Gate C29", placeQuery: "Plaza Premium Lounge Vancouver Domestic" },
   ],
   MEX: [
     { id: "mex_centurion", name: "Amex Centurion Lounge", terminal: "T1", network: "centurion", rating: 4.2, amenities: ["showers","hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Terminal 1 Int'l", placeQuery: "American Express Centurion Lounge Mexico City Airport" },
     { id: "mex_pp_salon", name: "Salon Premier", terminal: "T2", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 10:00 PM", location: "Terminal 2", placeQuery: "Salon Premier Mexico City Airport Terminal 2" },
     { id: "mex_admirals", name: "Admirals Club", terminal: "T1", network: "admirals_club", alliance: "oneworld", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Terminal 1", placeQuery: "Admirals Club Mexico City Airport" },
+    { id: "mex_united_club", name: "United Club", terminal: "T1", network: "united_club", alliance: "star", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - 9:30 PM", location: "Terminal 1 Int'l Concourse H near Gate 19", placeQuery: "United Club Mexico City Airport" },
+    { id: "mex_delta_sky", name: "Delta Sky Club", terminal: "T2", network: "delta_sky_club", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies with DL flights", location: "Terminal 2", placeQuery: "Delta Sky Club Mexico City Airport" },
   ],
   GRU: [
     { id: "gru_pp_plaza", name: "Plaza Premium Lounge", terminal: "T3", network: "plaza_premium", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 3 Int'l", placeQuery: "Plaza Premium Lounge Guarulhos Airport" },
     { id: "gru_admirals", name: "Admirals Club", terminal: "T3", network: "admirals_club", alliance: "oneworld", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - Last Departure", location: "Terminal 3", placeQuery: "Admirals Club Guarulhos Airport" },
     { id: "gru_latam", name: "LATAM VIP Lounge", terminal: "T3", network: "generic_airline", alliance: "none", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal 3", placeQuery: "LATAM VIP Lounge Guarulhos" },
+    { id: "gru_star_alliance", name: "Star Alliance Lounge", terminal: "T3", network: "generic_airline", alliance: "star", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies", location: "Terminal 3 International airside", placeQuery: "Star Alliance Lounge Guarulhos Airport" },
+    { id: "gru_gol", name: "GOL Premium Lounge", terminal: "T2", network: "generic_airline", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "Varies with G3 flights", location: "Terminal 2 Domestic", placeQuery: "GOL Premium Lounge Guarulhos Airport" },
+    { id: "gru_pp_plaza_dom", name: "Plaza Premium Lounge (Domestic)", terminal: "T2", network: "plaza_premium", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "05:00-23:00", location: "Terminal 2 Domestic", placeQuery: "Plaza Premium Lounge Guarulhos Terminal 2" },
   ],
   EZE: [
     { id: "eze_pp_salon", name: "Salon Condor", terminal: "A", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "24 hours", location: "Terminal A", placeQuery: "Salon Condor Ezeiza Airport" },
     { id: "eze_aerolineas", name: "Aerolineas Argentinas Salon VIP", terminal: "A", network: "generic_airline", alliance: "skyteam", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - Last Departure", location: "Terminal A", placeQuery: "Aerolineas Argentinas VIP Lounge Ezeiza" },
+    { id: "eze_latam", name: "LATAM VIP Lounge", terminal: "A", network: "generic_airline", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal A", placeQuery: "LATAM VIP Lounge Buenos Aires Ezeiza" },
   ],
   BOG: [
     { id: "bog_avianca", name: "Avianca Lounge", terminal: "1", network: "generic_airline", alliance: "star", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "4:30 AM - 10:00 PM", location: "International Terminal", placeQuery: "Avianca Lounge El Dorado Bogota" },
     { id: "bog_pp_sala", name: "Sala VIP El Dorado", terminal: "1", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 10:00 PM", location: "International Terminal", placeQuery: "Sala VIP El Dorado Airport Bogota" },
+    { id: "bog_avianca_diamond", name: "Avianca Diamond Lounge", terminal: "1", network: "generic_airline", alliance: "star", rating: 4.1, amenities: ["hot_food","bar","wifi","showers","a_la_carte"], hours: "03:30-24:00", location: "International Terminal, near Gate 32", placeQuery: "Avianca Diamond Lounge El Dorado Bogota" },
+    { id: "bog_copa_club", name: "Copa Club", terminal: "1", network: "generic_airline", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "03:30-21:30", location: "Concourse A airside near Gate A6", placeQuery: "Copa Club Bogota El Dorado" },
   ],
   SCL: [
     { id: "scl_latam", name: "LATAM VIP Lounge", terminal: "2", network: "generic_airline", alliance: "none", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "International Terminal", placeQuery: "LATAM VIP Lounge Santiago Airport" },
     { id: "scl_pp_salon", name: "Salon VIP Pacific Club", terminal: "2", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "International Terminal", placeQuery: "Pacific Club Lounge Santiago Airport" },
+    { id: "scl_american", name: "American Airlines Admirals Club", terminal: "2", network: "admirals_club", alliance: "oneworld", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "6:30 AM - 10:00 PM", location: "International Terminal, near Gate 19", placeQuery: "Admirals Club Santiago Airport" },
+    { id: "scl_avianca", name: "Avianca Sala VIP", terminal: "2", network: "generic_airline", alliance: "star", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "Varies with AV flights", location: "International Terminal, near Gate 12B", placeQuery: "Avianca VIP Lounge Santiago Airport" },
+    { id: "scl_salones_vip", name: "Salones VIP Pacific Club", terminal: "2", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "International Terminal", placeQuery: "Salones VIP Pacific Club Santiago Airport" },
   ],
   PTY: [
     { id: "pty_copa", name: "Copa Club", terminal: "1", network: "generic_airline", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - 10:00 PM", location: "Main Terminal", placeQuery: "Copa Club Tocumen Airport Panama" },
     { id: "pty_pp_global", name: "Global Lounge", terminal: "2", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "24 hours", location: "Terminal 2", placeQuery: "Global Lounge Tocumen Airport Panama" },
+    { id: "pty_copa_t2", name: "Copa Club Terminal 2", terminal: "2", network: "generic_airline", alliance: "star", rating: 4.2, amenities: ["showers","hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Terminal 2 3rd floor near Gate 208", placeQuery: "Copa Club Terminal 2 Panama Tocumen Airport" },
   ],
   LIM: [
     { id: "lim_pp_sumaq", name: "Sumaq VIP Lounge", terminal: "1", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "International Terminal", placeQuery: "Sumaq VIP Lounge Lima Airport" },
     { id: "lim_latam", name: "LATAM VIP Lounge", terminal: "1", network: "generic_airline", alliance: "none", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "International Terminal", placeQuery: "LATAM VIP Lounge Lima Airport" },
+    { id: "lim_hanaq", name: "Hanaq Pacha VIP Lounge", terminal: "1", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "International Departures airside", placeQuery: "Hanaq Pacha VIP Lounge Lima Airport" },
+    { id: "lim_salones_peru", name: "Salones VIP Peru", terminal: "1", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "24 hours", location: "International Departures", placeQuery: "Salones VIP Peru Lima Airport" },
+    { id: "lim_avianca", name: "Avianca Sala VIP", terminal: "1", network: "generic_airline", alliance: "star", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "Varies with AV flights", location: "International Departures", placeQuery: "Avianca Sala VIP Lima Airport" },
   ],
   SJU: [
     { id: "sju_pp_club", name: "The Club SJU", terminal: "A", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Terminal A", placeQuery: "The Club SJU Airport" },
@@ -984,6 +1081,8 @@ export const LOUNGE_DATABASE = {
   CUN: [
     { id: "cun_pp_viplounge", name: "Mera Business Lounge", terminal: "T3", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 10:00 PM", location: "Terminal 3 Int'l", placeQuery: "Mera Business Lounge Cancun Airport Terminal 3" },
     { id: "cun_admirals", name: "Admirals Club", terminal: "T3", network: "admirals_club", alliance: "oneworld", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 8:00 PM", location: "Terminal 3", placeQuery: "Admirals Club Cancun Airport" },
+    { id: "cun_aeromexico", name: "Aeromexico Salon Premier", terminal: "T2", network: "generic_airline", alliance: "skyteam", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "Varies with AM flights", location: "Terminal 2 airside near Gate A11", placeQuery: "Aeromexico Salon Premier Cancun Airport" },
+    { id: "cun_mera_t4", name: "Mera Business Lounge", terminal: "T4", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 10:00 PM", location: "Terminal 4 international departures airside near Gate 54", placeQuery: "Mera Business Lounge Cancun Airport Terminal 4" },
   ],
   // Europe — expanded
   CDG: [
@@ -1005,6 +1104,7 @@ export const LOUNGE_DATABASE = {
     { id: "ams_klm_crown_ns", name: "KLM Crown Lounge (Non-Schengen)", terminal: "1", network: "generic_airline", alliance: "skyteam", rating: 4.2, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Non-Schengen Lounge 3", placeQuery: "KLM Crown Lounge Schiphol Non-Schengen" },
     { id: "ams_british_airways", name: "British Airways Lounge", terminal: "1", network: "generic_airline", alliance: "oneworld", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "Varies with BA flights", location: "Non-Schengen area", placeQuery: "British Airways Lounge Amsterdam Schiphol" },
     { id: "ams_star_alliance", name: "Star Alliance Lounge", terminal: "1", network: "generic_airline", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - Last Departure", location: "Non-Schengen area", placeQuery: "Star Alliance Lounge Amsterdam Schiphol" },
+    { id: "ams_aspire_43", name: "Aspire Lounge 41 (Non-Schengen)", terminal: "1", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 10:00 PM", location: "Non-Schengen Lounge 41 between D and E gates", placeQuery: "Aspire Lounge 41 Amsterdam Schiphol" },
   ],
   FRA: [
     { id: "fra_luft_senator", name: "Lufthansa Senator Lounge", terminal: "T1", network: "generic_airline", alliance: "star", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","nap_pods"], hours: "5:30 AM - Last Departure", location: "Terminal 1 Concourse B", placeQuery: "Lufthansa Senator Lounge Frankfurt Terminal 1" },
@@ -1016,42 +1116,68 @@ export const LOUNGE_DATABASE = {
     { id: "fra_emirates", name: "Emirates Lounge", terminal: "T2", network: "generic_airline", alliance: "none", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with EK flights", location: "Terminal 2 Concourse D", placeQuery: "Emirates Lounge Frankfurt Airport" },
     { id: "fra_turkish", name: "Turkish Airlines Lounge", terminal: "T1", network: "turkish_lounge", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with TK flights", location: "Terminal 1", placeQuery: "Turkish Airlines Lounge Frankfurt Airport" },
     { id: "fra_ba_lounge", name: "British Airways Lounge", terminal: "T1", network: "generic_airline", alliance: "oneworld", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "Varies with BA flights", location: "Terminal 1 Concourse B", placeQuery: "British Airways Lounge Frankfurt Airport" },
+    { id: "fra_air_canada", name: "Air Canada Maple Leaf Lounge", terminal: "T1", network: "generic_airline", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies with AC flights", location: "Terminal 1 Concourse B", placeQuery: "Air Canada Maple Leaf Lounge Frankfurt" },
+    { id: "fra_japan_airlines", name: "JAL Sakura Lounge", terminal: "T2", network: "generic_airline", alliance: "oneworld", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with JL flights", location: "Terminal 2", placeQuery: "JAL Sakura Lounge Frankfurt" },
+    { id: "fra_lh_first_b", name: "Lufthansa First Class Lounge", terminal: "T1", network: "lufthansa_lounge", alliance: "star", tier: "first", rating: 4.6, amenities: ["showers","hot_food","bar","wifi","spa","a_la_carte","nap_pods"], hours: "5:30 AM - Last Departure", location: "Terminal 1 Concourse B", placeQuery: "Lufthansa First Class Lounge Frankfurt Concourse B" },
   ],
   MUC: [
     { id: "muc_luft_senator", name: "Lufthansa Senator Lounge", terminal: "T2", network: "generic_airline", alliance: "star", rating: 4.4, amenities: ["showers","hot_food","bar","wifi","nap_pods"], hours: "5:30 AM - Last Departure", location: "Terminal 2 Satellite", placeQuery: "Lufthansa Senator Lounge Munich Airport" },
     { id: "muc_luft_business", name: "Lufthansa Business Lounge", terminal: "T2", network: "generic_airline", alliance: "star", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - Last Departure", location: "Terminal 2", placeQuery: "Lufthansa Business Lounge Munich" },
     { id: "muc_pp_airport", name: "Airport Lounge Europa", terminal: "T1", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:30 PM", location: "Terminal 1", placeQuery: "Airport Lounge Europa Munich" },
+    { id: "muc_lh_first_t2", name: "Lufthansa First Class Lounge", terminal: "T2", network: "lufthansa_lounge", alliance: "star", tier: "first", rating: 4.6, amenities: ["showers","hot_food","bar","wifi","a_la_carte","nap_pods"], hours: "5:30 AM - Last Departure", location: "Terminal 2 main, near Gate G/H21", placeQuery: "Lufthansa First Class Lounge Munich Terminal 2" },
+    { id: "muc_lh_first_satellite", name: "Lufthansa First Class Lounge", terminal: "T2", network: "lufthansa_lounge", alliance: "star", tier: "first", rating: 4.6, amenities: ["showers","hot_food","bar","wifi","a_la_carte","nap_pods"], hours: "5:30 AM - Last Departure", location: "Terminal 2 Satellite, near Gate K/L11", placeQuery: "Lufthansa First Class Lounge Munich Satellite" },
+    { id: "muc_lh_business_satellite", name: "Lufthansa Business Lounge", terminal: "T2", network: "lufthansa_lounge", alliance: "star", rating: 4, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - Last Departure", location: "Terminal 2 Satellite", placeQuery: "Lufthansa Business Lounge Munich Satellite" },
+    { id: "muc_emirates", name: "Emirates Lounge", terminal: "T1", network: "emirates_lounge", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with EK flights", location: "Terminal 1 Module C, non-Schengen airside", placeQuery: "Emirates Lounge Munich Airport" },
   ],
   ZRH: [
     { id: "zrh_swiss_senator", name: "SWISS Senator Lounge", terminal: "E", network: "generic_airline", alliance: "star", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","nap_pods"], hours: "5:30 AM - Last Departure", location: "Airside E", placeQuery: "SWISS Senator Lounge Zurich Airport" },
     { id: "zrh_swiss_business", name: "SWISS Business Lounge", terminal: "E", network: "generic_airline", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - Last Departure", location: "Airside E", placeQuery: "SWISS Business Lounge Zurich" },
     { id: "zrh_pp_aspire", name: "Aspire Lounge", terminal: "E", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Airside E", placeQuery: "Aspire Lounge Zurich Airport" },
+    { id: "zrh_swiss_first", name: "SWISS First Class Lounge", terminal: "E", network: "swiss_lounge", alliance: "star", tier: "first", rating: 4.7, amenities: ["showers","hot_food","bar","wifi","a_la_carte","spa"], hours: "6:00 AM - 10:30 PM", location: "Airside E, Top Floor", placeQuery: "SWISS First Class Lounge Zurich Airport E" },
+    { id: "zrh_swiss_business_a", name: "SWISS Business Lounge", terminal: "A", network: "swiss_lounge", alliance: "star", rating: 4, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - 10:00 PM", location: "Airside A Schengen", placeQuery: "SWISS Business Lounge Zurich Airport A" },
+    { id: "zrh_swiss_senator_a", name: "SWISS Senator Lounge", terminal: "A", network: "swiss_lounge", alliance: "star", rating: 4.2, amenities: ["showers","hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Airside A Schengen", placeQuery: "SWISS Senator Lounge Zurich Airport A" },
+    { id: "zrh_emirates", name: "Emirates Lounge", terminal: "E", network: "emirates_lounge", rating: 4, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with EK flights", location: "Airside E Non-Schengen", placeQuery: "Emirates Lounge Zurich Airport" },
   ],
   FCO: [
     { id: "fco_pp_plaza", name: "Plaza Premium Lounge", terminal: "T3", network: "plaza_premium", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 11:00 PM", location: "Terminal 3", placeQuery: "Plaza Premium Lounge Rome Fiumicino" },
     { id: "fco_ita_lounge", name: "ITA Airways Lounge Dolce Vita", terminal: "T1", network: "generic_airline", alliance: "skyteam", rating: 3.9, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Terminal 1", placeQuery: "ITA Airways Lounge Rome Fiumicino" },
     { id: "fco_pp_primeclass", name: "Primeclass Lounge", terminal: "T3", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Terminal 3", placeQuery: "Primeclass Lounge Rome Fiumicino Airport" },
+    { id: "fco_emirates", name: "Emirates Lounge", terminal: "T3", network: "emirates_lounge", rating: 4, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with EK flights", location: "Terminal 3", placeQuery: "Emirates Lounge Rome Fiumicino" },
+    { id: "fco_ita_first", name: "ITA Airways Piazza di Spagna Lounge", terminal: "T1", network: "generic_airline", alliance: "skyteam", rating: 4, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - Last Departure", location: "Terminal 1", placeQuery: "ITA Airways Piazza di Spagna Lounge Rome Fiumicino" },
+    { id: "fco_qatar", name: "Qatar Airways Premium Lounge", terminal: "T3", network: "generic_airline", alliance: "oneworld", rating: 4, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with QR flights", location: "Terminal 3", placeQuery: "Qatar Airways Lounge Rome Fiumicino" },
   ],
   BCN: [
     { id: "bcn_pp_sala", name: "Sala VIP Pau Casals", terminal: "T1", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Terminal 1", placeQuery: "Sala VIP Pau Casals Barcelona Airport" },
     { id: "bcn_iberia", name: "Iberia Sala VIP Dali", terminal: "T1", network: "generic_airline", alliance: "oneworld", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - Last Departure", location: "Terminal 1", placeQuery: "Iberia Sala VIP Dali Barcelona" },
+    { id: "bcn_sala_colomer", name: "Sala VIP Colomer", terminal: "T1", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "05:00-22:00", location: "Terminal 1 airside Schengen area", placeQuery: "Sala VIP Colomer Barcelona Airport" },
   ],
   MAD: [
     { id: "mad_iberia_vela", name: "Iberia Premium Lounge Velazquez", terminal: "T4S", network: "generic_airline", alliance: "oneworld", rating: 4.2, amenities: ["showers","hot_food","bar","wifi","nap_pods"], hours: "5:00 AM - Last Departure", location: "Terminal 4 Satellite", placeQuery: "Iberia Premium Lounge Velazquez Madrid" },
     { id: "mad_pp_sala", name: "Sala VIP Cibeles", terminal: "T4", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Terminal 4", placeQuery: "Sala VIP Cibeles Madrid Airport" },
     { id: "mad_neptuno", name: "Sala VIP Neptuno", terminal: "T1", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Terminal 1", placeQuery: "Sala VIP Neptuno Madrid Airport" },
+    { id: "mad_iberia_dali", name: "Iberia Dali Premium Lounge", terminal: "T4", network: "generic_airline", alliance: "oneworld", rating: 4.1, amenities: ["showers","hot_food","bar","wifi","nap_pods"], hours: "5:30 AM - 11:00 PM", location: "Terminal 4 Main", placeQuery: "Iberia Sala Dali Premium Lounge Madrid Barajas Terminal 4" },
+    { id: "mad_iberia_velazquez_first", name: "Iberia Velazquez Premium Lounge", terminal: "T4S", network: "generic_airline", alliance: "oneworld", tier: "first", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","a_la_carte","spa"], hours: "5:00 AM - Last Departure", location: "Terminal 4 Satellite", placeQuery: "Iberia Velazquez Premium Lounge Madrid Barajas Terminal 4S" },
+    { id: "mad_iberia_business_t4", name: "Iberia Business Lounge", terminal: "T4", network: "generic_airline", alliance: "oneworld", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal 4", placeQuery: "Iberia Business Lounge Madrid Barajas Terminal 4" },
+    { id: "mad_pp_goya", name: "Sala VIP Goya", terminal: "T4S", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 11:00 PM", location: "Terminal 4 Satellite", placeQuery: "Sala VIP Goya Madrid Barajas Terminal 4S" },
   ],
   LIS: [
     { id: "lis_pp_ana", name: "ANA Lounge", terminal: "T1", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - 11:00 PM", location: "Terminal 1", placeQuery: "ANA Star Alliance Lounge Lisbon Airport" },
     { id: "lis_tap", name: "TAP Premium Lounge", terminal: "T1", network: "generic_airline", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal 1", placeQuery: "TAP Premium Lounge Lisbon Airport" },
+    { id: "lis_blue_lounge", name: "Blue Lounge", terminal: "T1", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "4:30 AM - 11:00 PM", location: "Terminal 1 Schengen", placeQuery: "Blue Lounge Lisbon Airport" },
   ],
   DUB: [
     { id: "dub_pp_51st", name: "51st & Green", terminal: "T2", network: "priority_pass", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - 10:00 PM", location: "Terminal 2 Departure Gates", placeQuery: "51st and Green Lounge Dublin Airport" },
     { id: "dub_pp_t1", name: "The Lounge", terminal: "T1", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 9:00 PM", location: "Terminal 1", placeQuery: "The Lounge Dublin Airport Terminal 1" },
+    { id: "dub_aer_lingus", name: "Aer Lingus Lounge", terminal: "T2", network: "generic_airline", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal 2 airside", placeQuery: "Aer Lingus Lounge Dublin Airport Terminal 2" },
+    { id: "dub_dub_lounge_t2", name: "DAA Executive Lounge", terminal: "T2", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "4:30 AM - 9:30 PM", location: "Terminal 2 airside", placeQuery: "DAA Executive Lounge Dublin Airport" },
+    { id: "dub_us_preclearance", name: "51st & Green Lounge", terminal: "T2", network: "priority_pass", rating: 3.6, amenities: ["hot_food","wifi","bar"], hours: "5:00 AM - 1:00 PM", location: "Terminal 2 US Preclearance area", placeQuery: "51st and Green US Preclearance Lounge Dublin" },
   ],
   CPH: [
     { id: "cph_sas_gold", name: "SAS Gold Lounge", terminal: "T3", network: "generic_airline", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal 3", placeQuery: "SAS Gold Lounge Copenhagen Airport" },
     { id: "cph_pp_eventyr", name: "Eventyr Lounge", terminal: "T3", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 10:00 PM", location: "Terminal 3", placeQuery: "Eventyr Lounge Copenhagen Airport" },
+    { id: "cph_aspire", name: "Aspire Lounge", terminal: "T2", network: "swissport_aspire", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 8:00 PM", location: "Terminal 2 airside between Pier A and B", placeQuery: "Aspire Lounge Copenhagen Airport" },
+    { id: "cph_air_france", name: "Air France / KLM Lounge", terminal: "T2", network: "generic_airline", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies with AF/KL flights", location: "Terminal 2 airside near Pier A", placeQuery: "Atelier Lounge Copenhagen Airport Air France KLM" },
+    { id: "cph_pp_aviator", name: "Carlsberg Aviator Lounge", terminal: "T2", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 8:30 PM", location: "Terminal 2 airside between Piers A and B", placeQuery: "Carlsberg Aviator Lounge Copenhagen Airport" },
   ],
   ARN: [
     { id: "arn_sas_gold", name: "SAS Gold Lounge", terminal: "T5", network: "generic_airline", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal 5", placeQuery: "SAS Gold Lounge Stockholm Arlanda" },
@@ -1060,19 +1186,29 @@ export const LOUNGE_DATABASE = {
   HEL: [
     { id: "hel_finnair_lounge", name: "Finnair Premium Lounge", terminal: "T2", network: "generic_airline", alliance: "oneworld", rating: 4.2, amenities: ["showers","hot_food","bar","wifi","nap_pods"], hours: "5:00 AM - Last Departure", location: "Terminal 2 Schengen", placeQuery: "Finnair Premium Lounge Helsinki Airport" },
     { id: "hel_pp_plaza", name: "Plaza Premium Lounge", terminal: "T2", network: "plaza_premium", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 10:00 PM", location: "Terminal 2 Non-Schengen", placeQuery: "Plaza Premium Lounge Helsinki Airport" },
+    { id: "hel_finnair_platinum", name: "Finnair Platinum Wing Lounge", terminal: "T2", network: "generic_airline", alliance: "oneworld", tier: "first", rating: 4.4, amenities: ["showers","hot_food","bar","wifi","a_la_carte"], hours: "Varies with AY flights", location: "Terminal 2 Non-Schengen Departures", placeQuery: "Finnair Platinum Wing Lounge Helsinki Airport" },
+    { id: "hel_finnair_nonschengen", name: "Finnair Non-Schengen Lounge", terminal: "T2", network: "generic_airline", alliance: "oneworld", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "05:30-Last Departure", location: "Terminal 2 Non-Schengen Departures", placeQuery: "Finnair Non-Schengen Lounge Helsinki Airport" },
+    { id: "hel_aspire", name: "Aspire Lounge", terminal: "T2", network: "swissport_aspire", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "05:00-22:00", location: "Terminal 2 Schengen Departures", placeQuery: "Aspire Lounge Helsinki Airport" },
   ],
   IST: [
     { id: "ist_turkish_miles", name: "Turkish Airlines Miles&Smiles Lounge", terminal: "1", network: "turkish_lounge", alliance: "star", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","nap_pods","spa"], hours: "24 hours", location: "International Departures", placeQuery: "Turkish Airlines Miles Smiles Lounge Istanbul Airport" },
     { id: "ist_turkish_business", name: "Turkish Airlines Business Lounge", terminal: "1", network: "turkish_lounge", alliance: "star", rating: 4.6, amenities: ["showers","hot_food","bar","wifi","nap_pods","spa","a_la_carte"], hours: "24 hours", location: "International Departures", placeQuery: "Turkish Airlines Business Lounge Istanbul Airport" },
     { id: "ist_pp_primeclass", name: "Primeclass CIP Lounge", terminal: "1", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "24 hours", location: "Domestic Terminal", placeQuery: "Primeclass Lounge Istanbul Airport" },
+    { id: "ist_iga_intl", name: "IGA Lounge International", terminal: "1", network: "priority_pass", rating: 4.1, amenities: ["hot_food","bar","wifi","showers","nap_pods"], hours: "24 hours", location: "International Departures, mezzanine after passport control", placeQuery: "IGA Lounge International Istanbul Airport" },
+    { id: "ist_iga_dom", name: "IGA Lounge Domestic", terminal: "1", network: "priority_pass", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "24 hours", location: "Domestic Departures, opposite Gate G6", placeQuery: "IGA Lounge Domestic Istanbul Airport" },
+    { id: "ist_turkish_business_dom", name: "Turkish Airlines Domestic CIP Lounge", terminal: "1", network: "turkish_lounge", alliance: "star", rating: 4, amenities: ["hot_food","bar","wifi"], hours: "24 hours", location: "Domestic Departures, opposite Gates G6-G7", placeQuery: "Turkish Airlines Domestic Lounge Istanbul Airport" },
   ],
   VIE: [
     { id: "vie_austrian", name: "Austrian Airlines Senator Lounge", terminal: "3", network: "generic_airline", alliance: "star", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - Last Departure", location: "Terminal 3", placeQuery: "Austrian Airlines Senator Lounge Vienna Airport" },
     { id: "vie_pp_lounge", name: "Air Lounge", terminal: "3", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Terminal 3", placeQuery: "Air Lounge Vienna Airport" },
+    { id: "vie_austrian_business", name: "Austrian Airlines Business Lounge", terminal: "3", network: "generic_airline", alliance: "star", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - Last Departure", location: "Terminal 3 Schengen", placeQuery: "Austrian Airlines Business Lounge Vienna Airport" },
+    { id: "vie_sky_lounge_schengen", name: "Sky Lounge Schengen", terminal: "3", network: "generic_airline", alliance: "star", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 10:00 PM", location: "Terminal 3 Schengen F Gates", placeQuery: "Sky Lounge Schengen Vienna Airport" },
   ],
   ATH: [
     { id: "ath_pp_goldair", name: "Goldair Handling CIP Lounge", terminal: "A", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 10:00 PM", location: "Main Terminal Non-Schengen", placeQuery: "Goldair Handling CIP Lounge Athens Airport" },
     { id: "ath_aegean", name: "Aegean Business Lounge", terminal: "A", network: "generic_airline", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - Last Departure", location: "Main Terminal Schengen", placeQuery: "Aegean Business Lounge Athens Airport" },
+    { id: "ath_lufthansa", name: "Lufthansa Business Lounge", terminal: "A", network: "lufthansa_lounge", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "4:30 AM - 8:00 PM", location: "Main Terminal Schengen Area B opposite Gate B12", placeQuery: "Lufthansa Business Lounge Athens Airport" },
+    { id: "ath_skyserv_aristotelis", name: "Skyserv Aristotle Onassis Lounge", terminal: "A", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - 11:00 PM", location: "Main Terminal Extra-Schengen Hall A", placeQuery: "Skyserv Aristotle Onassis Lounge Athens Airport" },
   ],
   // Middle East / Africa — expanded
   DXB: [
@@ -1096,10 +1232,14 @@ export const LOUNGE_DATABASE = {
     { id: "auh_etihad_fc", name: "Etihad First Class Lounge & Spa", terminal: "A", network: "generic_airline", alliance: "none", rating: 4.7, amenities: ["showers","hot_food","bar","wifi","spa","nap_pods","a_la_carte"], hours: "24 hours", location: "Terminal 3", placeQuery: "Etihad First Class Lounge Abu Dhabi" },
     { id: "auh_etihad_bc", name: "Etihad Business Class Lounge", terminal: "A", network: "generic_airline", alliance: "none", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","nap_pods"], hours: "24 hours", location: "Terminal 3", placeQuery: "Etihad Business Lounge Abu Dhabi" },
     { id: "auh_pp_aldhabi", name: "Al Dhabi Lounge", terminal: "A", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 1", placeQuery: "Al Dhabi Lounge Abu Dhabi Airport" },
+    { id: "auh_plaza_premium", name: "Pearl Lounge by Plaza Premium", terminal: "A", network: "plaza_premium", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal A Level 5 near Gate D43 airside", placeQuery: "Pearl Lounge Plaza Premium Abu Dhabi Zayed Terminal A" },
+    { id: "auh_ahlan", name: "Ahlan Lounge", terminal: "A", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal A international departures", placeQuery: "Ahlan Lounge Abu Dhabi Zayed Airport" },
   ],
   JNB: [
     { id: "jnb_pp_bidvest", name: "Bidvest Premier Lounge", terminal: "A", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - 10:00 PM", location: "International Terminal", placeQuery: "Bidvest Premier Lounge Johannesburg Airport" },
     { id: "jnb_saa_lounge", name: "SAA Voyager Lounge", terminal: "B", network: "generic_airline", alliance: "star", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Domestic Terminal", placeQuery: "SAA Voyager Lounge Johannesburg" },
+    { id: "jnb_ba_galleries", name: "British Airways Galleries Lounge", terminal: "A", network: "generic_airline", alliance: "oneworld", rating: 4.1, amenities: ["hot_food","bar","wifi","showers","a_la_carte"], hours: "3:00 PM - 10:15 PM", location: "Terminal A International, mezzanine level", placeQuery: "British Airways Galleries Lounge Johannesburg OR Tambo" },
+    { id: "jnb_emirates", name: "Emirates Lounge", terminal: "A", network: "emirates_lounge", rating: 4.3, amenities: ["hot_food","bar","wifi","showers","a_la_carte"], hours: "Varies with EK flights", location: "Terminal A International, mezzanine level", placeQuery: "Emirates Lounge Johannesburg OR Tambo" },
   ],
   CAI: [
     { id: "cai_pp_premium", name: "Premium Lounge", terminal: "T3", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "24 hours", location: "Terminal 3", placeQuery: "Premium Lounge Cairo Airport Terminal 3" },
@@ -1123,6 +1263,7 @@ export const LOUNGE_DATABASE = {
     { id: "kix_ana_lounge", name: "ANA Lounge", terminal: "T1", network: "generic_airline", alliance: "star", rating: 4.1, amenities: ["hot_food","bar","wifi"], hours: "6:30 AM - Last Departure", location: "Terminal 1 Int'l", placeQuery: "ANA Lounge Kansai Airport" },
     { id: "kix_jal_sakura", name: "JAL Sakura Lounge", terminal: "T1", network: "generic_airline", alliance: "oneworld", rating: 4.0, amenities: ["hot_food","bar","wifi"], hours: "7:00 AM - Last Departure", location: "Terminal 1 Int'l", placeQuery: "JAL Sakura Lounge Kansai" },
     { id: "kix_pp_kanku", name: "KIX Airport Lounge", terminal: "T1", network: "priority_pass", rating: 3.3, amenities: ["bar","wifi"], hours: "7:00 AM - 9:00 PM", location: "Terminal 1", placeQuery: "KIX Airport Lounge Kansai" },
+    { id: "kix_kal_lounge", name: "Korean Air KAL Business Class Lounge", terminal: "1", network: "generic_airline", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies with KE flights", location: "Terminal 1 International, North Wing between Gates 5-11", placeQuery: "Korean Air KAL Lounge Kansai Airport" },
   ],
   BKK: [
     { id: "bkk_thai_royal_silk", name: "Thai Airways Royal Silk Lounge", terminal: "1", network: "generic_airline", alliance: "star", rating: 4.2, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "5:00 AM - Last Departure", location: "Concourse C", placeQuery: "Thai Airways Royal Silk Lounge Suvarnabhumi" },
@@ -1135,6 +1276,10 @@ export const LOUNGE_DATABASE = {
     { id: "bkk_jal", name: "JAL Sakura Lounge", terminal: "1", network: "generic_airline", alliance: "oneworld", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with JL flights", location: "Concourse C", placeQuery: "JAL Sakura Lounge Bangkok Suvarnabhumi" },
     { id: "bkk_thai_royal_first", name: "Thai Airways Royal First Lounge", terminal: "1", network: "generic_airline", alliance: "star", tier: "first", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","spa","a_la_carte"], hours: "5:00 AM - Last Departure", location: "Concourse D", placeQuery: "Thai Airways Royal First Lounge Suvarnabhumi" },
     { id: "bkk_oman_air", name: "Oman Air Lounge", terminal: "1", network: "generic_airline", alliance: "oneworld", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Concourse E", placeQuery: "Oman Air Lounge Bangkok Suvarnabhumi" },
+    { id: "bkk_qatar_premium", name: "Qatar Airways Premium Lounge", terminal: "1", network: "qatar_lounge", alliance: "oneworld", rating: 4.2, amenities: ["hot_food","bar","wifi","showers","a_la_carte"], hours: "Varies with QR flights", location: "Concourse D, Level 3", placeQuery: "Qatar Airways Premium Lounge Bangkok Suvarnabhumi" },
+    { id: "bkk_air_france", name: "Air France-KLM Lounge", terminal: "1", network: "generic_airline", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Concourse F near Gate F2", placeQuery: "Air France KLM Lounge Bangkok Suvarnabhumi" },
+    { id: "bkk_louis_tavern_g", name: "Louis Tavern CIP Lounge", terminal: "1", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "24 hours", location: "Concourse G airside", placeQuery: "Louis Tavern CIP Lounge Bangkok Suvarnabhumi" },
+    { id: "bkk_bangkok_airways", name: "Bangkok Airways Blue Ribbon Lounge", terminal: "1", network: "generic_airline", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "04:30-22:00", location: "Concourse D near Gate D7", placeQuery: "Bangkok Airways Blue Ribbon Lounge Suvarnabhumi" },
   ],
   TPE: [
     // oneworld
@@ -1152,24 +1297,35 @@ export const LOUNGE_DATABASE = {
     { id: "tpe_plaza_t1", name: "Plaza Premium Lounge", terminal: "T1", network: "plaza_premium", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - Last Departure", location: "Terminal 1", placeQuery: "Plaza Premium Lounge Taiwan Taoyuan Terminal 1" },
     { id: "tpe_plaza_t2_a", name: "Plaza Premium Lounge", terminal: "T2", network: "plaza_premium", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 2 Zone A", placeQuery: "Plaza Premium Lounge Taiwan Taoyuan Terminal 2 Zone A" },
     { id: "tpe_plaza_t2_d", name: "Plaza Premium Lounge", terminal: "T2", network: "plaza_premium", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 2 Zone D", placeQuery: "Plaza Premium Lounge Taiwan Taoyuan Terminal 2 Zone D" },
+    { id: "tpe_ana", name: "ANA Lounge", terminal: "T2", network: "generic_airline", alliance: "star", rating: 3.9, amenities: ["hot_food","bar","wifi"], hours: "Varies with NH flights", location: "Terminal 2", placeQuery: "ANA Lounge Taoyuan Terminal 2" },
   ],
   KUL: [
     { id: "kul_pp_plaza", name: "Plaza Premium Lounge", terminal: "1", network: "plaza_premium", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "KLIA Main Terminal", placeQuery: "Plaza Premium Lounge KLIA" },
     { id: "kul_malaysia_golden", name: "Malaysia Airlines Golden Lounge", terminal: "1", network: "generic_airline", alliance: "oneworld", rating: 4.1, amenities: ["hot_food","bar","wifi","showers","nap_pods"], hours: "24 hours", location: "KLIA Satellite", placeQuery: "Malaysia Airlines Golden Lounge KLIA" },
     { id: "kul_cathay", name: "Cathay Pacific Lounge", terminal: "1", network: "cathay_lounge", alliance: "oneworld", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "7:00 AM - 11:00 PM", location: "KLIA Satellite", placeQuery: "Cathay Pacific Lounge KLIA" },
+    { id: "kul_golden_first", name: "Malaysia Airlines Golden Lounge First Class", terminal: "1", network: "generic_airline", alliance: "oneworld", tier: "first", rating: 4.3, amenities: ["showers","hot_food","bar","wifi","a_la_carte","nap_pods"], hours: "24 hours", location: "KLIA Satellite Building", placeQuery: "Malaysia Airlines Golden Lounge First Class KLIA Satellite" },
+    { id: "kul_golden_regional", name: "Malaysia Airlines Golden Lounge (Regional)", terminal: "1", network: "generic_airline", alliance: "oneworld", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "KLIA Main Terminal", placeQuery: "Malaysia Airlines Golden Lounge Regional KLIA Main Terminal" },
+    { id: "kul_emirates", name: "Emirates Lounge", terminal: "1", network: "emirates_lounge", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with EK flights", location: "KLIA Satellite Building", placeQuery: "Emirates Lounge Kuala Lumpur KLIA" },
   ],
   MNL: [
     { id: "mnl_pp_mabuhay", name: "Mabuhay Lounge", terminal: "T3", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "24 hours", location: "Terminal 3 Int'l", placeQuery: "Mabuhay Lounge Manila Terminal 3" },
     { id: "mnl_cathay", name: "Cathay Pacific Lounge", terminal: "T3", network: "cathay_lounge", alliance: "oneworld", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - Last Departure", location: "Terminal 3", placeQuery: "Cathay Pacific Lounge Manila" },
+    { id: "mnl_skyview_t3", name: "SkyView Lounge", terminal: "T3", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "24 hours", location: "Terminal 3 Int'l", placeQuery: "SkyView Lounge Manila Terminal 3" },
   ],
   DEL: [
     { id: "del_pp_plaza_t3", name: "Plaza Premium Lounge", terminal: "T3", network: "plaza_premium", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 3 Int'l", placeQuery: "Plaza Premium Lounge Delhi Airport Terminal 3" },
     { id: "del_pp_encalm", name: "Encalm Privé Lounge", terminal: "T3", network: "priority_pass", rating: 4.0, amenities: ["hot_food","bar","wifi","showers","nap_pods"], hours: "24 hours", location: "Terminal 3 Domestic", placeQuery: "Encalm Prive Lounge Delhi Airport" },
     { id: "del_air_india", name: "Air India Maharaja Lounge", terminal: "T3", network: "generic_airline", alliance: "star", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "24 hours", location: "Terminal 3 Int'l", placeQuery: "Air India Maharaja Lounge Delhi" },
+    { id: "del_air_india_maharaja_first", name: "Air India Maharaja Lounge (First)", terminal: "T3", network: "generic_airline", alliance: "star", tier: "first", rating: 4, amenities: ["hot_food","bar","wifi","showers","a_la_carte"], hours: "24 hours", location: "Terminal 3 International departures airside", placeQuery: "Air India Maharaja First Class Lounge Delhi Airport" },
+    { id: "del_pp_encalm_intl", name: "Encalm Lounge (International)", terminal: "T3", network: "priority_pass", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 3 International departures airside", placeQuery: "Encalm Lounge Delhi Airport International Terminal 3" },
+    { id: "del_pp_plaza_dom", name: "Plaza Premium Lounge (Domestic)", terminal: "T3", network: "plaza_premium", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 3 Domestic departures airside near Gates 27 & 33", placeQuery: "Plaza Premium Lounge Delhi Airport Domestic" },
   ],
   BOM: [
     { id: "bom_pp_plaza_t2", name: "Plaza Premium Lounge", terminal: "T2", network: "plaza_premium", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 2 Int'l", placeQuery: "Plaza Premium Lounge Mumbai Airport Terminal 2" },
     { id: "bom_pp_encalm", name: "Encalm Privé Lounge", terminal: "T2", network: "priority_pass", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 2 Domestic", placeQuery: "Encalm Prive Lounge Mumbai Airport" },
+    { id: "bom_air_india_t2", name: "Air India Maharaja Lounge", terminal: "T2", network: "generic_airline", alliance: "star", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with AI flights", location: "Terminal 2 international departures", placeQuery: "Air India Maharaja Lounge Mumbai Airport Terminal 2" },
+    { id: "bom_adani_t2", name: "Adani Lounge", terminal: "T2", network: "priority_pass", rating: 4, amenities: ["hot_food","bar","wifi","showers","spa","a_la_carte"], hours: "24 hours", location: "Terminal 2 international departures, Level 4 near gates 45-46", placeQuery: "Adani Lounge Mumbai Airport Terminal 2" },
+    { id: "bom_gvk_t2", name: "GVK Lounge", terminal: "T2", network: "priority_pass", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 2 international departures, Level 3", placeQuery: "GVK Lounge Mumbai Airport Terminal 2" },
   ],
   SYD: [
     { id: "syd_qantas_business", name: "Qantas Business Lounge", terminal: "T1", network: "qantas_lounge", alliance: "oneworld", rating: 4.2, amenities: ["showers","hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 1 Int'l", placeQuery: "Qantas Business Lounge Sydney Airport" },
@@ -1181,28 +1337,43 @@ export const LOUNGE_DATABASE = {
     { id: "syd_emirates", name: "Emirates Lounge", terminal: "T1", network: "generic_airline", alliance: "none", rating: 4.2, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with EK flights", location: "Terminal 1 Int'l", placeQuery: "Emirates Lounge Sydney Airport" },
     { id: "syd_american_lounge", name: "American Airlines Lounge", terminal: "T1", network: "admirals_club", alliance: "oneworld", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "Varies with AA flights", location: "Terminal 1 Int'l", placeQuery: "American Airlines Lounge Sydney Airport" },
     { id: "syd_qantas_dom_biz", name: "Qantas Business Lounge (Domestic)", terminal: "T3", network: "qantas_lounge", alliance: "oneworld", rating: 4.1, amenities: ["showers","hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 3 Domestic", placeQuery: "Qantas Business Lounge Sydney Domestic Terminal" },
+    { id: "syd_plaza_premium_intl", name: "Plaza Premium Lounge", terminal: "T1", network: "plaza_premium", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 10:00 PM", location: "Terminal 1 International Departures opposite Gates 25-26", placeQuery: "Plaza Premium Lounge Sydney Airport Terminal 1" },
   ],
   MEL: [
     { id: "mel_qantas_business", name: "Qantas Business Lounge", terminal: "T1", network: "qantas_lounge", alliance: "oneworld", rating: 4.1, amenities: ["showers","hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 1 Int'l", placeQuery: "Qantas Business Lounge Melbourne Airport" },
     { id: "mel_qantas_first", name: "Qantas First Lounge", terminal: "T1", network: "qantas_lounge", alliance: "oneworld", tier: "first", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","spa","a_la_carte"], hours: "5:30 AM - Last Departure", location: "Terminal 1 Int'l", placeQuery: "Qantas First Lounge Melbourne" },
     { id: "mel_pp_menzies", name: "Menzies Aviation Lounge", terminal: "T2", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 10:00 PM", location: "Terminal 2", placeQuery: "Menzies Aviation Lounge Melbourne Airport" },
+    { id: "mel_singapore_sl", name: "SilverKris Lounge", terminal: "T2", network: "singapore_lounge", alliance: "star", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with SQ flights", location: "Terminal 2 Int'l, basement level near Gate 7", placeQuery: "SilverKris Lounge Melbourne Airport" },
+    { id: "mel_emirates", name: "Emirates Lounge", terminal: "T2", network: "emirates_lounge", rating: 4.2, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with EK flights", location: "Terminal 2 Int'l, Level 3 near Gate 10", placeQuery: "Emirates Lounge Melbourne Airport" },
+    { id: "mel_air_nz", name: "Air New Zealand Lounge", terminal: "T2", network: "generic_airline", alliance: "star", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with NZ flights", location: "Terminal 2 Int'l ground floor", placeQuery: "Air New Zealand Lounge Melbourne Airport" },
+    { id: "mel_qantas_dom", name: "Qantas Domestic Business Lounge", terminal: "T1", network: "qantas_lounge", alliance: "oneworld", rating: 4, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Terminal 1 Domestic", placeQuery: "Qantas Domestic Business Lounge Melbourne" },
   ],
   AKL: [
     { id: "akl_airnz_koru", name: "Air New Zealand Koru Lounge", terminal: "2", network: "generic_airline", alliance: "star", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "International Terminal", placeQuery: "Air New Zealand Koru Lounge Auckland Airport" },
     { id: "akl_pp_strata", name: "Strata Lounge", terminal: "2", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "5:30 AM - Last Departure", location: "International Terminal", placeQuery: "Strata Lounge Auckland Airport" },
+    { id: "akl_qantas", name: "Qantas International Lounge", terminal: "I", network: "qantas_lounge", alliance: "oneworld", rating: 4.2, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with QF flights", location: "International Terminal departures airside", placeQuery: "Qantas International Lounge Auckland Airport" },
+    { id: "akl_emirates", name: "Emirates Lounge", terminal: "I", network: "emirates_lounge", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with EK flights", location: "International Terminal Level 2 airside", placeQuery: "Emirates Lounge Auckland Airport" },
+    { id: "akl_airnz_intl_business", name: "Air New Zealand International Business Lounge", terminal: "I", network: "generic_airline", alliance: "star", rating: 4.3, amenities: ["hot_food","bar","wifi","showers","nap_pods"], hours: "5:00 AM - Last Departure", location: "International Terminal Pier B", placeQuery: "Air New Zealand International Lounge Auckland Airport" },
   ],
   PVG: [
     { id: "pvg_china_eastern", name: "China Eastern V03 Lounge", terminal: "T1", network: "generic_airline", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - Last Departure", location: "Terminal 1", placeQuery: "China Eastern VIP Lounge Shanghai Pudong" },
     { id: "pvg_pp_no77", name: "No. 77 China Eastern Plaza Premium", terminal: "T2", network: "plaza_premium", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 11:00 PM", location: "Terminal 2", placeQuery: "No 77 Lounge Shanghai Pudong Terminal 2" },
     { id: "pvg_cathay", name: "Cathay Pacific Lounge", terminal: "T2", network: "cathay_lounge", alliance: "oneworld", rating: 3.9, amenities: ["hot_food","bar","wifi"], hours: "6:30 AM - Last Departure", location: "Terminal 2", placeQuery: "Cathay Pacific Lounge Shanghai Pudong" },
+    { id: "pvg_air_china_business", name: "Air China No. 71 Business Class Lounge", terminal: "T2", network: "generic_airline", alliance: "star", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - 1:00 AM", location: "Terminal 2 International, 4F near Gate D71", placeQuery: "Air China No 71 Lounge Shanghai Pudong Terminal 2" },
+    { id: "pvg_pp_no170", name: "No. 170 VIP Lounge", terminal: "T2", network: "plaza_premium", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 11:00 PM", location: "Terminal 2 Satellite S2 International near Gate 170", placeQuery: "No 170 Lounge Shanghai Pudong Terminal 2" },
   ],
   PEK: [
     { id: "pek_air_china", name: "Air China First Class Lounge", terminal: "3", network: "generic_airline", alliance: "star", tier: "first", rating: 4.0, amenities: ["hot_food","bar","wifi","showers","nap_pods"], hours: "6:00 AM - Last Departure", location: "Terminal 3E Int'l", placeQuery: "Air China First Class Lounge Beijing Capital Terminal 3" },
     { id: "pek_pp_bgs", name: "BGS Premier Lounge", terminal: "3", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Terminal 3E", placeQuery: "BGS Premier Lounge Beijing Capital Airport" },
+    { id: "pek_cathay", name: "Cathay Pacific Lounge", terminal: "3", network: "cathay_lounge", alliance: "oneworld", rating: 4.3, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal 3E Level 3 near Gate E20", placeQuery: "Cathay Pacific Lounge Beijing Capital PEK Terminal 3" },
+    { id: "pek_air_china_business", name: "Air China Business Class Lounge", terminal: "3", network: "generic_airline", alliance: "star", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal 3E International", placeQuery: "Air China Business Class Lounge Beijing Capital Terminal 3" },
   ],
   CAN: [
     { id: "can_china_southern", name: "China Southern Sky Pearl Lounge", terminal: "T2", network: "generic_airline", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - Last Departure", location: "Terminal 2 Int'l", placeQuery: "China Southern Sky Pearl Lounge Guangzhou" },
     { id: "can_pp_lounge", name: "V1 Lounge", terminal: "T2", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 10:00 PM", location: "Terminal 2", placeQuery: "V1 Lounge Guangzhou Baiyun Airport" },
+    { id: "can_cathay", name: "Cathay Pacific T2 Premium Lounge", terminal: "T2", network: "cathay_lounge", alliance: "oneworld", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "T2 Level 4 International Departures airside", placeQuery: "Cathay Pacific Premium Lounge Guangzhou T2" },
+    { id: "can_china_southern_first", name: "China Southern First/Business Class Lounge", terminal: "T2", network: "generic_airline", alliance: "skyteam", rating: 4, amenities: ["hot_food","bar","wifi","showers","nap_pods"], hours: "04:30-Last Departure", location: "T2 international departures 4th floor", placeQuery: "China Southern First Business Class Lounge Guangzhou T2" },
+    { id: "can_plaza_premium", name: "Premium Lounge by Plaza Premium", terminal: "T2", network: "plaza_premium", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "T2 international departures 3rd floor airside", placeQuery: "Premium Lounge Plaza Premium Guangzhou T2" },
   ],
   LAS: [
     { id: "las_chase_sapphire", name: "Chase Sapphire Lounge by The Club", terminal: "T1", network: "chase_sapphire_lounge", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","phone_rooms"], hours: "5:00 AM - 11:00 PM", location: "Terminal 1 D Gates near Gate D1", placeQuery: "Chase Sapphire Lounge Las Vegas Airport" },
@@ -1215,16 +1386,24 @@ export const LOUNGE_DATABASE = {
     { id: "phl_centurion", name: "Amex Centurion Lounge", terminal: "A", network: "centurion", rating: 4.3, amenities: ["showers","hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Terminal A West", placeQuery: "American Express Centurion Lounge Philadelphia" },
     { id: "phl_admirals", name: "Admirals Club", terminal: "B", network: "admirals_club", alliance: "oneworld", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 9:30 PM", location: "Between B and C", placeQuery: "Admirals Club Philadelphia Airport" },
     { id: "phl_pp_minute", name: "Minute Suites", terminal: "A", network: "priority_pass", rating: 3.4, amenities: ["wifi","nap_pods"], hours: "24 hours", location: "Terminal A East", placeQuery: "Minute Suites Philadelphia Airport" },
+    { id: "phl_flagship", name: "American Airlines Flagship Lounge", terminal: "A", network: "flagship", alliance: "oneworld", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","a_la_carte"], hours: "4:30 AM - 10:30 PM", location: "Terminal A-West between Gates A15-A16", placeQuery: "American Airlines Flagship Lounge Philadelphia PHL" },
+    { id: "phl_admirals_aw", name: "Admirals Club", terminal: "A", network: "admirals_club", alliance: "oneworld", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "4:30 AM - 10:30 PM", location: "Terminal A-West between Gates A15-A16", placeQuery: "Admirals Club Philadelphia Terminal A West" },
+    { id: "phl_united_club", name: "United Club", terminal: "D", network: "united_club", alliance: "star", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "4:30 AM - 7:30 PM", location: "Terminal C/D connector near Gate D5", placeQuery: "United Club Philadelphia PHL" },
+    { id: "phl_delta_sky", name: "Delta Sky Club", terminal: "D", network: "delta_sky_club", alliance: "skyteam", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "4:30 AM - 6:30 PM", location: "Terminal D/E connector", placeQuery: "Delta Sky Club Philadelphia PHL" },
   ],
   IAD: [
     { id: "iad_united_club", name: "United Club", terminal: "C", network: "united_club", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Concourse C", placeQuery: "United Club Dulles Airport" },
     { id: "iad_polaris", name: "United Polaris Lounge", terminal: "Int'l", network: "polaris", alliance: "star", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","nap_pods","a_la_carte"], hours: "6:00 AM - Last Departure", location: "International Departures", placeQuery: "United Polaris Lounge Dulles" },
     { id: "iad_pp_turkish", name: "Turkish Airlines Lounge", terminal: "Int'l", network: "priority_pass", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 11:00 PM", location: "International", placeQuery: "Turkish Airlines Lounge Dulles" },
+    { id: "iad_lufthansa", name: "Lufthansa Business Lounge", terminal: "Int'l", network: "lufthansa_lounge", alliance: "star", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with LH flights", location: "Concourse B International", placeQuery: "Lufthansa Business Lounge Dulles Airport" },
+    { id: "iad_air_france", name: "Air France Lounge", terminal: "Int'l", network: "generic_airline", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies with AF flights", location: "Concourse A International near Gate A22", placeQuery: "Air France Lounge Dulles Airport" },
+    { id: "iad_virgin_atlantic", name: "Virgin Atlantic Clubhouse", terminal: "Int'l", network: "virgin_atlantic_lounge", rating: 4, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with VS flights", location: "Concourse A near Gate A32", placeQuery: "Virgin Atlantic Clubhouse Dulles Airport" },
   ],
   DCA: [
     { id: "dca_admirals", name: "Admirals Club", terminal: "2", network: "admirals_club", alliance: "oneworld", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Terminal B", placeQuery: "Admirals Club Reagan National Airport" },
     { id: "dca_delta_sky", name: "Delta Sky Club", terminal: "2", network: "delta_sky_club", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Terminal B", placeQuery: "Delta Sky Club Reagan National" },
     { id: "dca_cap1", name: "Capital One Lounge", terminal: "1", network: "capital_one", rating: 4.5, amenities: ["showers","hot_food","bar","wifi","spa"], hours: "5:30 AM - 10:00 PM", location: "Terminal A", placeQuery: "Capital One Lounge DCA" },
+    { id: "dca_united_club", name: "United Club", terminal: "2", network: "united_club", alliance: "star", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 7:30 PM", location: "Terminal 2 Concourse B opposite Gate B11", placeQuery: "United Club Reagan National Airport" },
   ],
   TPA: [
     { id: "tpa_pp_club", name: "The Club TPA", terminal: "F", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "Airside F", placeQuery: "The Club at Tampa Airport" },
@@ -1232,24 +1411,34 @@ export const LOUNGE_DATABASE = {
   ],
   MSY: [
     { id: "msy_pp_club", name: "The Club MSY", terminal: "C", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Concourse C", placeQuery: "The Club at New Orleans Airport" },
+    { id: "msy_delta_sky", name: "Delta Sky Club", terminal: "B", network: "delta_sky_club", alliance: "skyteam", rating: 4, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Concourse B entrance", placeQuery: "Delta Sky Club New Orleans MSY" },
+    { id: "msy_united_club", name: "United Club", terminal: "C", network: "united_club", alliance: "star", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "4:00 AM - 6:30 PM", location: "Concourse C near Gate C7", placeQuery: "United Club New Orleans MSY" },
   ],
   RDU: [
     { id: "rdu_pp_club", name: "The Club RDU", terminal: "2", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Terminal 2", placeQuery: "The Club at Raleigh Durham Airport" },
+    { id: "rdu_admirals", name: "Admirals Club", terminal: "2", network: "admirals_club", alliance: "oneworld", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "4:15 AM - 8:15 PM", location: "Terminal 2 across from Gates C1-C3", placeQuery: "American Airlines Admirals Club Raleigh Durham RDU" },
+    { id: "rdu_delta_sky", name: "Delta Sky Club", terminal: "2", network: "delta_sky_club", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "4:30 AM - 7:45 PM", location: "Terminal 2 Level 2 across from Gate C3", placeQuery: "Delta Sky Club Raleigh Durham RDU" },
   ],
   BNA: [
     { id: "bna_pp_club", name: "The Club BNA", terminal: "Main", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Concourse C", placeQuery: "The Club at Nashville Airport" },
     { id: "bna_delta_sky", name: "Delta Sky Club", terminal: "B", network: "delta_sky_club", alliance: "skyteam", rating: 3.9, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Concourse B", placeQuery: "Delta Sky Club Nashville" },
+    { id: "bna_admirals", name: "American Airlines Admirals Club", terminal: "C", network: "admirals_club", alliance: "oneworld", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "04:00-20:00", location: "Concourse C mezzanine between gates C14 and C16", placeQuery: "Admirals Club Nashville Airport" },
   ],
   AUS: [
     { id: "aus_centurion", name: "Amex Centurion Lounge", terminal: "E", network: "centurion", rating: 4.4, amenities: ["showers","hot_food","bar","wifi"], hours: "6:00 AM - 9:00 PM", location: "East Wing", placeQuery: "American Express Centurion Lounge Austin" },
     { id: "aus_pp_club", name: "The Club AUS", terminal: "E", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Near Gate 18", placeQuery: "The Club at Austin Airport" },
+    { id: "aus_delta_sky", name: "Delta Sky Club", terminal: "Barbara Jordan", network: "delta_sky_club", alliance: "skyteam", rating: 3.9, amenities: ["hot_food","bar","wifi"], hours: "4:15 AM - 10:00 PM", location: "Barbara Jordan Terminal mezzanine near Gate 4", placeQuery: "Delta Sky Club Austin Airport" },
+    { id: "aus_united_club", name: "United Club", terminal: "Barbara Jordan", network: "united_club", alliance: "star", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 7:00 PM", location: "Barbara Jordan Terminal mezzanine near Gate 22", placeQuery: "United Club Austin Airport" },
+    { id: "aus_admirals", name: "Admirals Club", terminal: "Barbara Jordan", network: "admirals_club", alliance: "oneworld", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "4:15 AM - 8:15 PM", location: "Barbara Jordan Terminal mezzanine across from Gate 22", placeQuery: "Admirals Club Austin Airport" },
   ],
   SLC: [
     { id: "slc_delta_sky", name: "Delta Sky Club", terminal: "A", network: "delta_sky_club", alliance: "skyteam", rating: 4.2, amenities: ["hot_food","bar","wifi","showers"], hours: "4:30 AM - Last Departure", location: "Concourse A", placeQuery: "Delta Sky Club Salt Lake City" },
     { id: "slc_pp_club", name: "The Club SLC", terminal: "B", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 9:00 PM", location: "Concourse B", placeQuery: "The Club at Salt Lake City Airport" },
+    { id: "slc_delta_sky_b", name: "Delta Sky Club", terminal: "B", network: "delta_sky_club", alliance: "skyteam", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "5:45 AM - 10:30 PM", location: "Concourse B at central tunnel exit", placeQuery: "Delta Sky Club Salt Lake City Concourse B" },
   ],
   STL: [
     { id: "stl_pp_club", name: "The Club STL", terminal: "1", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Terminal 1", placeQuery: "The Club at St Louis Airport" },
+    { id: "stl_admirals", name: "Admirals Club", terminal: "1", network: "admirals_club", alliance: "oneworld", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "4:30 AM - 7:00 PM", location: "Terminal 1 Concourse C entrance", placeQuery: "Admirals Club St Louis Lambert STL Airport" },
   ],
   PIT: [
     { id: "pit_pp_club", name: "The Club PIT", terminal: "C", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Concourse C", placeQuery: "The Club at Pittsburgh Airport" },
@@ -1262,6 +1451,7 @@ export const LOUNGE_DATABASE = {
   ],
   IND: [
     { id: "ind_pp_club", name: "The Club IND", terminal: "B", network: "priority_pass", rating: 3.4, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:00 PM", location: "Concourse B", placeQuery: "The Club at Indianapolis Airport" },
+    { id: "ind_delta_sky", name: "Delta Sky Club", terminal: "A", network: "delta_sky_club", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "4:45 AM - Last Departure", location: "Concourse A", placeQuery: "Delta Sky Club Indianapolis Airport" },
   ],
   CMH: [
     { id: "cmh_pp_club", name: "The Club CMH", terminal: "B", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 8:00 PM", location: "Concourse B", placeQuery: "The Club at Columbus Airport" },
@@ -1277,6 +1467,7 @@ export const LOUNGE_DATABASE = {
   ],
   JAX: [
     { id: "jax_pp_club", name: "The Club JAX", terminal: "1", network: "priority_pass", rating: 3.2, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 8:00 PM", location: "Concourse C", placeQuery: "The Club at Jacksonville Airport" },
+    { id: "jax_delta_sky", name: "Delta Sky Club", terminal: "1", network: "delta_sky_club", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - Last Departure", location: "Concourse A", placeQuery: "Delta Sky Club Jacksonville Airport" },
   ],
   RSW: [
     { id: "rsw_pp_club", name: "The Club RSW", terminal: "C", network: "priority_pass", rating: 3.3, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 8:30 PM", location: "Concourse C", placeQuery: "The Club at Fort Myers Airport" },
@@ -1284,28 +1475,44 @@ export const LOUNGE_DATABASE = {
   // International - additional
   ADD: [
     { id: "add_sheba", name: "Sheba Lounge", terminal: "T2", network: "generic_airline", alliance: "star", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 2 Int'l", placeQuery: "Sheba Lounge Addis Ababa Airport" },
+    { id: "add_cloud_nine_business", name: "Ethiopian Airlines Cloud Nine Lounge", terminal: "T2", network: "generic_airline", alliance: "star", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 2 international departures airside", placeQuery: "Ethiopian Airlines Cloud Nine Lounge Addis Ababa Bole Airport" },
   ],
   NBO: [
     { id: "nbo_pp_simba", name: "Simba Lounge", terminal: "1A", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "24 hours", location: "Terminal 1 Int'l", placeQuery: "Simba Lounge Nairobi Jomo Kenyatta Airport" },
+    { id: "nbo_plaza_premium", name: "Plaza Premium Lounge", terminal: "1D", network: "plaza_premium", rating: 4, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 1D airside, Level 2 near Gate 4", placeQuery: "Plaza Premium Lounge Nairobi JKIA" },
+    { id: "nbo_ke_pride", name: "Kenya Airways Pride Lounge", terminal: "1A", network: "generic_airline", alliance: "skyteam", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 1A, Level 2 near Gate 17", placeQuery: "Kenya Airways Pride Lounge Nairobi" },
+    { id: "nbo_ke_msafiri", name: "Kenya Airways Msafiri Lounge", terminal: "1D", network: "generic_airline", alliance: "skyteam", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "24 hours", location: "Terminal 1D", placeQuery: "Kenya Airways Msafiri Lounge Nairobi" },
   ],
   CMB: [
     { id: "cmb_pp_serendib", name: "Serendib Lounge", terminal: "1", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Departures", placeQuery: "Serendib Lounge Colombo Bandaranaike Airport" },
+    { id: "cmb_sri_lankan", name: "SriLankan Airlines Serendib Lounge", terminal: "1", network: "generic_airline", alliance: "oneworld", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "International Departures airside, 1st floor", placeQuery: "SriLankan Airlines Serendib Lounge Colombo" },
   ],
   MLE: [
     { id: "mle_pp_moonimaa", name: "Moonimaa Lounge", terminal: "1", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "24 hours", location: "Int'l Departures", placeQuery: "Moonimaa Lounge Maldives Velana Airport" },
+    { id: "mle_leeli", name: "Leeli Lounge", terminal: "1", network: "generic_airline", rating: 3.8, amenities: ["hot_food","wifi"], hours: "24 hours", location: "Int'l Departures", placeQuery: "Leeli Lounge Male Velana Airport" },
   ],
   HAN: [
     { id: "han_pp_song_hong", name: "Song Hong Business Lounge", terminal: "T2", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - 12:00 AM", location: "Terminal 2 Int'l", placeQuery: "Song Hong Business Lounge Hanoi Noi Bai" },
+    { id: "han_vietnam_lotus_t2", name: "Vietnam Airlines Lotus Lounge", terminal: "T2", network: "generic_airline", alliance: "skyteam", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with VN flights", location: "Terminal 2 International Departures", placeQuery: "Vietnam Airlines Lotus Lounge Hanoi Noi Bai T2" },
+    { id: "han_vietnam_lotus_t1", name: "Vietnam Airlines Lotus Lounge", terminal: "T1", network: "generic_airline", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies with VN flights", location: "Terminal 1 Domestic", placeQuery: "Vietnam Airlines Lotus Lounge Hanoi Noi Bai T1" },
+    { id: "han_song_hong_t1", name: "Song Hong Business Lounge", terminal: "T1", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "04:30-23:00", location: "Terminal 1 Domestic", placeQuery: "Song Hong Business Lounge Hanoi Noi Bai T1" },
   ],
   SGN: [
     { id: "sgn_pp_lotus", name: "Lotus Lounge", terminal: "T2", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 12:00 AM", location: "Terminal 2 Int'l", placeQuery: "Lotus Lounge Ho Chi Minh City Airport" },
+    { id: "sgn_vietnam_airlines", name: "Vietnam Airlines Lotus Lounge", terminal: "T2", network: "generic_airline", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 2 Int'l, Level 3", placeQuery: "Vietnam Airlines Lotus Lounge Ho Chi Minh City" },
+    { id: "sgn_orchid", name: "Orchid Lounge", terminal: "T2", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "24 hours", location: "Terminal 2 Int'l, opposite gates 10-14", placeQuery: "Orchid Lounge Ho Chi Minh City Airport" },
+    { id: "sgn_le_saigonnais", name: "Le Saigonnais Business Lounge", terminal: "T2", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 2 Int'l", placeQuery: "Le Saigonnais Lounge Ho Chi Minh City Airport" },
   ],
   DPS: [
     { id: "dps_pp_premier", name: "Premier Lounge", terminal: "I", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Int'l Departures", placeQuery: "Premier Lounge Bali Ngurah Rai Airport" },
+    { id: "dps_garuda", name: "Garuda Indonesia Lounge", terminal: "I", network: "generic_airline", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with GA flights", location: "International Departures", placeQuery: "Garuda Indonesia Lounge Bali Ngurah Rai Airport" },
+    { id: "dps_saphire", name: "Saphire Plaza Premium Lounge", terminal: "I", network: "plaza_premium", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "International Departures", placeQuery: "Saphire Plaza Premium Lounge Bali Denpasar Airport" },
+    { id: "dps_singapore", name: "Singapore Airlines SilverKris Lounge", terminal: "I", network: "singapore_lounge", alliance: "star", rating: 4, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with SQ flights", location: "International Departures", placeQuery: "SilverKris Lounge Bali Denpasar Airport" },
   ],
   CGK: [
     { id: "cgk_pp_saphire", name: "Saphire Lounge", terminal: "T3", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi","showers"], hours: "24 hours", location: "Terminal 3", placeQuery: "Saphire Lounge Jakarta Soekarno-Hatta" },
     { id: "cgk_ga_lounge", name: "Garuda Indonesia Lounge", terminal: "T3", network: "generic_airline", alliance: "none", rating: 4.0, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "Terminal 3", placeQuery: "Garuda Indonesia Lounge Jakarta T3" },
+    { id: "cgk_singapore", name: "Singapore Airlines Lounge", terminal: "T3", network: "singapore_lounge", alliance: "star", rating: 4.1, amenities: ["hot_food","bar","wifi","showers"], hours: "Varies with SQ flights", location: "T3 International Departures Level 2 near Gate 6 (inside Saphire)", placeQuery: "Singapore Airlines Lounge Jakarta T3" },
   ],
   BKI: [
     { id: "bki_pp_plaza", name: "Plaza Premium Lounge", terminal: "T1", network: "priority_pass", rating: 3.5, amenities: ["hot_food","bar","wifi"], hours: "6:00 AM - 12:00 AM", location: "Terminal 1", placeQuery: "Plaza Premium Lounge Kota Kinabalu Airport" },
@@ -1318,28 +1525,43 @@ export const LOUNGE_DATABASE = {
   ],
   EDI: [
     { id: "edi_pp_aspire", name: "Aspire Lounge", terminal: "1", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "4:00 AM - 9:00 PM", location: "Airside after security", placeQuery: "Aspire Lounge Edinburgh Airport" },
+    { id: "edi_no1", name: "No1 Lounge", terminal: "1", network: "no1_lounge", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "4:30 AM - 9:00 PM", location: "Airside after security", placeQuery: "No1 Lounge Edinburgh Airport" },
+    { id: "edi_british_airways", name: "British Airways Lounge", terminal: "1", network: "generic_airline", alliance: "oneworld", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Airside after security", placeQuery: "British Airways Lounge Edinburgh Airport" },
+    { id: "edi_plaza_premium", name: "Plaza Premium Lounge", terminal: "1", network: "plaza_premium", rating: 3.7, amenities: ["hot_food","bar","wifi","showers"], hours: "4:30 AM - 9:00 PM", location: "International Departures", placeQuery: "Plaza Premium Lounge Edinburgh Airport" },
   ],
   MAN: [
     { id: "man_pp_escape", name: "Escape Lounge", terminal: "T1", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "4:00 AM - 9:00 PM", location: "Terminal 1", placeQuery: "Escape Lounge Manchester Airport Terminal 1" },
     { id: "man_pp_1903", name: "1903 Lounge", terminal: "T3", network: "priority_pass", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "4:00 AM - 9:00 PM", location: "Terminal 3", placeQuery: "1903 Lounge Manchester Airport" },
+    { id: "man_escape_t2", name: "Escape Lounge", terminal: "T2", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "03:00 - 20:00", location: "Terminal 2 airside", placeQuery: "Escape Lounge Manchester Airport Terminal 2" },
   ],
   GVA: [
     { id: "gva_pp_swiss", name: "Dnata Skyview Lounge", terminal: "1", network: "priority_pass", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "6:00 AM - 10:00 PM", location: "Terminal 1", placeQuery: "Dnata Skyview Lounge Geneva Airport" },
+    { id: "gva_swiss_business", name: "Swiss Business Lounge", terminal: "1", network: "swiss_lounge", alliance: "star", rating: 4, amenities: ["hot_food","bar","wifi","showers"], hours: "05:30-21:30", location: "Terminal 1 Schengen Departures", placeQuery: "Swiss Business Lounge Geneva Airport" },
+    { id: "gva_swiss_senator", name: "Swiss Senator Lounge", terminal: "1", network: "swiss_lounge", alliance: "star", rating: 4.2, amenities: ["hot_food","bar","wifi","showers"], hours: "05:30-21:30", location: "Terminal 1 Schengen Departures", placeQuery: "Swiss Senator Lounge Geneva Airport" },
+    { id: "gva_af", name: "Air France Lounge", terminal: "1", network: "generic_airline", alliance: "skyteam", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies with AF flights", location: "Terminal 1 Schengen Departures", placeQuery: "Air France Lounge Geneva Airport" },
+    { id: "gva_ba", name: "British Airways Lounge", terminal: "1", network: "generic_airline", alliance: "oneworld", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "Varies with BA flights", location: "Terminal 1 Schengen Departures", placeQuery: "British Airways Lounge Geneva Airport" },
   ],
   BRU: [
     { id: "bru_pp_diamond", name: "Diamond Lounge", terminal: "A", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:30 AM - 9:30 PM", location: "Pier A", placeQuery: "Diamond Lounge Brussels Airport" },
+    { id: "bru_brussels_airlines", name: "Brussels Airlines THE LOFT", terminal: "A", network: "generic_airline", alliance: "star", rating: 4, amenities: ["hot_food","bar","wifi","showers"], hours: "05:00-21:00", location: "Pier A, across from Gate A42 (Schengen)", placeQuery: "Brussels Airlines THE LOFT Lounge Brussels Airport" },
   ],
   OSL: [
     { id: "osl_pp_osl", name: "OSL Lounge", terminal: "1", network: "priority_pass", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - 10:00 PM", location: "Int'l Departures", placeQuery: "OSL Lounge Oslo Gardermoen Airport" },
+    { id: "osl_sas_lounge", name: "SAS Lounge", terminal: "1", network: "generic_airline", alliance: "skyteam", rating: 4, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - Last Departure", location: "International, near Gate E2", placeQuery: "SAS Lounge Oslo Gardermoen Airport" },
+    { id: "osl_sas_domestic", name: "SAS Domestic Lounge", terminal: "1", network: "generic_airline", alliance: "skyteam", rating: 3.9, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - Last Departure", location: "Domestic departures", placeQuery: "SAS Domestic Lounge Oslo Airport" },
   ],
   WAW: [
     { id: "waw_pp_preludium", name: "Preludium Lounge", terminal: "A", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 10:00 PM", location: "Terminal A", placeQuery: "Preludium Lounge Warsaw Chopin Airport" },
+    { id: "waw_lot_business", name: "LOT Business Lounge Polonez", terminal: "A", network: "generic_airline", alliance: "star", rating: 4, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - 11:00 PM", location: "Terminal A Schengen Level 3", placeQuery: "LOT Business Lounge Polonez Warsaw Chopin Airport" },
   ],
   PRG: [
     { id: "prg_pp_mastercard", name: "Mastercard Lounge", terminal: "2", network: "priority_pass", rating: 3.7, amenities: ["hot_food","bar","wifi"], hours: "5:00 AM - 10:00 PM", location: "Terminal 2", placeQuery: "Mastercard Lounge Prague Airport" },
+    { id: "prg_erste_premier", name: "Erste Premier Lounge", terminal: "2", network: "priority_pass", rating: 3.9, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - 10:00 PM", location: "Terminal 2, 3rd floor past security", placeQuery: "Erste Premier Lounge Prague Vaclav Havel Airport" },
   ],
   BUD: [
     { id: "bud_pp_skycourt", name: "SkyCourt Lounge", terminal: "2B", network: "priority_pass", rating: 3.8, amenities: ["hot_food","bar","wifi","showers"], hours: "5:00 AM - 10:00 PM", location: "Terminal 2B", placeQuery: "SkyCourt Lounge Budapest Airport" },
+    { id: "bud_mastercard", name: "Mastercard Airport Lounge", terminal: "2B", network: "priority_pass", rating: 3.8, amenities: ["hot_food","bar","wifi"], hours: "05:00-21:00", location: "SkyCourt mezzanine between T2A/T2B airside", placeQuery: "Mastercard Airport Lounge Budapest" },
+    { id: "bud_menzies", name: "Menzies Aviation Lounge", terminal: "2B", network: "priority_pass", rating: 3.6, amenities: ["hot_food","bar","wifi"], hours: "07:00-21:00", location: "SkyCourt mezzanine airside", placeQuery: "Menzies Aviation Lounge Budapest Airport" },
   ],
 };
 
