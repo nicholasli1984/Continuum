@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { apiFetch } from "../utils/apiBase";
 import { motion, AnimatePresence } from "framer-motion";
 import { LANDMARK_FALLBACK_PHOTOS } from "../constants/airline-data";
-import { airlineIdFromFn, isInternational, loungeAccessSummary, computeLoungeAccess } from "../constants/loungeAccess";
+import { airlineIdFromFn, isInternational, loungeAccessSummary, computeLoungeAccess, carrierKeyOf } from "../constants/loungeAccess";
 import { AIRLINE_ALLIANCE } from "../constants/lounges";
 import { picksForCity, resyUrl, openTableUrl, googleUrl } from "../constants/michelinPicks";
 import TransferBonusBand from "../components/transferBonuses/TransferBonusBand";
@@ -260,9 +260,13 @@ function NextFlightCard({ css, dv, D, isMobile, trips, getFlightLiveStatus, AIRP
       let pool = accessible;
       if (dt) { const inT = accessible.filter(a => nrm(a.lounge.terminal) === dt); pool = inT.length ? inT : []; }
       pool = [...pool].sort((a, b) => ((b.lounge.tier === "first" ? 100 : 0) + (b.lounge.rating || 0)) - ((a.lounge.tier === "first" ? 100 : 0) + (a.lounge.rating || 0)));
+      // Dedupe by CARRIER (first significant word of the name) so we don't
+      // waste both slots on the same operator's lounges at the same airport.
+      // Same rule as the notification summary in loungeAccess.js.
       const seen = new Set(); const out = [];
       for (const it of pool) {
-        if (seen.has(it.lounge.name)) continue; seen.add(it.lounge.name);
+        const key = carrierKeyOf(it.lounge.name);
+        if (seen.has(key)) continue; seen.add(key);
         const l = it.lounge; const gm = String(l.location || "").match(/gate\s+([A-Za-z]?\d+[A-Za-z]?)/i);
         // Keep the raw lounge object on the row so the Walk Here button can
         // pass it (with placeQuery) into the directions modal.

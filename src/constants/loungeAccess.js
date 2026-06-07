@@ -237,6 +237,22 @@ function rankScore(l) {
   return (l.tier === "first" ? 100 : 0) + (l.rating || 0);
 }
 
+// Group lounges by the operating carrier so the top-N picks don't burn slots
+// on multiple lounges from the same airline at the same airport (JAL First +
+// JAL Sakura at HND, ANA Suite + ANA Lounge at HND, etc.). Heuristic: skip
+// leading articles, take the first remaining word of the lounge name. Works
+// because lounge names start with their operator: "JAL First Class Lounge",
+// "Cathay Pacific The Pier...", "British Airways Galleries Lounge". Returns
+// the lounge name itself as a fallback so we never collapse unrelated lounges.
+export function carrierKeyOf(loungeName) {
+  const words = String(loungeName || "").trim().split(/\s+/);
+  const skip = new Set(["the", "a", "an"]);
+  for (const w of words) {
+    if (!skip.has(w.toLowerCase())) return w.toLowerCase();
+  }
+  return String(loungeName || "").toLowerCase();
+}
+
 // Trim the noise suffix so a name fits a notification line.
 //   "Cathay Pacific The Pier First Class Lounge" → "Cathay Pacific The Pier First"
 //   "Amex Centurion Lounge" → "Amex Centurion"
@@ -265,13 +281,19 @@ export function loungeAccessSummary(args) {
   const accessible = computeLoungeAccess(args);
   if (!accessible.length) return { count: 0, body: "", top: [] };
 
-  // Highest-ranked first, then dedupe by name (keeps the best instance).
+  // Highest-ranked first, then dedupe by CARRIER so a user with multiple
+  // lounges from the same operator at the same airport (JAL First + JAL Sakura
+  // at HND, both grantable to oneworld Emerald) sees only the operator's best
+  // option — and the second slot goes to a different airline instead. This
+  // gave the right top-2 at HND: JAL First then Cathay, instead of JAL First
+  // then JAL Sakura.
   const sorted = [...accessible].sort((a, b) => rankScore(b.lounge) - rankScore(a.lounge));
   const seen = new Set();
   const uniq = [];
   for (const item of sorted) {
-    if (seen.has(item.lounge.name)) continue;
-    seen.add(item.lounge.name);
+    const key = carrierKeyOf(item.lounge.name);
+    if (seen.has(key)) continue;
+    seen.add(key);
     uniq.push(item);
   }
 
