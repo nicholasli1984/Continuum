@@ -30,26 +30,25 @@ export default async function handler(req, res) {
   const accounts = {};
   (laRows || []).forEach(r => { accounts[r.program_id] = { currentTier: r.current_tier || "" }; });
 
-  // Compute lounge access for the user's specific HND→TSA on JL scenario so we
-  // can compare the engine's output to what the dashboard is rendering.
-  const aid = airlineIdFromFn("JL 99");
+  // Run the engine against the airport/flight in the query. Defaults to the
+  // HND → TSA on JL99 scenario so the original Emerald test still works.
+  const airport = String(req.query.airport || "HND").toUpperCase();
+  const arrAirport = String(req.query.arr || "TSA").toUpperCase();
+  const flightNumber = String(req.query.flight || "JL 99");
+  const aid = airlineIdFromFn(flightNumber);
   const alliance = aid ? AIRLINE_ALLIANCE[aid] : null;
+  const isIntl = isInternational(airport, arrAirport);
   const accessible = computeLoungeAccess({
-    airport: "HND",
-    flyingAirlineId: aid,
-    alliance,
-    isIntl: isInternational("HND", "TSA"),
-    accounts,
+    airport, flyingAirlineId: aid, alliance, isIntl, accounts,
   });
 
   return res.json({
     userId,
     accountsCount: laRows?.length || 0,
     accounts,
-    hndCheck: {
-      flyingAirlineId: aid,
-      alliance,
-      isIntl: isInternational("HND", "TSA"),
+    check: {
+      airport, arr: arrAirport, flightNumber,
+      flyingAirlineId: aid, alliance, isIntl,
       grantedCount: accessible.length,
       granted: accessible.map(a => ({
         name: a.lounge.name,
