@@ -6,7 +6,6 @@ import SegmentDropZone from "../components/SegmentDropZone";
 import ReportedBadge from "../components/ReportedBadge";
 import DayTimeline from "../components/DayTimeline";
 import TripSelector from "../components/TripSelector";
-import TrackInAirlineButton from "../components/TrackInAirlineButton";
 // TripSearchBar removed — the global Ask Continuum bar at the bottom of the
 // app handles trip lookup ("show me my Tokyo trip") plus open-ended Q&A.
 import { cityPhoto } from "../constants/cityPhotos";
@@ -482,22 +481,6 @@ export function renderTrips(s) {
                   {/* Scrollable detail body */}
                   <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: isMobile ? "16px 18px 18px" : "18px 22px 20px" }}>
                     <SegmentDetailsPanel seg={seg} ev={ev} isMobile={isMobile} liveStatus={live} />
-                    {seg.type === "flight" && seg.flightNumber && (
-                      <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${ev.cream}` }}>
-                        <TrackInAirlineButton
-                          flightNumber={seg.flightNumber}
-                          pnr={seg.confirmationCode || trip.confirmationCode || trip.confirmation_code || ""}
-                          lastName={user?.user_metadata?.last_name || (user?.user_metadata?.name || "").trim().split(/\s+/).slice(-1)[0] || ""}
-                          theme={{ ink: ev.ink, taupe: ev.taupe, cream: ev.cream, paper: ev.paper, accent: css.accent }}
-                          onMissingPnr={() => { close(); editSegment(trip.id, segIdx); }}
-                        />
-                        {!seg.confirmationCode && !trip.confirmationCode && !trip.confirmation_code && (
-                          <div style={{ marginTop: 8, fontFamily: ev.mono, fontSize: 9, letterSpacing: "0.08em", textTransform: "uppercase", color: ev.taupe, textAlign: "center" }}>
-                            Add a confirmation code to pre-fill the airline lookup
-                          </div>
-                        )}
-                      </div>
-                    )}
                     {seg.notes && <div style={{ marginTop: 14, fontFamily: ev.serif, fontSize: 14, color: ev.taupe, lineHeight: 1.5 }}>{seg.notes}</div>}
                   </div>
                   {/* Sticky action footer — always visible, no scrolling needed. */}

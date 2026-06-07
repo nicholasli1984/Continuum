@@ -7,7 +7,6 @@ import { AIRLINE_ALLIANCE } from "../constants/lounges";
 import { picksForCity, resyUrl, openTableUrl, googleUrl } from "../constants/michelinPicks";
 import TransferBonusBand from "../components/transferBonuses/TransferBonusBand";
 import ReportedBadge from "../components/ReportedBadge";
-import TrackInAirlineButton from "../components/TrackInAirlineButton";
 import { isLandingDemo, DEMO_FIRST_NAME } from "../utils/landingDemo";
 
 // Verified destination cover photos (each visually checked). Bermuda uses a
@@ -252,16 +251,7 @@ function NextFlightCard({ css, dv, D, isMobile, trips, getFlightLiveStatus, AIRP
     const countdown = departed
       ? ((liveStatus.includes("route") || liveStatus.includes("air") || liveStatus.includes("active")) ? "In flight" : "Departed")
       : days === 0 ? "Today" : days === 1 ? "Tomorrow" : `In ${days} days`;
-    // Per-segment PNR wins over the trip-level one — multi-leg bookings often
-    // get a single trip-wide confirmation, but tickets that were booked
-    // separately (e.g. an inbound on one airline, an outbound on another)
-    // have distinct PNRs per segment and should each link to its own airline.
-    const pnr = fl.confirmationCode || trip.confirmationCode || trip.confirmation_code || "";
-    const lastName =
-      user?.user_metadata?.last_name ||
-      (user?.user_metadata?.name || "").trim().split(/\s+/).slice(-1)[0] ||
-      "";
-    return { fl, trip, segIdx, dep, arr, depCity, arrCity, live, fnum, carrier, logo, term, termDisplay, gate, aircraft, aircraftReg, seat, cls, fdate, baggage, depTime, arrTime, overnight, countdown, pnr, lastName };
+    return { fl, trip, segIdx, dep, arr, depCity, arrCity, live, fnum, carrier, logo, term, termDisplay, gate, aircraft, aircraftReg, seat, cls, fdate, baggage, depTime, arrTime, overnight, countdown };
   };
 
   const loungesFor = (f) => {
@@ -357,24 +347,6 @@ function NextFlightCard({ css, dv, D, isMobile, trips, getFlightLiveStatus, AIRP
                 {f.aircraft}{f.aircraftReg && <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, letterSpacing: "0.06em", color: dv.taupe, marginLeft: 8 }}>{f.aircraftReg}</span>}
               </div>
             </div>
-          </div>
-
-          {/* Track in airline app — hands off live notifications to the airline
-              that issued the ticket. Replaces Continuum's removed in-house cron
-              + AeroDataBox stack. Hidden for carriers we don't know. */}
-          <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${dv.cream}` }}>
-            <TrackInAirlineButton
-              flightNumber={f.fnum}
-              pnr={f.pnr}
-              lastName={f.lastName}
-              theme={{ ink: dv.ink, taupe: dv.taupe, cream: dv.cream, paper: dv.paper, accent: css.accent }}
-              onMissingPnr={() => { setTripDetailId(f.trip.id); setTripDetailSegIdx(f.segIdx || 0); setActiveView("trips"); }}
-            />
-            {!f.pnr && (
-              <div style={{ marginTop: 8, fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.08em", textTransform: "uppercase", color: dv.taupe, textAlign: "center" }}>
-                Add a confirmation code to pre-fill the airline lookup
-              </div>
-            )}
           </div>
 
           {/* Weather (compact) */}
