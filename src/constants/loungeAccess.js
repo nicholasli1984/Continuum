@@ -196,10 +196,23 @@ export function computeLoungeAccess({ airport, flyingAirlineId, alliance, isIntl
           if (!mapping || !allianceLevel) continue;
           if (mapping.alliance !== alliance) continue;
           if (lounge.alliance !== mapping.alliance) continue;
-          // Dedicated First-class lounges (e.g. JFK T8 Chelsea, BA Concorde Room)
-          // require a First/Flagship-First CABIN, not just status — and cabin is
-          // unknown here. Never grant them on status alone, for any tier.
-          if (lounge.tier === "first") continue;
+          // First-class lounges: oneworld Emerald is the one alliance status that
+          // explicitly opens them on a same-day oneworld flight REGARDLESS of
+          // cabin (the headline Emerald perk — JAL First at HND, Cathay First
+          // at HKG, Qantas First at LAX, etc). Star Gold and SkyTeam Elite Plus
+          // don't have that benefit — their alliance rules cap status access at
+          // business lounges; First requires a First/HON cabin ticket — so we
+          // still skip First for them.
+          //
+          // Cabin-only carrier flagship lounges (BA Concorde Room ba_concorde,
+          // AA Chelsea chelsea_lounge, AA Flagship First Dining flagship-first)
+          // are NOT accidentally let through by this exception: their network
+          // names aren't in oneworld Emerald's networkTypes whitelist, so the
+          // `r.networkTypes.includes(network)` check below filters them out.
+          if (lounge.tier === "first") {
+            const isOneworldEmerald = mapping.alliance === "oneworld" && allianceLevel === "Emerald";
+            if (!isOneworldEmerald) continue;
+          }
           const key = `${mapping.alliance}_${allianceLevel}`;
           if (seen.has(key)) continue;
           const allianceRules = ALLIANCE_LOUNGE_ACCESS[mapping.alliance]?.[allianceLevel];
