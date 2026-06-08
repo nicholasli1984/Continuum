@@ -21,6 +21,19 @@ export default async function handler(req, res) {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 
+  // ?recentExpenses=1 → return the user's last 20 expenses with no receipt
+  // body (just metadata) so we can verify a snap-and-save actually landed.
+  if (req.query.recentExpenses) {
+    const { data, error } = await supabase
+      .from("expenses")
+      .select("id, trip_id, date, amount, currency, vendor, category, status, created_at, updated_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (error) return res.status(500).json({ error: error.message });
+    return res.json({ userId, count: data?.length || 0, expenses: data });
+  }
+
   const { data: laRows, error: laErr } = await supabase
     .from("linked_accounts")
     .select("program_id, current_tier")
