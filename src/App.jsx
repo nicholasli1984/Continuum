@@ -2413,9 +2413,15 @@ export default function EliteStatusTracker() {
         setUser(session.user);
         setIsLoggedIn(true);
         loadTrips(session.user.id);
-        loadSharedTrips(session.user.id, session.user.email);
+        // Lowercase the email everywhere — the sharer's handleShareTrip
+        // stores shared_with_email as lowercased trim, but session.user.email
+        // is whatever the recipient signed up with. Postgres .eq is
+        // case-sensitive, so a recipient who signed up as "Foo@gmail.com"
+        // would never match a share stored as "foo@gmail.com" without this.
+        const emailLc = (session.user.email || "").toLowerCase();
+        loadSharedTrips(session.user.id, emailLc);
         // Resolve pending share invites to this user's ID
-        supabase.from("trip_shares").update({ shared_with_id: session.user.id }).eq("shared_with_email", session.user.email).is("shared_with_id", null);
+        supabase.from("trip_shares").update({ shared_with_id: session.user.id }).eq("shared_with_email", emailLc).is("shared_with_id", null);
         loadLinkedAccounts(session.user.id);
         loadExpenses(session.user.id);
         loadExpenseReports(session.user.id);
@@ -2429,7 +2435,7 @@ export default function EliteStatusTracker() {
           setUser(refreshData.session.user);
           setIsLoggedIn(true);
           loadTrips(refreshData.session.user.id);
-          loadSharedTrips(refreshData.session.user.id, refreshData.session.user.email);
+          loadSharedTrips(refreshData.session.user.id, (refreshData.session.user.email || "").toLowerCase());
           loadLinkedAccounts(refreshData.session.user.id);
           loadExpenses(refreshData.session.user.id);
           loadExpenseReports(refreshData.session.user.id);
@@ -2440,13 +2446,20 @@ export default function EliteStatusTracker() {
       }
     });
 
-    // Re-check session when app comes back to foreground (mobile PWA)
+    // Re-check session when app comes back to foreground (mobile PWA) AND
+    // re-fetch shared trips so newly accepted invites land without a sign-out
+    // cycle. loadSharedTrips only ran on auth events before, so a recipient
+    // who was already signed in when the trip was shared had to log out and
+    // back in to see it. Refreshing on tab focus is the cheapest fix —
+    // typically the next interaction with the app after switching from
+    // email/messages where the share invite arrived.
     const handleVisibility = () => {
       if (document.visibilityState === "visible") {
         supabase.auth.getSession().then(({ data: { session } }) => {
           if (session?.user) {
             setUser(session.user);
             setIsLoggedIn(true);
+            loadSharedTrips(session.user.id, (session.user.email || "").toLowerCase());
           }
         });
       }
@@ -2472,7 +2485,7 @@ export default function EliteStatusTracker() {
         // Only reload data on SIGNED_IN, not on TOKEN_REFRESHED (avoids unnecessary refetches)
         if (event === "SIGNED_IN") {
           loadTrips(session.user.id);
-          loadSharedTrips(session.user.id, session.user.email);
+          loadSharedTrips(session.user.id, (session.user.email || "").toLowerCase());
           loadLinkedAccounts(session.user.id);
           loadExpenses(session.user.id);
           loadExpenseReports(session.user.id);
@@ -2587,10 +2600,12 @@ export default function EliteStatusTracker() {
   };
 
   const loadSharedTrips = async (userId, userEmail) => {
+    // Defensive: always compare on lowercased email even if caller forgot.
+    const emailLc = (userEmail || "").toLowerCase();
     const { data: shares } = await supabase
       .from("trip_shares")
       .select("trip_id, owner_name, permission")
-      .or(`shared_with_id.eq.${userId},shared_with_email.eq.${userEmail}`);
+      .or(`shared_with_id.eq.${userId},shared_with_email.eq.${emailLc}`);
     if (!shares || shares.length === 0) { setSharedTrips([]); return; }
     const tripIds = shares.map(s => s.trip_id);
     // Try fetching trips directly first
