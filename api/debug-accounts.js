@@ -26,12 +26,20 @@ export default async function handler(req, res) {
   if (req.query.recentExpenses) {
     const { data, error } = await supabase
       .from("expenses")
-      .select("id, trip_id, date, amount, currency, vendor, category, status, created_at, updated_at")
+      .select("*")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(20);
     if (error) return res.status(500).json({ error: error.message });
-    return res.json({ userId, count: data?.length || 0, expenses: data });
+    // Strip receipt_image (potentially huge base64 blob) for readability;
+    // replace with byte count so we can see if it's stored.
+    const expenses = (data || []).map(r => {
+      const { receipt_image, ...rest } = r;
+      const hasReceipt = receipt_image != null && receipt_image !== "";
+      const receiptBytes = hasReceipt ? (typeof receipt_image === "string" ? receipt_image.length : JSON.stringify(receipt_image).length) : 0;
+      return { ...rest, _hasReceipt: hasReceipt, _receiptBytes: receiptBytes };
+    });
+    return res.json({ userId, count: expenses.length, expenses });
   }
 
   const { data: laRows, error: laErr } = await supabase
