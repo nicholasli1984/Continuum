@@ -4726,13 +4726,65 @@ Start by introducing yourself briefly in-character with personality, and give an
 
   const BLANK_EXPENSE = { category: "flight", description: "", amount: "", currency: "USD", usdReimbursement: "", fxRate: 1, fxMode: "direct", individuals: "Self", date: "", paymentMethod: "", receipt: false, receiptImage: null, notes: "" };
 
-  const handleAddExpense = () => {
+  // Shrink a base64 receipt image until its bytes fit comfortably under
+  // Postgres + Supabase row-size budgets. JSONB columns can technically hold
+  // large blobs but in practice the network round-trip times out around the
+  // 1-2 MB mark, especially on flaky mobile networks. We re-encode to JPEG at
+  // descending quality until the data URL fits in TARGET, falling back to a
+  // resize as a last resort. Pure client-side — no library needed.
+  const compressReceiptImage = async (receiptImage) => {
+    const TARGET = 700 * 1024; // ~700KB of base64 → ~525KB raw, well inside DB limits
+    if (!receiptImage?.data || typeof receiptImage.data !== "string") return receiptImage;
+    // Already small enough.
+    if (receiptImage.data.length <= TARGET) return receiptImage;
+    try {
+      const img = await new Promise((resolve, reject) => {
+        const i = new Image();
+        i.onload = () => resolve(i);
+        i.onerror = reject;
+        i.src = receiptImage.data;
+      });
+      let { width, height } = img;
+      // Cap longest side at 1800px first — preserves OCR-grade detail.
+      const MAX_DIM = 1800;
+      if (Math.max(width, height) > MAX_DIM) {
+        const scale = MAX_DIM / Math.max(width, height);
+        width = Math.round(width * scale);
+        height = Math.round(height * scale);
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width; canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, width, height);
+      let q = 0.85;
+      let dataUrl = canvas.toDataURL("image/jpeg", q);
+      // Step quality down until we fit or hit the floor.
+      while (dataUrl.length > TARGET && q > 0.4) {
+        q -= 0.1;
+        dataUrl = canvas.toDataURL("image/jpeg", q);
+      }
+      return { ...receiptImage, data: dataUrl, type: "image/jpeg" };
+    } catch (e) {
+      // Compression failed — keep the original; if it's too large the save
+      // will surface a real error via the catch handler in handleAddExpense.
+      console.warn("Receipt compress failed:", e?.message);
+      return receiptImage;
+    }
+  };
+
+  const handleAddExpense = async () => {
     const parsed = {
       ...newExpense,
       amount: parseFloat(newExpense.amount) || 0,
       fxRate: newExpense.currency === "USD" ? 1 : (parseFloat(newExpense.fxRate) || 1),
       usdReimbursement: newExpense.currency === "USD" ? parseFloat(newExpense.amount) || 0 : (parseFloat(newExpense.usdReimbursement) || 0),
     };
+    // Shrink the receipt before it goes into state OR onto the wire — the same
+    // compressed blob ends up in optimistic UI, the DB row, and any retry
+    // payload we cache, so we only do it once and then everyone's consistent.
+    if (parsed.receiptImage?.data) {
+      parsed.receiptImage = await compressReceiptImage(parsed.receiptImage);
+    }
     const tripId = showAddExpense === "_inbox" ? null : showAddExpense;
     const payload = {
       category: parsed.category, description: parsed.description, amount: parsed.amount,
@@ -4742,24 +4794,44 @@ Start by introducing yourself briefly in-character with personality, and give an
       individuals: parsed.individuals || "Self",
       usd_reimbursement: parsed.usdReimbursement || null,
     };
+    // Close the modal before awaiting the DB write so the UI doesn't feel stuck.
+    setShowAddExpense(null);
+    setNewExpense(BLANK_EXPENSE);
 
-    // Optimistic: update UI immediately, persist in background
+    // Optimistic: update UI immediately, persist in background — but with real
+    // error handling. The previous fire-and-forget swallowed Supabase errors
+    // entirely, so a failed insert silently dropped the receipt on the next
+    // reload (the user-visible "I took two photos and they vanished" bug).
     if (editExpenseId) {
       setExpenses(prev => prev.map(e => e.id === editExpenseId ? { ...parsed, id: editExpenseId, tripId: e.tripId } : e));
+      const updateId = editExpenseId;
       setEditExpenseId(null);
-      if (user) supabase.from("expenses").update(payload).eq("id", editExpenseId).eq("user_id", user.id).then();
+      if (user) {
+        const { error } = await supabase.from("expenses").update(payload).eq("id", updateId).eq("user_id", user.id);
+        if (error) {
+          console.error("Expense update failed:", error);
+          alert(`Couldn't save the changes: ${error.message || "unknown error"}. Please try again.`);
+          // Reload from DB to drop the stale optimistic state.
+          if (typeof loadExpenses === "function") loadExpenses();
+        }
+      }
     } else {
       const tempId = `temp_${Date.now()}`;
       setExpenses(prev => [...prev, { ...parsed, id: tempId, tripId }]);
       if (user) {
-        supabase.from("expenses").insert({ ...payload, user_id: user.id, trip_id: tripId })
-          .select().single().then(({ data }) => {
-            if (data) setExpenses(prev => prev.map(e => e.id === tempId ? { ...e, id: data.id } : e));
-          });
+        const { data, error } = await supabase.from("expenses")
+          .insert({ ...payload, user_id: user.id, trip_id: tripId })
+          .select().single();
+        if (error) {
+          console.error("Expense insert failed:", error);
+          alert(`Couldn't save this expense: ${error.message || "unknown error"}. Please try again — the receipt is still attached if you reopen the form.`);
+          // Drop the optimistic row so the user knows it didn't save.
+          setExpenses(prev => prev.filter(e => e.id !== tempId));
+        } else if (data) {
+          setExpenses(prev => prev.map(e => e.id === tempId ? { ...e, id: data.id } : e));
+        }
       }
     }
-    setShowAddExpense(null);
-    setNewExpense(BLANK_EXPENSE);
   };
 
   const removeExpense = (id) => {
