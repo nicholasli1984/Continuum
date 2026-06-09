@@ -1,66 +1,74 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import * as Sentry from '@sentry/react'
-import posthog from 'posthog-js'
 import App from './App.jsx'
 import './index.css'
 
-// ── PostHog product analytics ──
-// Auto-captures pageviews + clicks. Identify users on auth so funnels work
-// per-user. Init only if VITE_POSTHOG_KEY is set so local dev stays silent.
-const POSTHOG_KEY = import.meta.env.VITE_POSTHOG_KEY;
-const POSTHOG_HOST = import.meta.env.VITE_POSTHOG_HOST || 'https://us.i.posthog.com';
-if (POSTHOG_KEY) {
-  posthog.init(POSTHOG_KEY, {
-    api_host: POSTHOG_HOST,
-    person_profiles: 'identified_only',  // Don't create profiles for anonymous traffic — saves on event quota
-    capture_pageview: true,
-    capture_pageleave: true,
-    autocapture: true,                   // Click + form-submit auto-tracking
-    disable_session_recording: false,    // Free tier includes 5k recordings/month
-    session_recording: {
-      maskAllInputs: true,               // Don't capture form inputs (emails, etc.)
-      blockClass: 'ph-no-capture',       // Add class="ph-no-capture" to any element to skip
-    },
+// Sentry + PostHog were imported synchronously at the top of this file,
+// putting ~150KB of analytics/error-tracking SDK code on the critical path
+// of every cold start. They never run before first paint anyway (Sentry
+// just installs error hooks; PostHog captures clicks/pageviews after the
+// first render), so deferring them with requestIdleCallback unblocks React
+// without changing any observable behavior. Hold a module-scope reference
+// to Sentry once it loads so the ErrorBoundary below can forward to it.
+let _sentry = null;
+
+const deferInit = (cb) => {
+  if ('requestIdleCallback' in window) requestIdleCallback(cb, { timeout: 2000 });
+  else setTimeout(cb, 0);
+};
+
+deferInit(() => {
+  const POSTHOG_KEY = import.meta.env.VITE_POSTHOG_KEY;
+  if (POSTHOG_KEY) {
+    import('posthog-js').then(({ default: posthog }) => {
+      posthog.init(POSTHOG_KEY, {
+        api_host: import.meta.env.VITE_POSTHOG_HOST || 'https://us.i.posthog.com',
+        person_profiles: 'identified_only',
+        capture_pageview: true,
+        capture_pageleave: true,
+        autocapture: true,
+        disable_session_recording: false,
+        session_recording: {
+          maskAllInputs: true,
+          blockClass: 'ph-no-capture',
+        },
+      });
+      window.posthog = posthog;
+    });
+  }
+});
+
+deferInit(() => {
+  const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN;
+  if (!SENTRY_DSN) return;
+  import('@sentry/react').then(Sentry => {
+    _sentry = Sentry;
+    Sentry.init({
+      dsn: SENTRY_DSN,
+      environment: import.meta.env.MODE || 'production',
+      integrations: [
+        Sentry.browserTracingIntegration(),
+        Sentry.replayIntegration({ maskAllText: false, blockAllMedia: false }),
+      ],
+      tracesSampleRate: 0.1,
+      replaysSessionSampleRate: 0,
+      replaysOnErrorSampleRate: 1.0,
+      ignoreErrors: [
+        'ResizeObserver loop limit exceeded',
+        'ResizeObserver loop completed with undelivered notifications',
+        'Non-Error promise rejection captured',
+        'Could not load "util"',
+        /Could not load "util"/,
+        'The object can not be found here',
+        /The object can not be found here/,
+      ],
+    });
   });
-  // Expose globally so other parts of the app can call posthog.identify(...) on auth
-  window.posthog = posthog;
-}
+});
 
 // Redirect any *.vercel.app access (including auth callbacks) to the custom domain
 if (window.location.hostname.endsWith('.vercel.app')) {
   window.location.replace('https://gocontinuum.app' + window.location.pathname + window.location.search + window.location.hash);
-}
-
-// ── Sentry error tracking ──
-// Init only if a DSN is configured (so local dev without VITE_SENTRY_DSN is silent).
-// Free tier limits: 5k errors/mo, 50 replays/mo. Conservative sampling to fit.
-const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN;
-if (SENTRY_DSN) {
-  Sentry.init({
-    dsn: SENTRY_DSN,
-    environment: import.meta.env.MODE || 'production',
-    integrations: [
-      Sentry.browserTracingIntegration(),
-      Sentry.replayIntegration({ maskAllText: false, blockAllMedia: false }),
-    ],
-    // Performance: 10% sample (free tier has limited transactions)
-    tracesSampleRate: 0.1,
-    // Replay: never on normal sessions, 100% when an error occurs
-    replaysSessionSampleRate: 0,
-    replaysOnErrorSampleRate: 1.0,
-    // Don't report some noisy / harmless errors
-    ignoreErrors: [
-      'ResizeObserver loop limit exceeded',
-      'ResizeObserver loop completed with undelivered notifications',
-      'Non-Error promise rejection captured',
-      // Not from our code — a browser extension / injected script on the page
-      // tries to load a "util" module and fails; Sentry's global handler catches
-      // it. No such string exists anywhere in our bundle.
-      'Could not load "util"',
-      /Could not load "util"/,
-    ],
-  });
 }
 
 // Log SW controller changes (no auto-reload to prevent loops)
@@ -70,11 +78,13 @@ class ErrorBoundary extends React.Component {
   static getDerivedStateFromError(error) { return { error }; }
   componentDidCatch(e, info) {
     console.error("React crash:", e, info);
-    // Forward to Sentry with React component stack as context
-    if (SENTRY_DSN) {
-      Sentry.withScope(scope => {
+    // Forward to Sentry with React component stack as context — Sentry is
+    // deferred-loaded so it may not be ready yet on a very early crash;
+    // when it's not, we still get the console.error above.
+    if (_sentry) {
+      _sentry.withScope(scope => {
         scope.setExtras({ componentStack: info?.componentStack });
-        Sentry.captureException(e);
+        _sentry.captureException(e);
       });
     }
   }

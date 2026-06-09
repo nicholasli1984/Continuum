@@ -1,5 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import * as d3 from "d3";
+// Reports is the only page that renders the world map. Importing
+// react-simple-maps here (instead of at the top of App.jsx) keeps ~200KB of
+// D3 + topojson out of the main bundle — it ships with the lazy Reports chunk
+// and only downloads when the user opens this tab.
+import { ComposableMap, Geographies, Geography, Marker, Line } from "react-simple-maps";
 
 const AIRPORT_COUNTRY = {
   ATL:"US",BOS:"US",CLT:"US",DEN:"US",DFW:"US",DTW:"US",EWR:"US",FLL:"US",HNL:"US",IAD:"US",IAH:"US",
@@ -345,8 +350,7 @@ function ReportsPage(s) {
     EXPENSE_CATEGORIES, AIRPORT_COORDS, AIRPORT_CITY,
     getTripExpenses, getTripTotal, getTripName, formatTripDates,
     haversineDistance, parseRoute, greatCircleMiles,
-    getProjectedStatus, ProgramLogo,
-    ComposableMap, Geographies, Geography, Marker, Line, landmarkPhotos } = s;
+    getProjectedStatus, ProgramLogo, landmarkPhotos } = s;
   const D = darkMode;
 
   // Voyager palette

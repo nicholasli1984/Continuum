@@ -1,7 +1,10 @@
 ﻿import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { apiFetch } from "./utils/apiBase";
-import { ComposableMap, Geographies, Geography, Marker, Line } from "react-simple-maps";
+// react-simple-maps moved into Reports.jsx (~200KB of D3 + topojson) so it
+// only loads when the user opens the Reports tab. Previously imported here
+// at the top of App.jsx, which forced every page to download it on first
+// paint even though nothing else uses it.
 import { supabase } from "./supabase";
 
 // Extracted data constants
@@ -6589,7 +6592,7 @@ Start by introducing yourself briefly in-character with personality, and give an
   }, _previewTab);
 
   const renderExpenseReports = () => renderExpenseReportsPage({ css, isMobile, darkMode, user, trips, expenses, setExpenses, allPrograms, supabase, standaloneReports, setStandaloneReports, showReportBuilder, setShowReportBuilder, reportBuilder, setReportBuilder, editingReportId, setEditingReportId, reportBuilderCustom, setReportBuilderCustom, forwardReportId, setForwardReportId, forwardEmail, setForwardEmail, forwardStatus, setForwardStatus, forwardError, setForwardError, EXPENSE_CATEGORIES, showConfirm, getTripExpenses, getTripTotal, getTripName, formatTripDates, showReportCustomExpense, setShowReportCustomExpense, setInlineReportHtml, expenseReportMembership, openReport });
-  const renderReports = () => renderReportsPage({ css, isMobile, darkMode, user, trips, expenses, linkedAccounts, allPrograms, EXPENSE_CATEGORIES, AIRPORT_COORDS, AIRPORT_CITY, getTripExpenses, getTripTotal, getTripName, formatTripDates, haversineDistance, parseRoute, greatCircleMiles, getProjectedStatus, ProgramLogo, ComposableMap, Geographies, Geography, Marker, Line, landmarkPhotos });
+  const renderReports = () => renderReportsPage({ css, isMobile, darkMode, user, trips, expenses, linkedAccounts, allPrograms, EXPENSE_CATEGORIES, AIRPORT_COORDS, AIRPORT_CITY, getTripExpenses, getTripTotal, getTripName, formatTripDates, haversineDistance, parseRoute, greatCircleMiles, getProjectedStatus, ProgramLogo, landmarkPhotos });
   const renderAlliances = () => renderAlliancesPage({ css, isMobile, darkMode, user, linkedAccounts, allPrograms, ProgramLogo, getProjectedStatus, allianceMyProgram, setAllianceMyProgram, allianceMyTierOverride, setAllianceMyTierOverride, allianceCompare, setAllianceCompare, setActiveView });
   const renderInsights = (_previewTab = null) => renderInsightsPage({ css, isMobile, darkMode, user, trips, expenses, linkedAccounts, allPrograms, EXPENSE_CATEGORIES, formatTripDates, getTripExpenses, getTripTotal, getTripName, AIRPORT_CITY, setActiveView, ProgramLogo, transferGoal, setTransferGoal, EXPIRATION_RULES, REDEMPTION_VALUES, CC_TRANSFER_PARTNERS, motion, CARD_BENEFITS_DATA }, _previewTab);
   const renderNews = () => renderNewsPage({ css, isMobile, darkMode, newsLoading, fetchNews, NEWS_SOURCES, newsArticles, newsSourceFilter, setNewsSourceFilter, newsFetched });
