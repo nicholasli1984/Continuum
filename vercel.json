@@ -32,6 +32,13 @@
         { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
         { "key": "Pragma", "value": "no-cache" }
       ]
+    },
+    {
+      "comment": "Vite outputs every bundle in /assets/ with a content hash in the filename (index-CmFy09rf.js). Those URLs are immutable — when content changes, the hash changes, so a new URL is requested. Cache them for 1 year + immutable so the browser doesn't waste a conditional GET on every PWA cold start (was costing 200-800ms per launch).",
+      "source": "/assets/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
     }
   ],
   "redirects": [

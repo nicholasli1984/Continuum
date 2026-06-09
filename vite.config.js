@@ -65,7 +65,8 @@ export default defineConfig({
         // Push service worker removed alongside the rest of the in-house
         // notification stack — the airline's own app handles flight alerts now.
         // Only precache static assets (icons, images) — NOT JS/CSS bundles
-        // JS/CSS have content hashes in filenames and are fetched fresh via NetworkFirst
+        // (they're handled by the runtime CacheFirst rule below; the URLs
+        // change every build so precaching them would just bloat the SW).
         globPatterns: ['**/*.{ico,png,svg,woff2}'],
         // Large landing-page screenshots (image*.png at 1290x2796) blow past the
         // 2 MiB precache cap. They're marketing-only and fetched on demand — let
@@ -81,10 +82,17 @@ export default defineConfig({
             handler: 'NetworkOnly',
           },
           {
-            // JS and CSS — network first with short cache
+            // JS and CSS — CacheFirst because every bundle URL is
+            // content-hashed by Vite (index-CmFy09rf.js), so a cached
+            // response is by definition correct for that URL. New builds
+            // emit new hashed URLs, which miss this cache, get fetched
+            // once, and are then cached forever. The previous NetworkFirst
+            // strategy waited up to 5 seconds for the network even when a
+            // perfectly valid cached copy existed — the single biggest
+            // contributor to slow PWA cold-start times.
             urlPattern: /\.(?:js|css)$/,
-            handler: 'NetworkFirst',
-            options: { cacheName: 'assets-cache', expiration: { maxEntries: 30, maxAgeSeconds: 86400 }, networkTimeoutSeconds: 5 },
+            handler: 'CacheFirst',
+            options: { cacheName: 'assets-cache', expiration: { maxEntries: 60, maxAgeSeconds: 31536000 } },
           },
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
