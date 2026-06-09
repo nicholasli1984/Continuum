@@ -450,17 +450,26 @@ export function renderTrips(s) {
             const live = seg.type === "flight" ? getFlightLiveStatus(seg) : null;
             const close = () => setExpandedSegmentKey?.(null);
             return (
-              <div onClick={close} style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: isMobile ? "flex-end" : "center", justifyContent: "center", padding: isMobile ? 0 : 24 }}>
-                {/* maxHeight uses --app-height (JS-measured window.innerHeight)
-                    instead of `vh` because iOS PWA misreports `vh` to include
-                    the hidden URL bar. With `88vh` the modal extended past the
-                    visible viewport, putting the scrollable body's bottom (and
-                    the action footer) off-screen — users couldn't reach the
-                    flight info further down because the touch area was clipped. */}
-                <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 560, maxHeight: isMobile ? "calc(var(--app-height, 88vh) * 0.92)" : "86vh", display: "flex", flexDirection: "column", overflow: "hidden", background: ev.bone, border: `1px solid ${ev.cream}`, borderRadius: isMobile ? "18px 18px 0 0" : 16, boxShadow: "0 24px 70px rgba(0,0,0,0.4)" }}>
-                  {/* Header — now carries a quick Edit affordance next to Close so
-                      it's discoverable without scrolling to the bottom. */}
-                  <div style={{ flexShrink: 0, background: ev.bone, borderBottom: `1px solid ${ev.cream}`, padding: isMobile ? "16px 18px" : "18px 22px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+              /* Single-scroll modal: the inner card IS the scroll container,
+                 header is position: sticky at top, footer is position: sticky
+                 at bottom. The previous nested-flex pattern (card with
+                 overflow: hidden, body child with flex:1 + overflowY: auto)
+                 worked on desktop but failed on iOS PWA — the body wouldn't
+                 accept touch-scroll and the footer stayed clipped off-screen.
+                 Single-scroll containers are the iOS-friendly pattern: one
+                 div with overflow-y: auto, content flows inside it normally,
+                 sticky positioning pins what needs to stay visible. */
+              <div onClick={close} style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: isMobile ? "flex-end" : "center", justifyContent: "center", padding: isMobile ? 0 : 24, overscrollBehavior: "contain" }}>
+                <div onClick={e => e.stopPropagation()} style={{
+                  width: "100%", maxWidth: 560,
+                  maxHeight: isMobile ? "calc(var(--app-height, 100dvh) * 0.92)" : "86vh",
+                  overflowY: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain",
+                  background: ev.bone, border: `1px solid ${ev.cream}`,
+                  borderRadius: isMobile ? "18px 18px 0 0" : 16,
+                  boxShadow: "0 24px 70px rgba(0,0,0,0.4)",
+                }}>
+                  {/* Sticky header — pins to the top while the user scrolls the body. */}
+                  <div style={{ position: "sticky", top: 0, zIndex: 2, background: ev.bone, borderBottom: `1px solid ${ev.cream}`, padding: isMobile ? "16px 18px" : "18px 22px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
                       <span style={{ width: 38, height: 38, borderRadius: "50%", background: info.wash, display: "grid", placeItems: "center", flexShrink: 0 }}>
                         <SegIcon type={seg.type} size={18} color={info.color} />
@@ -484,18 +493,14 @@ export function renderTrips(s) {
                       </button>
                     </div>
                   </div>
-                  {/* Scrollable detail body — WebkitOverflowScrolling: "touch"
-                      gives older iOS Safari its native momentum-scroll behavior
-                      (modern iOS handles this automatically, but the property
-                      is harmless on current versions and rescues anyone still
-                      on 14.x or below). */}
-                  <div style={{ flex: 1, minHeight: 0, overflowY: "auto", WebkitOverflowScrolling: "touch", padding: isMobile ? "16px 18px 18px" : "18px 22px 20px" }}>
+                  {/* Detail body — just inline content, no separate scroller. */}
+                  <div style={{ padding: isMobile ? "16px 18px 18px" : "18px 22px 20px" }}>
                     <SegmentDetailsPanel seg={seg} ev={ev} isMobile={isMobile} liveStatus={live} />
                     {seg.notes && <div style={{ marginTop: 14, fontFamily: ev.serif, fontSize: 14, color: ev.taupe, lineHeight: 1.5 }}>{seg.notes}</div>}
                   </div>
-                  {/* Sticky action footer — always visible, no scrolling needed. */}
+                  {/* Sticky action footer — pins to the bottom while the body scrolls behind. */}
                   {canEdit && (
-                    <div style={{ flexShrink: 0, display: "flex", gap: 8, padding: isMobile ? "12px 18px calc(12px + env(safe-area-inset-bottom))" : "14px 22px", borderTop: `1px solid ${ev.cream}`, background: ev.bone }}>
+                    <div style={{ position: "sticky", bottom: 0, zIndex: 2, display: "flex", gap: 8, padding: isMobile ? "12px 18px calc(12px + env(safe-area-inset-bottom))" : "14px 22px", borderTop: `1px solid ${ev.cream}`, background: ev.bone }}>
                       <button onClick={() => { close(); editSegment(trip.id, segIdx); }} style={{ flex: 1, padding: "12px 0", border: "none", background: ev.ink, color: ev.bone, fontFamily: ev.mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", borderRadius: 8, fontWeight: 600 }}>Edit</button>
                       <button onClick={() => { close(); setShowMoveSegment?.({ tripId: trip.id, segIdx }); }} style={{ flex: 1, padding: "12px 0", border: `1px solid ${ev.cream}`, background: ev.paper, color: ev.ink, fontFamily: ev.mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", borderRadius: 8 }}>Move</button>
                       <button onClick={() => { showConfirm("Delete this item?", () => { deleteSegment(trip.id, segIdx); close(); }); }} style={{ flex: 1, padding: "12px 0", border: `1px solid rgba(200,85,61,0.3)`, background: "rgba(200,85,61,0.06)", color: "#C8553D", fontFamily: ev.mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", borderRadius: 8 }}>Delete</button>
