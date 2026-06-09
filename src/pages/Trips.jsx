@@ -451,7 +451,13 @@ export function renderTrips(s) {
             const close = () => setExpandedSegmentKey?.(null);
             return (
               <div onClick={close} style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: isMobile ? "flex-end" : "center", justifyContent: "center", padding: isMobile ? 0 : 24 }}>
-                <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 560, maxHeight: isMobile ? "88vh" : "86vh", display: "flex", flexDirection: "column", overflow: "hidden", background: ev.bone, border: `1px solid ${ev.cream}`, borderRadius: isMobile ? "18px 18px 0 0" : 16, boxShadow: "0 24px 70px rgba(0,0,0,0.4)" }}>
+                {/* maxHeight uses --app-height (JS-measured window.innerHeight)
+                    instead of `vh` because iOS PWA misreports `vh` to include
+                    the hidden URL bar. With `88vh` the modal extended past the
+                    visible viewport, putting the scrollable body's bottom (and
+                    the action footer) off-screen — users couldn't reach the
+                    flight info further down because the touch area was clipped. */}
+                <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 560, maxHeight: isMobile ? "calc(var(--app-height, 88vh) * 0.92)" : "86vh", display: "flex", flexDirection: "column", overflow: "hidden", background: ev.bone, border: `1px solid ${ev.cream}`, borderRadius: isMobile ? "18px 18px 0 0" : 16, boxShadow: "0 24px 70px rgba(0,0,0,0.4)" }}>
                   {/* Header — now carries a quick Edit affordance next to Close so
                       it's discoverable without scrolling to the bottom. */}
                   <div style={{ flexShrink: 0, background: ev.bone, borderBottom: `1px solid ${ev.cream}`, padding: isMobile ? "16px 18px" : "18px 22px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
@@ -478,8 +484,12 @@ export function renderTrips(s) {
                       </button>
                     </div>
                   </div>
-                  {/* Scrollable detail body */}
-                  <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: isMobile ? "16px 18px 18px" : "18px 22px 20px" }}>
+                  {/* Scrollable detail body — WebkitOverflowScrolling: "touch"
+                      gives older iOS Safari its native momentum-scroll behavior
+                      (modern iOS handles this automatically, but the property
+                      is harmless on current versions and rescues anyone still
+                      on 14.x or below). */}
+                  <div style={{ flex: 1, minHeight: 0, overflowY: "auto", WebkitOverflowScrolling: "touch", padding: isMobile ? "16px 18px 18px" : "18px 22px 20px" }}>
                     <SegmentDetailsPanel seg={seg} ev={ev} isMobile={isMobile} liveStatus={live} />
                     {seg.notes && <div style={{ marginTop: 14, fontFamily: ev.serif, fontSize: 14, color: ev.taupe, lineHeight: 1.5 }}>{seg.notes}</div>}
                   </div>
