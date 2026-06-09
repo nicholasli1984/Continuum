@@ -1136,10 +1136,142 @@ function OriginalEmailModal({ rawHtml, onClose }) {
 // empty PNG and now load to a broken-image icon). On image error we show
 // a recovery panel that lets the user clear the receipt so they can
 // re-forward the source email.
+// Fullscreen receipt viewer with pinch-to-zoom + double-tap-to-toggle + pan.
+// Uses Pointer Events so the same code paths work for touch and mouse, and
+// touchAction: "none" on the container so the browser doesn't intercept the
+// gesture (which would otherwise scroll the page or trigger page-zoom). Wheel
+// zooms on desktop for parity.
+function ReceiptLightbox({ src, name, onClose }) {
+  const [scale, setScale] = useState(1);
+  const [tx, setTx] = useState(0);
+  const [ty, setTy] = useState(0);
+  const pointers = useRef(new Map());
+  const pinchStart = useRef(null); // { dist, scale, midX, midY, tx, ty }
+  const lastTap = useRef(0);
+
+  const clampScale = (s) => Math.max(0.5, Math.min(6, s));
+
+  const onPointerDown = (e) => {
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.current.size === 2) {
+      const pts = [...pointers.current.values()];
+      const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+      pinchStart.current = {
+        dist, scale,
+        midX: (pts[0].x + pts[1].x) / 2,
+        midY: (pts[0].y + pts[1].y) / 2,
+        tx, ty,
+      };
+    } else if (pointers.current.size === 1) {
+      // Double-tap detection — toggle between 1x and 2.5x at the tap point.
+      const now = Date.now();
+      if (now - lastTap.current < 280) {
+        if (scale > 1) { setScale(1); setTx(0); setTy(0); }
+        else { setScale(2.5); }
+        lastTap.current = 0;
+      } else {
+        lastTap.current = now;
+      }
+    }
+  };
+
+  const onPointerMove = (e) => {
+    if (!pointers.current.has(e.pointerId)) return;
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.current.size === 2 && pinchStart.current) {
+      const pts = [...pointers.current.values()];
+      const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+      const next = clampScale(pinchStart.current.scale * (dist / pinchStart.current.dist));
+      setScale(next);
+    } else if (pointers.current.size === 1 && scale > 1) {
+      // Pan when zoomed in.
+      setTx(t => t + e.movementX);
+      setTy(t => t + e.movementY);
+    }
+  };
+
+  const endPointer = (e) => {
+    pointers.current.delete(e.pointerId);
+    if (pointers.current.size < 2) pinchStart.current = null;
+  };
+
+  const onWheel = (e) => {
+    e.preventDefault();
+    const delta = -e.deltaY * 0.0015;
+    setScale(s => clampScale(s + delta));
+  };
+
+  // Lock body scroll while open.
+  React.useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
+  return (
+    <div onClick={onClose} style={{
+      position: "fixed", inset: 0, zIndex: 10000, background: "rgba(0,0,0,0.96)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+    }}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={endPointer}
+        onPointerCancel={endPointer}
+        onWheel={onWheel}
+        style={{
+          width: "100%", height: "100%",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          touchAction: "none", overflow: "hidden", cursor: scale > 1 ? "grab" : "zoom-in",
+        }}
+      >
+        <img
+          src={src}
+          alt={name || "Receipt"}
+          draggable={false}
+          style={{
+            maxWidth: "100%", maxHeight: "100%", objectFit: "contain",
+            transform: `translate(${tx}px, ${ty}px) scale(${scale})`,
+            transformOrigin: "center center",
+            transition: pointers.current.size === 0 ? "transform 0.18s ease" : "none",
+            userSelect: "none", WebkitUserSelect: "none", pointerEvents: "none",
+          }}
+        />
+      </div>
+      {/* Close (top-right, respects safe area) */}
+      <button onClick={onClose} aria-label="Close" style={{
+        position: "absolute", top: "calc(16px + env(safe-area-inset-top))", right: 16,
+        width: 44, height: 44, borderRadius: 22, border: "1px solid rgba(255,255,255,0.25)",
+        background: "rgba(0,0,0,0.45)", color: "#fff", fontSize: 24, lineHeight: 1, cursor: "pointer",
+        display: "grid", placeItems: "center",
+      }}>×</button>
+      {/* Zoom controls (bottom-centered, respects safe area) */}
+      <div style={{
+        position: "absolute", bottom: "calc(20px + env(safe-area-inset-bottom))", left: "50%",
+        transform: "translateX(-50%)", display: "flex", gap: 8,
+        background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.18)",
+        borderRadius: 999, padding: "6px 8px",
+      }}>
+        <button onClick={() => setScale(s => clampScale(s - 0.5))} aria-label="Zoom out" style={lbBtn}>−</button>
+        <button onClick={() => { setScale(1); setTx(0); setTy(0); }} style={{ ...lbBtn, fontSize: 11, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.08em", textTransform: "uppercase", padding: "0 12px", minWidth: 56 }}>Fit</button>
+        <button onClick={() => setScale(s => clampScale(s + 0.5))} aria-label="Zoom in" style={lbBtn}>+</button>
+      </div>
+    </div>
+  );
+}
+const lbBtn = {
+  width: 36, height: 36, borderRadius: 18, border: "none",
+  background: "transparent", color: "#fff", fontSize: 20, lineHeight: 1, cursor: "pointer",
+  display: "grid", placeItems: "center",
+};
+
 function ImageReceiptWithFallback({ exp, css, D, user, supabase, setExpenses, setCropExpenseId, setCropRect, cropStartRef, cropEndRef }) {
   const [imgError, setImgError] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [recoveryRunning, setRecoveryRunning] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const recoveryAttemptedRef = useRef(false);
   const tooSmall = (exp.receiptImage?.size || 0) < 2000; // empty PNGs from the failed converter were ~1KB
 
@@ -1245,18 +1377,42 @@ function ImageReceiptWithFallback({ exp, css, D, user, supabase, setExpenses, se
 
   return (
     <div>
-      <img
-        src={exp.receiptImage.data}
-        alt="Receipt"
-        onError={() => setImgError(true)}
-        style={{ width: "100%", maxHeight: 500, objectFit: "contain", border: `1px solid ${css.border}`, background: D ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)" }}
-      />
+      {/* The thumbnail is now a button — tap opens the fullscreen lightbox
+          with pinch-to-zoom + double-tap + pan. Receipts are mostly small text
+          and the constrained 500px thumb made them unreadable. */}
+      <button
+        type="button"
+        onClick={() => setLightboxOpen(true)}
+        aria-label="Open receipt in full screen"
+        style={{ width: "100%", padding: 0, border: `1px solid ${css.border}`, background: D ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)", cursor: "zoom-in", display: "block", position: "relative" }}
+      >
+        <img
+          src={exp.receiptImage.data}
+          alt="Receipt — tap to zoom"
+          onError={() => setImgError(true)}
+          style={{ width: "100%", maxHeight: 500, objectFit: "contain", display: "block" }}
+        />
+        {/* Subtle hint badge so the affordance is obvious */}
+        <span style={{
+          position: "absolute", top: 8, right: 8, padding: "4px 8px",
+          background: "rgba(0,0,0,0.55)", color: "#fff",
+          fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.08em",
+          textTransform: "uppercase", borderRadius: 4, pointerEvents: "none",
+        }}>Tap to zoom</span>
+      </button>
       <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
         <button onClick={() => { setCropExpenseId(exp.id); setCropRect(null); cropStartRef.current = null; cropEndRef.current = null; }} style={{ padding: "6px 14px", borderRadius: 6, border: `1px solid ${css.border}`, background: "transparent", color: css.text2, fontSize: 11, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2v14a2 2 0 002 2h14"/><path d="M18 22V8a2 2 0 00-2-2H2"/></svg>
           Crop
         </button>
       </div>
+      {lightboxOpen && (
+        <ReceiptLightbox
+          src={exp.receiptImage.data}
+          name={exp.receiptImage.name}
+          onClose={() => setLightboxOpen(false)}
+        />
+      )}
     </div>
   );
 }
