@@ -604,6 +604,38 @@ export function renderExpenseReports(s) {
                                     <span style={{ fontSize: 12, color: css.text2, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{exp.description}</span>
                                     {otherReports.length > 0 && <ReportedBadge reports={otherReports} onOpen={openReport} compact />}
                                     <span style={{ fontSize: 11, color: css.text3, fontFamily: "'Geist Mono', monospace", flexShrink: 0 }}>${(expenseUSD(exp)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                    {/* "→ Inbox" button — unassigns the expense from the trip so it
+                                        naturally drops from the report's auto-included set and reappears
+                                        under Unassigned Receipts below. The expense row itself is
+                                        preserved (amount, receipt, notes, etc.) so the user can re-file
+                                        it later from the Inbox or from the Expense detail's "Transfer
+                                        to Another Trip" dropdown. stopPropagation so the surrounding
+                                        row click (which toggles exclude) doesn't also fire. */}
+                                    <button
+                                      type="button"
+                                      onClick={async (e) => {
+                                        e.stopPropagation();
+                                        const expId = exp.id;
+                                        setExpenses(prev => prev.map(x => x.id === expId ? { ...x, tripId: null } : x));
+                                        if (user) {
+                                          const { error } = await supabase.from("expenses").update({ trip_id: null }).eq("id", expId).eq("user_id", user.id);
+                                          if (error) {
+                                            console.error("Send to Inbox failed:", error);
+                                            alert(`Couldn't move the expense to Inbox: ${error.message || "unknown error"}.`);
+                                            // Roll back the optimistic state on failure.
+                                            setExpenses(prev => prev.map(x => x.id === expId ? { ...x, tripId: trip.id } : x));
+                                          }
+                                        }
+                                      }}
+                                      title="Send to Inbox — unassigns from this trip and removes from the report"
+                                      style={{ padding: "3px 8px", borderRadius: 5, border: `1px solid ${css.border}`, background: "transparent", color: css.text2, fontSize: 9, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}
+                                    >
+                                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                        <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>
+                                        <path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/>
+                                      </svg>
+                                      Inbox
+                                    </button>
                                     <span style={{ fontSize: 10, color: excluded ? "#C8553D" : css.text3, flexShrink: 0 }}>{excluded ? "excluded" : "included"}</span>
                                   </div>
                                 );
