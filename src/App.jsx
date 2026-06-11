@@ -2874,6 +2874,52 @@ export default function EliteStatusTracker() {
     }
   };
 
+  // Auto-lock legacy reimbursement reports that have no saved snapshot of
+  // included expense IDs. Without this, any new expense on a trip that's in
+  // the report's selectedTripIds silently joins the report via the live-
+  // filter fallback in getReportExpenses — the "filed reports keep growing"
+  // complaint that the snapshot mechanism was supposed to fix, but only
+  // worked for reports created after the migration. This runs once per
+  // legacy report per session, persists the snapshot to the DB so the bug
+  // is fixed for good, and updates local state in lock-step. Users who
+  // want the live behavior can hit Unlock on the report card.
+  const backfilledReportsRef = useRef(new Set());
+  useEffect(() => {
+    if (!user || !standaloneReports.length || !expenses.length) return;
+    const legacyReports = standaloneReports.filter(r =>
+      r.reportType !== "trip_cost" &&
+      !Array.isArray(r.includedExpenseIds) &&
+      !backfilledReportsRef.current.has(r.id)
+    );
+    if (!legacyReports.length) return;
+
+    legacyReports.forEach(async (r) => {
+      backfilledReportsRef.current.add(r.id);
+      const snapshot = [
+        ...expenses
+          .filter(e => (r.selectedTripIds || []).includes(e.tripId) && !(r.excludedExpenseIds || []).includes(e.id))
+          .map(e => e.id),
+        ...expenses
+          .filter(e => !e.tripId && (r.includedUnassignedIds || []).includes(e.id))
+          .map(e => e.id),
+      ];
+      try {
+        await supabase
+          .from("expense_reports")
+          .update({ included_expense_ids: snapshot, updated_at: new Date().toISOString() })
+          .eq("id", r.id)
+          .eq("user_id", user.id);
+        setStandaloneReports(prev => prev.map(p =>
+          p.id === r.id ? { ...p, includedExpenseIds: snapshot } : p
+        ));
+      } catch (err) {
+        // Allow a retry next session if the update failed.
+        backfilledReportsRef.current.delete(r.id);
+        console.error("Auto-lock backfill failed for report", r.id, err);
+      }
+    });
+  }, [user, standaloneReports, expenses]);
+
   const loadItineraries = async (userId) => {
     const { data } = await supabase
       .from("itineraries")
