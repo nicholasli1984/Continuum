@@ -4068,8 +4068,14 @@ Start by introducing yourself briefly in-character with personality, and give an
   // ── Add segment to existing trip ──
   const handleAddSegmentToTrip = async (tripId) => {
     if (!addSegmentType) return;
-    const trip = trips.find(t => t.id === tripId);
+    // Search both owned and shared trips — Add/Edit Segment is reachable on
+    // shared trips with edit permission, and the previous lookup only checked
+    // the owned `trips` array. That's why the Save Accommodation button on a
+    // shared trip silently did nothing: this find() returned undefined and the
+    // function bailed at the early-return below.
+    const trip = [...trips, ...sharedTrips].find(t => t.id === tripId);
     if (!trip) return;
+    const isShared = !!trip._shared;
     const isNewFlightAdd = addSegmentType === "flight" && editingSegIdx === null;
 
     let newSegs = [];
@@ -4168,8 +4174,32 @@ Start by introducing yourself briefly in-character with personality, and give an
         return (a.date || "9999").localeCompare(b.date || "9999");
       });
     }
-    if (user) {
-      await supabase.from("trips").update({ segments: mergedSegs }).eq("id", tripId).eq("user_id", user.id);
+    // Shared trips route through the dedicated /api/shared-trips PUT endpoint
+    // because RLS blocks the recipient's user_id from updating a row whose
+    // owner is someone else. The endpoint validates the recipient's edit
+    // permission server-side and uses the service-role client to perform the
+    // write. Owned trips go straight to Supabase as before.
+    if (isShared) {
+      setSharedTrips(prev => prev.map(t => t.id === tripId ? { ...t, segments: mergedSegs } : t));
+      if (user) {
+        try {
+          await apiFetch("/api/shared-trips", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ tripId, userId: user.id, userEmail: user.email, payload: { segments: mergedSegs } }),
+          });
+        } catch (e) {
+          console.error("Shared trip segment save failed:", e);
+          alert("Couldn't save to the shared trip. The owner may have revoked edit access — refresh and try again.");
+        }
+      }
+    } else if (user) {
+      const { error } = await supabase.from("trips").update({ segments: mergedSegs }).eq("id", tripId).eq("user_id", user.id);
+      if (error) {
+        console.error("Trip segment save failed:", error);
+        alert(`Couldn't save the segment: ${error.message || "unknown error"}.`);
+        return;
+      }
       setTrips(prev => prev.map(t => t.id === tripId ? { ...t, segments: mergedSegs } : t));
     }
     setShowAddSegment(null);
@@ -4182,7 +4212,10 @@ Start by introducing yourself briefly in-character with personality, and give an
 
   // Edit an existing segment — opens the add form pre-filled
   const editSegment = (tripId, segIdx) => {
-    const trip = trips.find(t => t.id === tripId);
+    // Look in both owned and shared trips — same fix as handleAddSegmentToTrip.
+    // Without this, tapping Edit on a segment of a shared trip silently does
+    // nothing because the find() returns undefined and we bail out.
+    const trip = [...trips, ...sharedTrips].find(t => t.id === tripId);
     if (!trip) return;
     const realSegs = (trip.segments || []).filter(s => !s._isMeta);
     const seg = realSegs[segIdx];
