@@ -102,18 +102,29 @@ export async function buildPrintReport({ title, expsForReport, trips, EXPENSE_CA
           </div>
         </td>
         <td style="padding:7px 14px;border-bottom:${childBorder};"></td>
+        <td style="padding:7px 14px;border-bottom:${childBorder};"></td>
         <td style="padding:7px 14px;border-bottom:${childBorder};text-align:right;font-size:12px;font-family:'Geist Mono',monospace;color:#d0d6e0;">${fmtAmt(itemAmt, cur)}</td>
         <td style="padding:7px 14px;border-bottom:${childBorder};"></td>
       </tr>`;
     }).join("");
+    const rowBorder = items.length ? "1px solid rgba(42,38,64,0.4)" : "1px solid #2a2640";
+    const catLabel = cat?.label ? escapeHtml(cat.label) : "Uncategorized";
+    const catColor = cat?.color || "#8a8f98";
+    // Category pill uses the category's own colour at low alpha so the
+    // column reads as a coloured tag rather than another wall of text. Plain
+    // text fallback if no category matches the row (legacy/imported rows).
+    const categoryCell = cat
+      ? `<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:${catColor};background:${catColor}1A;border:1px solid ${catColor}33;padding:2px 8px;border-radius:4px;white-space:nowrap;"><span style="font-size:12px;line-height:1;">${cat.icon || ""}</span>${catLabel}</span>`
+      : `<span style="font-size:11px;color:#62666d;">${catLabel}</span>`;
     return `<tr>
-      <td style="padding:10px 14px;border-bottom:${items.length ? "1px solid rgba(42,38,64,0.4)" : "1px solid #2a2640"};vertical-align:top;">
-        <div style="font-size:13px;color:#f7f8f8;">${cat?.icon||""} ${escapeHtml(exp.description || "")}</div>
+      <td style="padding:10px 14px;border-bottom:${rowBorder};vertical-align:top;">
+        <div style="font-size:13px;color:#f7f8f8;">${escapeHtml(exp.description || "")}</div>
         <div style="font-size:10px;color:#62666d;margin-top:2px;">${escapeHtml(tripName)}${exp.notes ? " · " + escapeHtml(exp.notes) : ""}${items.length ? ` · ${items.length} item${items.length === 1 ? "" : "s"}` : ""}</div>
       </td>
-      <td style="padding:10px 14px;border-bottom:${items.length ? "1px solid rgba(42,38,64,0.4)" : "1px solid #2a2640"};font-size:12px;color:#8a8f98;white-space:nowrap;">${exp.date?.slice(5)||""}</td>
-      <td style="padding:10px 14px;border-bottom:${items.length ? "1px solid rgba(42,38,64,0.4)" : "1px solid #2a2640"};text-align:right;">${amountCell}</td>
-      <td style="padding:10px 14px;border-bottom:${items.length ? "1px solid rgba(42,38,64,0.4)" : "1px solid #2a2640"};text-align:center;font-size:13px;color:${exp.receipt?"#34d399":"#62666d"};">
+      <td style="padding:10px 14px;border-bottom:${rowBorder};vertical-align:top;">${categoryCell}</td>
+      <td style="padding:10px 14px;border-bottom:${rowBorder};font-size:12px;color:#8a8f98;white-space:nowrap;">${exp.date?.slice(5)||""}</td>
+      <td style="padding:10px 14px;border-bottom:${rowBorder};text-align:right;">${amountCell}</td>
+      <td style="padding:10px 14px;border-bottom:${rowBorder};text-align:center;font-size:13px;color:${exp.receipt?"#34d399":"#62666d"};">
         ${hasReceipt?`<a href="#receipt-${receiptIdx}" class="rcpt-link" style="color:#0EA5A0;font-size:10px;">p.${receiptIdx+2}</a>`:(exp.receipt?"✓":"—")}
       </td>
     </tr>${itemRows}`;
@@ -180,16 +191,17 @@ export async function buildPrintReport({ title, expsForReport, trips, EXPENSE_CA
           <table>
             <thead><tr style="background:rgba(255,255,255,0.04);">
               <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:#8a8f98;text-transform:uppercase;border-bottom:1px solid #2a2640;">Description</th>
+              <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:#8a8f98;text-transform:uppercase;border-bottom:1px solid #2a2640;">Category</th>
               <th style="padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:#8a8f98;text-transform:uppercase;border-bottom:1px solid #2a2640;">Date</th>
               <th style="padding:10px 14px;text-align:right;font-size:10px;font-weight:700;color:#8a8f98;text-transform:uppercase;border-bottom:1px solid #2a2640;">Amount</th>
               <th style="padding:10px 14px;text-align:center;font-size:10px;font-weight:700;color:#8a8f98;text-transform:uppercase;border-bottom:1px solid #2a2640;">Rcpt</th>
             </tr></thead>
             <tbody>${lineRows}</tbody>
             <tfoot><tr style="background:rgba(14,165,160,0.08);">
-              <td colspan="2" style="padding:14px;font-size:13px;font-weight:700;color:#0EA5A0;border-top:2px solid rgba(14,165,160,0.3);">TOTAL (USD)</td>
+              <td colspan="3" style="padding:14px;font-size:13px;font-weight:700;color:#0EA5A0;border-top:2px solid rgba(14,165,160,0.3);">TOTAL (USD)</td>
               <td style="padding:14px;text-align:right;font-size:15px;font-weight:800;color:#0EA5A0;border-top:2px solid rgba(14,165,160,0.3);">$${tripTotalUSD.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
               <td style="border-top:2px solid rgba(14,165,160,0.3);"></td>
-            </tr>${unconvertedCurrencies.map(cur => `<tr style="background:rgba(251,191,36,0.06);"><td colspan="2" style="padding:10px 14px;font-size:11px;font-weight:700;color:#fbbf24;">TOTAL (${cur}) — not converted</td><td style="padding:10px 14px;text-align:right;font-size:13px;font-weight:800;color:#fbbf24;">${formatCurrencyAmount(grouped.byCurrency[cur], cur)}</td><td></td></tr>`).join("")}</tfoot>
+            </tr>${unconvertedCurrencies.map(cur => `<tr style="background:rgba(251,191,36,0.06);"><td colspan="3" style="padding:10px 14px;font-size:11px;font-weight:700;color:#fbbf24;">TOTAL (${cur}) — not converted</td><td style="padding:10px 14px;text-align:right;font-size:13px;font-weight:800;color:#fbbf24;">${formatCurrencyAmount(grouped.byCurrency[cur], cur)}</td><td></td></tr>`).join("")}</tfoot>
           </table>
         </div>
       </div>
