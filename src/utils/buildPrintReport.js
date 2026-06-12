@@ -25,6 +25,15 @@ export async function buildPrintReport({ title, expsForReport, trips, EXPENSE_CA
   const CURRENCY_SYMBOLS = { USD:"$",EUR:"€",GBP:"£",CAD:"CA$",AUD:"A$",JPY:"¥",CHF:"Fr",CNY:"¥",HKD:"HK$",SGD:"S$",MXN:"MX$",BRL:"R$",INR:"₹",KRW:"₩",AED:"د.إ",THB:"฿",NOK:"kr",SEK:"kr",DKK:"kr",NZD:"NZ$" };
   const symFor = (cur) => CURRENCY_SYMBOLS[cur] || (cur + " ");
   const fmtAmt = (n, cur) => n === 0 ? "Free" : `${symFor(cur)}${n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+  // Defensive HTML escape — user-entered descriptions / notes / item names
+  // get interpolated into the report; a stray < or & would break the markup
+  // (or worse if the report is ever forwarded as raw HTML in an email).
+  const escapeHtml = (s) => String(s ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
   const toUSD = (e) => expenseUSD(e);
   // Split into convertible (genuine USD or with FX rate) vs unconverted
   // foreign-currency totals so the printed report doesn't claim
@@ -72,17 +81,42 @@ export async function buildPrintReport({ title, expsForReport, trips, EXPENSE_CA
     const amountCell = hasReceipt
       ? `<a href="#receipt-${receiptIdx}" class="rcpt-link" title="Jump to receipt">${amountInner}</a>`
       : amountInner;
+    // Itemized rows — when an expense has sub-line-items (restaurant
+    // breakdown, grocery split, etc.), render each one as an indented
+    // sibling row directly under the parent so the reader sees how the
+    // total was composed. The parent row keeps the rolled-up total in
+    // the Amount column; child rows show their own amount in the parent
+    // currency. The child rows DON'T sum into the totals/footer — that
+    // would double-count, since the parent already has the rolled-up
+    // total. Receipt cell on children is blank.
+    const items = Array.isArray(exp.items) ? exp.items : [];
+    const itemRows = items.map((it, ii) => {
+      const itemAmt = Number(it.amount) || 0;
+      const isLastItem = ii === items.length - 1;
+      const childBorder = isLastItem ? "1px solid #2a2640" : "1px solid rgba(42,38,64,0.5)";
+      return `<tr style="background:rgba(255,255,255,0.018);">
+        <td style="padding:7px 14px 7px 30px;border-bottom:${childBorder};vertical-align:top;">
+          <div style="display:flex;align-items:baseline;gap:8px;">
+            <span style="color:#62666d;font-size:11px;font-family:'JetBrains Mono','SF Mono',monospace;">└</span>
+            <span style="font-size:12px;color:#d0d6e0;">${escapeHtml(it.description || `Item ${ii + 1}`)}</span>
+          </div>
+        </td>
+        <td style="padding:7px 14px;border-bottom:${childBorder};"></td>
+        <td style="padding:7px 14px;border-bottom:${childBorder};text-align:right;font-size:12px;font-family:'Geist Mono',monospace;color:#d0d6e0;">${fmtAmt(itemAmt, cur)}</td>
+        <td style="padding:7px 14px;border-bottom:${childBorder};"></td>
+      </tr>`;
+    }).join("");
     return `<tr>
-      <td style="padding:10px 14px;border-bottom:1px solid #2a2640;vertical-align:top;">
-        <div style="font-size:13px;color:#f7f8f8;">${cat?.icon||""} ${exp.description}</div>
-        <div style="font-size:10px;color:#62666d;margin-top:2px;">${tripName}${exp.notes ? " · " + exp.notes : ""}</div>
+      <td style="padding:10px 14px;border-bottom:${items.length ? "1px solid rgba(42,38,64,0.4)" : "1px solid #2a2640"};vertical-align:top;">
+        <div style="font-size:13px;color:#f7f8f8;">${cat?.icon||""} ${escapeHtml(exp.description || "")}</div>
+        <div style="font-size:10px;color:#62666d;margin-top:2px;">${escapeHtml(tripName)}${exp.notes ? " · " + escapeHtml(exp.notes) : ""}${items.length ? ` · ${items.length} item${items.length === 1 ? "" : "s"}` : ""}</div>
       </td>
-      <td style="padding:10px 14px;border-bottom:1px solid #2a2640;font-size:12px;color:#8a8f98;white-space:nowrap;">${exp.date?.slice(5)||""}</td>
-      <td style="padding:10px 14px;border-bottom:1px solid #2a2640;text-align:right;">${amountCell}</td>
-      <td style="padding:10px 14px;border-bottom:1px solid #2a2640;text-align:center;font-size:13px;color:${exp.receipt?"#34d399":"#62666d"};">
+      <td style="padding:10px 14px;border-bottom:${items.length ? "1px solid rgba(42,38,64,0.4)" : "1px solid #2a2640"};font-size:12px;color:#8a8f98;white-space:nowrap;">${exp.date?.slice(5)||""}</td>
+      <td style="padding:10px 14px;border-bottom:${items.length ? "1px solid rgba(42,38,64,0.4)" : "1px solid #2a2640"};text-align:right;">${amountCell}</td>
+      <td style="padding:10px 14px;border-bottom:${items.length ? "1px solid rgba(42,38,64,0.4)" : "1px solid #2a2640"};text-align:center;font-size:13px;color:${exp.receipt?"#34d399":"#62666d"};">
         ${hasReceipt?`<a href="#receipt-${receiptIdx}" class="rcpt-link" style="color:#0EA5A0;font-size:10px;">p.${receiptIdx+2}</a>`:(exp.receipt?"✓":"—")}
       </td>
-    </tr>`;
+    </tr>${itemRows}`;
   }).join("");
 
   const receiptPages = expensesWithReceipts.map((exp, i) => {
