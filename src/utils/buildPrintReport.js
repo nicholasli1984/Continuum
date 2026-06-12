@@ -1,15 +1,50 @@
-import { expenseUSD } from "./expenseUsd";
+import { expenseUSD, groupExpenseTotals, formatCurrencyAmount } from "./expenseUsd";
 
 // Returns the dark-themed HTML report (logo + stat cards + category bars
 // + line items + embedded receipt pages) used by both the in-app View and
 // the emailed PDF. Pure: no DOM mutation, no React. Caller passes trips +
 // EXPENSE_CATEGORIES so this util can stay independent of any page.
-export async function buildPrintReport({ title, expsForReport, trips, EXPENSE_CATEGORIES }) {
+export async function buildPrintReport({ title, expsForReport, trips, EXPENSE_CATEGORIES, supabase }) {
+  // The main loadExpenses excludes receipt_image to keep the Supabase query
+  // under its statement timeout — receipts are normally lazy-loaded when a
+  // user opens an expense. For a report, we need every receipt blob in one go,
+  // so hydrate any that aren't already in memory. Callers should pass the
+  // supabase client; if they don't, we render whatever we have.
+  if (supabase && expsForReport && expsForReport.length) {
+    const needIds = expsForReport.filter(e => e?.receipt && !e?.receiptImage).map(e => e.id);
+    if (needIds.length) {
+      try {
+        const { data } = await supabase.from("expenses").select("id, receipt_image").in("id", needIds);
+        const byId = Object.fromEntries((data || []).map(r => [r.id, r.receipt_image]));
+        expsForReport = expsForReport.map(e =>
+          !e.receiptImage && byId[e.id] ? { ...e, receiptImage: byId[e.id] } : e
+        );
+      } catch { /* fall through with whatever we have */ }
+    }
+  }
   const CURRENCY_SYMBOLS = { USD:"$",EUR:"€",GBP:"£",CAD:"CA$",AUD:"A$",JPY:"¥",CHF:"Fr",CNY:"¥",HKD:"HK$",SGD:"S$",MXN:"MX$",BRL:"R$",INR:"₹",KRW:"₩",AED:"د.إ",THB:"฿",NOK:"kr",SEK:"kr",DKK:"kr",NZD:"NZ$" };
   const symFor = (cur) => CURRENCY_SYMBOLS[cur] || (cur + " ");
   const fmtAmt = (n, cur) => n === 0 ? "Free" : `${symFor(cur)}${n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`;
   const toUSD = (e) => expenseUSD(e);
-  const tripTotalUSD = expsForReport.reduce((s, e) => s + toUSD(e), 0);
+  // Split into convertible (genuine USD or with FX rate) vs unconverted
+  // foreign-currency totals so the printed report doesn't claim
+  // ¥10,000 = $10,000. `tripTotalUSD` stays for category percentages
+  // (where unconverted rows just contribute 0 to the USD denominator —
+  // the category bars are visualising USD share, not raw amounts).
+  const grouped = groupExpenseTotals(expsForReport);
+  const tripTotalUSD = grouped.usd;
+  const unconvertedCurrencies = Object.keys(grouped.byCurrency);
+  // HTML fragment used in two places (header stat card + table footer).
+  // Each unconverted currency renders on its own line with the right number
+  // of decimal places for the currency.
+  const unconvertedBlock = unconvertedCurrencies.length
+    ? unconvertedCurrencies.map(cur =>
+        `<div style="font-size:13px;font-weight:700;color:#fbbf24;">${formatCurrencyAmount(grouped.byCurrency[cur], cur)}</div>`
+      ).join("")
+    : "";
+  const unconvertedFootnote = unconvertedCurrencies.length
+    ? `<div style="font-size:9px;color:#8a8f98;margin-top:4px;">${unconvertedCurrencies.length === 1 ? unconvertedCurrencies[0] : "Foreign"} not converted — add FX rate on each item to roll into USD</div>`
+    : "";
   const receiptCount = expsForReport.filter(e => e.receipt).length;
   const catSummary = EXPENSE_CATEGORIES.map(cat => ({
     ...cat,
@@ -97,7 +132,7 @@ export async function buildPrintReport({ title, expsForReport, trips, EXPENSE_CA
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:28px;">
-        <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:16px;text-align:center;"><div style="font-size:22px;font-weight:800;color:#0EA5A0;">$${tripTotalUSD.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</div><div style="font-size:10px;color:#8a8f98;margin-top:4px;">Total (USD)</div></div>
+        <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:16px;text-align:center;"><div style="font-size:22px;font-weight:800;color:#0EA5A0;">$${tripTotalUSD.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</div><div style="font-size:10px;color:#8a8f98;margin-top:4px;">Total (USD)</div>${unconvertedBlock?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.08);">${unconvertedBlock}${unconvertedFootnote}</div>`:""}</div>
         <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:16px;text-align:center;"><div style="font-size:22px;font-weight:700;color:#fff;">${expsForReport.length}</div><div style="font-size:10px;color:#8a8f98;margin-top:4px;">Items</div></div>
         <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:16px;text-align:center;"><div style="font-size:22px;font-weight:800;color:#34d399;">${receiptCount}/${expsForReport.length}</div><div style="font-size:10px;color:#8a8f98;margin-top:4px;">Receipts</div></div>
       </div>
@@ -120,7 +155,7 @@ export async function buildPrintReport({ title, expsForReport, trips, EXPENSE_CA
               <td colspan="2" style="padding:14px;font-size:13px;font-weight:700;color:#0EA5A0;border-top:2px solid rgba(14,165,160,0.3);">TOTAL (USD)</td>
               <td style="padding:14px;text-align:right;font-size:15px;font-weight:800;color:#0EA5A0;border-top:2px solid rgba(14,165,160,0.3);">$${tripTotalUSD.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
               <td style="border-top:2px solid rgba(14,165,160,0.3);"></td>
-            </tr></tfoot>
+            </tr>${unconvertedCurrencies.map(cur => `<tr style="background:rgba(251,191,36,0.06);"><td colspan="2" style="padding:10px 14px;font-size:11px;font-weight:700;color:#fbbf24;">TOTAL (${cur}) — not converted</td><td style="padding:10px 14px;text-align:right;font-size:13px;font-weight:800;color:#fbbf24;">${formatCurrencyAmount(grouped.byCurrency[cur], cur)}</td><td></td></tr>`).join("")}</tfoot>
           </table>
         </div>
       </div>

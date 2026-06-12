@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { apiFetch } from "../utils/apiBase";
-import { expenseUSD } from "../utils/expenseUsd";
+import { expenseUSD, groupExpenseTotals, formatCurrencyAmount } from "../utils/expenseUsd";
 import { getReportExpenses as getReportExpensesUtil } from "../utils/reportExpenses";
 import { buildPrintReport as buildPrintReportUtil } from "../utils/buildPrintReport";
 import ReportedBadge from "../components/ReportedBadge";
@@ -417,7 +417,12 @@ export function renderExpenseReports(s) {
           <div style={{ background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, marginBottom: 32 }}>
             {standaloneReports.map((report, ri) => {
               const exps = getReportExpenses(report);
-              const total = exps.reduce((s, e) => s + expenseUSD(e), 0);
+              // Split expenses into convertible (genuine USD or with an FX
+              // rate) and unconverted foreign-currency rows. When any rows
+              // are unconverted, surface them as their own subtotals beside
+              // the USD figure so we don't lie about JPY = USD etc.
+              const grouped = groupExpenseTotals(exps);
+              const unconvertedCurrencies = Object.keys(grouped.byCurrency);
               return (
                 <div key={report.id} style={{ borderBottom: ri < standaloneReports.length - 1 ? `1px solid ${dv.cream}` : "none", padding: isMobile ? "16px" : "18px 28px", transition: "background 0.3s" }}
                   onMouseEnter={e => e.currentTarget.style.background = dv.bone} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
@@ -430,8 +435,24 @@ export function renderExpenseReports(s) {
                       </div>
                     </div>
                     <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: isMobile ? 15 : 18, fontWeight: 800, color: css.gold, fontFamily: "'Geist Mono', monospace" }}>${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                      <div style={{ fontSize: 11, color: css.text3 }}>USD</div>
+                      {grouped.usd > 0 && (
+                        <div style={{ fontSize: isMobile ? 15 : 18, fontWeight: 800, color: css.gold, fontFamily: "'Geist Mono', monospace" }}>
+                          ${grouped.usd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                      )}
+                      {grouped.usd > 0 && <div style={{ fontSize: 11, color: css.text3 }}>USD</div>}
+                      {unconvertedCurrencies.length > 0 && (
+                        <div style={{ marginTop: grouped.usd > 0 ? 6 : 0, paddingTop: grouped.usd > 0 ? 6 : 0, borderTop: grouped.usd > 0 ? `1px solid ${dv.cream}` : "none", display: "flex", flexDirection: "column", gap: 2 }}>
+                          {unconvertedCurrencies.map(cur => (
+                            <div key={cur} style={{ fontSize: isMobile ? 13 : 15, fontWeight: 700, color: css.text2, fontFamily: "'Geist Mono', monospace", lineHeight: 1.2 }}>
+                              {formatCurrencyAmount(grouped.byCurrency[cur], cur)}
+                            </div>
+                          ))}
+                          <div style={{ fontSize: 10, color: css.text3, marginTop: 2 }} title="No USD conversion set on the foreign expense(s); add an FX rate on each one to roll them into the USD subtotal.">
+                            Not converted to USD
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
