@@ -2804,13 +2804,29 @@ export default function EliteStatusTracker() {
   // statement timeout" with 11 users / many MB of receipts). Receipts are
   // fetched lazily per-expense via loadExpenseReceipt below.
   const EXPENSE_META_COLS = "id, user_id, trip_id, category, description, amount, currency, fx_rate, usd_reimbursement, individuals, date, payment_method, receipt, notes";
+  // Tracks whether the `items` JSONB column has been added to the expenses
+  // table yet (via supabase-expenses-items-migration.sql). Loads try with
+  // the column included; if Postgres errors on missing column we drop back
+  // to META_COLS and remember the column is missing so saves skip it too,
+  // making the itemization feature gracefully no-op until the SQL is run.
+  const expenseItemsColumnRef = useRef(true);
 
   const loadExpenses = async (userId) => {
-    const { data, error } = await supabase
+    const colsWithItems = EXPENSE_META_COLS + ", items";
+    let { data, error } = await supabase
       .from("expenses")
-      .select(EXPENSE_META_COLS)
+      .select(expenseItemsColumnRef.current ? colsWithItems : EXPENSE_META_COLS)
       .eq("user_id", userId)
       .order("date", { ascending: true });
+    // Items column missing? Retry without it and remember for the session.
+    if (error && /column.*items/i.test(error.message || "")) {
+      expenseItemsColumnRef.current = false;
+      ({ data, error } = await supabase
+        .from("expenses")
+        .select(EXPENSE_META_COLS)
+        .eq("user_id", userId)
+        .order("date", { ascending: true }));
+    }
     if (error) { console.error("loadExpenses", error.message); return; }
     if (!data) return;
     setExpenses(data.map(row => ({
@@ -2828,6 +2844,7 @@ export default function EliteStatusTracker() {
       receipt: row.receipt,
       receiptImage: null, // lazy-loaded — see loadExpenseReceipt
       notes: row.notes,
+      items: Array.isArray(row.items) ? row.items : [],
     })));
   };
 
@@ -4977,7 +4994,7 @@ Start by introducing yourself briefly in-character with personality, and give an
     setItineraryText("");
   };
 
-  const BLANK_EXPENSE = { category: "flight", description: "", amount: "", currency: "USD", usdReimbursement: "", fxRate: 1, fxMode: "direct", individuals: "Self", date: "", paymentMethod: "", receipt: false, receiptImage: null, notes: "" };
+  const BLANK_EXPENSE = { category: "flight", description: "", amount: "", currency: "USD", usdReimbursement: "", fxRate: 1, fxMode: "direct", individuals: "Self", date: "", paymentMethod: "", receipt: false, receiptImage: null, notes: "", items: [] };
 
   // Shrink a base64 receipt image until its bytes fit comfortably under
   // Postgres + Supabase row-size budgets. JSONB columns can technically hold
@@ -5039,6 +5056,13 @@ Start by introducing yourself briefly in-character with personality, and give an
       parsed.receiptImage = await compressReceiptImage(parsed.receiptImage);
     }
     const tripId = showAddExpense === "_inbox" ? null : showAddExpense;
+    // Normalize itemized line items: keep only ones with a non-empty
+    // description or amount > 0 so empty rows from the editor don't persist.
+    const cleanItems = Array.isArray(parsed.items)
+      ? parsed.items
+          .map(it => ({ id: it.id || crypto.randomUUID(), description: String(it.description || "").trim(), amount: Number(it.amount) || 0 }))
+          .filter(it => it.description || it.amount > 0)
+      : [];
     const payload = {
       category: parsed.category, description: parsed.description, amount: parsed.amount,
       currency: parsed.currency, fx_rate: parsed.fxRate, date: parsed.date || null,
@@ -5047,6 +5071,13 @@ Start by introducing yourself briefly in-character with personality, and give an
       individuals: parsed.individuals || "Self",
       usd_reimbursement: parsed.usdReimbursement || null,
     };
+    // Only include `items` when the column exists in this database — keeps
+    // saves working until the migration is run, with itemization simply
+    // being a no-op for the local-only items.
+    if (expenseItemsColumnRef.current) payload.items = cleanItems;
+    // Mirror cleaned items onto the in-memory parsed object so the optimistic
+    // UI shows what we actually saved.
+    parsed.items = cleanItems;
     // Close the modal before awaiting the DB write so the UI doesn't feel stuck.
     setShowAddExpense(null);
     setNewExpense(BLANK_EXPENSE);
@@ -5055,16 +5086,25 @@ Start by introducing yourself briefly in-character with personality, and give an
     // error handling. The previous fire-and-forget swallowed Supabase errors
     // entirely, so a failed insert silently dropped the receipt on the next
     // reload (the user-visible "I took two photos and they vanished" bug).
+    // If a save fails specifically because the items column doesn't exist,
+    // drop items from the payload and retry once. After the first failure we
+    // also flip the ref so subsequent saves skip items pre-emptively.
+    const missingItemsCol = (err) => err && /column.*items/i.test(err.message || "");
+    const retryWithoutItems = (p) => { const { items, ...rest } = p; return rest; };
+
     if (editExpenseId) {
       setExpenses(prev => prev.map(e => e.id === editExpenseId ? { ...parsed, id: editExpenseId, tripId: e.tripId } : e));
       const updateId = editExpenseId;
       setEditExpenseId(null);
       if (user) {
-        const { error } = await supabase.from("expenses").update(payload).eq("id", updateId).eq("user_id", user.id);
+        let { error } = await supabase.from("expenses").update(payload).eq("id", updateId).eq("user_id", user.id);
+        if (missingItemsCol(error)) {
+          expenseItemsColumnRef.current = false;
+          ({ error } = await supabase.from("expenses").update(retryWithoutItems(payload)).eq("id", updateId).eq("user_id", user.id));
+        }
         if (error) {
           console.error("Expense update failed:", error);
           alert(`Couldn't save the changes: ${error.message || "unknown error"}. Please try again.`);
-          // Reload from DB to drop the stale optimistic state.
           if (typeof loadExpenses === "function") loadExpenses();
         }
       }
@@ -5072,13 +5112,18 @@ Start by introducing yourself briefly in-character with personality, and give an
       const tempId = `temp_${Date.now()}`;
       setExpenses(prev => [...prev, { ...parsed, id: tempId, tripId }]);
       if (user) {
-        const { data, error } = await supabase.from("expenses")
+        let { data, error } = await supabase.from("expenses")
           .insert({ ...payload, user_id: user.id, trip_id: tripId })
           .select().single();
+        if (missingItemsCol(error)) {
+          expenseItemsColumnRef.current = false;
+          ({ data, error } = await supabase.from("expenses")
+            .insert({ ...retryWithoutItems(payload), user_id: user.id, trip_id: tripId })
+            .select().single());
+        }
         if (error) {
           console.error("Expense insert failed:", error);
           alert(`Couldn't save this expense: ${error.message || "unknown error"}. Please try again — the receipt is still attached if you reopen the form.`);
-          // Drop the optimistic row so the user knows it didn't save.
           setExpenses(prev => prev.filter(e => e.id !== tempId));
         } else if (data) {
           setExpenses(prev => prev.map(e => e.id === tempId ? { ...e, id: data.id } : e));
@@ -9446,6 +9491,34 @@ Start by introducing yourself briefly in-character with personality, and give an
                 </div>
               ))}
 
+              {/* Itemized breakdown — surfaces line items captured on Add/Edit */}
+              {Array.isArray(exp.items) && exp.items.length > 0 && (
+                <div style={{ marginTop: 20 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Itemized Breakdown</div>
+                  <div style={{ border: `1px solid ${css.border}`, borderRadius: 8, overflow: "hidden" }}>
+                    {exp.items.map((it, idx) => (
+                      <div key={it.id || idx} style={{
+                        display: "flex", justifyContent: "space-between", alignItems: "center",
+                        padding: "10px 14px",
+                        borderBottom: idx < exp.items.length - 1 ? `1px solid ${css.border}` : "none",
+                        background: idx % 2 === 0 ? (D ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.015)") : "transparent",
+                      }}>
+                        <span style={{ fontSize: 13, color: css.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginRight: 12, minWidth: 0, flex: 1 }}>{it.description || `Item ${idx + 1}`}</span>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: css.text, fontFamily: "'Geist Mono', monospace", flexShrink: 0 }}>
+                          {(Number(it.amount) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {exp.currency || "USD"}
+                        </span>
+                      </div>
+                    ))}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", borderTop: `1px solid ${css.border}`, background: D ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)" }}>
+                      <span style={{ fontSize: 11, color: css.text3, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase" }}>Total</span>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: css.gold, fontFamily: "'Geist Mono', monospace" }}>
+                        {exp.items.reduce((s, it) => s + (Number(it.amount) || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {exp.currency || "USD"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Receipt preview */}
               {exp.receiptImage && (
                 <div style={{ marginTop: 20 }}>
@@ -9600,14 +9673,18 @@ Start by introducing yourself briefly in-character with personality, and give an
             </div>
 
             {/* Amount + Currency */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8, marginBottom: 16 }}>
+            {(() => {
+              const items = Array.isArray(newExpense.items) ? newExpense.items : [];
+              const itemized = items.length > 0;
+              const itemsTotal = items.reduce((s, it) => s + (Number(it.amount) || 0), 0);
+              return (
+            <>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8, marginBottom: 8 }}>
               <div>
-                <label style={eLbl}>Expense Amount</label>
-                <input type="number" min="0" step="0.01" value={newExpense.amount} onChange={e => setNewExpense(p => {
+                <label style={eLbl}>Expense Amount{itemized && <span style={{ marginLeft: 6, fontSize: 9, color: css.text3, fontWeight: 500, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase" }}>Sum of items</span>}</label>
+                <input type="number" min="0" step="0.01" value={itemized ? itemsTotal.toFixed(2) : newExpense.amount} disabled={itemized} onChange={e => setNewExpense(p => {
                   const amt = e.target.value;
                   const isUsd = p.currency === "USD";
-                  // Match the form's effectiveMode logic so live recompute also works
-                  // when fxRate came from email parsing without an explicit fxMode set.
                   const inRateMode = p.fxMode === "rate"
                     || (!p.fxMode && p.fxRate && Number(p.fxRate) > 0 && Number(p.fxRate) !== 1);
                   if (!isUsd && inRateMode) {
@@ -9616,7 +9693,7 @@ Start by introducing yourself briefly in-character with personality, and give an
                     return { ...p, amount: amt, usdReimbursement: rate > 0 ? computed.toFixed(2) : p.usdReimbursement };
                   }
                   return { ...p, amount: amt, usdReimbursement: isUsd ? amt : p.usdReimbursement };
-                })} placeholder="0.00" style={eInp} />
+                })} placeholder="0.00" style={{ ...eInp, ...(itemized ? { color: css.text3, background: D ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)" } : {}) }} />
               </div>
               <div>
                 <label style={eLbl}>Currency</label>
@@ -9625,6 +9702,86 @@ Start by introducing yourself briefly in-character with personality, and give an
                 </select>
               </div>
             </div>
+
+            {/* Itemize — break the expense down into line items that sum
+                back into the Amount field. Useful for restaurant receipts
+                (main + drinks + tip), grocery runs, or any time the user
+                wants a paper trail per line. When at least one item exists
+                the Amount field locks to the items total. */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: itemized ? 8 : 0 }}>
+                <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, color: css.text3, letterSpacing: "0.08em", textTransform: "uppercase" }}>Items {itemized && `· ${items.length}`}</span>
+                <button type="button" onClick={() => setNewExpense(p => ({ ...p, items: [...(p.items || []), { id: crypto.randomUUID(), description: "", amount: "" }] }))} style={{ background: "transparent", border: `1px dashed ${css.border}`, color: css.text2, padding: "3px 9px", borderRadius: 6, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                  + Add item
+                </button>
+              </div>
+              {itemized && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 6, border: `1px solid ${css.border}`, borderRadius: 8, padding: "10px 10px 8px", background: D ? "rgba(255,255,255,0.015)" : "rgba(0,0,0,0.015)" }}>
+                  {items.map((it, idx) => (
+                    <div key={it.id || idx} style={{ display: "grid", gridTemplateColumns: "1fr 110px 28px", gap: 6, alignItems: "center" }}>
+                      <input
+                        value={it.description || ""}
+                        onChange={e => {
+                          const v = e.target.value;
+                          setNewExpense(p => {
+                            const next = [...(p.items || [])];
+                            next[idx] = { ...next[idx], description: v };
+                            return { ...p, items: next };
+                          });
+                        }}
+                        placeholder={`Item ${idx + 1}`}
+                        style={{ ...eInp, padding: "7px 9px", fontSize: 12 }}
+                      />
+                      <input
+                        type="number" min="0" step="0.01"
+                        value={it.amount === 0 ? "0" : (it.amount || "")}
+                        onChange={e => {
+                          const v = e.target.value;
+                          setNewExpense(p => {
+                            const next = [...(p.items || [])];
+                            next[idx] = { ...next[idx], amount: v };
+                            // Cascade the running total back into the main
+                            // amount + USD reimbursement so the rest of the
+                            // form (FX preview, totals) stays in sync.
+                            const total = next.reduce((s, x) => s + (Number(x.amount) || 0), 0);
+                            const isUsd = p.currency === "USD";
+                            const inRateMode = p.fxMode === "rate" || (!p.fxMode && p.fxRate && Number(p.fxRate) > 0 && Number(p.fxRate) !== 1);
+                            const usd = isUsd ? total.toFixed(2)
+                              : inRateMode ? (total * (parseFloat(p.fxRate) || 0)).toFixed(2)
+                              : p.usdReimbursement;
+                            return { ...p, items: next, amount: total.toFixed(2), usdReimbursement: usd };
+                          });
+                        }}
+                        placeholder="0.00"
+                        style={{ ...eInp, padding: "7px 9px", fontSize: 12, textAlign: "right", fontFamily: "'Geist Mono', monospace" }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setNewExpense(p => {
+                          const next = (p.items || []).filter((_, i) => i !== idx);
+                          const total = next.reduce((s, x) => s + (Number(x.amount) || 0), 0);
+                          const isUsd = p.currency === "USD";
+                          const inRateMode = p.fxMode === "rate" || (!p.fxMode && p.fxRate && Number(p.fxRate) > 0 && Number(p.fxRate) !== 1);
+                          const usd = isUsd ? (next.length ? total.toFixed(2) : p.amount)
+                            : inRateMode ? (total * (parseFloat(p.fxRate) || 0)).toFixed(2)
+                            : p.usdReimbursement;
+                          return { ...p, items: next, ...(next.length ? { amount: total.toFixed(2), usdReimbursement: usd } : {}) };
+                        })}
+                        title="Remove item"
+                        style={{ width: 24, height: 24, borderRadius: 6, border: `1px solid rgba(200,85,61,0.3)`, background: "rgba(200,85,61,0.06)", color: "#C8553D", fontSize: 14, lineHeight: 1, cursor: "pointer", display: "grid", placeItems: "center" }}
+                      >×</button>
+                    </div>
+                  ))}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4, paddingTop: 8, borderTop: `1px solid ${css.border}`, fontSize: 11 }}>
+                    <span style={{ color: css.text3, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase" }}>Subtotal</span>
+                    <span style={{ color: css.text, fontFamily: "'Geist Mono', monospace", fontWeight: 700 }}>{itemsTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {newExpense.currency}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+            </>
+              );
+            })()}
 
             {/* USD Reimbursement — direct entry OR FX rate conversion */}
             {(() => {
