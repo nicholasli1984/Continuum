@@ -81,9 +81,45 @@ export function renderExpenseReports(s) {
       const html2canvas = (await import("html2canvas")).default;
       const { jsPDF } = await import("jspdf");
 
+      const scale = 1.5;
+      // Capture clickable-link positions BEFORE we rasterise. The output
+      // of html2canvas is just pixels — the <a href="#receipt-N"> jumps
+      // in the source HTML lose their click behavior in the PDF unless
+      // we layer real PDF link annotations on top.
+      //
+      // Strategy: for each .rcpt-link, measure its box in iframe coords
+      // and remember which target receipt id it points to. After all
+      // pages are added, walk the list, convert to per-page PDF coords,
+      // and call pdf.link() to draw an invisible clickable region
+      // pointing at the page that contains the receipt target.
+      iframe.contentWindow.scrollTo(0, 0);
+      const bodyRect = docEl.body.getBoundingClientRect();
+      const targetTops = new Map();
+      docEl.querySelectorAll('[id^="receipt-"]').forEach(el => {
+        const r = el.getBoundingClientRect();
+        targetTops.set(el.id, r.top - bodyRect.top);
+      });
+      const pendingLinks = [];
+      docEl.querySelectorAll('a.rcpt-link[href^="#receipt-"]').forEach(a => {
+        const targetId = a.getAttribute("href").slice(1);
+        const targetTopPx = targetTops.get(targetId);
+        if (targetTopPx == null) return;
+        const r = a.getBoundingClientRect();
+        // Some anchors wrap inline elements with zero extents — give them
+        // at least 10x10 so they're actually tappable in a PDF reader.
+        const w = Math.max(r.width, 10);
+        const h = Math.max(r.height, 10);
+        pendingLinks.push({
+          x: r.left - bodyRect.left,
+          y: r.top - bodyRect.top,
+          w, h,
+          targetTopPx,
+        });
+      });
+
       const canvas = await html2canvas(docEl.body, {
         backgroundColor: "#13111C",
-        scale: 1.5,
+        scale,
         useCORS: true,
         allowTaint: true,
         windowWidth: RENDER_WIDTH_PX,
@@ -114,6 +150,38 @@ export function renderExpenseReports(s) {
         y += sliceHeight;
         pageIdx++;
       }
+
+      // Add the link annotations now that all pages exist. For each link:
+      //   sourcePage = which slice the anchor was rasterised on
+      //   targetPage = which slice the receipt landed on
+      // Per-page coords come from subtracting the page's canvas offset.
+      // pdf.setPage(N) is 1-indexed; pdf.link(x, y, w, h, {pageNumber: N}).
+      pendingLinks.forEach(link => {
+        const cX = link.x * scale;
+        const cY = link.y * scale;
+        const cW = link.w * scale;
+        const cH = link.h * scale;
+        const sourcePage = Math.floor(cY / pageHeightPx);
+        const yOnSourcePage = cY - sourcePage * pageHeightPx;
+        const targetCanvasY = link.targetTopPx * scale;
+        const targetPage = Math.floor(targetCanvasY / pageHeightPx);
+        // Bail if any of these went out of bounds (shouldn't happen, but
+        // we don't want a math glitch to throw and kill the entire send).
+        if (sourcePage < 0 || sourcePage >= pageIdx) return;
+        if (targetPage < 0 || targetPage >= pageIdx) return;
+        try {
+          pdf.setPage(sourcePage + 1);
+          pdf.link(
+            cX * pxToPt,
+            yOnSourcePage * pxToPt,
+            cW * pxToPt,
+            cH * pxToPt,
+            { pageNumber: targetPage + 1 }
+          );
+        } catch (e) {
+          console.warn("[forward] link annotation failed for", link, e?.message);
+        }
+      });
 
       // jsPDF returns "data:application/pdf;base64,...."; strip the prefix.
       const dataUri = pdf.output("datauristring");
