@@ -233,24 +233,24 @@ export function renderExpenseReports(s) {
         pdf.setTextColor(138, 143, 152);
         pdf.setFontSize(10);
         if (rcpt.subtext) pdf.text(rcpt.subtext, m, m + 46);
-        // Back-to-top button (top-right of the page). Mirrors the in-app
-        // .rcpt-back pill: dark fill, hairline border, monospace caps text,
-        // wraps a real pdf.link annotation pointing at page 1 (the report's
-        // first page). The HTML version of this pill is stripped before
-        // html2canvas — that's where the user noticed it was missing — so
-        // we draw the PDF-side equivalent here, one per receipt page.
-        const btnW = 108;
-        const btnH = 22;
+        // Back-to-top pill (top-right). First attempt mirrored the in-app
+        // pill's semi-transparent white styling (rgba(255,255,255,0.04) fill
+        // + rgba(255,255,255,0.14) border) — but PDF viewers don't render
+        // those low-alpha values with the same on-screen anti-aliasing,
+        // so the pill was effectively invisible against the dark page.
+        // Switch to a solid teal accent (matching the report's #0EA5A0
+        // brand colour used for the Total in USD heading) so the button
+        // is unmistakable.
+        const btnW = 120;
+        const btnH = 24;
         const btnX = pageWidthPt - m - btnW;
-        const btnY = m - 14; // visually aligns with the Receipt N of M baseline
-        pdf.setFillColor(28, 26, 38);
-        pdf.setDrawColor(60, 58, 72);
-        pdf.setLineWidth(0.5);
-        pdf.roundedRect(btnX, btnY, btnW, btnH, 4, 4, "FD");
-        pdf.setTextColor(247, 248, 248);
-        pdf.setFontSize(8);
+        const btnY = m - 12; // top edge sits just above the Receipt N of M baseline
+        pdf.setFillColor(14, 165, 160); // #0EA5A0
+        pdf.roundedRect(btnX, btnY, btnW, btnH, 5, 5, "F");
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFontSize(9);
         pdf.setFont("helvetica", "bold");
-        pdf.text("↑ BACK TO TOP", btnX + btnW / 2, btnY + btnH / 2 + 2.8, { align: "center" });
+        pdf.text("↑ BACK TO TOP", btnX + btnW / 2, btnY + btnH / 2 + 3, { align: "center" });
         pdf.setFont("helvetica", "normal");
         try {
           pdf.link(btnX, btnY, btnW, btnH, { pageNumber: 1 });
