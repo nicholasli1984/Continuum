@@ -1,4 +1,5 @@
 import { expenseUSD, groupExpenseTotals, formatCurrencyAmount } from "./expenseUsd";
+import { renderPdfToImages } from "./pdfRender";
 
 // Returns the dark-themed HTML report (logo + stat cards + category bars
 // + line items + embedded receipt pages) used by both the in-app View and
@@ -60,7 +61,48 @@ export async function buildPrintReport({ title, expsForReport, trips, EXPENSE_CA
     totalUSD: expsForReport.filter(e => e.category === cat.id).reduce((s,e) => s + toUSD(e), 0),
     count: expsForReport.filter(e => e.category === cat.id).length,
   })).filter(c => c.totalUSD > 0);
-  const expensesWithReceipts = expsForReport.filter(e => e.receiptImage?.data);
+  // Build the list of receipt "pages" the report will embed. For image
+  // receipts that's one entry per expense. For PDF receipts we render
+  // every source page to its own PNG via pdf.js and emit one entry per
+  // source page, so a 3-page hotel folio becomes 3 receipt pages in the
+  // report. Previously every receipt — image or PDF — was dumped into a
+  // single <img src="data:..."> tag, and PDF data URLs don't render in
+  // <img> elements; receipts came out blank intermittently because the
+  // browser would sometimes try to render the PDF via internal viewer
+  // (first view) and refuse on subsequent views.
+  //
+  // Each entry: { exp, imageSrc, pageNum?, totalPages?, _isPdfPage? }
+  //   exp        — source expense row (carries category, description, etc.)
+  //   imageSrc   — data URL of the image to embed
+  //   pageNum    — 1-based source-PDF page (only for PDF entries)
+  //   totalPages — total PDF page count (only for PDF entries)
+  const sourceReceipts = expsForReport.filter(e => e.receiptImage?.data);
+  const expensesWithReceipts = [];
+  for (const exp of sourceReceipts) {
+    const type = exp.receiptImage.type || "";
+    const data = exp.receiptImage.data;
+    const isPdf = type === "application/pdf" || (typeof data === "string" && data.startsWith("data:application/pdf"));
+    if (!isPdf) {
+      expensesWithReceipts.push({ exp, imageSrc: data });
+      continue;
+    }
+    try {
+      const pages = await renderPdfToImages(data, { scale: 2 });
+      if (pages.length === 0) continue;
+      pages.forEach((pg, pi) => {
+        expensesWithReceipts.push({
+          exp,
+          imageSrc: pg.dataUrl,
+          pageNum: pi + 1,
+          totalPages: pages.length,
+          _isPdfPage: true,
+        });
+      });
+    } catch (e) {
+      console.warn("[buildPrintReport] PDF→images failed for", exp.id, e?.message);
+      // Skip this receipt entirely rather than emit an unviewable PDF data URL.
+    }
+  }
 
   const catRows = catSummary.map(cat => `
     <tr>
@@ -75,7 +117,11 @@ export async function buildPrintReport({ title, expsForReport, trips, EXPENSE_CA
     const usdAmt = toUSD(exp);
     const isForeign = cur !== "USD";
     const tripName = exp.tripId ? (trips.find(t => t.id === exp.tripId)?.tripName || trips.find(t => t.id === exp.tripId)?.route || "Trip") : "Custom";
-    const receiptIdx = expensesWithReceipts.findIndex(e => e.id === exp.id);
+    // expensesWithReceipts is now { exp, imageSrc, ... }; the line-item
+    // jump should land on the FIRST page of this expense's receipt
+    // (multi-page PDF receipts get N consecutive entries, all sharing
+    // the same exp.id — findIndex naturally returns the first).
+    const receiptIdx = expensesWithReceipts.findIndex(r => r.exp.id === exp.id);
     const hasReceipt = receiptIdx >= 0;
     const amountInner = `<div style="font-size:13px;font-weight:700;color:${exp.amount===0?"#34d399":"#fff"};">${fmtAmt(exp.amount,cur)}</div>${isForeign?`<div style="font-size:10px;color:#62666d;">$${usdAmt.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})} USD</div>`:""}`;
     const amountCell = hasReceipt
@@ -130,22 +176,24 @@ export async function buildPrintReport({ title, expsForReport, trips, EXPENSE_CA
     </tr>${itemRows}`;
   }).join("");
 
-  const receiptPages = expensesWithReceipts.map((exp, i) => {
+  const receiptPages = expensesWithReceipts.map((entry, i) => {
+    const exp = entry.exp;
     const cat = EXPENSE_CATEGORIES.find(c => c.id === exp.category);
     const cur = exp.currency || "USD";
-    const src = exp.receiptImage.data;
-    // Itemized expenses often have no top-level description (the breakdown
-    // lives in items[]). Without a fallback the template prints the literal
-    // "null" right above the receipt image — the "shows null value" symptom
-    // user reported. Fall back to category label, then to "Receipt".
+    const src = entry.imageSrc;
     const headerTitle = exp.description || cat?.label || "Receipt";
     const amountStr = (exp.amount == null || isNaN(Number(exp.amount))) ? "" : fmtAmt(Number(exp.amount), cur);
     const subtextPieces = [exp.date || "", amountStr].filter(Boolean);
     const subtext = subtextPieces.join(" · ");
+    // Multi-page PDF receipts append " · Page N of M" to the label so the
+    // reader can see how the folio is split across consecutive pages.
+    const pageSuffix = entry._isPdfPage && entry.totalPages > 1
+      ? `  ·  Page ${entry.pageNum} of ${entry.totalPages}`
+      : "";
     return `
       <div id="receipt-${i}" style="page-break-before:always;padding:48px;background:#13111C;min-height:100vh;box-sizing:border-box;scroll-margin-top:64px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:16px;">
-          <div style="color:#8a8f98;font-size:11px;font-family:monospace;text-transform:uppercase;letter-spacing:0.1em;">Receipt ${i+1} of ${expensesWithReceipts.length}</div>
+          <div style="color:#8a8f98;font-size:11px;font-family:monospace;text-transform:uppercase;letter-spacing:0.1em;">Receipt ${i+1} of ${expensesWithReceipts.length}${pageSuffix}</div>
           <a href="#report-top" class="rcpt-back no-print" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.04);color:#f7f8f8;font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;text-decoration:none;font-family:'JetBrains Mono','SF Mono',monospace;">
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
             Back to top
