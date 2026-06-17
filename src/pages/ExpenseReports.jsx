@@ -37,19 +37,34 @@ export function renderExpenseReports(s) {
     iframe.srcdoc = html;
     document.body.appendChild(iframe);
     try {
-      // Wait for iframe load, then for all images (logo + receipt data URLs)
+      // Wait for iframe load, then for all images (logo + receipt data URLs).
+      //
+      // Two bugs to be defensive about:
+      //  (a) An already-completed-but-failed image (complete=true,
+      //      naturalHeight=0) used to fall into the else branch and wait
+      //      forever for events that had already fired. Now we tick on any
+      //      `complete` flag — success or fail, doesn't matter, the load
+      //      attempt is done.
+      //  (b) The overall timeout was 20s, which was tight for reports with
+      //      several receipts (each a ~700KB JPEG data URL). Bump to 60s.
+      // Also give each individual image a 6s safety so one stuck image
+      // doesn't block the rest of the batch indefinitely.
       await new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => reject(new Error("Report HTML load timeout")), 20000);
+        const timeout = setTimeout(() => reject(new Error("Report HTML load timeout (>60s) — too many large embedded receipts?")), 60000);
         iframe.onload = () => {
           const docEl = iframe.contentDocument;
           if (!docEl) { clearTimeout(timeout); return reject(new Error("Iframe document unavailable")); }
           const imgs = Array.from(docEl.images || []);
           if (imgs.length === 0) { clearTimeout(timeout); return resolve(); }
           let done = 0;
-          const tick = () => { done++; if (done >= imgs.length) { clearTimeout(timeout); resolve(); } };
+          const need = imgs.length;
+          const tick = () => { done++; if (done >= need) { clearTimeout(timeout); resolve(); } };
           imgs.forEach(img => {
-            if (img.complete && img.naturalHeight > 0) tick();
-            else { img.onload = tick; img.onerror = tick; }
+            if (img.complete) { tick(); return; }
+            let perImg = setTimeout(() => { perImg = null; tick(); }, 6000);
+            const handle = () => { if (perImg) { clearTimeout(perImg); perImg = null; tick(); } };
+            img.onload = handle;
+            img.onerror = handle;
           });
         };
       });
