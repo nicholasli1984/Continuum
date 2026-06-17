@@ -73,29 +73,55 @@ export function renderExpenseReports(s) {
       docEl.querySelector("[data-report-toolbar]")?.remove();
       docEl.getElementById("fab-top")?.remove();
       docEl.querySelectorAll(".rcpt-back").forEach(el => el.remove());
-      // Receipt pages carry `min-height: 100vh` for the in-app View Report so
-      // each receipt looks like a full page in the on-screen reader. In this
-      // PDF render path it backfires: the iframe starts at 200px, each
-      // receipt fills that as `100vh = 200px`, then we resize the iframe to
-      // body.scrollHeight, `100vh` re-resolves to the new (much larger)
-      // iframe height, and each receipt balloons into a multi-thousand-pixel
-      // black void with the real receipt image stranded at the top. jsPDF
-      // slices that into A4 pages and the receipt jumps land on black pages.
-      // Strip the constraint so each receipt sits at its natural content
-      // height for the rasterisation; jsPDF still slices into A4 either way.
+
+      // ── Receipt pages — extracted and rendered NATIVELY in jsPDF ──
+      // The original pipeline rasterised the entire HTML (including each
+      // receipt page) through html2canvas → JPEG slices → addImage. That
+      // chain was fragile in two ways:
+      //   1. Receipt page divs use `min-height: 100vh` for the in-app
+      //      View Report. Once the iframe is resized to fit body content,
+      //      100vh re-resolves to a multi-thousand-pixel value and each
+      //      receipt balloons into a black void with the real image
+      //      stranded at the top. Receipt-bound PDF pages came out black.
+      //   2. html2canvas is genuinely flaky with very large data-URL
+      //      <img> elements (~700KB JPEG receipts each), sometimes drawing
+      //      an empty slot even when img.complete is true.
+      // Instead: pull every receipt page out of the iframe BEFORE
+      // html2canvas runs, remember each one's image src + dimensions +
+      // header text, and render them as native jsPDF pages with
+      // pdf.addImage() after the main report. That bypasses both bugs.
+      const receiptPages = [];
       docEl.querySelectorAll('[id^="receipt-"]').forEach(el => {
-        el.style.minHeight = "auto";
+        const img = el.querySelector("img");
+        if (!img?.src) return;
+        // The receipt header rows live as the first three direct children
+        // of the wrapper div (after the strip of .rcpt-back). Defensively
+        // read textContent so a layout shift doesn't crash the render.
+        const kids = Array.from(el.children);
+        const label = kids[0]?.textContent?.trim() || "";
+        const header = kids[1]?.textContent?.trim() || "";
+        const subtext = kids[2]?.textContent?.trim() || "";
+        receiptPages.push({
+          id: el.id, // "receipt-0", "receipt-1", ...
+          src: img.src,
+          naturalWidth: img.naturalWidth || 0,
+          naturalHeight: img.naturalHeight || 0,
+          label,
+          header,
+          subtext,
+        });
+        el.remove();
       });
-      // Explicit decode pass — image.complete only means the load attempt
-      // finished, not that pixels are ready for the canvas to sample. Some
-      // browsers defer JPEG decode until first paint; html2canvas can race
-      // that and rasterise an empty image slot. decode() forces the wait.
+
+      // Explicit decode pass for whatever <img>s remain in the main
+      // report (the Continuum logo + anything else inline). For big
+      // receipt JPEGs we don't bother — they were just removed.
       await Promise.allSettled(
         Array.from(docEl.images || []).map(img =>
           img.decode ? img.decode().catch(() => {}) : Promise.resolve()
         )
       );
-      // Resize iframe so html2canvas captures full content
+      // Resize iframe so html2canvas captures the (now shorter) main report.
       const fullHeight = docEl.body.scrollHeight;
       iframe.style.height = fullHeight + "px";
       await new Promise(r => setTimeout(r, 150)); // let layout settle
@@ -104,38 +130,24 @@ export function renderExpenseReports(s) {
       const { jsPDF } = await import("jspdf");
 
       const scale = 1.5;
-      // Capture clickable-link positions BEFORE we rasterise. The output
-      // of html2canvas is just pixels — the <a href="#receipt-N"> jumps
-      // in the source HTML lose their click behavior in the PDF unless
-      // we layer real PDF link annotations on top.
-      //
-      // Strategy: for each .rcpt-link, measure its box in iframe coords
-      // and remember which target receipt id it points to. After all
-      // pages are added, walk the list, convert to per-page PDF coords,
-      // and call pdf.link() to draw an invisible clickable region
-      // pointing at the page that contains the receipt target.
+      // Capture clickable-link positions BEFORE rasterising. Each rcpt-link
+      // anchor in the line items points at a #receipt-N id we already
+      // pulled out — so the target is no longer a Y coordinate within the
+      // rasterised canvas; it's a specific native receipt page added
+      // later. Remember just (x, y, w, h, targetReceiptId).
       iframe.contentWindow.scrollTo(0, 0);
       const bodyRect = docEl.body.getBoundingClientRect();
-      const targetTops = new Map();
-      docEl.querySelectorAll('[id^="receipt-"]').forEach(el => {
-        const r = el.getBoundingClientRect();
-        targetTops.set(el.id, r.top - bodyRect.top);
-      });
       const pendingLinks = [];
       docEl.querySelectorAll('a.rcpt-link[href^="#receipt-"]').forEach(a => {
         const targetId = a.getAttribute("href").slice(1);
-        const targetTopPx = targetTops.get(targetId);
-        if (targetTopPx == null) return;
         const r = a.getBoundingClientRect();
-        // Some anchors wrap inline elements with zero extents — give them
-        // at least 10x10 so they're actually tappable in a PDF reader.
         const w = Math.max(r.width, 10);
         const h = Math.max(r.height, 10);
         pendingLinks.push({
           x: r.left - bodyRect.left,
           y: r.top - bodyRect.top,
           w, h,
-          targetTopPx,
+          targetReceiptId: targetId,
         });
       });
 
@@ -156,8 +168,9 @@ export function renderExpenseReports(s) {
       const pxToPt = pageWidthPt / canvas.width;
       const pageHeightPx = Math.floor(pageHeightPt / pxToPt);
 
+      // 1) Add the rasterised main report pages.
       let y = 0;
-      let pageIdx = 0;
+      let mainReportPageCount = 0;
       while (y < canvas.height) {
         const sliceHeight = Math.min(pageHeightPx, canvas.height - y);
         const slice = document.createElement("canvas");
@@ -167,17 +180,66 @@ export function renderExpenseReports(s) {
         ctx.fillStyle = "#13111C";
         ctx.fillRect(0, 0, slice.width, slice.height);
         ctx.drawImage(canvas, 0, -y);
-        if (pageIdx > 0) pdf.addPage();
+        if (mainReportPageCount > 0) pdf.addPage();
         pdf.addImage(slice.toDataURL("image/jpeg", 0.85), "JPEG", 0, 0, pageWidthPt, sliceHeight * pxToPt);
         y += sliceHeight;
-        pageIdx++;
+        mainReportPageCount++;
       }
 
-      // Add the link annotations now that all pages exist. For each link:
-      //   sourcePage = which slice the anchor was rasterised on
-      //   targetPage = which slice the receipt landed on
-      // Per-page coords come from subtracting the page's canvas offset.
-      // pdf.setPage(N) is 1-indexed; pdf.link(x, y, w, h, {pageNumber: N}).
+      // 2) Add receipt pages natively. Dark background, small header
+      //    "Receipt N of M" + expense description + date, then the image
+      //    centred and scaled to fit while preserving aspect ratio.
+      const receiptPageNumbers = new Map(); // receipt id → 1-indexed PDF page
+      for (let ri = 0; ri < receiptPages.length; ri++) {
+        const rcpt = receiptPages[ri];
+        pdf.addPage();
+        const pageNum = mainReportPageCount + ri + 1;
+        receiptPageNumbers.set(rcpt.id, pageNum);
+        // Background
+        pdf.setFillColor(19, 17, 28); // #13111C
+        pdf.rect(0, 0, pageWidthPt, pageHeightPt, "F");
+        // Header text
+        const m = 48;
+        pdf.setTextColor(138, 143, 152); // #8a8f98
+        pdf.setFontSize(9);
+        if (rcpt.label) pdf.text(rcpt.label, m, m);
+        pdf.setTextColor(247, 248, 248); // #f7f8f8
+        pdf.setFontSize(14);
+        if (rcpt.header) pdf.text(rcpt.header, m, m + 28);
+        pdf.setTextColor(138, 143, 152);
+        pdf.setFontSize(10);
+        if (rcpt.subtext) pdf.text(rcpt.subtext, m, m + 46);
+        // Image area: below the header block, with a margin on each side.
+        const imgTop = m + 70;
+        const maxImgW = pageWidthPt - 2 * m;
+        const maxImgH = pageHeightPt - imgTop - m;
+        // Scale to fit while preserving aspect ratio. Fall back to
+        // 4:3 portrait if naturalWidth/Height aren't known yet.
+        const nW = rcpt.naturalWidth || 800;
+        const nH = rcpt.naturalHeight || 1000;
+        const aspect = nH / nW;
+        let imgW = maxImgW;
+        let imgH = imgW * aspect;
+        if (imgH > maxImgH) {
+          imgH = maxImgH;
+          imgW = imgH / aspect;
+        }
+        const imgX = (pageWidthPt - imgW) / 2;
+        try {
+          // Format defaults to auto-detect from the data URL prefix
+          // (data:image/jpeg → JPEG, etc). "FAST" compression is fine —
+          // the receipt is already JPEG-compressed; jsPDF just embeds.
+          pdf.addImage(rcpt.src, "", imgX, imgTop, imgW, imgH, undefined, "FAST");
+        } catch (e) {
+          console.warn("[forward] receipt addImage failed for", rcpt.id, e?.message);
+          pdf.setTextColor(200, 85, 61);
+          pdf.setFontSize(10);
+          pdf.text("(Receipt image could not be embedded.)", m, imgTop + 20);
+        }
+      }
+
+      // 3) Layer the link annotations on the rasterised main-report
+      //    pages, pointing at the corresponding native receipt page.
       pendingLinks.forEach(link => {
         const cX = link.x * scale;
         const cY = link.y * scale;
@@ -185,12 +247,9 @@ export function renderExpenseReports(s) {
         const cH = link.h * scale;
         const sourcePage = Math.floor(cY / pageHeightPx);
         const yOnSourcePage = cY - sourcePage * pageHeightPx;
-        const targetCanvasY = link.targetTopPx * scale;
-        const targetPage = Math.floor(targetCanvasY / pageHeightPx);
-        // Bail if any of these went out of bounds (shouldn't happen, but
-        // we don't want a math glitch to throw and kill the entire send).
-        if (sourcePage < 0 || sourcePage >= pageIdx) return;
-        if (targetPage < 0 || targetPage >= pageIdx) return;
+        const targetPdfPage = receiptPageNumbers.get(link.targetReceiptId);
+        if (sourcePage < 0 || sourcePage >= mainReportPageCount) return;
+        if (!targetPdfPage) return;
         try {
           pdf.setPage(sourcePage + 1);
           pdf.link(
@@ -198,7 +257,7 @@ export function renderExpenseReports(s) {
             yOnSourcePage * pxToPt,
             cW * pxToPt,
             cH * pxToPt,
-            { pageNumber: targetPage + 1 }
+            { pageNumber: targetPdfPage }
           );
         } catch (e) {
           console.warn("[forward] link annotation failed for", link, e?.message);
