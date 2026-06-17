@@ -201,7 +201,7 @@ export async function buildPrintReport({ title, expsForReport, trips, EXPENSE_CA
         </div>
         <div style="font-size:16px;font-weight:700;color:#f7f8f8;margin-bottom:4px;">${cat?.icon||""} ${escapeHtml(headerTitle)}</div>
         <div style="font-size:12px;color:#8a8f98;margin-bottom:32px;">${escapeHtml(subtext)}</div>
-        <img src="${src}" alt="Receipt" style="width:100%;border-radius:8px;border:1px solid #2a2640;display:block;" />
+        <img src="${src}" alt="Receipt" style="max-width:100%;height:auto;margin:0 auto;border-radius:8px;border:1px solid #2a2640;display:block;" />
       </div>
     `;
   }).join("");

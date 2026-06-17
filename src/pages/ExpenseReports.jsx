@@ -265,7 +265,14 @@ export function renderExpenseReports(s) {
         const maxImgW = pageWidthPt - 2 * m;
         const maxImgH = pageHeightPt - imgTop - m;
         const aspect = natH / natW;
-        let imgW = maxImgW;
+        // Cap the displayed width to the source's natural pixel count at
+        // 96 DPI (1pt = 0.75px). Without this cap, a tightly-cropped 400px
+        // receipt would get stretched to fit the full A4 page width (~500pt
+        // ≈ 666px) — a 1.67× upscale that the user saw as severe blur in the
+        // emailed PDF. Small images now display proportionally smaller but
+        // crisp; large images scale down to fit as before.
+        const maxNaturalPt = natW * 0.75;
+        let imgW = Math.min(maxImgW, maxNaturalPt);
         let imgH = imgW * aspect;
         if (imgH > maxImgH) { imgH = maxImgH; imgW = imgH / aspect; }
         const imgX = (pageWidthPt - imgW) / 2;
