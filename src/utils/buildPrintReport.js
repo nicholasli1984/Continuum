@@ -134,6 +134,14 @@ export async function buildPrintReport({ title, expsForReport, trips, EXPENSE_CA
     const cat = EXPENSE_CATEGORIES.find(c => c.id === exp.category);
     const cur = exp.currency || "USD";
     const src = exp.receiptImage.data;
+    // Itemized expenses often have no top-level description (the breakdown
+    // lives in items[]). Without a fallback the template prints the literal
+    // "null" right above the receipt image — the "shows null value" symptom
+    // user reported. Fall back to category label, then to "Receipt".
+    const headerTitle = exp.description || cat?.label || "Receipt";
+    const amountStr = (exp.amount == null || isNaN(Number(exp.amount))) ? "" : fmtAmt(Number(exp.amount), cur);
+    const subtextPieces = [exp.date || "", amountStr].filter(Boolean);
+    const subtext = subtextPieces.join(" · ");
     return `
       <div id="receipt-${i}" style="page-break-before:always;padding:48px;background:#13111C;min-height:100vh;box-sizing:border-box;scroll-margin-top:64px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:16px;">
@@ -143,8 +151,8 @@ export async function buildPrintReport({ title, expsForReport, trips, EXPENSE_CA
             Back to top
           </a>
         </div>
-        <div style="font-size:16px;font-weight:700;color:#f7f8f8;margin-bottom:4px;">${cat?.icon||""} ${exp.description}</div>
-        <div style="font-size:12px;color:#8a8f98;margin-bottom:32px;">${exp.date||""} · ${fmtAmt(exp.amount,cur)}</div>
+        <div style="font-size:16px;font-weight:700;color:#f7f8f8;margin-bottom:4px;">${cat?.icon||""} ${escapeHtml(headerTitle)}</div>
+        <div style="font-size:12px;color:#8a8f98;margin-bottom:32px;">${escapeHtml(subtext)}</div>
         <img src="${src}" alt="Receipt" style="width:100%;border-radius:8px;border:1px solid #2a2640;display:block;" />
       </div>
     `;
