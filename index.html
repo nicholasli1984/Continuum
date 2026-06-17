@@ -90,22 +90,36 @@
         // Hide the page immediately to prevent flash of old content
         document.documentElement.style.display = "none";
 
+        // Safety net: if any of the steps below stalls or rejects, the user
+        // would be stuck on a black hidden page forever. Force a reload after
+        // 6 seconds no matter what. The old code had no .catch and no
+        // timeout — when caches.delete() failed (quota, locked entry, etc.)
+        // the promise chain broke, location.replace never fired, and the
+        // black screen survived a refresh because _sw_reloading wasn't set
+        // to match V yet.
+        var forceReload = function() {
+          location.replace(location.pathname + "?_cb=" + Date.now() + (location.hash || ""));
+        };
+        var safetyTimer = setTimeout(forceReload, 6000);
+
         var done = Promise.resolve();
         if ("serviceWorker" in navigator) {
           done = navigator.serviceWorker.getRegistrations().then(function(regs) {
-            return Promise.all(regs.map(function(r) { return r.unregister(); }));
-          });
+            return Promise.all(regs.map(function(r) { return r.unregister().catch(function(){}); }));
+          }).catch(function(){});
         }
         done.then(function() {
           if ("caches" in window) {
             return caches.keys().then(function(keys) {
-              return Promise.all(keys.map(function(k) { return caches.delete(k); }));
-            });
+              return Promise.all(keys.map(function(k) { return caches.delete(k).catch(function(){}); }));
+            }).catch(function(){});
           }
         }).then(function() {
-          // Force a true network fetch by busting the URL cache.
-          // Preserve hash so the refresh-button restore (#v=...&t=...) survives.
-          location.replace(location.pathname + "?_cb=" + Date.now() + (location.hash || ""));
+          clearTimeout(safetyTimer);
+          forceReload();
+        }).catch(function() {
+          clearTimeout(safetyTimer);
+          forceReload();
         });
 
         // Block further execution — the page will reload
@@ -164,22 +178,34 @@
 
         function nukeAndReload() {
           document.documentElement.style.display = "none";
+          // Safety net + .catch on every promise — see the matching block at
+          // the top of the file for the why. Without these, any cache-clear
+          // failure left the user staring at a black screen until they
+          // manually wiped site data.
+          var doReload = function() {
+            localStorage.removeItem("_sw_ver");
+            localStorage.removeItem("_sw_reloading");
+            location.replace("/?_cb=" + Date.now() + (location.hash || ""));
+          };
+          var safetyTimer = setTimeout(doReload, 6000);
           var done = Promise.resolve();
           if ("serviceWorker" in navigator) {
             done = navigator.serviceWorker.getRegistrations().then(function(regs) {
-              return Promise.all(regs.map(function(r) { return r.unregister(); }));
-            });
+              return Promise.all(regs.map(function(r) { return r.unregister().catch(function(){}); }));
+            }).catch(function(){});
           }
           done.then(function() {
             if ("caches" in window) {
               return caches.keys().then(function(keys) {
-                return Promise.all(keys.map(function(k) { return caches.delete(k); }));
-              });
+                return Promise.all(keys.map(function(k) { return caches.delete(k).catch(function(){}); }));
+              }).catch(function(){});
             }
           }).then(function() {
-            localStorage.removeItem("_sw_ver");
-            localStorage.removeItem("_sw_reloading");
-            location.replace("/?_cb=" + Date.now() + (location.hash || ""));
+            clearTimeout(safetyTimer);
+            doReload();
+          }).catch(function() {
+            clearTimeout(safetyTimer);
+            doReload();
           });
         }
 
