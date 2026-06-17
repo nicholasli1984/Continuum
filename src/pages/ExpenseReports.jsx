@@ -233,6 +233,30 @@ export function renderExpenseReports(s) {
         pdf.setTextColor(138, 143, 152);
         pdf.setFontSize(10);
         if (rcpt.subtext) pdf.text(rcpt.subtext, m, m + 46);
+        // Back-to-top button (top-right of the page). Mirrors the in-app
+        // .rcpt-back pill: dark fill, hairline border, monospace caps text,
+        // wraps a real pdf.link annotation pointing at page 1 (the report's
+        // first page). The HTML version of this pill is stripped before
+        // html2canvas — that's where the user noticed it was missing — so
+        // we draw the PDF-side equivalent here, one per receipt page.
+        const btnW = 108;
+        const btnH = 22;
+        const btnX = pageWidthPt - m - btnW;
+        const btnY = m - 14; // visually aligns with the Receipt N of M baseline
+        pdf.setFillColor(28, 26, 38);
+        pdf.setDrawColor(60, 58, 72);
+        pdf.setLineWidth(0.5);
+        pdf.roundedRect(btnX, btnY, btnW, btnH, 4, 4, "FD");
+        pdf.setTextColor(247, 248, 248);
+        pdf.setFontSize(8);
+        pdf.setFont("helvetica", "bold");
+        pdf.text("↑ BACK TO TOP", btnX + btnW / 2, btnY + btnH / 2 + 2.8, { align: "center" });
+        pdf.setFont("helvetica", "normal");
+        try {
+          pdf.link(btnX, btnY, btnW, btnH, { pageNumber: 1 });
+        } catch (e) {
+          console.warn("[forward] back-to-top link annotation failed for", rcpt.id, e?.message);
+        }
         // Image area: below the header block, with a margin on each side.
         const imgTop = m + 70;
         const maxImgW = pageWidthPt - 2 * m;
