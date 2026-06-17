@@ -9593,8 +9593,38 @@ Start by introducing yourself briefly in-character with personality, and give an
                 <select onChange={async e => {
                   const newTripId = e.target.value; if (!newTripId) return;
                   const actualTripId = newTripId === "_unassign" ? null : newTripId;
-                  if (user) await supabase.from("expenses").update({ trip_id: actualTripId }).eq("id", exp.id).eq("user_id", user.id);
+                  // Unassigning back to the Inbox means "this expense isn't
+                  // filed under any trip" — and since reports are now strict
+                  // curated lists, the natural follow-on is to also drop it
+                  // from every report that currently includes it. Otherwise
+                  // the report total would silently keep counting an
+                  // expense the user explicitly took back to the Inbox.
+                  // Transferring to a DIFFERENT trip leaves report
+                  // membership alone — the expense is still filed, just
+                  // under a new trip.
+                  const reportsContaining = actualTripId === null
+                    ? standaloneReports.filter(r => Array.isArray(r.includedExpenseIds) && r.includedExpenseIds.includes(exp.id))
+                    : [];
                   setExpenses(prev => prev.map(ex => ex.id === exp.id ? { ...ex, tripId: actualTripId } : ex));
+                  if (reportsContaining.length) {
+                    setStandaloneReports(prev => prev.map(r =>
+                      Array.isArray(r.includedExpenseIds) && r.includedExpenseIds.includes(exp.id)
+                        ? { ...r, includedExpenseIds: r.includedExpenseIds.filter(id => id !== exp.id) }
+                        : r
+                    ));
+                  }
+                  if (user) {
+                    const ops = [
+                      supabase.from("expenses").update({ trip_id: actualTripId }).eq("id", exp.id).eq("user_id", user.id),
+                      ...reportsContaining.map(r =>
+                        supabase.from("expense_reports").update({
+                          included_expense_ids: r.includedExpenseIds.filter(id => id !== exp.id),
+                          updated_at: new Date().toISOString(),
+                        }).eq("id", r.id).eq("user_id", user.id)
+                      ),
+                    ];
+                    await Promise.all(ops);
+                  }
                   e.target.value = "";
                 }} style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: `1px solid ${css.border}`, background: css.surface2, color: css.text, fontSize: 13, fontFamily: "inherit", cursor: "pointer" }}>
                   <option value="">{exp.tripId ? `Currently: ${trip?.tripName || trip?.location || "Trip"}` : "Select a trip..."}</option>

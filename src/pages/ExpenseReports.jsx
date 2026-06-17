@@ -799,30 +799,65 @@ export function renderExpenseReports(s) {
                                     <span style={{ fontSize: 12, color: css.text2, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{exp.description}</span>
                                     {otherReports.length > 0 && <ReportedBadge reports={otherReports} onOpen={openReport} compact />}
                                     <span style={{ fontSize: 11, color: css.text3, fontFamily: "'Geist Mono', monospace", flexShrink: 0 }}>${(expenseUSD(exp)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                    {/* "→ Inbox" button — unassigns the expense from the trip so it
-                                        naturally drops from the report's auto-included set and reappears
-                                        under Unassigned Receipts below. The expense row itself is
-                                        preserved (amount, receipt, notes, etc.) so the user can re-file
-                                        it later from the Inbox or from the Expense detail's "Transfer
-                                        to Another Trip" dropdown. stopPropagation so the surrounding
-                                        row click (which toggles exclude) doesn't also fire. */}
+                                    {/* "→ Inbox" button — unassigns the expense from the trip AND
+                                        immediately removes it from EVERY report that currently includes
+                                        it. Previously we only updated the trip_id, which left the
+                                        expense sitting inside report.includedExpenseIds snapshots and
+                                        kept the report total stale until a manual edit. Snapshot is
+                                        the source of truth now; rip the expense out of it right when
+                                        we unassign the trip. The expense row itself is preserved
+                                        (amount, receipt, notes, etc.) so the user can re-file later
+                                        via the Inbox or the Expense detail's report picker. */}
                                     <button
                                       type="button"
                                       onClick={async (e) => {
                                         e.stopPropagation();
                                         const expId = exp.id;
+                                        const reportsContaining = standaloneReports.filter(r =>
+                                          Array.isArray(r.includedExpenseIds) && r.includedExpenseIds.includes(expId)
+                                        );
+                                        // Optimistic: unassign in expenses state, drop from every snapshot.
                                         setExpenses(prev => prev.map(x => x.id === expId ? { ...x, tripId: null } : x));
+                                        setStandaloneReports(prev => prev.map(r =>
+                                          Array.isArray(r.includedExpenseIds) && r.includedExpenseIds.includes(expId)
+                                            ? { ...r, includedExpenseIds: r.includedExpenseIds.filter(id => id !== expId) }
+                                            : r
+                                        ));
+                                        // Also update the in-progress builder if this expense is in it,
+                                        // so the live preview reflects the change immediately.
+                                        setReportBuilder(p => ({
+                                          ...p,
+                                          excludedExpenseIds: Array.from(new Set([...(p.excludedExpenseIds || []), expId])),
+                                          includedUnassignedIds: (p.includedUnassignedIds || []).filter(id => id !== expId),
+                                        }));
                                         if (user) {
-                                          const { error } = await supabase.from("expenses").update({ trip_id: null }).eq("id", expId).eq("user_id", user.id);
-                                          if (error) {
-                                            console.error("Send to Inbox failed:", error);
-                                            alert(`Couldn't move the expense to Inbox: ${error.message || "unknown error"}.`);
+                                          // Two persists: trip_id null, plus a snapshot strip per
+                                          // affected report. Run in parallel — independent rows.
+                                          const ops = [
+                                            supabase.from("expenses").update({ trip_id: null }).eq("id", expId).eq("user_id", user.id),
+                                            ...reportsContaining.map(r =>
+                                              supabase.from("expense_reports").update({
+                                                included_expense_ids: r.includedExpenseIds.filter(id => id !== expId),
+                                                updated_at: new Date().toISOString(),
+                                              }).eq("id", r.id).eq("user_id", user.id)
+                                            ),
+                                          ];
+                                          const results = await Promise.all(ops);
+                                          const anyError = results.find(r => r?.error);
+                                          if (anyError?.error) {
+                                            console.error("Send to Inbox failed:", anyError.error);
+                                            alert(`Couldn't move the expense to Inbox: ${anyError.error.message || "unknown error"}.`);
                                             // Roll back the optimistic state on failure.
                                             setExpenses(prev => prev.map(x => x.id === expId ? { ...x, tripId: trip.id } : x));
+                                            setStandaloneReports(prev => prev.map(r =>
+                                              reportsContaining.some(rc => rc.id === r.id)
+                                                ? { ...r, includedExpenseIds: reportsContaining.find(rc => rc.id === r.id).includedExpenseIds }
+                                                : r
+                                            ));
                                           }
                                         }
                                       }}
-                                      title="Send to Inbox — unassigns from this trip and removes from the report"
+                                      title="Send to Inbox — unassigns from this trip and removes from every report containing it"
                                       style={{ padding: "3px 8px", borderRadius: 5, border: `1px solid ${css.border}`, background: "transparent", color: css.text2, fontSize: 9, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}
                                     >
                                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
