@@ -3,6 +3,7 @@ import { apiFetch } from "../utils/apiBase";
 import { expenseUSD, groupExpenseTotals, formatCurrencyAmount } from "../utils/expenseUsd";
 import { getReportExpenses as getReportExpensesUtil } from "../utils/reportExpenses";
 import { buildPrintReport as buildPrintReportUtil } from "../utils/buildPrintReport";
+import { renderPdfToImages } from "../utils/pdfRender";
 import ReportedBadge from "../components/ReportedBadge";
 export function renderExpenseReports(s) {
   const { css, isMobile, darkMode, user, trips, expenses, setExpenses, allPrograms, supabase,
@@ -94,24 +95,23 @@ export function renderExpenseReports(s) {
       docEl.querySelectorAll('[id^="receipt-"]').forEach(el => {
         const img = el.querySelector("img");
         if (!img) return;
-        // The receipt header rows live as the first three direct children
-        // of the wrapper div (after the strip of .rcpt-back). Defensively
-        // read textContent so a layout shift doesn't crash the render.
         const kids = Array.from(el.children);
         const label = kids[0]?.textContent?.trim() || "";
         const header = kids[1]?.textContent?.trim() || "";
         const subtext = kids[2]?.textContent?.trim() || "";
-        // Keep the ORIGINAL img element reference, not just its src. We
-        // already paid the cost of decoding it inside the iframe — re-loading
-        // via `new Image(); img.src = dataUrl` for a second time was failing
-        // on the larger receipts (older uncompressed rows up to 2.8MB).
-        // Detached <img> elements retain their decoded pixel data so long
-        // as we hold a JS reference; drawImage on them works fine even
-        // after the parent div is removed from the DOM.
+        // Detect PDF receipts by their data URL prefix. The <img> can't
+        // render `data:application/pdf;...` so the iframe load shows an
+        // empty image, naturalWidth = 0, and previously the receipt page
+        // came out blank with our red "image failed to load" diagnostic.
+        // Tag them here so the receipt loop can route them through
+        // renderPdfToImages instead of the image path.
+        const src = img.src || "";
+        const isPdf = src.startsWith("data:application/pdf");
         receiptPages.push({
           id: el.id,
           img,
-          src: img.src, // backup for the fallback Image() path
+          src,
+          isPdf,
           naturalWidth: img.naturalWidth || 0,
           naturalHeight: img.naturalHeight || 0,
           label,
@@ -214,58 +214,117 @@ export function renderExpenseReports(s) {
         img.onerror = () => reject(new Error("Image load failed"));
         img.src = src;
       });
-      for (let ri = 0; ri < receiptPages.length; ri++) {
-        const rcpt = receiptPages[ri];
-        pdf.addPage();
-        const pageNum = mainReportPageCount + ri + 1;
-        receiptPageNumbers.set(rcpt.id, pageNum);
-        // Background
+      // Common page chrome (dark fill, header, back-to-top pill, page
+      // counter for multi-page receipts) factored out so the image path
+      // and the PDF-receipt path share one definition.
+      const m = 48;
+      const drawReceiptChrome = (rcpt, pageSuffix /* e.g. " · Page 1 of 3" or "" */) => {
         pdf.setFillColor(19, 17, 28); // #13111C
         pdf.rect(0, 0, pageWidthPt, pageHeightPt, "F");
-        // Header text
-        const m = 48;
-        pdf.setTextColor(138, 143, 152); // #8a8f98
+        // Top-left label
+        pdf.setTextColor(138, 143, 152);
         pdf.setFontSize(9);
-        if (rcpt.label) pdf.text(rcpt.label, m, m);
-        pdf.setTextColor(247, 248, 248); // #f7f8f8
+        if (rcpt.label) pdf.text(rcpt.label + (pageSuffix || ""), m, m);
+        // Description + subtext
+        pdf.setTextColor(247, 248, 248);
         pdf.setFontSize(14);
         if (rcpt.header) pdf.text(rcpt.header, m, m + 28);
         pdf.setTextColor(138, 143, 152);
         pdf.setFontSize(10);
         if (rcpt.subtext) pdf.text(rcpt.subtext, m, m + 46);
-        // Back-to-top pill (top-right). First attempt mirrored the in-app
-        // pill's semi-transparent white styling (rgba(255,255,255,0.04) fill
-        // + rgba(255,255,255,0.14) border) — but PDF viewers don't render
-        // those low-alpha values with the same on-screen anti-aliasing,
-        // so the pill was effectively invisible against the dark page.
-        // Switch to a solid teal accent (matching the report's #0EA5A0
-        // brand colour used for the Total in USD heading) so the button
-        // is unmistakable.
+        // Back-to-top pill — solid teal #0EA5A0 with white text + a vector
+        // triangle as the arrow (jsPDF's default Helvetica doesn't carry
+        // a Unicode ↑ glyph; passing "↑" through pdf.text fell back to a
+        // substitution glyph that rendered as "!'", which was the user-
+        // visible artifact). Drawing the triangle as PDF vector primitives
+        // guarantees it's a real upward arrow in every viewer.
         const btnW = 120;
         const btnH = 24;
         const btnX = pageWidthPt - m - btnW;
-        const btnY = m - 12; // top edge sits just above the Receipt N of M baseline
-        pdf.setFillColor(14, 165, 160); // #0EA5A0
+        const btnY = m - 12;
+        pdf.setFillColor(14, 165, 160);
         pdf.roundedRect(btnX, btnY, btnW, btnH, 5, 5, "F");
+        // Arrow triangle (pointing up), then text right of it
+        pdf.setFillColor(255, 255, 255);
+        const cx = btnX + 22; // arrow centre x
+        const cy = btnY + btnH / 2; // arrow centre y
+        pdf.triangle(cx, cy - 4, cx - 4, cy + 3, cx + 4, cy + 3, "F");
         pdf.setTextColor(255, 255, 255);
         pdf.setFontSize(9);
         pdf.setFont("helvetica", "bold");
-        pdf.text("↑ BACK TO TOP", btnX + btnW / 2, btnY + btnH / 2 + 3, { align: "center" });
+        pdf.text("BACK TO TOP", cx + 8, btnY + btnH / 2 + 3, { align: "left" });
         pdf.setFont("helvetica", "normal");
         try {
           pdf.link(btnX, btnY, btnW, btnH, { pageNumber: 1 });
         } catch (e) {
           console.warn("[forward] back-to-top link annotation failed for", rcpt.id, e?.message);
         }
-        // Image area: below the header block, with a margin on each side.
+      };
+      const embedImageOnCurrentPage = async (rcpt, imgSourceCanvasOrImg, natW, natH) => {
         const imgTop = m + 70;
         const maxImgW = pageWidthPt - 2 * m;
         const maxImgH = pageHeightPt - imgTop - m;
-
-        // Prefer the already-decoded original img reference from the
-        // iframe. Falls back to a fresh Image() load only if the original
-        // has no pixels (rare — would mean even the iframe load gate
-        // ticked on a failed image).
+        const aspect = natH / natW;
+        let imgW = maxImgW;
+        let imgH = imgW * aspect;
+        if (imgH > maxImgH) { imgH = maxImgH; imgW = imgH / aspect; }
+        const imgX = (pageWidthPt - imgW) / 2;
+        try {
+          pdf.addImage(imgSourceCanvasOrImg, "JPEG", imgX, imgTop, imgW, imgH);
+        } catch (e) {
+          console.warn("[forward] receipt addImage failed for", rcpt.id, e?.message);
+          pdf.setTextColor(200, 85, 61);
+          pdf.setFontSize(10);
+          pdf.text("(Receipt image could not be embedded.)", m, imgTop + 20);
+        }
+      };
+      for (let ri = 0; ri < receiptPages.length; ri++) {
+        const rcpt = receiptPages[ri];
+        if (rcpt.isPdf) {
+          // ── PDF receipt ── render each page of the source PDF to a PNG,
+          // then add one report-PDF page per source page. The receipt's
+          // jump-link target is the FIRST page of the receipt.
+          let pdfPageImages = [];
+          try {
+            pdfPageImages = await renderPdfToImages(rcpt.src, { scale: 2 });
+          } catch (e) {
+            console.warn("[forward] PDF receipt render failed for", rcpt.id, e?.message);
+            pdf.addPage();
+            receiptPageNumbers.set(rcpt.id, pdf.internal.getNumberOfPages());
+            drawReceiptChrome(rcpt, "");
+            pdf.setTextColor(200, 85, 61);
+            pdf.setFontSize(10);
+            pdf.text("(PDF receipt could not be rendered.)", m, m + 90);
+            continue;
+          }
+          if (!pdfPageImages.length) {
+            pdf.addPage();
+            receiptPageNumbers.set(rcpt.id, pdf.internal.getNumberOfPages());
+            drawReceiptChrome(rcpt, "");
+            pdf.setTextColor(200, 85, 61);
+            pdf.setFontSize(10);
+            pdf.text("(PDF receipt has no pages.)", m, m + 90);
+            continue;
+          }
+          for (let pi = 0; pi < pdfPageImages.length; pi++) {
+            pdf.addPage();
+            const pageNum = pdf.internal.getNumberOfPages();
+            if (pi === 0) receiptPageNumbers.set(rcpt.id, pageNum);
+            const suffix = pdfPageImages.length > 1
+              ? `  ·  PAGE ${pi + 1} OF ${pdfPageImages.length}`
+              : "";
+            drawReceiptChrome(rcpt, suffix);
+            const pg = pdfPageImages[pi];
+            await embedImageOnCurrentPage(rcpt, pg.dataUrl, pg.width, pg.height);
+          }
+          continue;
+        }
+        // ── Image receipt ── single report-PDF page with the embedded image.
+        pdf.addPage();
+        receiptPageNumbers.set(rcpt.id, pdf.internal.getNumberOfPages());
+        drawReceiptChrome(rcpt, "");
+        // Prefer the already-decoded iframe img reference; fall back to a
+        // fresh Image() load if it has no pixels.
         let renderImage = rcpt.img;
         const hasPixels = (im) => im && im.naturalWidth > 0 && im.naturalHeight > 0;
         if (!hasPixels(renderImage)) {
@@ -275,7 +334,7 @@ export function renderExpenseReports(s) {
             console.warn("[forward] receipt image load failed for", rcpt.id, e?.message);
             pdf.setTextColor(200, 85, 61);
             pdf.setFontSize(10);
-            pdf.text("(Receipt image failed to load.)", m, imgTop + 20);
+            pdf.text("(Receipt image failed to load.)", m, m + 90);
             continue;
           }
         }
@@ -284,7 +343,7 @@ export function renderExpenseReports(s) {
         if (natW <= 0 || natH <= 0) {
           pdf.setTextColor(200, 85, 61);
           pdf.setFontSize(10);
-          pdf.text("(Receipt image has no decodable pixels.)", m, imgTop + 20);
+          pdf.text("(Receipt image has no decodable pixels.)", m, m + 90);
           continue;
         }
         // Downsample very large receipts so the PDF doesn't bloat.
@@ -305,26 +364,10 @@ export function renderExpenseReports(s) {
           console.warn("[forward] receipt drawImage failed for", rcpt.id, e?.message);
           pdf.setTextColor(200, 85, 61);
           pdf.setFontSize(10);
-          pdf.text("(Receipt image could not be drawn.)", m, imgTop + 20);
+          pdf.text("(Receipt image could not be drawn.)", m, m + 90);
           continue;
         }
-        // Now compute PDF placement and embed the canvas.
-        const aspect = cH / cW;
-        let imgW = maxImgW;
-        let imgH = imgW * aspect;
-        if (imgH > maxImgH) {
-          imgH = maxImgH;
-          imgW = imgH / aspect;
-        }
-        const imgX = (pageWidthPt - imgW) / 2;
-        try {
-          pdf.addImage(renderCanvas, "JPEG", imgX, imgTop, imgW, imgH);
-        } catch (e) {
-          console.warn("[forward] receipt addImage(canvas) failed for", rcpt.id, e?.message);
-          pdf.setTextColor(200, 85, 61);
-          pdf.setFontSize(10);
-          pdf.text("(Receipt image could not be embedded.)", m, imgTop + 20);
-        }
+        await embedImageOnCurrentPage(rcpt, renderCanvas, cW, cH);
       }
 
       // 3) Layer the link annotations on the rasterised main-report
