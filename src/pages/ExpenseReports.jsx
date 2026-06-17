@@ -73,6 +73,28 @@ export function renderExpenseReports(s) {
       docEl.querySelector("[data-report-toolbar]")?.remove();
       docEl.getElementById("fab-top")?.remove();
       docEl.querySelectorAll(".rcpt-back").forEach(el => el.remove());
+      // Receipt pages carry `min-height: 100vh` for the in-app View Report so
+      // each receipt looks like a full page in the on-screen reader. In this
+      // PDF render path it backfires: the iframe starts at 200px, each
+      // receipt fills that as `100vh = 200px`, then we resize the iframe to
+      // body.scrollHeight, `100vh` re-resolves to the new (much larger)
+      // iframe height, and each receipt balloons into a multi-thousand-pixel
+      // black void with the real receipt image stranded at the top. jsPDF
+      // slices that into A4 pages and the receipt jumps land on black pages.
+      // Strip the constraint so each receipt sits at its natural content
+      // height for the rasterisation; jsPDF still slices into A4 either way.
+      docEl.querySelectorAll('[id^="receipt-"]').forEach(el => {
+        el.style.minHeight = "auto";
+      });
+      // Explicit decode pass — image.complete only means the load attempt
+      // finished, not that pixels are ready for the canvas to sample. Some
+      // browsers defer JPEG decode until first paint; html2canvas can race
+      // that and rasterise an empty image slot. decode() forces the wait.
+      await Promise.allSettled(
+        Array.from(docEl.images || []).map(img =>
+          img.decode ? img.decode().catch(() => {}) : Promise.resolve()
+        )
+      );
       // Resize iframe so html2canvas captures full content
       const fullHeight = docEl.body.scrollHeight;
       iframe.style.height = fullHeight + "px";
