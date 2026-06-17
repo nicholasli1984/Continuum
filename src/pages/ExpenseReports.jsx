@@ -189,7 +189,23 @@ export function renderExpenseReports(s) {
       // 2) Add receipt pages natively. Dark background, small header
       //    "Receipt N of M" + expense description + date, then the image
       //    centred and scaled to fit while preserving aspect ratio.
+      //
+      // Each receipt image is round-tripped through an HTMLCanvasElement
+      // before being handed to jsPDF.addImage. Passing the data URL string
+      // directly to addImage worked some of the time, but was silently
+      // returning a blank embed on iOS Safari / mobile Chrome for large
+      // receipts — the page came out as just the dark background with
+      // no error logged. Drawing into a canvas first forces a real decode
+      // (synchronous, pixel-perfect), and addImage of a canvas element is
+      // jsPDF's most-tested path. Also caps the source dimensions to
+      // 2000px on the longest side to keep PDF size sane.
       const receiptPageNumbers = new Map(); // receipt id → 1-indexed PDF page
+      const loadImage = (src) => new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error("Image load failed"));
+        img.src = src;
+      });
       for (let ri = 0; ri < receiptPages.length; ri++) {
         const rcpt = receiptPages[ri];
         pdf.addPage();
@@ -213,11 +229,51 @@ export function renderExpenseReports(s) {
         const imgTop = m + 70;
         const maxImgW = pageWidthPt - 2 * m;
         const maxImgH = pageHeightPt - imgTop - m;
-        // Scale to fit while preserving aspect ratio. Fall back to
-        // 4:3 portrait if naturalWidth/Height aren't known yet.
-        const nW = rcpt.naturalWidth || 800;
-        const nH = rcpt.naturalHeight || 1000;
-        const aspect = nH / nW;
+
+        // Re-load the receipt image standalone, draw into a canvas of
+        // matching dimensions (capped at 2000px longest side), then
+        // hand the canvas to addImage. This is the bulletproof path.
+        let renderImage;
+        try {
+          renderImage = await loadImage(rcpt.src);
+        } catch (e) {
+          console.warn("[forward] receipt image load failed for", rcpt.id, e?.message);
+          pdf.setTextColor(200, 85, 61);
+          pdf.setFontSize(10);
+          pdf.text("(Receipt image failed to load.)", m, imgTop + 20);
+          continue;
+        }
+        const natW = renderImage.naturalWidth || rcpt.naturalWidth || 800;
+        const natH = renderImage.naturalHeight || rcpt.naturalHeight || 1000;
+        if (natW <= 0 || natH <= 0) {
+          pdf.setTextColor(200, 85, 61);
+          pdf.setFontSize(10);
+          pdf.text("(Receipt image has no decodable pixels.)", m, imgTop + 20);
+          continue;
+        }
+        // Downsample very large receipts so the PDF doesn't bloat.
+        const MAX_DIM = 2000;
+        const longest = Math.max(natW, natH);
+        const dsScale = longest > MAX_DIM ? MAX_DIM / longest : 1;
+        const cW = Math.max(1, Math.round(natW * dsScale));
+        const cH = Math.max(1, Math.round(natH * dsScale));
+        const renderCanvas = document.createElement("canvas");
+        renderCanvas.width = cW;
+        renderCanvas.height = cH;
+        const ctx = renderCanvas.getContext("2d");
+        ctx.fillStyle = "#13111C";
+        ctx.fillRect(0, 0, cW, cH);
+        try {
+          ctx.drawImage(renderImage, 0, 0, cW, cH);
+        } catch (e) {
+          console.warn("[forward] receipt drawImage failed for", rcpt.id, e?.message);
+          pdf.setTextColor(200, 85, 61);
+          pdf.setFontSize(10);
+          pdf.text("(Receipt image could not be drawn.)", m, imgTop + 20);
+          continue;
+        }
+        // Now compute PDF placement and embed the canvas.
+        const aspect = cH / cW;
         let imgW = maxImgW;
         let imgH = imgW * aspect;
         if (imgH > maxImgH) {
@@ -226,12 +282,9 @@ export function renderExpenseReports(s) {
         }
         const imgX = (pageWidthPt - imgW) / 2;
         try {
-          // Format defaults to auto-detect from the data URL prefix
-          // (data:image/jpeg → JPEG, etc). "FAST" compression is fine —
-          // the receipt is already JPEG-compressed; jsPDF just embeds.
-          pdf.addImage(rcpt.src, "", imgX, imgTop, imgW, imgH, undefined, "FAST");
+          pdf.addImage(renderCanvas, "JPEG", imgX, imgTop, imgW, imgH);
         } catch (e) {
-          console.warn("[forward] receipt addImage failed for", rcpt.id, e?.message);
+          console.warn("[forward] receipt addImage(canvas) failed for", rcpt.id, e?.message);
           pdf.setTextColor(200, 85, 61);
           pdf.setFontSize(10);
           pdf.text("(Receipt image could not be embedded.)", m, imgTop + 20);
