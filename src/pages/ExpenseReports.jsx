@@ -93,7 +93,7 @@ export function renderExpenseReports(s) {
       const receiptPages = [];
       docEl.querySelectorAll('[id^="receipt-"]').forEach(el => {
         const img = el.querySelector("img");
-        if (!img?.src) return;
+        if (!img) return;
         // The receipt header rows live as the first three direct children
         // of the wrapper div (after the strip of .rcpt-back). Defensively
         // read textContent so a layout shift doesn't crash the render.
@@ -101,9 +101,17 @@ export function renderExpenseReports(s) {
         const label = kids[0]?.textContent?.trim() || "";
         const header = kids[1]?.textContent?.trim() || "";
         const subtext = kids[2]?.textContent?.trim() || "";
+        // Keep the ORIGINAL img element reference, not just its src. We
+        // already paid the cost of decoding it inside the iframe — re-loading
+        // via `new Image(); img.src = dataUrl` for a second time was failing
+        // on the larger receipts (older uncompressed rows up to 2.8MB).
+        // Detached <img> elements retain their decoded pixel data so long
+        // as we hold a JS reference; drawImage on them works fine even
+        // after the parent div is removed from the DOM.
         receiptPages.push({
-          id: el.id, // "receipt-0", "receipt-1", ...
-          src: img.src,
+          id: el.id,
+          img,
+          src: img.src, // backup for the fallback Image() path
           naturalWidth: img.naturalWidth || 0,
           naturalHeight: img.naturalHeight || 0,
           label,
@@ -230,18 +238,22 @@ export function renderExpenseReports(s) {
         const maxImgW = pageWidthPt - 2 * m;
         const maxImgH = pageHeightPt - imgTop - m;
 
-        // Re-load the receipt image standalone, draw into a canvas of
-        // matching dimensions (capped at 2000px longest side), then
-        // hand the canvas to addImage. This is the bulletproof path.
-        let renderImage;
-        try {
-          renderImage = await loadImage(rcpt.src);
-        } catch (e) {
-          console.warn("[forward] receipt image load failed for", rcpt.id, e?.message);
-          pdf.setTextColor(200, 85, 61);
-          pdf.setFontSize(10);
-          pdf.text("(Receipt image failed to load.)", m, imgTop + 20);
-          continue;
+        // Prefer the already-decoded original img reference from the
+        // iframe. Falls back to a fresh Image() load only if the original
+        // has no pixels (rare — would mean even the iframe load gate
+        // ticked on a failed image).
+        let renderImage = rcpt.img;
+        const hasPixels = (im) => im && im.naturalWidth > 0 && im.naturalHeight > 0;
+        if (!hasPixels(renderImage)) {
+          try {
+            renderImage = await loadImage(rcpt.src);
+          } catch (e) {
+            console.warn("[forward] receipt image load failed for", rcpt.id, e?.message);
+            pdf.setTextColor(200, 85, 61);
+            pdf.setFontSize(10);
+            pdf.text("(Receipt image failed to load.)", m, imgTop + 20);
+            continue;
+          }
         }
         const natW = renderImage.naturalWidth || rcpt.naturalWidth || 800;
         const natH = renderImage.naturalHeight || rcpt.naturalHeight || 1000;
