@@ -9612,79 +9612,60 @@ Start by introducing yourself briefly in-character with personality, and give an
                   don't auto-attach, so adding has to be explicit. Hidden when
                   there are no applicable reports. */}
               {(() => {
-                const applicable = standaloneReports.filter(r => {
-                  if (r.reportType === "trip_cost") return false;
-                  if (exp.tripId) return (r.selectedTripIds || []).includes(exp.tripId);
-                  // Unfiled expense: any reimbursement report could explicitly
-                  // include it via the unassigned bucket.
-                  return true;
-                });
+                // Simplified picker: a report is just a curated list of
+                // expense IDs. Show every reimbursement report and let the
+                // user explicitly add/remove this expense. No modes, no
+                // selectedTripIds magic, no Locked/Unlocked label. The
+                // auto-backfill effect in App.jsx guarantees every report
+                // has an includedExpenseIds array by the time we get here.
+                const applicable = standaloneReports.filter(r => r.reportType !== "trip_cost");
                 if (!applicable.length) return null;
-                const isIncluded = (r) => {
-                  if (Array.isArray(r.includedExpenseIds) && r.includedExpenseIds.includes(exp.id)) return true;
-                  // Legacy live-filter reports — for trip-attached this is
-                  // "in selectedTripIds and not excluded"; for unfiled it's
-                  // "in includedUnassignedIds".
-                  if (!Array.isArray(r.includedExpenseIds)) {
-                    if (exp.tripId) {
-                      return (r.selectedTripIds || []).includes(exp.tripId) && !(r.excludedExpenseIds || []).includes(exp.id);
-                    }
-                    return (r.includedUnassignedIds || []).includes(exp.id);
-                  }
-                  return false;
-                };
-                const addToReport = async (report) => {
-                  const newSnapshot = Array.isArray(report.includedExpenseIds)
-                    ? Array.from(new Set([...(report.includedExpenseIds || []), exp.id]))
-                    : null; // legacy report — leave snapshot null, will be set when user explicitly Locks
-                  const newUnassigned = !exp.tripId
-                    ? Array.from(new Set([...(report.includedUnassignedIds || []), exp.id]))
-                    : (report.includedUnassignedIds || []);
-                  const newExcluded = (report.excludedExpenseIds || []).filter(x => x !== exp.id);
-                  const updatePayload = {
-                    excluded_expense_ids: newExcluded,
-                    included_unassigned_expense_ids: newUnassigned,
-                    updated_at: new Date().toISOString(),
-                  };
-                  if (newSnapshot) updatePayload.included_expense_ids = newSnapshot;
+                const inReport = (r) => Array.isArray(r.includedExpenseIds) && r.includedExpenseIds.includes(exp.id);
+                const updateReportMembership = async (report, include) => {
+                  const existing = Array.isArray(report.includedExpenseIds) ? report.includedExpenseIds : [];
+                  const nextIds = include
+                    ? Array.from(new Set([...existing, exp.id]))
+                    : existing.filter(x => x !== exp.id);
                   if (user) {
-                    const { error } = await supabase.from("expense_reports").update(updatePayload).eq("id", report.id).eq("user_id", user.id);
+                    const { error } = await supabase
+                      .from("expense_reports")
+                      .update({ included_expense_ids: nextIds, updated_at: new Date().toISOString() })
+                      .eq("id", report.id)
+                      .eq("user_id", user.id);
                     if (error) {
-                      alert(`Couldn't add to report: ${error.message || "unknown error"}.`);
+                      alert(`Couldn't ${include ? "add to" : "remove from"} report: ${error.message || "unknown error"}.`);
                       return;
                     }
                   }
-                  setStandaloneReports(prev => prev.map(r => r.id === report.id ? {
-                    ...r,
-                    includedExpenseIds: newSnapshot || r.includedExpenseIds,
-                    includedUnassignedIds: newUnassigned,
-                    excludedExpenseIds: newExcluded,
-                  } : r));
+                  setStandaloneReports(prev => prev.map(r =>
+                    r.id === report.id ? { ...r, includedExpenseIds: nextIds } : r
+                  ));
                 };
                 return (
                   <div style={{ marginTop: 20 }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>
-                      Add to Expense Report
+                      Expense Reports
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                       {applicable.map(r => {
-                        const included = isIncluded(r);
+                        const included = inReport(r);
+                        const tripCount = (r.selectedTripIds || []).length;
+                        const itemCount = Array.isArray(r.includedExpenseIds) ? r.includedExpenseIds.length : 0;
                         return (
                           <div key={r.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", borderRadius: 8, border: `1px solid ${css.border}`, background: included ? (D ? "rgba(34,197,94,0.06)" : "rgba(34,197,94,0.04)") : "transparent" }}>
                             <div style={{ minWidth: 0, flex: 1, marginRight: 10 }}>
                               <div style={{ fontSize: 13, color: css.text, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.title || "Untitled report"}</div>
                               <div style={{ fontSize: 10, color: css.text3, marginTop: 2 }}>
-                                {Array.isArray(r.includedExpenseIds) ? "Locked" : "Unlocked"}
-                                {(r.selectedTripIds || []).length > 0 && ` · ${r.selectedTripIds.length} trip${r.selectedTripIds.length === 1 ? "" : "s"}`}
+                                {itemCount} item{itemCount === 1 ? "" : "s"}
+                                {tripCount > 0 && ` · ${tripCount} trip${tripCount === 1 ? "" : "s"}`}
                               </div>
                             </div>
                             {included ? (
-                              <span style={{ fontSize: 11, fontWeight: 700, color: "#22c55e", display: "inline-flex", alignItems: "center", gap: 4, padding: "4px 10px", borderRadius: 6, background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.18)", whiteSpace: "nowrap" }}>
-                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-                                Included
-                              </span>
+                              <button onClick={() => updateReportMembership(r, false)} title="Remove from this report" style={{ padding: "5px 12px", borderRadius: 6, border: `1px solid rgba(200,85,61,0.3)`, background: "rgba(200,85,61,0.04)", color: "#C8553D", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
+                                Remove
+                              </button>
                             ) : (
-                              <button onClick={() => addToReport(r)} style={{ padding: "5px 12px", borderRadius: 6, border: `1px solid ${css.accent}`, background: "transparent", color: css.accent, fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
+                              <button onClick={() => updateReportMembership(r, true)} style={{ padding: "5px 12px", borderRadius: 6, border: `1px solid ${css.accent}`, background: "transparent", color: css.accent, fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
                                 + Add
                               </button>
                             )}

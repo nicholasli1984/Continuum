@@ -437,36 +437,13 @@ export function renderExpenseReports(s) {
       });
     };
 
-    // Lock = freeze the current set of expense IDs as the report's snapshot
-    //        so new expenses on the report's trips don't silently join.
-    // Unlock = clear the snapshot, falling back to the legacy live-filter
-    //          behavior where any expense matching selectedTripIds joins.
-    // Trip-cost reports use synthetic segment IDs that aren't real expenses,
-    // so locking doesn't apply to them.
-    const toggleReportLock = async (report) => {
-      if (report.reportType === "trip_cost") return;
-      const isLocked = Array.isArray(report.includedExpenseIds);
-      const newSnapshot = isLocked
-        ? null
-        : [
-            ...expenses
-              .filter(e => (report.selectedTripIds || []).includes(e.tripId) && !(report.excludedExpenseIds || []).includes(e.id))
-              .map(e => e.id),
-            ...expenses
-              .filter(e => !e.tripId && (report.includedUnassignedIds || []).includes(e.id))
-              .map(e => e.id),
-          ];
-      if (user) {
-        await supabase
-          .from("expense_reports")
-          .update({ included_expense_ids: newSnapshot, updated_at: new Date().toISOString() })
-          .eq("id", report.id)
-          .eq("user_id", user.id);
-      }
-      setStandaloneReports(prev => prev.map(r =>
-        r.id === report.id ? { ...r, includedExpenseIds: newSnapshot } : r
-      ));
-    };
+    // Lock / Unlock UI removed — the two-modes model (snapshot vs legacy
+    // live-filter) was a sharp edge that confused users. A report is now
+    // simply a curated list of expenses: add via the Edit builder or the
+    // "Add to Report" picker on the expense detail; remove via the Edit
+    // builder's checkbox or the "→ Inbox" button. The auto-backfill effect
+    // in App.jsx still snapshots legacy rows on load so this invariant
+    // holds for every report, old or new.
 
     const getReportExpenses = (report) => getReportExpensesUtil(report, trips, expenses);
 
@@ -700,38 +677,6 @@ export function renderExpenseReports(s) {
                         Unlocked = live filter, expenses on trips in the report
                         keep joining as they're added. Default for all reports
                         is now LOCKED (the auto-lock backfill in App.jsx). */}
-                    {report.reportType !== "trip_cost" && (() => {
-                      const isLocked = Array.isArray(report.includedExpenseIds);
-                      return (
-                        <button
-                          onClick={() => toggleReportLock(report)}
-                          title={isLocked
-                            ? "Unlock — new expenses on this report's trips will auto-attach again"
-                            : "Lock — freeze this report so new expenses don't auto-attach"}
-                          style={{
-                            padding: "5px 10px", borderRadius: 8,
-                            border: `1px solid ${isLocked ? "rgba(212,116,45,0.35)" : css.border}`,
-                            background: isLocked ? "rgba(212,116,45,0.08)" : "transparent",
-                            color: isLocked ? css.accent : css.text2,
-                            fontSize: 10, fontWeight: 600, cursor: "pointer",
-                            display: "flex", alignItems: "center", gap: 4,
-                          }}
-                        >
-                          {isLocked ? (
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                              <rect x="3" y="11" width="18" height="11" rx="2" />
-                              <path d="M7 11V7a5 5 0 0110 0v4" />
-                            </svg>
-                          ) : (
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                              <rect x="3" y="11" width="18" height="11" rx="2" />
-                              <path d="M7 11V7a5 5 0 019.9-1" />
-                            </svg>
-                          )}
-                          {isLocked ? "Locked" : "Unlocked"}
-                        </button>
-                      );
-                    })()}
                     <button onClick={() => deleteReport(report.id)} style={{ width: 24, height: 24, borderRadius: 8, border: `1px solid rgba(200,85,61,0.2)`, background: "rgba(200,85,61,0.06)", color: "#C8553D", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
                   </div>
                 </div>
