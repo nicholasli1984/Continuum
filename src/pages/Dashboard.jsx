@@ -141,7 +141,7 @@ function DestinationWeather({ css, dv, isMobile, city, compact }) {
 // Next-flight boarding-pass card(s) — shows flights within 4 days of departure.
 // A single flight renders the full boarding pass; multiple flights stack like
 // wallet cards that expand on tap. Includes destination weather and lounges.
-function NextFlightCard({ css, dv, D, isMobile, trips, getFlightLiveStatus, AIRPORT_CITY, linkedAccounts, user, setActiveView, setTripDetailId, setTripDetailSegIdx, openDirections }) {
+function NextFlightCard({ css, dv, D, isMobile, trips, sharedTrips, getFlightLiveStatus, AIRPORT_CITY, linkedAccounts, user, setActiveView, setTripDetailId, setTripDetailSegIdx, openDirections }) {
   const [expanded, setExpanded] = useState(null); // null = wallet stack; index = that flight expanded
 
   // Flight-card lifecycle:
@@ -178,10 +178,19 @@ function NextFlightCard({ css, dv, D, isMobile, trips, getFlightLiveStatus, AIRP
     if (hhmm) return `${hhmm[1].padStart(2, "0")}:${hhmm[2]}`;
     return null;
   };
+  // Pull flights from both owned trips AND shared trips. The card used to
+  // only walk `trips`, so a flight on a trip your travel partner shared with
+  // you would never surface as your upcoming departure. Dedupe by trip id +
+  // segment index so a shared trip that's also somehow in `trips` (sync
+  // race) isn't double-counted.
+  const seenTripSeg = new Set();
   const allFlights = [];
-  for (const trip of (trips || [])) {
+  for (const trip of [...(trips || []), ...(sharedTrips || [])]) {
     const segs = (trip.segments || []).filter(x => !x._isMeta && x.type === "flight" && (x.flightNumber || x.route));
     segs.forEach((seg, si) => {
+      const key = `${trip.id}|${si}`;
+      if (seenTripSeg.has(key)) return;
+      seenTripSeg.add(key);
       const d = seg.date || trip.date;
       if (!d) return;
       const time = to24h(seg.departureTime) || "00:00";
@@ -1414,7 +1423,7 @@ export function renderDashboard(s) {
         {/* Next 30 Days rail removed — merged into the Upcoming Trips horizontal rail below. */}
 
         {/* ── Up next — boarding-pass card (within 4 days) ── */}
-        <NextFlightCard css={css} dv={dv} D={D} isMobile={isMobile} trips={trips} getFlightLiveStatus={getFlightLiveStatus} AIRPORT_CITY={AIRPORT_CITY} linkedAccounts={linkedAccounts} user={user} setActiveView={setActiveView} setTripDetailId={setTripDetailId} setTripDetailSegIdx={setTripDetailSegIdx} openDirections={openDirections} />
+        <NextFlightCard css={css} dv={dv} D={D} isMobile={isMobile} trips={trips} sharedTrips={sharedTrips} getFlightLiveStatus={getFlightLiveStatus} AIRPORT_CITY={AIRPORT_CITY} linkedAccounts={linkedAccounts} user={user} setActiveView={setActiveView} setTripDetailId={setTripDetailId} setTripDetailSegIdx={setTripDetailSegIdx} openDirections={openDirections} />
 
         {/* ── Upcoming Trips — Editorial Timeline ── */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", margin: "32px 0 20px", paddingBottom: 14, borderBottom: `1px solid ${css.border}` }}>
