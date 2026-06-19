@@ -141,7 +141,7 @@ function DestinationWeather({ css, dv, isMobile, city, compact }) {
 // Next-flight boarding-pass card(s) — shows flights within 4 days of departure.
 // A single flight renders the full boarding pass; multiple flights stack like
 // wallet cards that expand on tap. Includes destination weather and lounges.
-function NextFlightCard({ css, dv, D, isMobile, trips, sharedTrips, getFlightLiveStatus, AIRPORT_CITY, linkedAccounts, user, setActiveView, setTripDetailId, setTripDetailSegIdx, openDirections }) {
+function NextFlightCard({ css, dv, D, isMobile, trips, sharedTrips, hideShared, getFlightLiveStatus, AIRPORT_CITY, linkedAccounts, user, setActiveView, setTripDetailId, setTripDetailSegIdx, openDirections }) {
   const [expanded, setExpanded] = useState(null); // null = wallet stack; index = that flight expanded
 
   // Flight-card lifecycle:
@@ -178,14 +178,17 @@ function NextFlightCard({ css, dv, D, isMobile, trips, sharedTrips, getFlightLiv
     if (hhmm) return `${hhmm[1].padStart(2, "0")}:${hhmm[2]}`;
     return null;
   };
-  // Pull flights from both owned trips AND shared trips. The card used to
-  // only walk `trips`, so a flight on a trip your travel partner shared with
-  // you would never surface as your upcoming departure. Dedupe by trip id +
-  // segment index so a shared trip that's also somehow in `trips` (sync
-  // race) isn't double-counted.
+  // Pull flights from both owned trips AND shared trips, unless the user
+  // has toggled "Shared OFF" — in which case shared trips drop out of the
+  // candidate set (matches the My Trips rail's behaviour). Dedupe by trip
+  // id + segment index so a shared trip that's also somehow in `trips`
+  // (sync race) isn't double-counted.
   const seenTripSeg = new Set();
   const allFlights = [];
-  for (const trip of [...(trips || []), ...(sharedTrips || [])]) {
+  const tripsToWalk = hideShared
+    ? (trips || [])
+    : [...(trips || []), ...(sharedTrips || [])];
+  for (const trip of tripsToWalk) {
     const segs = (trip.segments || []).filter(x => !x._isMeta && x.type === "flight" && (x.flightNumber || x.route));
     segs.forEach((seg, si) => {
       const key = `${trip.id}|${si}`;
@@ -220,7 +223,8 @@ function NextFlightCard({ css, dv, D, isMobile, trips, sharedTrips, getFlightLiv
   upcoming.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
   if (upcoming.length === 0) return null;
 
-  const passenger = (user?.user_metadata?.first_name ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ""}`.trim() : (user?.user_metadata?.name || (user?.email || "").split("@")[0] || "You"));
+  // "You" name fallback used when the trip is owned by the current user.
+  const myName = (user?.user_metadata?.first_name ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ""}`.trim() : (user?.user_metadata?.name || (user?.email || "").split("@")[0] || "You"));
   const CLS = { business_first: "Business", business: "Business", first: "First", premium_economy: "Premium", economy: "Economy" };
 
   // Derive everything one card needs from a {seg, trip, days, segIdx}.
@@ -256,7 +260,15 @@ function NextFlightCard({ css, dv, D, isMobile, trips, sharedTrips, getFlightLiv
     const countdown = departed
       ? ((liveStatus.includes("route") || liveStatus.includes("air") || liveStatus.includes("active")) ? "In flight" : "Departed")
       : days === 0 ? "Today" : days === 1 ? "Tomorrow" : `In ${days} days`;
-    return { fl, trip, segIdx, dep, arr, depCity, arrCity, live, fnum, carrier, logo, aircraft, aircraftReg, seat, cls, fdate, depTime, arrTime, overnight, countdown };
+    // Passenger label: on a SHARED trip the booking belongs to whoever
+    // shared it, not to the current user. The share record stores their
+    // display name on `trip._sharedBy` — use that. Fall back to "Shared
+    // traveler" if for some reason the name isn't on the row. Owned
+    // trips show the current user's name as before.
+    const passenger = trip?._shared
+      ? (trip._sharedBy || "Shared traveler")
+      : myName;
+    return { fl, trip, segIdx, dep, arr, depCity, arrCity, live, fnum, carrier, logo, aircraft, aircraftReg, seat, cls, fdate, depTime, arrTime, overnight, countdown, passenger };
   };
 
   const loungesFor = (f) => {
@@ -329,7 +341,7 @@ function NextFlightCard({ css, dv, D, isMobile, trips, sharedTrips, getFlightLiv
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
             <div style={{ minWidth: 0 }}>
               <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: dv.taupe }}>Passenger</div>
-              <div style={{ fontFamily: "'Fraunces', serif", fontSize: isMobile ? 19 : 22, fontWeight: 500, color: dv.ink, marginTop: 2 }}>{passenger}</div>
+              <div style={{ fontFamily: "'Fraunces', serif", fontSize: isMobile ? 19 : 22, fontWeight: 500, color: dv.ink, marginTop: 2 }}>{f.passenger}</div>
             </div>
             <Logo src={f.logo} alt={f.carrier} size={36} />
           </div>
@@ -1423,7 +1435,7 @@ export function renderDashboard(s) {
         {/* Next 30 Days rail removed — merged into the Upcoming Trips horizontal rail below. */}
 
         {/* ── Up next — boarding-pass card (within 4 days) ── */}
-        <NextFlightCard css={css} dv={dv} D={D} isMobile={isMobile} trips={trips} sharedTrips={sharedTrips} getFlightLiveStatus={getFlightLiveStatus} AIRPORT_CITY={AIRPORT_CITY} linkedAccounts={linkedAccounts} user={user} setActiveView={setActiveView} setTripDetailId={setTripDetailId} setTripDetailSegIdx={setTripDetailSegIdx} openDirections={openDirections} />
+        <NextFlightCard css={css} dv={dv} D={D} isMobile={isMobile} trips={trips} sharedTrips={sharedTrips} hideShared={hideShared} getFlightLiveStatus={getFlightLiveStatus} AIRPORT_CITY={AIRPORT_CITY} linkedAccounts={linkedAccounts} user={user} setActiveView={setActiveView} setTripDetailId={setTripDetailId} setTripDetailSegIdx={setTripDetailSegIdx} openDirections={openDirections} />
 
         {/* ── Upcoming Trips — Editorial Timeline ── */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", margin: "32px 0 20px", paddingBottom: 14, borderBottom: `1px solid ${css.border}` }}>
