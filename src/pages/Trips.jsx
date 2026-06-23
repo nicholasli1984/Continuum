@@ -451,21 +451,22 @@ export function renderTrips(s) {
             const close = () => setExpandedSegmentKey?.(null);
             return (
               /* Single-scroll modal: the inner card IS the scroll container,
-                 header is position: sticky at top, footer is position: sticky
-                 at bottom. The previous nested-flex pattern (card with
-                 overflow: hidden, body child with flex:1 + overflowY: auto)
-                 worked on desktop but failed on iOS PWA — the body wouldn't
-                 accept touch-scroll and the footer stayed clipped off-screen.
-                 Single-scroll containers are the iOS-friendly pattern: one
-                 div with overflow-y: auto, content flows inside it normally,
-                 sticky positioning pins what needs to stay visible. */
-              <div onClick={close} style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: isMobile ? "flex-end" : "center", justifyContent: "center", padding: isMobile ? 0 : 24, overscrollBehavior: "contain" }}>
+                 header is sticky at top, footer is sticky at bottom. Single-
+                 scroll containers are the iOS-friendly pattern: one div with
+                 overflow-y: auto, content flows inside it normally, sticky
+                 positioning pins what needs to stay visible.
+                 Overlay also gets a chunky bottom padding so the modal docks
+                 ABOVE the Continuum bottom tab bar instead of hiding the
+                 sticky footer beneath it. The bottom nav (Ask Continuum row
+                 + tab buttons) is ~120-132px tall plus the iOS safe-area
+                 home-indicator zone. */
+              <div onClick={close} style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: isMobile ? "flex-end" : "center", justifyContent: "center", padding: isMobile ? "0 0 calc(132px + env(safe-area-inset-bottom)) 0" : 24, overscrollBehavior: "contain" }}>
                 <div onClick={e => e.stopPropagation()} style={{
                   width: "100%", maxWidth: 560,
-                  maxHeight: isMobile ? "calc(var(--app-height, 100dvh) * 0.92)" : "86vh",
+                  maxHeight: isMobile ? "calc(var(--app-height, 100dvh) * 0.78)" : "86vh",
                   overflowY: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain",
                   background: ev.bone, border: `1px solid ${ev.cream}`,
-                  borderRadius: isMobile ? "18px 18px 0 0" : 16,
+                  borderRadius: isMobile ? 18 : 16,
                   boxShadow: "0 24px 70px rgba(0,0,0,0.4)",
                 }}>
                   {/* Sticky header — pins to the top while the user scrolls the body. */}
