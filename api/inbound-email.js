@@ -192,32 +192,37 @@ async function handler(req, res) {
       return { isExpense, token: tokenFromAddr };
     };
 
-    // Walk every candidate; first one with a meaningful classification wins
-    let isExpenseEmail = false;
+    // Walk every candidate; the explicit recipient determines routing.
+    // expenses@ → expense. trips@ → itinerary. Either signal, once seen, is sticky.
+    let sawExplicitExpenses = false;
+    let sawExplicitTrips = false;
     let toToken = "";
     for (const addr of candidateRecipients) {
       const c = classifyRecipient(addr);
-      if (c.isExpense) { isExpenseEmail = true; if (!toToken && c.token && c.token !== "expenses") toToken = c.token; }
+      const localPart = (addr.split("@")[0] || "").toLowerCase().replace(/\+.*$/, "");
+      if (c.isExpense) { sawExplicitExpenses = true; if (!toToken && c.token && c.token !== "expenses") toToken = c.token; }
+      else if (localPart === "trips") { sawExplicitTrips = true; }
       else if (!toToken && c.token && c.token !== "expenses" && c.token !== "trips") toToken = c.token;
     }
 
-    // Legacy fallbacks from the original first-To-only parser (in case our header
-    // enumeration missed something)
+    // Legacy fallbacks from the original first-To-only parser
     const toRaw = (toEmail.match(/<?([^@<]+)@/)?.[1] || "").trim().toLowerCase();
     const toDomain = (toEmail.match(/@([^\s>]+)/)?.[1] || "").trim().toLowerCase();
-    if (!isExpenseEmail) {
-      isExpenseEmail = toDomain.startsWith("expenses.") || toDomain === "expenses.gocontinuum.app" || toRaw === "expenses" || toRaw.includes("+expense");
+    if (!sawExplicitExpenses && (toDomain.startsWith("expenses.") || toDomain === "expenses.gocontinuum.app" || toRaw === "expenses" || toRaw.includes("+expense"))) {
+      sawExplicitExpenses = true;
     }
+    if (!sawExplicitTrips && toRaw === "trips") sawExplicitTrips = true;
     if (!toToken) toToken = toRaw.replace(/\+expense$/, "").replace(/\+.*$/, "");
 
-    // Last-resort fallback: scan the raw text for "expenses@gocontinuum.app" —
-    // if present anywhere in routing envelopes, treat this as expense email.
-    if (!isExpenseEmail && /\bexpenses@gocontinuum\.app\b/i.test(rawText.slice(0, 4000))) {
+    // Explicit recipient wins. Trips@ beats body-scan; expenses@ beats body-scan.
+    let isExpenseEmail = sawExplicitExpenses;
+    // Body-scan fallback only when NEITHER explicit signal was found.
+    if (!sawExplicitExpenses && !sawExplicitTrips && /\bexpenses@gocontinuum\.app\b/i.test(rawText.slice(0, 4000))) {
       isExpenseEmail = true;
     }
 
     console.log("[inbound-email] ROUTE", JSON.stringify({
-      isExpenseEmail, toToken, candidateRecipients, toRaw, toDomain,
+      isExpenseEmail, sawExplicitExpenses, sawExplicitTrips, toToken, candidateRecipients, toRaw, toDomain,
     }));
 
     // Look up user — first by token in the TO address, then by any candidate sender
