@@ -70,6 +70,8 @@ const _WalletPage = lazyRender(() => import("./pages/Wallet"), "renderWallet");
 const renderWalletPage = (...args) => <_WalletPage args={args} />;
 const _AwardSweetSpotsPage = lazyRender(() => import("./pages/AwardSweetSpots"), "renderAwardSweetSpots");
 const renderAwardSweetSpotsPage = (...args) => <_AwardSweetSpotsPage args={args} />;
+const _TasksPage = lazyRender(() => import("./pages/Tasks"), "renderTasks");
+const renderTasksPage = (...args) => <_TasksPage args={args} />;
 // Premium / paid-tier system removed — see git history if reintroducing.
 import Tour from "./components/tour/Tour";
 import VoucherModal from "./components/VoucherModal";
@@ -6835,6 +6837,8 @@ Start by introducing yourself briefly in-character with personality, and give an
   // lands on `defaultSubView`.
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: <NavIcon d={<><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="4" rx="1"/><rect x="14" y="11" width="7" height="10" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></>} />, gradient: "radial-gradient(circle, rgba(212,116,45,0.18) 0%, rgba(212,116,45,0.06) 50%, transparent 100%)", hoverColor: "#D4742D" },
+    // Tasks — shared household to-do ledger
+    { id: "tasks", label: "Tasks", icon: <NavIcon d={<><path d="M9 6h11"/><path d="M9 12h11"/><path d="M9 18h11"/><path d="M4 6l1 1 2-2"/><path d="M4 12l1 1 2-2"/><path d="M4 18l1 1 2-2"/></>} />, gradient: "radial-gradient(circle, rgba(79,70,229,0.18) 0%, rgba(79,70,229,0.06) 50%, transparent 100%)", hoverColor: "#6366F1" },
     // My Trips — Trips + Packing
     { id: "mytrips", label: "My Trips", icon: <NavIcon d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1L11 12l-2 3H6l-2 2 4-1 4-1 2 7.5 2-2v-3l-3-2 4.8-7.3" />, gradient: "radial-gradient(circle, rgba(59,130,246,0.18) 0%, rgba(59,130,246,0.06) 50%, transparent 100%)", hoverColor: "#3b82f6", subViews: ["trips", "packing"], defaultSubView: "trips" },
     // Travel — Programs / Alliances / Wallet / Awards / Lounges
@@ -6859,6 +6863,8 @@ Start by introducing yourself briefly in-character with personality, and give an
     expensesplit: renderExpensesHub, expensereports: renderExpensesHub,
     // Feedback hub
     feedback: () => <FeedbackPage css={css} isMobile={isMobile} darkMode={darkMode} user={user} />,
+    // Tasks — shared household ledger
+    tasks: () => renderTasksPage({ css, isMobile, darkMode, user, supabase }),
     // legacy / still-reachable views
     expenses: renderExpenses, optimizer: renderOptimizer, insights: renderInsights, reports: renderReports, news: renderNews,
   };
