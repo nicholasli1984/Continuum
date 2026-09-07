@@ -6837,14 +6837,14 @@ Start by introducing yourself briefly in-character with personality, and give an
   // lands on `defaultSubView`.
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: <NavIcon d={<><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="4" rx="1"/><rect x="14" y="11" width="7" height="10" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></>} />, gradient: "radial-gradient(circle, rgba(212,116,45,0.18) 0%, rgba(212,116,45,0.06) 50%, transparent 100%)", hoverColor: "#D4742D" },
+    // Tasks — shared household to-do ledger
+    { id: "tasks", label: "Tasks", icon: <NavIcon d={<><path d="M9 6h11"/><path d="M9 12h11"/><path d="M9 18h11"/><path d="M4 6l1 1 2-2"/><path d="M4 12l1 1 2-2"/><path d="M4 18l1 1 2-2"/></>} />, gradient: "radial-gradient(circle, rgba(79,70,229,0.18) 0%, rgba(79,70,229,0.06) 50%, transparent 100%)", hoverColor: "#6366F1" },
     // My Trips — Trips + Packing
     { id: "mytrips", label: "My Trips", icon: <NavIcon d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1L11 12l-2 3H6l-2 2 4-1 4-1 2 7.5 2-2v-3l-3-2 4.8-7.3" />, gradient: "radial-gradient(circle, rgba(59,130,246,0.18) 0%, rgba(59,130,246,0.06) 50%, transparent 100%)", hoverColor: "#3b82f6", subViews: ["trips", "packing"], defaultSubView: "trips" },
     // Travel — Programs / Alliances / Wallet / Awards / Lounges
     { id: "travel", label: "Travel", icon: <NavIcon d={<><circle cx="12" cy="12" r="3"/><path d="M12 2a10 10 0 0 1 10 10"/><path d="M22 12a10 10 0 0 1-10 10"/><path d="M12 22A10 10 0 0 1 2 12"/><path d="M2 12A10 10 0 0 1 12 2"/></>} />, gradient: "radial-gradient(circle, rgba(184,146,74,0.18) 0%, rgba(184,146,74,0.06) 50%, transparent 100%)", hoverColor: "#B8924A", subViews: ["programs", "lounges", "alliances", "wallet", "awards"], defaultSubView: "programs" },
     // Expenses — Expense Split + Expense Reports
     { id: "expenses", label: "Expenses", icon: <NavIcon d={<><path d="M16 3h5v5"/><line x1="21" y1="3" x2="14" y2="10"/><path d="M8 21H3v-5"/><line x1="3" y1="21" x2="10" y2="14"/><line x1="12" y1="2" x2="12" y2="22"/></>} />, gradient: "radial-gradient(circle, rgba(200,85,61,0.18) 0%, rgba(200,85,61,0.06) 50%, transparent 100%)", hoverColor: "#C8553D", subViews: ["expensesplit", "expensereports"], defaultSubView: "expensesplit" },
-    // Tasks — shared household to-do ledger
-    { id: "tasks", label: "Tasks", icon: <NavIcon d={<><path d="M9 6h11"/><path d="M9 12h11"/><path d="M9 18h11"/><path d="M4 6l1 1 2-2"/><path d="M4 12l1 1 2-2"/><path d="M4 18l1 1 2-2"/></>} />, gradient: "radial-gradient(circle, rgba(79,70,229,0.18) 0%, rgba(79,70,229,0.06) 50%, transparent 100%)", hoverColor: "#6366F1" },
     // Feedback — suggest a feature / share feedback / report a bug
     { id: "feedback", label: "Feedback", icon: <NavIcon d={<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>} />, gradient: "radial-gradient(circle, rgba(107,122,90,0.18) 0%, rgba(107,122,90,0.06) 50%, transparent 100%)", hoverColor: "#6B7A5A" },
   ];
