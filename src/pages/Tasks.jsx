@@ -6,10 +6,15 @@ import React, { useState, useEffect } from "react";
  * A flat, running list (not a calendar). Tasks come in over time and never
  * disappear on their own; each carries who's responsible and whether it's done.
  *
- *   One-time task — "done" is sticky. Completing it stamps the date + who and it
- *                   sinks into the Done group. Toggle back any time.
+ *   One-time task — "done" is sticky. Completing it stamps the date + who and
+ *                   turns the status pill green; the task keeps its place in
+ *                   the list. Toggle back any time.
  *   Recurring task — never persistently done. Tapping done logs a completion
  *                    (date, who, running count) and it stays in the list.
+ *
+ * The list is flat and stays in the order tasks were added — nothing is struck
+ * through and nothing sinks to the bottom. Assignment is explicit: the pill
+ * opens a sheet where a name is typed (new names join the household roster).
  *
  * Single-owner model: `people` are labels owned by this account (no second
  * login). Everything is owner-scoped in Supabase with RLS — see
@@ -62,7 +67,8 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
     taupe: D ? "#999" : "#6B6458",
     ink: D ? "#f0ece6" : "#15130F",
     accent: "#C8553D",
-    moss: "#6B7A5A",
+    moss: "#6B7A5A",   // complete
+    red: D ? "#E05A4E" : "#C03E34",   // open — deliberately hotter than the terracotta accent
     gold: "#B8924A",
     serif: "'Fraunces', 'Instrument Serif', Georgia, serif",
     sans: "'Inter Tight', 'Instrument Sans', sans-serif",
@@ -82,6 +88,8 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
   const [addTitle, setAddTitle] = useState("");
   const [addRecurring, setAddRecurring] = useState(false);
   const [editing, setEditing] = useState(null);      // task being edited
+  const [assigning, setAssigning] = useState(null);  // task whose assignee is being set
+  const [assignName, setAssignName] = useState("");  // typed name in the assign sheet
   const [showPeople, setShowPeople] = useState(false);
   const [newPerson, setNewPerson] = useState("");
 
@@ -109,14 +117,19 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
   }
 
   /* ---------- people CRUD ---------- */
+  // Returns the person row so callers (the assign sheet) can use it immediately.
   async function addPerson(name) {
     const nm = (name || "").trim();
-    if (!nm) return;
+    if (!nm) return null;
+    // Typing a name that already exists reuses that person rather than duplicating.
+    const existing = people.find((p) => p.name.toLowerCase() === nm.toLowerCase());
+    if (existing) return existing;
     const color = PALETTE[people.length % PALETTE.length];
     const { data, error } = await supabase.from("task_people")
       .insert({ owner_id: user.id, name: nm, color }).select().single();
-    if (error) { console.error(error); return; }
+    if (error) { console.error(error); return null; }
     setPeople((prev) => [...prev, data]);
+    return data;
   }
   async function renamePerson(id, name) {
     const nm = (name || "").trim();
@@ -165,11 +178,20 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
     setFilter(null);
   }
 
-  function cycleAssignee(t) {
-    const ids = [null, ...people.map((p) => p.id)];
-    const next = ids[(ids.indexOf(t.assignee_id) + 1) % ids.length];
-    patchLocal(t.id, { assignee_id: next });
-    pushDb(t.id, { assignee_id: next });
+  // Assignment is explicit: the pill opens a sheet where a name is typed (or an
+  // existing person picked), rather than cycling blindly through the roster.
+  function setAssignee(t, personId) {
+    patchLocal(t.id, { assignee_id: personId });
+    pushDb(t.id, { assignee_id: personId });
+    setAssigning(null);
+    setAssignName("");
+  }
+
+  async function assignTypedName(t) {
+    const nm = assignName.trim();
+    if (!nm) return;
+    const person = await addPerson(nm);
+    if (person) setAssignee(t, person.id);
   }
 
   function toggleComplete(t) {
@@ -217,9 +239,10 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
   }
 
   /* ---------- derived ---------- */
+  // One flat list in the order tasks were added (created_at desc from the query).
+  // Completed tasks keep their place — the status pill turns green, nothing
+  // sinks to the bottom and nothing gets struck through.
   const visible = tasks.filter(matches);
-  const todo = visible.filter((t) => !isDone(t));  // already created_at desc from query
-  const done = visible.filter(isDone).sort((a, b) => (b.completed_at || "").localeCompare(a.completed_at || ""));
 
   /* ---------- shared styles ---------- */
   // The app shell already supplies page padding and bottom-nav clearance, so the
@@ -296,32 +319,37 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
   function assigneePill(t) {
     const p = personById(t.assignee_id);
     return (
-      <Pill onClick={() => cycleAssignee(t)} title="Tap to change who's responsible"
+      <Pill onClick={() => { setAssigning(t); setAssignName(""); }} title="Set who's responsible"
         style={p ? {} : { borderStyle: "dashed", color: dv.taupe }}>
         <Bubble p={p} /><span>{p ? p.name : "Assign"}</span>
       </Pill>
     );
   }
 
+  // Status reads at a glance: red while open, green once complete.
   function statusControl(t) {
     if (t.recurring) {
       return (
         <Pill onClick={() => logDone(t)} title="Record that this was done"
-          style={{ padding: "6px 13px", gap: 6, color: dv.moss, borderColor: `${dv.moss}55` }}>
+          style={{ padding: "6px 13px", gap: 6, color: dv.moss, borderColor: `${dv.moss}55`,
+            background: D ? "rgba(107,122,90,0.12)" : "rgba(107,122,90,0.07)" }}>
           <CheckIcon size={13} /><span style={{ ...monoLabel, fontSize: 9.5 }}>Log done</span>
         </Pill>
       );
     }
+    const on = t.completed;
     return (
-      <Pill onClick={() => toggleComplete(t)} title={t.completed ? "Tap to reopen" : "Tap to mark done"}
+      <Pill onClick={() => toggleComplete(t)} title={on ? "Tap to reopen" : "Tap to mark done"}
         style={{
           padding: "6px 13px", gap: 6,
-          color: t.completed ? dv.moss : dv.taupe,
-          borderColor: t.completed ? `${dv.moss}55` : dv.cream,
-          background: t.completed ? (D ? "rgba(107,122,90,0.12)" : "rgba(107,122,90,0.07)") : "transparent",
+          color: on ? dv.moss : dv.red,
+          borderColor: on ? `${dv.moss}55` : `${dv.red}55`,
+          background: on
+            ? (D ? "rgba(107,122,90,0.12)" : "rgba(107,122,90,0.07)")
+            : (D ? "rgba(200,62,52,0.14)" : "rgba(200,62,52,0.07)"),
         }}>
-        {t.completed ? <CheckIcon size={13} /> : <CircleIcon size={13} stroke={1.6} />}
-        <span style={{ ...monoLabel, fontSize: 9.5 }}>{t.completed ? `Done ${fmtDate(t.completed_at)}` : "Open"}</span>
+        {on ? <CheckIcon size={13} /> : <CircleIcon size={13} stroke={1.6} />}
+        <span style={{ ...monoLabel, fontSize: 9.5 }}>{on ? `Done ${fmtDate(t.completed_at)}` : "Open"}</span>
       </Pill>
     );
   }
@@ -341,19 +369,17 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
 
   function TaskRow(t) {
     const meta = subtitle(t);
-    const dim = isDone(t);
     return (
       <div key={t.id} style={{
         ...cardStyle, display: "flex", alignItems: "center", gap: 14,
         padding: isMobile ? "14px 15px" : "15px 18px",
-        opacity: dim ? 0.6 : 1, flexWrap: isMobile ? "wrap" : "nowrap",
-        transition: "opacity 0.2s, border-color 0.18s",
+        flexWrap: isMobile ? "wrap" : "nowrap",
+        transition: "border-color 0.18s",
       }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
             fontFamily: dv.serif, fontSize: isMobile ? 16 : 18, fontWeight: 400, lineHeight: 1.25,
             color: dv.ink, wordBreak: "break-word", letterSpacing: "-0.01em",
-            textDecoration: dim ? "line-through" : "none",
           }}>
             {t.title}
             {t.recurring && (
@@ -485,30 +511,67 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
         </button>
       </div>
 
-      {/* ── To do ── */}
-      <div style={{ marginBottom: done.length ? (isMobile ? 30 : 42) : 0 }}>
-        <SectionRule count={todo.length || null}>To do</SectionRule>
+      {/* ── The ledger — one flat list, completed tasks stay put ── */}
+      <div>
+        <SectionRule count={visible.length || null} right={doneCount > 0 ? (
+          <button type="button" onClick={clearDone}
+            style={{ border: "none", background: "none", color: dv.accent, ...monoLabel, fontSize: 9.5, cursor: "pointer", padding: 0, flex: "none" }}>Clear done</button>
+        ) : null}>The list</SectionRule>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {todo.length === 0 && (
+          {visible.length === 0 && (
             <div style={{ ...cardStyle, padding: isMobile ? "26px 18px" : "34px 24px", textAlign: "center", background: "transparent", borderStyle: "dashed" }}>
               <p style={{ fontFamily: dv.serif, fontStyle: "italic", fontSize: 15, color: dv.taupe, margin: 0 }}>
-                {filter ? "Nothing on their plate." : tasks.length ? "All clear." : "No tasks yet — add the first one above."}
+                {filter ? "Nothing on their plate." : "No tasks yet — add the first one above."}
               </p>
             </div>
           )}
-          {todo.map(TaskRow)}
+          {visible.map(TaskRow)}
         </div>
       </div>
 
-      {/* ── Done ── */}
-      {done.length > 0 && (
-        <div>
-          <SectionRule count={done.length} right={
-            <button type="button" onClick={clearDone}
-              style={{ border: "none", background: "none", color: dv.accent, ...monoLabel, fontSize: 9.5, cursor: "pointer", padding: 0, flex: "none" }}>Clear done</button>
-          }>Done</SectionRule>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{done.map(TaskRow)}</div>
-        </div>
+      {/* ── Assign modal — type a name, or pick someone already on the list ── */}
+      {assigning && (
+        <Overlay dv={dv} isMobile={isMobile} onClose={() => { setAssigning(null); setAssignName(""); }}
+          eyebrow="Responsible" title={assigning.title}
+          footer={
+            <>
+              {assigning.assignee_id && (
+                <button type="button" onClick={() => setAssignee(assigning, null)} style={ghostBtn}>Unassign</button>
+              )}
+              <div style={{ flex: 1 }} />
+              <button type="button" onClick={() => { setAssigning(null); setAssignName(""); }} style={ghostBtn}>Cancel</button>
+              <button type="button" onClick={() => assignTypedName(assigning)}
+                style={{ ...primaryBtn, opacity: assignName.trim() ? 1 : 0.4, cursor: assignName.trim() ? "pointer" : "default" }}>Assign</button>
+            </>
+          }>
+          <label style={{ display: "block", ...monoLabel, color: dv.taupe, marginBottom: 8 }}>Name</label>
+          <input value={assignName} onChange={(e) => setAssignName(e.target.value)} autoFocus
+            onKeyDown={(e) => { if (e.key === "Enter") assignTypedName(assigning); }}
+            placeholder="Type a name" maxLength={24}
+            style={{ ...fieldStyle, fontFamily: dv.serif, fontSize: 17 }} />
+          <p style={{ fontFamily: dv.serif, fontStyle: "italic", fontSize: 13.5, lineHeight: 1.5, color: dv.taupe, margin: "10px 0 0" }}>
+            A new name is added to the household; an existing one is reused.
+          </p>
+          {people.length > 0 && (
+            <>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "20px 0 12px" }}>
+                <div style={{ ...monoLabel, fontSize: 9.5, color: dv.taupe, whiteSpace: "nowrap" }}>Or pick someone</div>
+                <div style={{ flex: 1, height: 1, background: dv.cream }} />
+              </div>
+              <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+                {people.map((p) => {
+                  const on = assigning.assignee_id === p.id;
+                  return (
+                    <button key={p.id} type="button" onClick={() => setAssignee(assigning, p.id)}
+                      style={{ ...chipBase, paddingLeft: 6, ...(on ? chipOn : {}) }}>
+                      <Bubble p={p} size={20} />{p.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </Overlay>
       )}
 
       {/* ── Edit modal ── */}
