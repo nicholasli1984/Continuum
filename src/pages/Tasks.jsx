@@ -167,9 +167,9 @@ function completionsOf(t) {
 }
 
 /* ── Icons — stroke SVGs, matching the app's nav/segment icon weight ── */
-const Icon = ({ d, size = 14, stroke = 1.9 }) => (
+const Icon = ({ d, size = 14, stroke = 1.9, style }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round">{d}</svg>
+    strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" style={style}>{d}</svg>
 );
 const CheckIcon = (p) => <Icon {...p} d={<polyline points="20 6 9 17 4 12" />} />;
 const CircleIcon = (p) => <Icon {...p} d={<circle cx="12" cy="12" r="8" />} />;
@@ -180,6 +180,22 @@ const PlusIcon = (p) => <Icon {...p} d={<><line x1="12" y1="5" x2="12" y2="19" /
 const CloseIcon = (p) => <Icon {...p} d={<><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></>} />;
 const ClockIcon = (p) => <Icon {...p} d={<><circle cx="12" cy="12" r="9" /><polyline points="12 7 12 12 15.5 14" /></>} />;
 const NoteIcon = (p) => <Icon {...p} d={<><path d="M4 5h16" /><path d="M4 10h16" /><path d="M4 15h10" /><path d="M4 20h6" /></>} />;
+const ChevronIcon = (p) => <Icon {...p} d={<polyline points="6 9 12 15 18 9" />} />;
+
+// Which sections the user folded away, remembered between visits. Browser
+// storage can throw outright (private windows, blocked site data), so every
+// read and write is guarded and an empty set is a perfectly good fallback.
+const COLLAPSE_KEY = "continuum-tasks-collapsed";
+const readCollapsed = () => {
+  // Nothing stored yet: months open, the Completed pile folded away.
+  try {
+    const raw = localStorage.getItem(COLLAPSE_KEY);
+    return raw ? new Set(JSON.parse(raw)) : new Set(["completed"]);
+  } catch { return new Set(["completed"]); }
+};
+const writeCollapsed = (set) => {
+  try { localStorage.setItem(COLLAPSE_KEY, JSON.stringify([...set])); } catch { /* not available */ }
+};
 
 export function renderTasks(s) {
   return <TasksPage {...s} />;
@@ -225,7 +241,15 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
   const [editing, setEditing] = useState(null);      // task being edited
   const [assigning, setAssigning] = useState(null);  // task whose assignee is being set
   const [assignName, setAssignName] = useState("");  // typed name in the assign sheet
-  const [showCompleted, setShowCompleted] = useState(false);   // the Completed pile stays folded away
+  // Folded sections, keyed by month ("2026-09") plus "completed" for the pile.
+  const [collapsed, setCollapsed] = useState(readCollapsed);
+  const isCollapsed = (key) => collapsed.has(key);
+  const toggleSection = (key) => setCollapsed((prev) => {
+    const next = new Set(prev);
+    next.has(key) ? next.delete(key) : next.add(key);
+    writeCollapsed(next);
+    return next;
+  });
   const [noteEditing, setNoteEditing] = useState(null);  // task id whose note is open
   const [noteDraft, setNoteDraft] = useState("");
   const [showPeople, setShowPeople] = useState(false);
@@ -759,17 +783,39 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
     );
   }
 
-  // Section rule — the app's standard "eyebrow + hairline" divider.
-  const SectionRule = ({ children, count, right }) => (
-    <div style={{ display: "flex", alignItems: "center", gap: 14, margin: "0 0 16px", ...monoLabel, fontSize: 11, letterSpacing: "0.15em", color: dv.taupe }}>
-      <div style={{ width: 28, height: 1, background: dv.accent, flex: "none" }} />
-      <strong style={{ color: dv.ink, fontWeight: 500, whiteSpace: "nowrap" }}>
+  // Section rule — the app's standard "eyebrow + hairline" divider. Given a
+  // `sectionKey` the heading becomes the fold control for its own section.
+  const SectionRule = ({ children, count, right, sectionKey }) => {
+    const foldable = !!sectionKey;
+    const folded = foldable && isCollapsed(sectionKey);
+    const label = (
+      <>
         {children}{count != null && <span style={{ color: dv.taupe, marginLeft: 8 }}>{count}</span>}
-      </strong>
-      <div style={{ flex: 1, height: 1, background: dv.cream }} />
-      {right}
-    </div>
-  );
+      </>
+    );
+    return (
+      <div style={{ display: "flex", alignItems: "center", gap: 14, margin: "0 0 16px", ...monoLabel, fontSize: 11, letterSpacing: "0.15em", color: dv.taupe }}>
+        <div style={{ width: 28, height: 1, background: dv.accent, flex: "none" }} />
+        {foldable ? (
+          <button type="button" onClick={() => toggleSection(sectionKey)}
+            aria-expanded={!folded} title={folded ? "Expand" : "Collapse"}
+            style={{
+              border: "none", background: "none", padding: 0, cursor: "pointer", color: dv.ink,
+              ...monoLabel, fontSize: 11, letterSpacing: "0.15em", fontWeight: 500,
+              display: "inline-flex", alignItems: "center", gap: 7, whiteSpace: "nowrap",
+            }}>
+            <ChevronIcon size={13} stroke={2.1}
+              style={{ flex: "none", transform: folded ? "rotate(-90deg)" : "none", transition: "transform 0.18s" }} />
+            {label}
+          </button>
+        ) : (
+          <strong style={{ color: dv.ink, fontWeight: 500, whiteSpace: "nowrap" }}>{label}</strong>
+        )}
+        <div style={{ flex: 1, height: 1, background: dv.cream }} />
+        {right}
+      </div>
+    );
+  };
 
   const chipBase = {
     border: `1px solid ${dv.cream}`, background: "transparent", color: dv.taupe,
@@ -899,25 +945,21 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
       )}
       {liveMonths.map((m, i) => (
         <div key={m.key} style={{ marginBottom: i === liveMonths.length - 1 ? 0 : (isMobile ? 28 : 38) }}>
-          <SectionRule count={m.items.length}>{m.label}</SectionRule>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{m.items.map(TaskRow)}</div>
+          <SectionRule count={m.items.length} sectionKey={m.key}>{m.label}</SectionRule>
+          {!isCollapsed(m.key) && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{m.items.map(TaskRow)}</div>
+          )}
         </div>
       ))}
 
       {/* ── Completed — one-time tasks that are finished, folded away at the foot ── */}
       {finished.length > 0 && (
         <div style={{ marginTop: isMobile ? 34 : 46 }}>
-          <SectionRule count={finished.length} right={
-            <div style={{ display: "flex", alignItems: "center", gap: 14, flex: "none" }}>
-              <button type="button" onClick={() => setShowCompleted((v) => !v)}
-                style={{ border: "none", background: "none", color: dv.taupe, ...monoLabel, fontSize: 9.5, cursor: "pointer", padding: 0 }}>
-                {showCompleted ? "Hide" : "Show"}
-              </button>
-              <button type="button" onClick={clearDone}
-                style={{ border: "none", background: "none", color: dv.accent, ...monoLabel, fontSize: 9.5, cursor: "pointer", padding: 0 }}>Clear done</button>
-            </div>
+          <SectionRule count={finished.length} sectionKey="completed" right={
+            <button type="button" onClick={clearDone}
+              style={{ border: "none", background: "none", color: dv.accent, ...monoLabel, fontSize: 9.5, cursor: "pointer", padding: 0, flex: "none" }}>Clear done</button>
           }>Completed</SectionRule>
-          {showCompleted && (
+          {!isCollapsed("completed") && (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{finished.map(TaskRow)}</div>
           )}
         </div>
