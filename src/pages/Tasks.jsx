@@ -67,6 +67,44 @@ function isoWeek(date) {
 }
 const mondayOf = (date) => { const d = startOfDay(date); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d; };
 
+// Period boundaries. A period is identified by the day it starts on, which is
+// what start dates are compared against — a task that starts mid-month starts
+// with that whole month's occurrence.
+function periodStartOf(date, cadenceId) {
+  const d = startOfDay(date);
+  if (cadenceId === "daily") return d;
+  if (cadenceId === "monthly") return new Date(d.getFullYear(), d.getMonth(), 1);
+  if (cadenceId === "yearly") return new Date(d.getFullYear(), 0, 1);
+  return mondayOf(d);
+}
+function periodEndOf(start, cadenceId) {
+  if (cadenceId === "daily") return new Date(start);
+  if (cadenceId === "monthly") return new Date(start.getFullYear(), start.getMonth() + 1, 0);
+  if (cadenceId === "yearly") return new Date(start.getFullYear(), 11, 31);
+  const e = new Date(start); e.setDate(e.getDate() + 6); return e;
+}
+function shiftPeriods(start, cadenceId, n) {
+  const d = new Date(start);
+  if (cadenceId === "daily") d.setDate(d.getDate() + n);
+  else if (cadenceId === "monthly") d.setMonth(d.getMonth() + n);
+  else if (cadenceId === "yearly") d.setFullYear(d.getFullYear() + n);
+  else d.setDate(d.getDate() + 7 * n);
+  return d;
+}
+function periodLabel(start, cadenceId) {
+  if (cadenceId === "daily") return start.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+  if (cadenceId === "monthly") return start.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  if (cadenceId === "yearly") return `${start.getFullYear()}`;
+  return `Week of ${start.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`;
+}
+// Short form for the status pill — "Aug 2026", "Mon Sep 7", "2027".
+function shortPeriodLabel(start, cadenceId) {
+  if (cadenceId === "daily") return start.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  if (cadenceId === "monthly") return start.toLocaleDateString(undefined, { month: "short", year: "numeric" });
+  if (cadenceId === "yearly") return `${start.getFullYear()}`;
+  return start.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
 // A period key identifies one occurrence — two dates in the same period share it.
 function periodKey(date, cadenceId) {
   const d = startOfDay(date);
@@ -77,33 +115,46 @@ function periodKey(date, cadenceId) {
   return `${year}-W${String(week).padStart(2, "0")}`;
 }
 
-// The periods to draw in a row's trail, oldest first, each with the date a
-// completion logged against it should carry (clamped so it's never in the future).
-function recentPeriods(cadenceId, count) {
+/*
+ * The periods to draw in a row's trail, oldest first, each with the date a
+ * completion logged against it should carry (clamped so it's never in the
+ * future). `startsOn` bounds the history: a monthly task that starts in August
+ * has no July occurrence, so nothing before it is drawn or markable. A task
+ * whose start is still ahead shows its first upcoming periods instead, all
+ * inactive until it begins.
+ */
+function occurrencePeriods(cadenceId, count, startsOn) {
   const today = startOfDay(new Date());
+  const curStart = periodStartOf(today, cadenceId);
+  const fromStart = startsOn ? periodStartOf(parseDay(startsOn), cadenceId) : null;
+  const notYetStarted = !!fromStart && fromStart > curStart;
+
+  let first = notYetStarted ? fromStart : shiftPeriods(curStart, cadenceId, -(count - 1));
+  if (!notYetStarted && fromStart && fromStart > first) first = fromStart;
+
   const out = [];
-  for (let i = count - 1; i >= 0; i--) {
-    let start, end, label;
-    if (cadenceId === "daily") {
-      start = new Date(today); start.setDate(start.getDate() - i); end = new Date(start);
-      label = start.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
-    } else if (cadenceId === "monthly") {
-      start = new Date(today.getFullYear(), today.getMonth() - i, 1);
-      end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
-      label = start.toLocaleDateString(undefined, { month: "long", year: "numeric" });
-    } else if (cadenceId === "yearly") {
-      start = new Date(today.getFullYear() - i, 0, 1);
-      end = new Date(start.getFullYear(), 11, 31);
-      label = `${start.getFullYear()}`;
-    } else {
-      start = mondayOf(today); start.setDate(start.getDate() - i * 7);
-      end = new Date(start); end.setDate(end.getDate() + 6);
-      label = `Week of ${start.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`;
-    }
+  for (let i = 0; i < count; i++) {
+    const start = shiftPeriods(first, cadenceId, i);
+    if (!notYetStarted && start > curStart) break;    // never draw ahead of the current period
+    const end = periodEndOf(start, cadenceId);
     const stamp = end > today ? today : end;
-    out.push({ key: periodKey(start, cadenceId), label, stampDate: toDayStr(stamp), isCurrent: i === 0 });
+    out.push({
+      key: periodKey(start, cadenceId),
+      label: periodLabel(start, cadenceId),
+      stampDate: toDayStr(stamp < start ? start : stamp),
+      isCurrent: start.getTime() === curStart.getTime(),
+      isFuture: start > curStart,
+    });
   }
   return out;
+}
+
+// Where a recurring task stands relative to its start date.
+function startState(t, cadenceId) {
+  if (!t.starts_on) return { pending: false };
+  const curStart = periodStartOf(new Date(), cadenceId);
+  const fromStart = periodStartOf(parseDay(t.starts_on), cadenceId);
+  return { pending: fromStart > curStart, label: shortPeriodLabel(fromStart, cadenceId) };
 }
 
 // Completion log. Older rows predate the log and only carry last_done_at, so
@@ -126,6 +177,7 @@ const PencilIcon = (p) => <Icon {...p} d={<path d="M17 3a2.85 2.85 0 114 4L7.5 2
 const TrashIcon = (p) => <Icon {...p} d={<><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" /></>} />;
 const PlusIcon = (p) => <Icon {...p} d={<><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></>} />;
 const CloseIcon = (p) => <Icon {...p} d={<><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></>} />;
+const ClockIcon = (p) => <Icon {...p} d={<><circle cx="12" cy="12" r="9" /><polyline points="12 7 12 12 15.5 14" /></>} />;
 
 export function renderTasks(s) {
   return <TasksPage {...s} />;
@@ -166,6 +218,7 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
   const [addTitle, setAddTitle] = useState("");
   const [addRecurring, setAddRecurring] = useState(false);
   const [addCadence, setAddCadence] = useState("weekly");
+  const [addStartsOn, setAddStartsOn] = useState(todayStr());
   const [editing, setEditing] = useState(null);      // task being edited
   const [assigning, setAssigning] = useState(null);  // task whose assignee is being set
   const [assignName, setAssignName] = useState("");  // typed name in the assign sheet
@@ -194,7 +247,7 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
     setTasks(tt.data || []);
     // The cadence columns arrived in a later patch — probe for them explicitly,
     // since select("*") can't tell an empty table from an un-patched one.
-    const probe = await supabase.from("tasks").select("id,cadence,completions").limit(1);
+    const probe = await supabase.from("tasks").select("id,cadence,completions,starts_on").limit(1);
     setReady(probe.error?.code === "42703" ? "patch" : true);
   }
 
@@ -249,7 +302,8 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
     const title = addTitle.trim();
     if (!title) return;
     const row = {
-      owner_id: user.id, title, recurring: addRecurring, cadence: addCadence, assignee_id: null,
+      owner_id: user.id, title, recurring: addRecurring, cadence: addCadence,
+      starts_on: addRecurring ? (addStartsOn || todayStr()) : null, assignee_id: null,
       completed: false, completed_at: null, completed_by: null,
       done_count: 0, last_done_at: null, last_done_by: null, completions: [],
     };
@@ -308,16 +362,18 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
 
   // The pill acts on the occurrence happening right now.
   function toggleCurrentPeriod(t) {
-    const periods = recentPeriods(cadenceOf(t).id, 1);
-    const now = periods[periods.length - 1];
-    togglePeriod(t, now.key, now.stampDate);
+    const cad = cadenceOf(t).id;
+    togglePeriod(t, periodKey(new Date(), cad), todayStr());
   }
 
   async function saveEdit() {
     const t = editing;
     const title = t.title.trim();
     if (!title) return;
-    const patch = { title, recurring: t.recurring, cadence: t.cadence || "weekly" };
+    const patch = {
+      title, recurring: t.recurring, cadence: t.cadence || "weekly",
+      starts_on: t.recurring ? (t.starts_on || todayStr()) : null,
+    };
     // Switching kind clears the stamps that only apply to the other kind.
     if (t.recurring !== tasks.find((x) => x.id === t.id)?.recurring) {
       Object.assign(patch, { completed: false, completed_at: null, completed_by: null, done_count: 0, last_done_at: null, last_done_by: null, completions: [] });
@@ -361,6 +417,12 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
     fontFamily: dv.sans, fontSize: 15, outline: "none",
   };
   const monoLabel = { fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase" };
+  // Native date input, dressed to match the chips beside it.
+  const dateFieldStyle = {
+    border: `1px solid ${dv.cream}`, background: D ? "rgba(255,255,255,0.04)" : "#FCFBF8", color: dv.ink,
+    fontFamily: dv.mono, fontSize: 11, padding: "6px 10px", borderRadius: 999, outline: "none",
+    colorScheme: D ? "dark" : "light", cursor: "pointer",
+  };
   const primaryBtn = {
     border: "none", background: dv.ink, color: dv.bone, ...monoLabel, fontWeight: 600,
     padding: "12px 18px", borderRadius: 8, cursor: "pointer", transition: "opacity 0.18s",
@@ -397,8 +459,9 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
           <p style={{ fontFamily: dv.sans, fontSize: 15, lineHeight: 1.55, color: dv.taupe, margin: 0 }}>
             {ready === "patch" ? (
               <>Run <span style={mono}>supabase-tasks-cadence-migration.sql</span> in your Supabase SQL editor to add
-                the <span style={mono}>cadence</span> and <span style={mono}>completions</span> columns — they carry how
-                often a recurring task repeats and which occurrences are done — then reopen this tab.</>
+                the <span style={mono}>cadence</span>, <span style={mono}>starts_on</span> and{" "}
+                <span style={mono}>completions</span> columns — they carry how often a recurring task repeats, when it
+                begins, and which occurrences are done — then reopen this tab. It's safe to re-run.</>
             ) : (
               <>Run <span style={mono}>supabase-tasks-migration.sql</span> in your Supabase SQL editor to create
                 the <span style={mono}>tasks</span> and <span style={mono}>task_people</span> tables, then reopen this tab.</>
@@ -449,6 +512,17 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
   function statusControl(t) {
     if (t.recurring) {
       const cad = cadenceOf(t);
+      const start = startState(t, cad.id);
+      // Hasn't come round yet — say when it starts rather than calling it due.
+      if (start.pending) {
+        return (
+          <Pill onClick={() => setEditing({ ...t })} title={`Starts ${start.label} — tap to change`}
+            style={{ padding: "6px 13px", gap: 6, color: dv.gold, borderColor: `${dv.gold}55`, cursor: "pointer",
+              background: D ? "rgba(184,146,74,0.12)" : "rgba(184,146,74,0.08)" }}>
+            <ClockIcon size={13} /><span style={{ ...monoLabel, fontSize: 9.5 }}>Starts {start.label}</span>
+          </Pill>
+        );
+      }
       const on = doneThisPeriod(t);
       return (
         <Pill onClick={() => toggleCurrentPeriod(t)}
@@ -508,25 +582,32 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
     const cad = cadenceOf(t);
     const log = completionsOf(t);
     const doneKeys = new Set(log.map((c) => periodKey(parseDay(c.on), cad.id)));
+    const periods = occurrencePeriods(cad.id, cad.trail, t.starts_on);
+    const pending = startState(t, cad.id).pending;
     return (
-      <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 8 }}>
-        {recentPeriods(cad.id, cad.trail).map((p) => {
+      <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 8, flexWrap: "wrap" }}>
+        {periods.map((p) => {
           const filled = doneKeys.has(p.key);
           return (
-            <button key={p.key} type="button" onClick={() => togglePeriod(t, p.key, p.stampDate)}
-              title={`${p.label} — ${filled ? "done, tap to undo" : "not done, tap to log"}`}
-              aria-label={`${p.label}: ${filled ? "done" : "not done"}`}
+            <button key={p.key} type="button" disabled={p.isFuture}
+              onClick={() => { if (!p.isFuture) togglePeriod(t, p.key, p.stampDate); }}
+              title={p.isFuture ? `${p.label} — not yet` : `${p.label} — ${filled ? "done, tap to undo" : "not done, tap to log"}`}
+              aria-label={`${p.label}: ${p.isFuture ? "upcoming" : filled ? "done" : "not done"}`}
               style={{
-                width: 16, height: 16, padding: 0, borderRadius: 4, cursor: "pointer",
+                width: 16, height: 16, padding: 0, borderRadius: 4,
+                cursor: p.isFuture ? "default" : "pointer",
                 background: filled ? dv.moss : "transparent",
-                border: filled ? `1px solid ${dv.moss}` : `1px solid ${dv.cream}`,
+                border: filled ? `1px solid ${dv.moss}` : `1px ${p.isFuture ? "dashed" : "solid"} ${dv.cream}`,
+                opacity: p.isFuture ? 0.7 : 1,
                 boxShadow: p.isCurrent ? `0 0 0 2px ${D ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.06)"}` : "none",
                 transition: "background 0.18s, border-color 0.18s",
               }} />
           );
         })}
         <span style={{ ...monoLabel, fontSize: 8.5, color: dv.stone, marginLeft: 6 }}>
-          Last {cad.trail} {cad.id === "daily" ? "days" : cad.id === "weekly" ? "weeks" : cad.id === "monthly" ? "months" : "years"}
+          {pending
+            ? `From ${startState(t, cad.id).label}`
+            : `Since ${t.starts_on ? shortPeriodLabel(periodStartOf(parseDay(t.starts_on), cad.id), cad.id) : periods[0]?.label || ""}`}
         </span>
       </div>
     );
@@ -679,6 +760,9 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
           <div style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "10px 8px 4px", borderTop: `1px solid ${dv.cream}`, marginTop: 4, flexWrap: "wrap" }}>
             <span style={{ ...monoLabel, fontSize: 9.5, color: dv.taupe }}>Repeats</span>
             <CadencePicker value={addCadence} onChange={setAddCadence} />
+            <span style={{ ...monoLabel, fontSize: 9.5, color: dv.taupe, marginLeft: 4 }}>Starting</span>
+            <input type="date" value={addStartsOn} onChange={(e) => setAddStartsOn(e.target.value)}
+              style={dateFieldStyle} />
           </div>
         )}
       </div>
@@ -784,10 +868,18 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
           <label style={{ display: "block", ...monoLabel, color: dv.taupe, marginBottom: 8 }}>Type</label>
           <Segmented value={editing.recurring} onChange={(val) => setEditing({ ...editing, recurring: val })} />
           {editing.recurring && (
-            <div style={{ marginTop: 18 }}>
-              <label style={{ display: "block", ...monoLabel, color: dv.taupe, marginBottom: 8 }}>Repeats</label>
-              <CadencePicker value={editing.cadence} onChange={(val) => setEditing({ ...editing, cadence: val })} />
-            </div>
+            <>
+              <div style={{ marginTop: 18 }}>
+                <label style={{ display: "block", ...monoLabel, color: dv.taupe, marginBottom: 8 }}>Repeats</label>
+                <CadencePicker value={editing.cadence} onChange={(val) => setEditing({ ...editing, cadence: val })} />
+              </div>
+              <div style={{ marginTop: 18 }}>
+                <label style={{ display: "block", ...monoLabel, color: dv.taupe, marginBottom: 8 }}>Starting</label>
+                <input type="date" value={editing.starts_on || todayStr()}
+                  onChange={(e) => setEditing({ ...editing, starts_on: e.target.value })}
+                  style={{ ...dateFieldStyle, fontSize: 13, padding: "9px 13px", borderRadius: 10 }} />
+              </div>
+            </>
           )}
           <p style={{ fontFamily: dv.serif, fontStyle: "italic", fontSize: 13.5, lineHeight: 1.5, color: dv.taupe, margin: "14px 0 0" }}>
             {editing.recurring
