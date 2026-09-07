@@ -6,15 +6,16 @@ import React, { useState, useEffect } from "react";
  * A flat, running list (not a calendar). Tasks come in over time and never
  * disappear on their own; each carries who's responsible and whether it's done.
  *
- *   One-time task — "done" is sticky. Completing it stamps the date + who and
- *                   turns the status pill green; the task keeps its place in
- *                   the list. Toggle back any time.
+ *   One-time task — "done" is sticky. Completing it stamps the date + who,
+ *                   turns the status pill green and moves it to the Completed
+ *                   pile at the foot of the page. Toggle back any time.
  *   Recurring task — never persistently done. Tapping done logs a completion
- *                    (date, who, running count) and it stays in the list.
+ *                    (date, who, running count) and it stays in its month.
  *
- * The list is flat and stays in the order tasks were added — nothing is struck
- * through and nothing sinks to the bottom. Assignment is explicit: the pill
- * opens a sheet where a name is typed (new names join the household roster).
+ * The ledger is grouped by the month each task was added, newest month first,
+ * so a long list stays legible; nothing is ever struck through. Assignment is
+ * explicit: the pill opens a sheet where a name is typed (new names join the
+ * household roster).
  *
  * Single-owner model: `people` are labels owned by this account (no second
  * login). Everything is owner-scoped in Supabase with RLS — see
@@ -224,6 +225,7 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
   const [editing, setEditing] = useState(null);      // task being edited
   const [assigning, setAssigning] = useState(null);  // task whose assignee is being set
   const [assignName, setAssignName] = useState("");  // typed name in the assign sheet
+  const [showCompleted, setShowCompleted] = useState(false);   // the Completed pile stays folded away
   const [noteEditing, setNoteEditing] = useState(null);  // task id whose note is open
   const [noteDraft, setNoteDraft] = useState("");
   const [showPeople, setShowPeople] = useState(false);
@@ -424,10 +426,29 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
   }
 
   /* ---------- derived ---------- */
-  // One flat list in the order tasks were added (created_at desc from the query).
-  // Completed tasks keep their place — the status pill turns green, nothing
-  // sinks to the bottom and nothing gets struck through.
+  /*
+   * The ledger is grouped by the month a task was added — a single unbroken
+   * list gets unreadable once it runs to any length. Recurring tasks never
+   * leave their month; a finished one-time task drops out of its month and
+   * into the Completed pile at the foot of the page.
+   */
   const visible = tasks.filter(matches);
+  const live = visible.filter((t) => !isDone(t));            // created_at desc from the query
+  const finished = visible.filter(isDone)
+    .sort((a, b) => (b.completed_at || "").localeCompare(a.completed_at || ""));
+  const monthsOf = (list) => {
+    const map = new Map();
+    list.forEach((t) => {
+      const d = t.created_at ? new Date(t.created_at) : new Date();
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      if (!map.has(key)) {
+        map.set(key, { key, label: d.toLocaleDateString(undefined, { month: "long", year: "numeric" }), items: [] });
+      }
+      map.get(key).items.push(t);
+    });
+    return [...map.values()].sort((a, b) => b.key.localeCompare(a.key));   // newest month first
+  };
+  const liveMonths = monthsOf(live);
 
   /* ---------- shared styles ---------- */
   // The app shell already supplies page padding and bottom-nav clearance, so the
@@ -868,23 +889,39 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
         </button>
       </div>
 
-      {/* ── The ledger — one flat list, completed tasks stay put ── */}
-      <div>
-        <SectionRule count={visible.length || null} right={doneCount > 0 ? (
-          <button type="button" onClick={clearDone}
-            style={{ border: "none", background: "none", color: dv.accent, ...monoLabel, fontSize: 9.5, cursor: "pointer", padding: 0, flex: "none" }}>Clear done</button>
-        ) : null}>The list</SectionRule>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {visible.length === 0 && (
-            <div style={{ ...cardStyle, padding: isMobile ? "26px 18px" : "34px 24px", textAlign: "center", background: "transparent", borderStyle: "dashed" }}>
-              <p style={{ fontFamily: dv.serif, fontStyle: "italic", fontSize: 15, color: dv.taupe, margin: 0 }}>
-                {filter ? "Nothing on their plate." : "No tasks yet — add the first one above."}
-              </p>
-            </div>
-          )}
-          {visible.map(TaskRow)}
+      {/* ── The ledger — grouped by the month each task was added ── */}
+      {live.length === 0 && (
+        <div style={{ ...cardStyle, padding: isMobile ? "26px 18px" : "34px 24px", textAlign: "center", background: "transparent", borderStyle: "dashed" }}>
+          <p style={{ fontFamily: dv.serif, fontStyle: "italic", fontSize: 15, color: dv.taupe, margin: 0 }}>
+            {filter ? "Nothing on their plate." : finished.length ? "All clear — everything's done." : "No tasks yet — add the first one above."}
+          </p>
         </div>
-      </div>
+      )}
+      {liveMonths.map((m, i) => (
+        <div key={m.key} style={{ marginBottom: i === liveMonths.length - 1 ? 0 : (isMobile ? 28 : 38) }}>
+          <SectionRule count={m.items.length}>{m.label}</SectionRule>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{m.items.map(TaskRow)}</div>
+        </div>
+      ))}
+
+      {/* ── Completed — one-time tasks that are finished, folded away at the foot ── */}
+      {finished.length > 0 && (
+        <div style={{ marginTop: isMobile ? 34 : 46 }}>
+          <SectionRule count={finished.length} right={
+            <div style={{ display: "flex", alignItems: "center", gap: 14, flex: "none" }}>
+              <button type="button" onClick={() => setShowCompleted((v) => !v)}
+                style={{ border: "none", background: "none", color: dv.taupe, ...monoLabel, fontSize: 9.5, cursor: "pointer", padding: 0 }}>
+                {showCompleted ? "Hide" : "Show"}
+              </button>
+              <button type="button" onClick={clearDone}
+                style={{ border: "none", background: "none", color: dv.accent, ...monoLabel, fontSize: 9.5, cursor: "pointer", padding: 0 }}>Clear done</button>
+            </div>
+          }>Completed</SectionRule>
+          {showCompleted && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{finished.map(TaskRow)}</div>
+          )}
+        </div>
+      )}
 
       {/* ── Assign modal — type a name, or pick someone already on the list ── */}
       {assigning && (
