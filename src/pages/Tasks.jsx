@@ -14,9 +14,15 @@ import React, { useState, useEffect } from "react";
  * Single-owner model: `people` are labels owned by this account (no second
  * login). Everything is owner-scoped in Supabase with RLS — see
  * supabase-tasks-migration.sql.
+ *
+ * Styling follows the app's editorial house style (Trips / Expense Split):
+ * a local `dv` palette, Fraunces display type over Inter Tight body copy with
+ * JetBrains Mono eyebrows, paper cards on a cream hairline, stroke-SVG icons,
+ * and modals that dock above the bottom tab bar with a sticky header.
  */
 
-const PALETTE = ["#4f46e5", "#0ea5a4", "#e0693b", "#c3358f", "#2f80ed", "#3f9142", "#8a5cf6", "#c9962a"];
+// Editorial accent set for person bubbles — same family as the split-page chips.
+const PALETTE = ["#C8553D", "#6B7A5A", "#B8924A", "#6B6458", "#2C6E63", "#8A5A44", "#4F6D8C", "#9C5C7A"];
 const initials = (name) => (name || "?").trim().split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
 
 const todayStr = () => {
@@ -27,11 +33,48 @@ const fmtDate = (s) => s
   ? new Date(`${s}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" })
   : "";
 
+/* ── Icons — stroke SVGs, matching the app's nav/segment icon weight ── */
+const Icon = ({ d, size = 14, stroke = 1.9 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round">{d}</svg>
+);
+const CheckIcon = (p) => <Icon {...p} d={<polyline points="20 6 9 17 4 12" />} />;
+const CircleIcon = (p) => <Icon {...p} d={<circle cx="12" cy="12" r="8" />} />;
+const RepeatIcon = (p) => <Icon {...p} d={<><polyline points="17 1 21 5 17 9" /><path d="M3 11V9a4 4 0 0 1 4-4h14" /><polyline points="7 23 3 19 7 15" /><path d="M21 13v2a4 4 0 0 1-4 4H3" /></>} />;
+const PencilIcon = (p) => <Icon {...p} d={<path d="M17 3a2.85 2.85 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z" />} />;
+const TrashIcon = (p) => <Icon {...p} d={<><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" /></>} />;
+const PlusIcon = (p) => <Icon {...p} d={<><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></>} />;
+const CloseIcon = (p) => <Icon {...p} d={<><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></>} />;
+
 export function renderTasks(s) {
   return <TasksPage {...s} />;
 }
 
-function TasksPage({ css, isMobile, darkMode, user, supabase }) {
+function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
+  const D = !!darkMode;
+
+  // Editorial palette — mirrors Trips / Expense Split so the tab reads as one app.
+  const dv = {
+    bone: D ? "#1a1a1a" : "#fff",
+    paper: D ? "#222" : "#fff",
+    cream: D ? "rgba(255,255,255,0.08)" : "#E2DCCE",
+    stone: D ? "#8a8a8a" : "#857A66",
+    taupe: D ? "#999" : "#6B6458",
+    ink: D ? "#f0ece6" : "#15130F",
+    accent: "#C8553D",
+    moss: "#6B7A5A",
+    gold: "#B8924A",
+    serif: "'Fraunces', 'Instrument Serif', Georgia, serif",
+    sans: "'Inter Tight', 'Instrument Sans', sans-serif",
+    mono: "'JetBrains Mono', 'Geist Mono', monospace",
+  };
+
+  // Fall back to the browser dialog only if the host didn't pass the in-app one.
+  const confirmThen = (message, onConfirm) => {
+    if (showConfirm) showConfirm(message, onConfirm);
+    else if (window.confirm(message)) onConfirm();
+  };
+
   const [people, setPeople] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [ready, setReady] = useState(null);   // null=loading, false=needs migration, true=ok
@@ -85,18 +128,19 @@ function TasksPage({ css, isMobile, darkMode, user, supabase }) {
     setPeople((prev) => prev.map((p) => (p.id === id ? { ...p, color } : p)));
     await supabase.from("task_people").update({ color }).eq("id", id);
   }
-  async function deletePerson(id) {
-    if (!confirm("Remove this person? Their tasks become unassigned.")) return;
-    setPeople((prev) => prev.filter((p) => p.id !== id));
-    // DB clears the references via ON DELETE SET NULL; mirror that locally.
-    setTasks((prev) => prev.map((t) => ({
-      ...t,
-      assignee_id: t.assignee_id === id ? null : t.assignee_id,
-      completed_by: t.completed_by === id ? null : t.completed_by,
-      last_done_by: t.last_done_by === id ? null : t.last_done_by,
-    })));
-    if (filter === id) setFilter(null);
-    await supabase.from("task_people").delete().eq("id", id);
+  function deletePerson(id) {
+    confirmThen("Remove this person? Their tasks become unassigned.", async () => {
+      setPeople((prev) => prev.filter((p) => p.id !== id));
+      // DB clears the references via ON DELETE SET NULL; mirror that locally.
+      setTasks((prev) => prev.map((t) => ({
+        ...t,
+        assignee_id: t.assignee_id === id ? null : t.assignee_id,
+        completed_by: t.completed_by === id ? null : t.completed_by,
+        last_done_by: t.last_done_by === id ? null : t.last_done_by,
+      })));
+      if (filter === id) setFilter(null);
+      await supabase.from("task_people").delete().eq("id", id);
+    });
   }
 
   /* ---------- task CRUD ---------- */
@@ -155,18 +199,21 @@ function TasksPage({ css, isMobile, darkMode, user, supabase }) {
     await pushDb(t.id, patch);
   }
 
-  async function deleteTask(id) {
-    if (!confirm("Delete this task?")) return;
-    setTasks((prev) => prev.filter((t) => t.id !== id));
-    setEditing(null);
-    await supabase.from("tasks").delete().eq("id", id);
+  function deleteTask(id) {
+    confirmThen("Delete this task?", async () => {
+      setTasks((prev) => prev.filter((t) => t.id !== id));
+      setEditing(null);
+      await supabase.from("tasks").delete().eq("id", id);
+    });
   }
 
-  async function clearDone() {
+  function clearDone() {
     const doneIds = tasks.filter(isDone).map((t) => t.id);
-    if (!doneIds.length || !confirm(`Remove ${doneIds.length} completed task${doneIds.length > 1 ? "s" : ""}?`)) return;
-    setTasks((prev) => prev.filter((t) => !isDone(t)));
-    await supabase.from("tasks").delete().in("id", doneIds);
+    if (!doneIds.length) return;
+    confirmThen(`Remove ${doneIds.length} completed task${doneIds.length > 1 ? "s" : ""}?`, async () => {
+      setTasks((prev) => prev.filter((t) => !isDone(t)));
+      await supabase.from("tasks").delete().in("id", doneIds);
+    });
   }
 
   /* ---------- derived ---------- */
@@ -174,75 +221,107 @@ function TasksPage({ css, isMobile, darkMode, user, supabase }) {
   const todo = visible.filter((t) => !isDone(t));  // already created_at desc from query
   const done = visible.filter(isDone).sort((a, b) => (b.completed_at || "").localeCompare(a.completed_at || ""));
 
-  /* ---------- styles ---------- */
-  const wrap = { maxWidth: 760, margin: "0 auto", padding: isMobile ? "16px 12px 64px" : "24px 20px 80px" };
-  const card = { background: css.surface, border: `1px solid ${css.border}`, borderRadius: css.radius, boxShadow: css.shadow };
+  /* ---------- shared styles ---------- */
+  // The app shell already supplies page padding and bottom-nav clearance, so the
+  // page only sets its own measure.
+  const wrap = { fontFamily: dv.sans, color: dv.ink, maxWidth: 880, margin: "0 auto" };
+  const cardStyle = { background: dv.paper, border: `1px solid ${dv.cream}`, borderRadius: 12 };
+  const fieldStyle = {
+    width: "100%", padding: "11px 13px", borderRadius: 10, border: `1px solid ${dv.cream}`,
+    background: D ? "rgba(255,255,255,0.03)" : "#FCFBF8", color: dv.ink,
+    fontFamily: dv.sans, fontSize: 15, outline: "none",
+  };
+  const monoLabel = { fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase" };
+  const primaryBtn = {
+    border: "none", background: dv.ink, color: dv.bone, ...monoLabel, fontWeight: 600,
+    padding: "12px 18px", borderRadius: 8, cursor: "pointer", transition: "opacity 0.18s",
+  };
+  const ghostBtn = {
+    border: `1px solid ${dv.cream}`, background: "transparent", color: dv.ink, ...monoLabel,
+    padding: "12px 18px", borderRadius: 8, cursor: "pointer", transition: "border-color 0.18s",
+  };
 
   if (!user) {
-    return <div style={wrap}><p style={{ color: css.text2 }}>Sign in to use Tasks.</p></div>;
+    return <div style={wrap}><p style={{ fontFamily: dv.serif, fontStyle: "italic", fontSize: 16, color: dv.taupe }}>Sign in to use Tasks.</p></div>;
   }
 
   if (ready === null) {
-    return <div style={wrap}><p style={{ color: css.text3 }}>Loading…</p></div>;
+    return <div style={wrap}><p style={{ ...monoLabel, color: dv.taupe }}>Loading…</p></div>;
   }
+
+  const Eyebrow = () => (
+    <div style={{ ...monoLabel, fontSize: 12, letterSpacing: "0.15em", color: dv.accent, marginBottom: isMobile ? 16 : 24, display: "flex", alignItems: "center", gap: 12 }}>
+      <div style={{ width: 28, height: 1, background: dv.accent }} />
+      Tasks
+    </div>
+  );
 
   if (ready === false) {
     return (
       <div style={wrap}>
-        <h1 style={{ fontSize: 24, color: css.text, margin: "0 0 8px" }}>Tasks</h1>
-        <div style={{ ...card, padding: 20, marginTop: 12 }}>
-          <p style={{ color: css.text, fontWeight: 600, margin: "0 0 6px" }}>One-time setup needed</p>
-          <p style={{ color: css.text2, fontSize: 14, margin: 0, lineHeight: 1.5 }}>
-            Run <code>supabase-tasks-migration.sql</code> in your Supabase SQL editor to create the
-            <code> tasks</code> and <code>task_people</code> tables, then reopen this tab.
+        <Eyebrow />
+        <h1 style={{ fontFamily: dv.serif, fontSize: isMobile ? 28 : 60, fontWeight: 300, lineHeight: 0.98, letterSpacing: "-0.03em", margin: "0 0 20px", color: dv.ink }}>
+          One <em style={{ fontStyle: "italic", fontWeight: 400, color: dv.accent }}>setup step</em> left.
+        </h1>
+        <div style={{ ...cardStyle, padding: isMobile ? "18px" : "24px 26px", maxWidth: 520 }}>
+          <p style={{ fontFamily: dv.sans, fontSize: 15, lineHeight: 1.55, color: dv.taupe, margin: 0 }}>
+            Run <span style={{ fontFamily: dv.mono, fontSize: 13, color: dv.ink }}>supabase-tasks-migration.sql</span> in
+            your Supabase SQL editor to create the <span style={{ fontFamily: dv.mono, fontSize: 13, color: dv.ink }}>tasks</span> and{" "}
+            <span style={{ fontFamily: dv.mono, fontSize: 13, color: dv.ink }}>task_people</span> tables, then reopen this tab.
           </p>
         </div>
       </div>
     );
   }
 
-  /* ---------- pills ---------- */
-  const Pill = ({ onClick, children, style, title }) => (
-    <button type="button" onClick={onClick} title={title} style={{
-      display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer",
-      border: `1px solid ${css.border}`, background: css.surface, color: css.text,
-      font: "inherit", fontSize: 12.5, fontWeight: 700, padding: "5px 11px 5px 6px",
-      borderRadius: 999, whiteSpace: "nowrap", ...style,
-    }}>{children}</button>
-  );
-
-  const Bubble = ({ p, size = 20 }) => (
+  /* ---------- pieces ---------- */
+  const Bubble = ({ p, size = 22 }) => (
     <span style={{
       width: size, height: size, flex: "none", borderRadius: "50%", display: "grid", placeItems: "center",
-      background: p ? p.color : "transparent", color: p ? "#fff" : css.text3, fontSize: 10, fontWeight: 700,
-      border: p ? "none" : `1px dashed ${css.border}`,
+      background: p ? p.color : "transparent", color: p ? "#fff" : dv.stone,
+      fontFamily: dv.mono, fontSize: size <= 22 ? 9 : 10, fontWeight: 500, letterSpacing: "0.02em",
+      border: p ? "none" : `1px dashed ${dv.cream}`,
     }}>{p ? initials(p.name) : "+"}</span>
+  );
+
+  const Pill = ({ onClick, children, style, title }) => (
+    <button type="button" onClick={onClick} title={title} style={{
+      display: "inline-flex", alignItems: "center", gap: 7, cursor: "pointer",
+      border: `1px solid ${dv.cream}`, background: "transparent", color: dv.ink,
+      fontFamily: dv.sans, fontSize: 12.5, fontWeight: 500, padding: "5px 12px 5px 5px",
+      borderRadius: 999, whiteSpace: "nowrap", transition: "border-color 0.18s, background 0.18s", ...style,
+    }}>{children}</button>
   );
 
   function assigneePill(t) {
     const p = personById(t.assignee_id);
     return (
       <Pill onClick={() => cycleAssignee(t)} title="Tap to change who's responsible"
-        style={p ? {} : { borderStyle: "dashed", color: css.text3 }}>
+        style={p ? {} : { borderStyle: "dashed", color: dv.taupe }}>
         <Bubble p={p} /><span>{p ? p.name : "Assign"}</span>
       </Pill>
     );
   }
 
-  function statusPill(t) {
+  function statusControl(t) {
     if (t.recurring) {
       return (
         <Pill onClick={() => logDone(t)} title="Record that this was done"
-          style={{ color: css.success, borderColor: css.successBg, padding: "6px 12px" }}>
-          ✓ Log done
+          style={{ padding: "6px 13px", gap: 6, color: dv.moss, borderColor: `${dv.moss}55` }}>
+          <CheckIcon size={13} /><span style={{ ...monoLabel, fontSize: 9.5 }}>Log done</span>
         </Pill>
       );
     }
     return (
       <Pill onClick={() => toggleComplete(t)} title={t.completed ? "Tap to reopen" : "Tap to mark done"}
-        style={{ padding: "6px 12px", color: t.completed ? css.success : css.text3,
-          background: t.completed ? css.successBg : css.surface, borderColor: t.completed ? "transparent" : css.border }}>
-        {t.completed ? `✓ Done ${fmtDate(t.completed_at)}` : "○ Not done"}
+        style={{
+          padding: "6px 13px", gap: 6,
+          color: t.completed ? dv.moss : dv.taupe,
+          borderColor: t.completed ? `${dv.moss}55` : dv.cream,
+          background: t.completed ? (D ? "rgba(107,122,90,0.12)" : "rgba(107,122,90,0.07)") : "transparent",
+        }}>
+        {t.completed ? <CheckIcon size={13} /> : <CircleIcon size={13} stroke={1.6} />}
+        <span style={{ ...monoLabel, fontSize: 9.5 }}>{t.completed ? `Done ${fmtDate(t.completed_at)}` : "Open"}</span>
       </Pill>
     );
   }
@@ -262,175 +341,243 @@ function TasksPage({ css, isMobile, darkMode, user, supabase }) {
 
   function TaskRow(t) {
     const meta = subtitle(t);
+    const dim = isDone(t);
     return (
       <div key={t.id} style={{
-        ...card, display: "flex", alignItems: "center", gap: 12, padding: "12px 14px",
-        opacity: isDone(t) ? 0.62 : 1, flexWrap: isMobile ? "wrap" : "nowrap",
+        ...cardStyle, display: "flex", alignItems: "center", gap: 14,
+        padding: isMobile ? "14px 15px" : "15px 18px",
+        opacity: dim ? 0.6 : 1, flexWrap: isMobile ? "wrap" : "nowrap",
+        transition: "opacity 0.2s, border-color 0.18s",
       }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 15, fontWeight: 600, color: css.text, wordBreak: "break-word",
-            textDecoration: isDone(t) ? "line-through" : "none" }}>
+          <div style={{
+            fontFamily: dv.serif, fontSize: isMobile ? 16 : 18, fontWeight: 400, lineHeight: 1.25,
+            color: dv.ink, wordBreak: "break-word", letterSpacing: "-0.01em",
+            textDecoration: dim ? "line-through" : "none",
+          }}>
             {t.title}
-            {t.recurring && <span style={{ marginLeft: 8, padding: "1px 7px", borderRadius: 5,
-              background: css.accentBg, color: css.accent, fontSize: 9.5, fontWeight: 800,
-              letterSpacing: ".05em", textTransform: "uppercase", verticalAlign: "middle" }}>Recurring</span>}
+            {t.recurring && (
+              <span style={{
+                marginLeft: 9, display: "inline-flex", alignItems: "center", gap: 4, verticalAlign: "middle",
+                padding: "2px 7px", borderRadius: 5, background: D ? "rgba(184,146,74,0.14)" : "rgba(184,146,74,0.10)",
+                color: dv.gold, ...monoLabel, fontSize: 8.5,
+              }}><RepeatIcon size={9} stroke={2.2} />Recurring</span>
+            )}
           </div>
-          {meta && <div style={{ fontSize: 12, color: css.text3, marginTop: 3 }}>{meta}</div>}
+          {meta && <div style={{ fontFamily: dv.sans, fontSize: 12.5, color: dv.taupe, marginTop: 4 }}>{meta}</div>}
         </div>
-        <div style={{ display: "flex", gap: 7, alignItems: "center", flex: "none",
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flex: "none",
           width: isMobile ? "100%" : "auto", order: isMobile ? 3 : 0 }}>
           {assigneePill(t)}
-          {statusPill(t)}
-          <button type="button" onClick={() => setEditing({ ...t })} aria-label={`Edit ${t.title}`}
-            style={{ border: 0, background: "none", cursor: "pointer", color: css.text3, fontSize: 15, padding: "4px 6px", borderRadius: 8 }}>✎</button>
+          {statusControl(t)}
+          <button type="button" onClick={() => setEditing({ ...t })} aria-label={`Edit ${t.title}`} title="Edit"
+            style={{ width: 30, height: 30, borderRadius: "50%", border: "1px solid transparent", background: "transparent",
+              color: dv.stone, cursor: "pointer", display: "grid", placeItems: "center", transition: "border-color 0.18s, color 0.18s" }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = dv.cream; e.currentTarget.style.color = dv.ink; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = "transparent"; e.currentTarget.style.color = dv.stone; }}>
+            <PencilIcon size={13} />
+          </button>
         </div>
       </div>
     );
   }
 
-  const GroupTitle = ({ children, count, right }) => (
-    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10 }}>
-      <h3 style={{ fontSize: 12, fontWeight: 800, letterSpacing: ".06em", textTransform: "uppercase", color: css.text3, margin: 0 }}>
-        {children}{count != null && <span style={{ marginLeft: 6, opacity: .8 }}>{count}</span>}
-      </h3>
+  // Section rule — the app's standard "eyebrow + hairline" divider.
+  const SectionRule = ({ children, count, right }) => (
+    <div style={{ display: "flex", alignItems: "center", gap: 14, margin: "0 0 16px", ...monoLabel, fontSize: 11, letterSpacing: "0.15em", color: dv.taupe }}>
+      <div style={{ width: 28, height: 1, background: dv.accent, flex: "none" }} />
+      <strong style={{ color: dv.ink, fontWeight: 500, whiteSpace: "nowrap" }}>
+        {children}{count != null && <span style={{ color: dv.taupe, marginLeft: 8 }}>{count}</span>}
+      </strong>
+      <div style={{ flex: 1, height: 1, background: dv.cream }} />
       {right}
     </div>
   );
 
   const chipBase = {
-    border: `1px solid ${css.border}`, background: css.surface, color: css.text3,
-    font: "inherit", fontSize: 13, fontWeight: 600, padding: "5px 12px", borderRadius: 999,
-    cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6,
+    border: `1px solid ${dv.cream}`, background: "transparent", color: dv.taupe,
+    fontFamily: dv.sans, fontSize: 13, fontWeight: 500, padding: "6px 14px", borderRadius: 999,
+    cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 7, transition: "all 0.18s",
   };
+  const chipOn = { borderColor: dv.accent, color: dv.ink, background: D ? "rgba(200,85,61,0.12)" : "rgba(200,85,61,0.07)" };
+
+  const openCount = tasks.filter((t) => !isDone(t)).length;
+  const doneCount = tasks.filter(isDone).length;
+
+  const Stat = ({ n, label }) => (
+    <div>
+      <div style={{ fontFamily: dv.serif, fontSize: isMobile ? 26 : 32, fontWeight: 400, fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em", color: dv.ink }}>{n}</div>
+      <div style={{ ...monoLabel, fontSize: 10.5, letterSpacing: "0.1em", color: dv.taupe, marginTop: 4 }}>{label}</div>
+    </div>
+  );
+
+  const Segmented = ({ value, onChange }) => (
+    <div style={{ display: "inline-flex", padding: 3, background: D ? "rgba(255,255,255,0.05)" : "#F4F1EC", borderRadius: 9, border: `1px solid ${dv.cream}` }}>
+      {[["One-time", false], ["Recurring", true]].map(([label, val]) => {
+        const on = value === val;
+        return (
+          <button key={label} type="button" onClick={() => onChange(val)} style={{
+            border: "none", background: on ? dv.paper : "transparent",
+            color: on ? dv.ink : dv.taupe, ...monoLabel, fontSize: 9.5,
+            padding: "8px 13px", borderRadius: 7, cursor: "pointer", whiteSpace: "nowrap",
+            boxShadow: on ? (D ? "0 1px 3px rgba(0,0,0,0.4)" : "0 1px 2px rgba(0,0,0,0.06)") : "none",
+            transition: "all 0.18s",
+          }}>{label}</button>
+        );
+      })}
+    </div>
+  );
 
   return (
     <div style={wrap}>
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
+      {/* ── Hero ── */}
+      <div style={{
+        display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr auto", gap: isMobile ? 22 : 48,
+        alignItems: "end", paddingBottom: isMobile ? 24 : 34, marginBottom: isMobile ? 26 : 36,
+        borderBottom: `1px solid ${dv.cream}`,
+      }}>
         <div>
-          <h1 style={{ fontSize: isMobile ? 22 : 26, color: css.text, margin: 0, letterSpacing: "-.02em" }}>Tasks</h1>
-          <p style={{ color: css.text3, fontSize: 13, margin: "2px 0 0" }}>Who's responsible for what.</p>
+          <Eyebrow />
+          <h1 style={{ fontFamily: dv.serif, fontSize: isMobile ? 30 : "clamp(48px, 7vw, 76px)", fontWeight: 300, lineHeight: isMobile ? 1.04 : 0.94, letterSpacing: "-0.035em", margin: 0, color: dv.ink }}>
+            Who's doing <em style={{ fontStyle: "italic", fontWeight: 400, color: dv.accent }}>what.</em>
+          </h1>
+          <p style={{ fontFamily: dv.serif, fontStyle: "italic", fontSize: isMobile ? 14 : 16, lineHeight: 1.5, color: dv.taupe, margin: "14px 0 0", maxWidth: 420 }}>
+            A running ledger of the household's responsibilities — the one-time jobs that get finished, and the recurring ones that never quite do.
+          </p>
+        </div>
+        <div style={{ display: "flex", gap: isMobile ? 28 : 40, paddingTop: isMobile ? 0 : 8 }}>
+          <Stat n={openCount} label="Open" />
+          <Stat n={doneCount} label="Done" />
+          <Stat n={people.length} label={people.length === 1 ? "Person" : "People"} />
         </div>
       </div>
 
-      {/* Add bar */}
-      <div style={{ ...card, display: "flex", gap: 8, alignItems: "center", padding: 8, marginBottom: 16, flexWrap: "wrap" }}>
+      {/* ── Composer ── */}
+      <div style={{ ...cardStyle, display: "flex", gap: 10, alignItems: "center", padding: isMobile ? 10 : 12, marginBottom: 20, flexWrap: "wrap" }}>
         <input value={addTitle} onChange={(e) => setAddTitle(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") addTask(); }}
-          placeholder="Add a task — e.g. Alyssa's lunch signup" maxLength={100}
-          style={{ flex: 1, minWidth: 180, border: 0, background: "transparent", color: css.text, font: "inherit", fontSize: 15, padding: 8, outline: "none" }} />
-        <div style={{ display: "inline-flex", padding: 3, background: css.surface2, borderRadius: 9 }}>
-          {[["One-time", false], ["Recurring", true]].map(([label, val]) => (
-            <button key={label} type="button" onClick={() => setAddRecurring(val)} style={{
-              border: 0, background: addRecurring === val ? css.surface : "transparent",
-              color: addRecurring === val ? css.text : css.text3, font: "inherit", fontSize: 12.5, fontWeight: 600,
-              padding: "6px 12px", borderRadius: 7, cursor: "pointer", whiteSpace: "nowrap",
-              boxShadow: addRecurring === val ? css.shadow : "none",
-            }}>{label}</button>
-          ))}
-        </div>
-        <button type="button" onClick={addTask} style={{
-          border: `1px solid ${css.accent}`, background: css.accent, color: "#fff", font: "inherit",
-          fontSize: 14, fontWeight: 600, padding: "9px 16px", borderRadius: 10, cursor: "pointer",
-        }}>Add</button>
+          placeholder="Add a task…" maxLength={100}
+          style={{ flex: 1, minWidth: 180, border: "none", background: "transparent", color: dv.ink,
+            fontFamily: dv.serif, fontSize: isMobile ? 16 : 18, padding: "6px 8px", outline: "none" }} />
+        <Segmented value={addRecurring} onChange={setAddRecurring} />
+        <button type="button" onClick={addTask} style={{ ...primaryBtn, display: "inline-flex", alignItems: "center", gap: 7 }}
+          onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.85"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; }}>
+          <PlusIcon size={12} stroke={2.4} />Add
+        </button>
       </div>
 
-      {/* Filters + manage people */}
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
+      {/* ── Filters + people ── */}
+      <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginBottom: isMobile ? 26 : 34 }}>
         {people.length > 0 && (
           <button type="button" onClick={() => setFilter(null)}
-            style={{ ...chipBase, ...(filter === null ? { borderColor: css.accent, color: css.text, background: css.accentBg } : {}) }}>Everyone</button>
+            style={{ ...chipBase, ...(filter === null ? chipOn : {}) }}>Everyone</button>
         )}
         {people.map((p) => (
           <button key={p.id} type="button" onClick={() => setFilter(filter === p.id ? null : p.id)}
-            style={{ ...chipBase, ...(filter === p.id ? { borderColor: css.accent, color: css.text, background: css.accentBg } : {}) }}>
-            <span style={{ width: 8, height: 8, borderRadius: "50%", background: p.color }} />{p.name}
+            style={{ ...chipBase, ...(filter === p.id ? chipOn : {}) }}>
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: p.color, flex: "none" }} />{p.name}
           </button>
         ))}
         <button type="button" onClick={() => setShowPeople(true)}
-          style={{ ...chipBase, borderStyle: "dashed", color: css.accent }}>＋ People</button>
+          style={{ ...chipBase, borderStyle: "dashed", color: dv.accent }}>
+          <PlusIcon size={11} stroke={2.2} />People
+        </button>
       </div>
 
-      {/* To do */}
-      <div style={{ marginBottom: 22 }}>
-        <GroupTitle count={todo.length || null}>To do</GroupTitle>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      {/* ── To do ── */}
+      <div style={{ marginBottom: done.length ? (isMobile ? 30 : 42) : 0 }}>
+        <SectionRule count={todo.length || null}>To do</SectionRule>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {todo.length === 0 && (
-            <div style={{ ...card, padding: 16, textAlign: "center", color: css.text3, fontSize: 14, boxShadow: "none" }}>
-              {filter ? "Nothing here for them." : tasks.length ? "All clear. Nice." : "No tasks yet — add one above."}
+            <div style={{ ...cardStyle, padding: isMobile ? "26px 18px" : "34px 24px", textAlign: "center", background: "transparent", borderStyle: "dashed" }}>
+              <p style={{ fontFamily: dv.serif, fontStyle: "italic", fontSize: 15, color: dv.taupe, margin: 0 }}>
+                {filter ? "Nothing on their plate." : tasks.length ? "All clear." : "No tasks yet — add the first one above."}
+              </p>
             </div>
           )}
           {todo.map(TaskRow)}
         </div>
       </div>
 
-      {/* Done */}
+      {/* ── Done ── */}
       {done.length > 0 && (
         <div>
-          <GroupTitle count={done.length} right={
-            <button type="button" onClick={clearDone} style={{ border: 0, background: "none", color: css.accent, font: "inherit", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Clear done</button>
-          }>Done</GroupTitle>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>{done.map(TaskRow)}</div>
+          <SectionRule count={done.length} right={
+            <button type="button" onClick={clearDone}
+              style={{ border: "none", background: "none", color: dv.accent, ...monoLabel, fontSize: 9.5, cursor: "pointer", padding: 0, flex: "none" }}>Clear done</button>
+          }>Done</SectionRule>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{done.map(TaskRow)}</div>
         </div>
       )}
 
-      {/* Edit modal */}
+      {/* ── Edit modal ── */}
       {editing && (
-        <Overlay onClose={() => setEditing(null)} css={css}>
-          <h2 style={{ fontSize: 17, color: css.text, margin: "0 0 14px" }}>Edit task</h2>
-          <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: ".03em", marginBottom: 6 }}>Task</label>
+        <Overlay dv={dv} isMobile={isMobile} onClose={() => setEditing(null)} eyebrow="Task" title="Edit task"
+          footer={
+            <>
+              <button type="button" onClick={() => deleteTask(editing.id)}
+                style={{ ...ghostBtn, display: "inline-flex", alignItems: "center", gap: 7, color: dv.accent, borderColor: "rgba(200,85,61,0.3)", background: D ? "rgba(200,85,61,0.10)" : "rgba(200,85,61,0.06)" }}>
+                <TrashIcon size={13} />Delete
+              </button>
+              <div style={{ flex: 1 }} />
+              <button type="button" onClick={() => setEditing(null)} style={ghostBtn}>Cancel</button>
+              <button type="button" onClick={saveEdit} style={primaryBtn}>Save</button>
+            </>
+          }>
+          <label style={{ display: "block", ...monoLabel, color: dv.taupe, marginBottom: 8 }}>Task</label>
           <input value={editing.title} onChange={(e) => setEditing({ ...editing, title: e.target.value })} maxLength={100}
-            style={{ width: "100%", padding: "11px 12px", borderRadius: 10, border: `1px solid ${css.border}`, background: css.bg, color: css.text, font: "inherit", fontSize: 15, marginBottom: 14, outline: "none" }} />
-          <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: ".03em", marginBottom: 6 }}>Type</label>
-          <div style={{ display: "inline-flex", padding: 3, background: css.surface2, borderRadius: 9, marginBottom: 18 }}>
-            {[["One-time", false], ["Recurring", true]].map(([label, val]) => (
-              <button key={label} type="button" onClick={() => setEditing({ ...editing, recurring: val })} style={{
-                border: 0, background: editing.recurring === val ? css.surface : "transparent",
-                color: editing.recurring === val ? css.text : css.text3, font: "inherit", fontSize: 13, fontWeight: 600,
-                padding: "7px 14px", borderRadius: 7, cursor: "pointer", boxShadow: editing.recurring === val ? css.shadow : "none",
-              }}>{label}</button>
-            ))}
-          </div>
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <button type="button" onClick={() => deleteTask(editing.id)} style={{ border: 0, background: "none", color: css.warning, font: "inherit", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Delete</button>
-            <div style={{ flex: 1 }} />
-            <button type="button" onClick={() => setEditing(null)} style={{ border: 0, background: "none", color: css.text3, font: "inherit", fontSize: 14, fontWeight: 600, cursor: "pointer", padding: "9px 14px" }}>Cancel</button>
-            <button type="button" onClick={saveEdit} style={{ border: `1px solid ${css.accent}`, background: css.accent, color: "#fff", font: "inherit", fontSize: 14, fontWeight: 600, padding: "9px 16px", borderRadius: 10, cursor: "pointer" }}>Save</button>
-          </div>
+            style={{ ...fieldStyle, fontFamily: dv.serif, fontSize: 17, marginBottom: 20 }} />
+          <label style={{ display: "block", ...monoLabel, color: dv.taupe, marginBottom: 8 }}>Type</label>
+          <Segmented value={editing.recurring} onChange={(val) => setEditing({ ...editing, recurring: val })} />
+          <p style={{ fontFamily: dv.serif, fontStyle: "italic", fontSize: 13.5, lineHeight: 1.5, color: dv.taupe, margin: "14px 0 0" }}>
+            {editing.recurring
+              ? "Recurring tasks stay on the list and keep a running count of every time they're done."
+              : "One-time tasks sink into Done once they're finished."}
+          </p>
         </Overlay>
       )}
 
-      {/* People modal */}
+      {/* ── People modal ── */}
       {showPeople && (
-        <Overlay onClose={() => setShowPeople(false)} css={css}>
-          <h2 style={{ fontSize: 17, color: css.text, margin: "0 0 14px" }}>People</h2>
-          <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+        <Overlay dv={dv} isMobile={isMobile} onClose={() => setShowPeople(false)} eyebrow="Household" title="People"
+          footer={
+            <>
+              <div style={{ flex: 1 }} />
+              <button type="button" onClick={() => setShowPeople(false)} style={primaryBtn}>Done</button>
+            </>
+          }>
+          <div style={{ display: "flex", gap: 9, marginBottom: 18 }}>
             <input value={newPerson} onChange={(e) => setNewPerson(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") { addPerson(newPerson); setNewPerson(""); } }}
-              placeholder="Add a person (e.g. Nick)" maxLength={24}
-              style={{ flex: 1, padding: "10px 12px", borderRadius: 10, border: `1px solid ${css.border}`, background: css.bg, color: css.text, font: "inherit", fontSize: 14, outline: "none" }} />
+              placeholder="Add a person" maxLength={24}
+              style={{ ...fieldStyle, fontSize: 14.5 }} />
             <button type="button" onClick={() => { addPerson(newPerson); setNewPerson(""); }}
-              style={{ border: `1px solid ${css.accent}`, background: css.accent, color: "#fff", font: "inherit", fontSize: 14, fontWeight: 600, padding: "9px 16px", borderRadius: 10, cursor: "pointer" }}>Add</button>
+              style={{ ...primaryBtn, flex: "none" }}>Add</button>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {people.length === 0 && <p style={{ color: css.text3, fontSize: 13, margin: 0 }}>No one yet.</p>}
+          <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+            {people.length === 0 && (
+              <p style={{ fontFamily: dv.serif, fontStyle: "italic", fontSize: 14, color: dv.taupe, margin: 0 }}>No one yet.</p>
+            )}
             {people.map((p) => (
-              <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", border: `1px solid ${css.border}`, borderRadius: 10 }}>
-                <span style={{ width: 26, height: 26, borderRadius: "50%", background: p.color, color: "#fff", display: "grid", placeItems: "center", fontSize: 10, fontWeight: 700, flex: "none" }}>{initials(p.name)}</span>
+              <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 11, padding: "9px 11px", border: `1px solid ${dv.cream}`, borderRadius: 10 }}>
+                <Bubble p={p} size={28} />
                 <input defaultValue={p.name} onBlur={(e) => renamePerson(p.id, e.target.value)} maxLength={24}
-                  style={{ border: 0, background: "none", color: css.text, font: "inherit", fontSize: 14, fontWeight: 600, width: 90, minWidth: 0, outline: "none" }} />
-                <div style={{ display: "flex", gap: 3, marginLeft: "auto" }}>
+                  style={{ border: "none", background: "none", color: dv.ink, fontFamily: dv.sans, fontSize: 14, fontWeight: 500, width: 84, minWidth: 0, outline: "none" }} />
+                <div style={{ display: "flex", gap: 4, marginLeft: "auto" }}>
                   {PALETTE.map((c) => (
-                    <button key={c} type="button" onClick={() => recolorPerson(p.id, c)} aria-label="colour"
-                      style={{ width: 16, height: 16, borderRadius: "50%", background: c, border: c === p.color ? `2px solid ${css.text}` : "2px solid transparent", cursor: "pointer", padding: 0 }} />
+                    <button key={c} type="button" onClick={() => recolorPerson(p.id, c)} aria-label={`Set colour ${c}`}
+                      style={{ width: 15, height: 15, borderRadius: "50%", background: c, border: c === p.color ? `2px solid ${dv.ink}` : "2px solid transparent", cursor: "pointer", padding: 0, transition: "border-color 0.18s" }} />
                   ))}
                 </div>
-                <button type="button" onClick={() => deletePerson(p.id)} aria-label={`Remove ${p.name}`}
-                  style={{ border: 0, background: "none", cursor: "pointer", color: css.text3, fontSize: 14, padding: "2px 4px" }}>🗑</button>
+                <button type="button" onClick={() => deletePerson(p.id)} aria-label={`Remove ${p.name}`} title="Remove"
+                  style={{ width: 28, height: 28, borderRadius: "50%", border: "1px solid transparent", background: "none", cursor: "pointer", color: dv.stone, display: "grid", placeItems: "center", flex: "none", transition: "color 0.18s, border-color 0.18s" }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = dv.accent; e.currentTarget.style.borderColor = "rgba(200,85,61,0.3)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = dv.stone; e.currentTarget.style.borderColor = "transparent"; }}>
+                  <TrashIcon size={13} />
+                </button>
               </div>
             ))}
-          </div>
-          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
-            <button type="button" onClick={() => setShowPeople(false)} style={{ border: `1px solid ${css.border}`, background: css.surface, color: css.text, font: "inherit", fontSize: 14, fontWeight: 600, padding: "9px 16px", borderRadius: 10, cursor: "pointer" }}>Done</button>
           </div>
         </Overlay>
       )}
@@ -438,14 +585,57 @@ function TasksPage({ css, isMobile, darkMode, user, supabase }) {
   );
 }
 
-function Overlay({ children, onClose, css }) {
+/*
+ * Modal shell — the app's standard sheet: one scroll container with a sticky
+ * header (title + close) and a sticky action footer, docked above the bottom
+ * tab bar on mobile so the footer stays reachable.
+ */
+function Overlay({ children, onClose, dv, isMobile, title, eyebrow, footer }) {
   return (
     <div onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-      style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(12,13,22,0.45)",
-        display: "grid", placeItems: "center", padding: 16 }}>
-      <div style={{ width: "100%", maxWidth: 420, background: css.surface, border: `1px solid ${css.border}`,
-        borderRadius: 18, boxShadow: css.shadowHover, padding: 20, maxHeight: "88vh", overflowY: "auto" }}>
-        {children}
+      style={{
+        position: "fixed", inset: 0, zIndex: 9000, background: "rgba(0,0,0,0.55)",
+        backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)",
+        display: "flex", alignItems: isMobile ? "flex-end" : "center", justifyContent: "center",
+        padding: isMobile ? "0 0 calc(132px + env(safe-area-inset-bottom)) 0" : 24,
+        overscrollBehavior: "contain",
+      }}>
+      <div onClick={(e) => e.stopPropagation()} style={{
+        width: "100%", maxWidth: 460,
+        maxHeight: isMobile ? "calc(var(--app-height, 100dvh) * 0.78)" : "86vh",
+        overflowY: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain",
+        background: dv.bone, border: `1px solid ${dv.cream}`,
+        borderRadius: isMobile ? 18 : 16, boxShadow: "0 24px 70px rgba(0,0,0,0.4)",
+      }}>
+        {/* Sticky header — stays put while the body scrolls. */}
+        <div style={{
+          position: "sticky", top: 0, zIndex: 2, background: dv.bone, borderBottom: `1px solid ${dv.cream}`,
+          padding: isMobile ? "16px 18px" : "18px 22px", display: "flex", alignItems: "flex-start",
+          justifyContent: "space-between", gap: 12,
+        }}>
+          <div style={{ minWidth: 0 }}>
+            {eyebrow && (
+              <div style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.13em", textTransform: "uppercase", color: dv.accent, marginBottom: 4 }}>{eyebrow}</div>
+            )}
+            <div style={{ fontFamily: dv.serif, fontSize: isMobile ? 20 : 23, fontWeight: 400, color: dv.ink, lineHeight: 1.15, letterSpacing: "-0.02em" }}>{title}</div>
+          </div>
+          <button type="button" onClick={onClose} title="Close" aria-label="Close"
+            style={{ width: 32, height: 32, borderRadius: "50%", border: `1px solid ${dv.cream}`, background: "transparent", color: dv.taupe, cursor: "pointer", display: "grid", placeItems: "center", flex: "none", transition: "border-color 0.18s, color 0.18s" }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = dv.ink; e.currentTarget.style.color = dv.ink; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = dv.cream; e.currentTarget.style.color = dv.taupe; }}>
+            <CloseIcon size={15} stroke={2} />
+          </button>
+        </div>
+
+        <div style={{ padding: isMobile ? "18px 18px 20px" : "20px 22px 22px" }}>{children}</div>
+
+        {footer && (
+          <div style={{
+            position: "sticky", bottom: 0, zIndex: 2, display: "flex", gap: 8, alignItems: "center",
+            padding: isMobile ? "12px 18px calc(12px + env(safe-area-inset-bottom))" : "14px 22px",
+            borderTop: `1px solid ${dv.cream}`, background: dv.bone,
+          }}>{footer}</div>
+        )}
       </div>
     </div>
   );

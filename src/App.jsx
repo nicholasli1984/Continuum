@@ -6864,7 +6864,7 @@ Start by introducing yourself briefly in-character with personality, and give an
     // Feedback hub
     feedback: () => <FeedbackPage css={css} isMobile={isMobile} darkMode={darkMode} user={user} />,
     // Tasks — shared household ledger
-    tasks: () => renderTasksPage({ css, isMobile, darkMode, user, supabase }),
+    tasks: () => renderTasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }),
     // legacy / still-reachable views
     expenses: renderExpenses, optimizer: renderOptimizer, insights: renderInsights, reports: renderReports, news: renderNews,
   };
