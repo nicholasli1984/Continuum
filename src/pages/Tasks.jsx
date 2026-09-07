@@ -38,6 +38,82 @@ const fmtDate = (s) => s
   ? new Date(`${s}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" })
   : "";
 
+/* ── Recurring cadence ──────────────────────────────────────────────────────
+ * A recurring task repeats on a fixed rhythm, so "done" is only ever true for
+ * a given occurrence: this week's laundry, this month's rent. Each cadence
+ * slices the calendar into periods, one completion per period, and the row
+ * carries a short trail of recent periods so a missed one is visible and any
+ * occurrence — including a mis-tap — can be toggled back off.
+ */
+const CADENCES = [
+  { id: "daily",   label: "Daily",   noun: "today",      trail: 7 },
+  { id: "weekly",  label: "Weekly",  noun: "this week",  trail: 8 },
+  { id: "monthly", label: "Monthly", noun: "this month", trail: 6 },
+  { id: "yearly",  label: "Yearly",  noun: "this year",  trail: 4 },
+];
+const cadenceOf = (t) => CADENCES.find((c) => c.id === t.cadence) || CADENCES[1];
+
+const parseDay = (s) => new Date(`${s}T00:00:00`);
+const toDayStr = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const startOfDay = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
+
+// ISO week (Monday-based), so "this week" doesn't drift by locale.
+function isoWeek(date) {
+  const d = startOfDay(date);
+  d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));   // shift to the Thursday of this week
+  const week1 = new Date(d.getFullYear(), 0, 4);
+  const week = 1 + Math.round(((d - week1) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
+  return { year: d.getFullYear(), week };
+}
+const mondayOf = (date) => { const d = startOfDay(date); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d; };
+
+// A period key identifies one occurrence — two dates in the same period share it.
+function periodKey(date, cadenceId) {
+  const d = startOfDay(date);
+  if (cadenceId === "daily") return toDayStr(d);
+  if (cadenceId === "monthly") return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  if (cadenceId === "yearly") return `${d.getFullYear()}`;
+  const { year, week } = isoWeek(d);
+  return `${year}-W${String(week).padStart(2, "0")}`;
+}
+
+// The periods to draw in a row's trail, oldest first, each with the date a
+// completion logged against it should carry (clamped so it's never in the future).
+function recentPeriods(cadenceId, count) {
+  const today = startOfDay(new Date());
+  const out = [];
+  for (let i = count - 1; i >= 0; i--) {
+    let start, end, label;
+    if (cadenceId === "daily") {
+      start = new Date(today); start.setDate(start.getDate() - i); end = new Date(start);
+      label = start.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+    } else if (cadenceId === "monthly") {
+      start = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
+      label = start.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+    } else if (cadenceId === "yearly") {
+      start = new Date(today.getFullYear() - i, 0, 1);
+      end = new Date(start.getFullYear(), 11, 31);
+      label = `${start.getFullYear()}`;
+    } else {
+      start = mondayOf(today); start.setDate(start.getDate() - i * 7);
+      end = new Date(start); end.setDate(end.getDate() + 6);
+      label = `Week of ${start.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`;
+    }
+    const stamp = end > today ? today : end;
+    out.push({ key: periodKey(start, cadenceId), label, stampDate: toDayStr(stamp), isCurrent: i === 0 });
+  }
+  return out;
+}
+
+// Completion log. Older rows predate the log and only carry last_done_at, so
+// they're read as a single historic completion.
+function completionsOf(t) {
+  const raw = Array.isArray(t.completions) ? t.completions : [];
+  if (raw.length === 0 && t.last_done_at) return [{ on: t.last_done_at, by: t.last_done_by || null }];
+  return raw;
+}
+
 /* ── Icons — stroke SVGs, matching the app's nav/segment icon weight ── */
 const Icon = ({ d, size = 14, stroke = 1.9 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -83,10 +159,13 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
 
   const [people, setPeople] = useState([]);
   const [tasks, setTasks] = useState([]);
-  const [ready, setReady] = useState(null);   // null=loading, false=needs migration, true=ok
+  // null=loading | false=needs the base migration | "patch"=needs the cadence
+  // patch | true=ok
+  const [ready, setReady] = useState(null);
   const [filter, setFilter] = useState(null);
   const [addTitle, setAddTitle] = useState("");
   const [addRecurring, setAddRecurring] = useState(false);
+  const [addCadence, setAddCadence] = useState("weekly");
   const [editing, setEditing] = useState(null);      // task being edited
   const [assigning, setAssigning] = useState(null);  // task whose assignee is being set
   const [assignName, setAssignName] = useState("");  // typed name in the assign sheet
@@ -113,7 +192,10 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
     if (pp.error || tt.error) { console.error("Tasks load error:", pp.error || tt.error); setReady(true); return; }
     setPeople(pp.data || []);
     setTasks(tt.data || []);
-    setReady(true);
+    // The cadence columns arrived in a later patch — probe for them explicitly,
+    // since select("*") can't tell an empty table from an un-patched one.
+    const probe = await supabase.from("tasks").select("id,cadence,completions").limit(1);
+    setReady(probe.error?.code === "42703" ? "patch" : true);
   }
 
   /* ---------- people CRUD ---------- */
@@ -167,9 +249,9 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
     const title = addTitle.trim();
     if (!title) return;
     const row = {
-      owner_id: user.id, title, recurring: addRecurring, assignee_id: null,
+      owner_id: user.id, title, recurring: addRecurring, cadence: addCadence, assignee_id: null,
       completed: false, completed_at: null, completed_by: null,
-      done_count: 0, last_done_at: null, last_done_by: null,
+      done_count: 0, last_done_at: null, last_done_by: null, completions: [],
     };
     const { data, error } = await supabase.from("tasks").insert(row).select().single();
     if (error) { console.error(error); return; }
@@ -201,20 +283,44 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
     pushDb(t.id, patch);
   }
 
-  function logDone(t) {
-    const patch = { done_count: (t.done_count || 0) + 1, last_done_at: todayStr(), last_done_by: t.assignee_id };
+  /*
+   * Recurring completions are toggled per occurrence rather than counted up, so
+   * an accidental tap is undone by tapping the same period again. done_count /
+   * last_done_at / last_done_by stay in sync as a rollup of the log.
+   */
+  function togglePeriod(t, key, stampDate) {
+    const cad = cadenceOf(t).id;
+    const list = completionsOf(t);
+    const hit = list.find((c) => periodKey(parseDay(c.on), cad) === key);
+    const next = hit
+      ? list.filter((c) => c !== hit)
+      : [...list, { on: stampDate, by: t.assignee_id || null }].sort((a, b) => a.on.localeCompare(b.on));
+    const latest = next.length ? next[next.length - 1] : null;
+    const patch = {
+      completions: next,
+      done_count: next.length,
+      last_done_at: latest ? latest.on : null,
+      last_done_by: latest ? latest.by : null,
+    };
     patchLocal(t.id, patch);
     pushDb(t.id, patch);
+  }
+
+  // The pill acts on the occurrence happening right now.
+  function toggleCurrentPeriod(t) {
+    const periods = recentPeriods(cadenceOf(t).id, 1);
+    const now = periods[periods.length - 1];
+    togglePeriod(t, now.key, now.stampDate);
   }
 
   async function saveEdit() {
     const t = editing;
     const title = t.title.trim();
     if (!title) return;
-    const patch = { title, recurring: t.recurring };
+    const patch = { title, recurring: t.recurring, cadence: t.cadence || "weekly" };
     // Switching kind clears the stamps that only apply to the other kind.
     if (t.recurring !== tasks.find((x) => x.id === t.id)?.recurring) {
-      Object.assign(patch, { completed: false, completed_at: null, completed_by: null, done_count: 0, last_done_at: null, last_done_by: null });
+      Object.assign(patch, { completed: false, completed_at: null, completed_by: null, done_count: 0, last_done_at: null, last_done_by: null, completions: [] });
     }
     patchLocal(t.id, patch);
     setEditing(null);
@@ -279,7 +385,8 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
     </div>
   );
 
-  if (ready === false) {
+  if (ready === false || ready === "patch") {
+    const mono = { fontFamily: dv.mono, fontSize: 13, color: dv.ink };
     return (
       <div style={wrap}>
         <Eyebrow />
@@ -288,9 +395,14 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
         </h1>
         <div style={{ ...cardStyle, padding: isMobile ? "18px" : "24px 26px", maxWidth: 520 }}>
           <p style={{ fontFamily: dv.sans, fontSize: 15, lineHeight: 1.55, color: dv.taupe, margin: 0 }}>
-            Run <span style={{ fontFamily: dv.mono, fontSize: 13, color: dv.ink }}>supabase-tasks-migration.sql</span> in
-            your Supabase SQL editor to create the <span style={{ fontFamily: dv.mono, fontSize: 13, color: dv.ink }}>tasks</span> and{" "}
-            <span style={{ fontFamily: dv.mono, fontSize: 13, color: dv.ink }}>task_people</span> tables, then reopen this tab.
+            {ready === "patch" ? (
+              <>Run <span style={mono}>supabase-tasks-cadence-migration.sql</span> in your Supabase SQL editor to add
+                the <span style={mono}>cadence</span> and <span style={mono}>completions</span> columns — they carry how
+                often a recurring task repeats and which occurrences are done — then reopen this tab.</>
+            ) : (
+              <>Run <span style={mono}>supabase-tasks-migration.sql</span> in your Supabase SQL editor to create
+                the <span style={mono}>tasks</span> and <span style={mono}>task_people</span> tables, then reopen this tab.</>
+            )}
           </p>
         </div>
       </div>
@@ -326,14 +438,31 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
     );
   }
 
+  // Is the occurrence happening right now already logged?
+  const doneThisPeriod = (t) => {
+    const cad = cadenceOf(t).id;
+    const nowKey = periodKey(new Date(), cad);
+    return completionsOf(t).some((c) => periodKey(parseDay(c.on), cad) === nowKey);
+  };
+
   // Status reads at a glance: red while open, green once complete.
   function statusControl(t) {
     if (t.recurring) {
+      const cad = cadenceOf(t);
+      const on = doneThisPeriod(t);
       return (
-        <Pill onClick={() => logDone(t)} title="Record that this was done"
-          style={{ padding: "6px 13px", gap: 6, color: dv.moss, borderColor: `${dv.moss}55`,
-            background: D ? "rgba(107,122,90,0.12)" : "rgba(107,122,90,0.07)" }}>
-          <CheckIcon size={13} /><span style={{ ...monoLabel, fontSize: 9.5 }}>Log done</span>
+        <Pill onClick={() => toggleCurrentPeriod(t)}
+          title={on ? `Logged for ${cad.noun} — tap to undo` : `Mark done for ${cad.noun}`}
+          style={{
+            padding: "6px 13px", gap: 6,
+            color: on ? dv.moss : dv.red,
+            borderColor: on ? `${dv.moss}55` : `${dv.red}55`,
+            background: on
+              ? (D ? "rgba(107,122,90,0.12)" : "rgba(107,122,90,0.07)")
+              : (D ? "rgba(200,62,52,0.14)" : "rgba(200,62,52,0.07)"),
+          }}>
+          {on ? <CheckIcon size={13} /> : <CircleIcon size={13} stroke={1.6} />}
+          <span style={{ ...monoLabel, fontSize: 9.5 }}>{on ? `Done ${cad.noun}` : `Due ${cad.noun}`}</span>
         </Pill>
       );
     }
@@ -356,9 +485,11 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
 
   function subtitle(t) {
     if (t.recurring) {
-      if (!t.last_done_at) return "Not done yet";
-      const who = personById(t.last_done_by);
-      return `Last done ${fmtDate(t.last_done_at)}${who ? ` by ${who.name}` : ""} · ${t.done_count}×`;
+      const log = completionsOf(t);
+      if (!log.length) return "Not done yet";
+      const latest = log[log.length - 1];
+      const who = personById(latest.by);
+      return `Last done ${fmtDate(latest.on)}${who ? ` by ${who.name}` : ""} · ${log.length}×`;
     }
     if (t.completed) {
       const who = personById(t.completed_by);
@@ -366,6 +497,40 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
     }
     return "";
   }
+
+  /*
+   * Occurrence trail — one cell per recent period, oldest on the left. Filled
+   * means that occurrence is logged, hollow means it was missed, and the
+   * current period carries a ring. Every cell is tappable, so a week that was
+   * forgotten can be filled in and a mis-tap can be cleared.
+   */
+  const OccurrenceTrail = ({ t }) => {
+    const cad = cadenceOf(t);
+    const log = completionsOf(t);
+    const doneKeys = new Set(log.map((c) => periodKey(parseDay(c.on), cad.id)));
+    return (
+      <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 8 }}>
+        {recentPeriods(cad.id, cad.trail).map((p) => {
+          const filled = doneKeys.has(p.key);
+          return (
+            <button key={p.key} type="button" onClick={() => togglePeriod(t, p.key, p.stampDate)}
+              title={`${p.label} — ${filled ? "done, tap to undo" : "not done, tap to log"}`}
+              aria-label={`${p.label}: ${filled ? "done" : "not done"}`}
+              style={{
+                width: 16, height: 16, padding: 0, borderRadius: 4, cursor: "pointer",
+                background: filled ? dv.moss : "transparent",
+                border: filled ? `1px solid ${dv.moss}` : `1px solid ${dv.cream}`,
+                boxShadow: p.isCurrent ? `0 0 0 2px ${D ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.06)"}` : "none",
+                transition: "background 0.18s, border-color 0.18s",
+              }} />
+          );
+        })}
+        <span style={{ ...monoLabel, fontSize: 8.5, color: dv.stone, marginLeft: 6 }}>
+          Last {cad.trail} {cad.id === "daily" ? "days" : cad.id === "weekly" ? "weeks" : cad.id === "monthly" ? "months" : "years"}
+        </span>
+      </div>
+    );
+  };
 
   function TaskRow(t) {
     const meta = subtitle(t);
@@ -387,10 +552,11 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
                 marginLeft: 9, display: "inline-flex", alignItems: "center", gap: 4, verticalAlign: "middle",
                 padding: "2px 7px", borderRadius: 5, background: D ? "rgba(184,146,74,0.14)" : "rgba(184,146,74,0.10)",
                 color: dv.gold, ...monoLabel, fontSize: 8.5,
-              }}><RepeatIcon size={9} stroke={2.2} />Recurring</span>
+              }}><RepeatIcon size={9} stroke={2.2} />{cadenceOf(t).label}</span>
             )}
           </div>
           {meta && <div style={{ fontFamily: dv.sans, fontSize: 12.5, color: dv.taupe, marginTop: 4 }}>{meta}</div>}
+          {t.recurring && <OccurrenceTrail t={t} />}
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center", flex: "none",
           width: isMobile ? "100%" : "auto", order: isMobile ? 3 : 0 }}>
@@ -454,6 +620,24 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
     </div>
   );
 
+  // Cadence picker — only meaningful once "Recurring" is chosen.
+  const CadencePicker = ({ value, onChange }) => (
+    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+      {CADENCES.map((c) => {
+        const on = (value || "weekly") === c.id;
+        return (
+          <button key={c.id} type="button" onClick={() => onChange(c.id)} style={{
+            border: `1px solid ${on ? dv.gold : dv.cream}`,
+            background: on ? (D ? "rgba(184,146,74,0.16)" : "rgba(184,146,74,0.10)") : "transparent",
+            color: on ? (D ? dv.ink : "#7A5F26") : dv.taupe,
+            ...monoLabel, fontSize: 9.5, padding: "7px 12px", borderRadius: 999,
+            cursor: "pointer", transition: "all 0.18s",
+          }}>{c.label}</button>
+        );
+      })}
+    </div>
+  );
+
   return (
     <div style={wrap}>
       {/* ── Hero ── */}
@@ -491,6 +675,12 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
           onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; }}>
           <PlusIcon size={12} stroke={2.4} />Add
         </button>
+        {addRecurring && (
+          <div style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "10px 8px 4px", borderTop: `1px solid ${dv.cream}`, marginTop: 4, flexWrap: "wrap" }}>
+            <span style={{ ...monoLabel, fontSize: 9.5, color: dv.taupe }}>Repeats</span>
+            <CadencePicker value={addCadence} onChange={setAddCadence} />
+          </div>
+        )}
       </div>
 
       {/* ── Filters + people ── */}
@@ -593,10 +783,16 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
             style={{ ...fieldStyle, fontFamily: dv.serif, fontSize: 17, marginBottom: 20 }} />
           <label style={{ display: "block", ...monoLabel, color: dv.taupe, marginBottom: 8 }}>Type</label>
           <Segmented value={editing.recurring} onChange={(val) => setEditing({ ...editing, recurring: val })} />
+          {editing.recurring && (
+            <div style={{ marginTop: 18 }}>
+              <label style={{ display: "block", ...monoLabel, color: dv.taupe, marginBottom: 8 }}>Repeats</label>
+              <CadencePicker value={editing.cadence} onChange={(val) => setEditing({ ...editing, cadence: val })} />
+            </div>
+          )}
           <p style={{ fontFamily: dv.serif, fontStyle: "italic", fontSize: 13.5, lineHeight: 1.5, color: dv.taupe, margin: "14px 0 0" }}>
             {editing.recurring
-              ? "Recurring tasks stay on the list and keep a running count of every time they're done."
-              : "One-time tasks sink into Done once they're finished."}
+              ? `Comes due again ${(CADENCES.find((c) => c.id === (editing.cadence || "weekly")) || CADENCES[1]).noun.replace("this ", "every ").replace("today", "every day")} — each occurrence is logged on its own, and tapping a logged one clears it.`
+              : "One-time tasks stay in place; completing one just turns its status green."}
           </p>
         </Overlay>
       )}
