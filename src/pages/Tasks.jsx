@@ -178,6 +178,7 @@ const TrashIcon = (p) => <Icon {...p} d={<><polyline points="3 6 5 6 21 6" /><pa
 const PlusIcon = (p) => <Icon {...p} d={<><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></>} />;
 const CloseIcon = (p) => <Icon {...p} d={<><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></>} />;
 const ClockIcon = (p) => <Icon {...p} d={<><circle cx="12" cy="12" r="9" /><polyline points="12 7 12 12 15.5 14" /></>} />;
+const NoteIcon = (p) => <Icon {...p} d={<><path d="M4 5h16" /><path d="M4 10h16" /><path d="M4 15h10" /><path d="M4 20h6" /></>} />;
 
 export function renderTasks(s) {
   return <TasksPage {...s} />;
@@ -198,6 +199,7 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
     moss: "#6B7A5A",   // complete
     red: D ? "#E05A4E" : "#C03E34",   // open — deliberately hotter than the terracotta accent
     gold: "#B8924A",
+    note: D ? "#8AB4DC" : "#3A6491",  // notes — italic blue, set apart from the warm palette
     serif: "'Fraunces', 'Instrument Serif', Georgia, serif",
     sans: "'Inter Tight', 'Instrument Sans', sans-serif",
     mono: "'JetBrains Mono', 'Geist Mono', monospace",
@@ -222,6 +224,8 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
   const [editing, setEditing] = useState(null);      // task being edited
   const [assigning, setAssigning] = useState(null);  // task whose assignee is being set
   const [assignName, setAssignName] = useState("");  // typed name in the assign sheet
+  const [noteEditing, setNoteEditing] = useState(null);  // task id whose note is open
+  const [noteDraft, setNoteDraft] = useState("");
   const [showPeople, setShowPeople] = useState(false);
   const [newPerson, setNewPerson] = useState("");
 
@@ -245,10 +249,17 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
     if (pp.error || tt.error) { console.error("Tasks load error:", pp.error || tt.error); setReady(true); return; }
     setPeople(pp.data || []);
     setTasks(tt.data || []);
-    // The cadence columns arrived in a later patch — probe for them explicitly,
-    // since select("*") can't tell an empty table from an un-patched one.
-    const probe = await supabase.from("tasks").select("id,cadence,completions,starts_on").limit(1);
-    setReady(probe.error?.code === "42703" ? "patch" : true);
+    // Later columns arrived in patches — probe for them explicitly, since
+    // select("*") can't tell an empty table from an un-patched one. Each patch
+    // is probed on its own so the setup card names only what's actually missing.
+    const [cad, note] = await Promise.all([
+      supabase.from("tasks").select("id,cadence,completions,starts_on").limit(1),
+      supabase.from("tasks").select("id,note").limit(1),
+    ]);
+    const missing = [];
+    if (cad.error?.code === "42703") missing.push("cadence");
+    if (note.error?.code === "42703") missing.push("notes");
+    setReady(missing.length ? missing : true);
   }
 
   /* ---------- people CRUD ---------- */
@@ -383,6 +394,18 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
     await pushDb(t.id, patch);
   }
 
+  /* ---------- notes ---------- */
+  function openNote(t) { setNoteEditing(t.id); setNoteDraft(t.note || ""); }
+  function closeNote() { setNoteEditing(null); setNoteDraft(""); }
+  function saveNote(t) {
+    const text = noteDraft.trim();
+    if (text === (t.note || "")) { closeNote(); return; }   // nothing changed — don't touch the row
+    const patch = { note: text || null };
+    patchLocal(t.id, patch);
+    pushDb(t.id, patch);
+    closeNote();
+  }
+
   function deleteTask(id) {
     confirmThen("Delete this task?", async () => {
       setTasks((prev) => prev.filter((t) => t.id !== id));
@@ -447,8 +470,9 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
     </div>
   );
 
-  if (ready === false || ready === "patch") {
+  if (ready === false || Array.isArray(ready)) {
     const mono = { fontFamily: dv.mono, fontSize: 13, color: dv.ink };
+    const patches = Array.isArray(ready) ? ready : [];
     return (
       <div style={wrap}>
         <Eyebrow />
@@ -457,11 +481,14 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
         </h1>
         <div style={{ ...cardStyle, padding: isMobile ? "18px" : "24px 26px", maxWidth: 520 }}>
           <p style={{ fontFamily: dv.sans, fontSize: 15, lineHeight: 1.55, color: dv.taupe, margin: 0 }}>
-            {ready === "patch" ? (
-              <>Run <span style={mono}>supabase-tasks-cadence-migration.sql</span> in your Supabase SQL editor to add
-                the <span style={mono}>cadence</span>, <span style={mono}>starts_on</span> and{" "}
-                <span style={mono}>completions</span> columns — they carry how often a recurring task repeats, when it
-                begins, and which occurrences are done — then reopen this tab. It's safe to re-run.</>
+            {patches.length ? (
+              <>Run {patches.includes("cadence") && <span style={mono}>supabase-tasks-cadence-migration.sql</span>}
+                {patches.length > 1 && " and "}
+                {patches.includes("notes") && <span style={mono}>supabase-tasks-notes-migration.sql</span>} in your
+                Supabase SQL editor, then reopen this tab.{" "}
+                {patches.includes("cadence") && "The first adds how often a recurring task repeats, when it begins, and which occurrences are done. "}
+                {patches.includes("notes") && "The notes patch adds the per-task note. "}
+                Both are safe to re-run.</>
             ) : (
               <>Run <span style={mono}>supabase-tasks-migration.sql</span> in your Supabase SQL editor to create
                 the <span style={mono}>tasks</span> and <span style={mono}>task_people</span> tables, then reopen this tab.</>
@@ -578,7 +605,7 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
    * current period carries a ring. Every cell is tappable, so a week that was
    * forgotten can be filled in and a mis-tap can be cleared.
    */
-  const OccurrenceTrail = ({ t }) => {
+  function occurrenceTrail(t) {
     const cad = cadenceOf(t);
     const log = completionsOf(t);
     const doneKeys = new Set(log.map((c) => periodKey(parseDay(c.on), cad.id)));
@@ -611,7 +638,62 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
         </span>
       </div>
     );
-  };
+  }
+
+  /*
+   * Note — one free-text aside per task, set in italic blue so it reads as a
+   * margin annotation rather than part of the task itself. Click it to edit;
+   * Enter saves, Escape reverts, blur saves. Emptying it removes the note.
+   */
+  // A plain render function, not a component: an inner component would be a new
+  // type on every render, so React would remount the textarea — and drop the
+  // caret — on each keystroke.
+  function noteBlock(t) {
+    const editingThis = noteEditing === t.id;
+    if (editingThis) {
+      return (
+        <div style={{ marginTop: 9, display: "flex", alignItems: "flex-start", gap: 9 }}>
+          <span style={{ width: 2, alignSelf: "stretch", background: dv.note, opacity: 0.5, borderRadius: 2, flex: "none" }} />
+          <textarea value={noteDraft} autoFocus rows={2}
+            onChange={(e) => setNoteDraft(e.target.value)}
+            onBlur={() => saveNote(t)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); saveNote(t); }
+              if (e.key === "Escape") { e.preventDefault(); closeNote(); }
+            }}
+            placeholder="Add a note…" maxLength={280}
+            style={{
+              flex: 1, resize: "vertical", minHeight: 46, padding: "8px 10px", borderRadius: 8,
+              border: `1px solid ${dv.note}55`, background: D ? "rgba(138,180,220,0.07)" : "rgba(58,100,145,0.04)",
+              color: dv.note, fontFamily: dv.serif, fontStyle: "italic", fontSize: 14, lineHeight: 1.5, outline: "none",
+            }} />
+        </div>
+      );
+    }
+    if (t.note) {
+      return (
+        <div onClick={() => openNote(t)} title="Click to edit this note"
+          style={{ marginTop: 9, display: "flex", alignItems: "flex-start", gap: 9, cursor: "text" }}>
+          <span style={{ width: 2, alignSelf: "stretch", background: dv.note, opacity: 0.5, borderRadius: 2, flex: "none" }} />
+          <p style={{ margin: 0, fontFamily: dv.serif, fontStyle: "italic", fontSize: 14, lineHeight: 1.5, color: dv.note, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+            {t.note}
+          </p>
+        </div>
+      );
+    }
+    return (
+      <button type="button" onClick={() => openNote(t)}
+        style={{
+          marginTop: 8, border: "none", background: "none", padding: 0, cursor: "pointer",
+          color: dv.note, opacity: 0.75, ...monoLabel, fontSize: 9,
+          display: "inline-flex", alignItems: "center", gap: 5, transition: "opacity 0.18s",
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.opacity = "1"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.opacity = "0.75"; }}>
+        <NoteIcon size={11} />Add note
+      </button>
+    );
+  }
 
   function TaskRow(t) {
     const meta = subtitle(t);
@@ -637,7 +719,8 @@ function TasksPage({ css, isMobile, darkMode, user, supabase, showConfirm }) {
             )}
           </div>
           {meta && <div style={{ fontFamily: dv.sans, fontSize: 12.5, color: dv.taupe, marginTop: 4 }}>{meta}</div>}
-          {t.recurring && <OccurrenceTrail t={t} />}
+          {t.recurring && occurrenceTrail(t)}
+          {noteBlock(t)}
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center", flex: "none",
           width: isMobile ? "100%" : "auto", order: isMobile ? 3 : 0 }}>
