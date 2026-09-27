@@ -1422,6 +1422,33 @@ function ImageReceiptWithFallback({ exp, css, D, user, supabase, setExpenses, se
   );
 }
 
+/*
+ * A blank leg of the Add Flight form. One definition rather than the same
+ * object literal repeated at every reset point — they had drifted (the
+ * generated return leg was missing `arrivalDate`), and a round trip built from
+ * a single leg is what left the form with no return date field at all.
+ */
+const blankFlightLeg = (id, overrides = {}) => ({
+  id,
+  flightNumber: "", date: "", arrivalDate: "",
+  departureTime: "", arrivalTime: "",
+  departureAirport: "", arrivalAirport: "",
+  departureTerminal: "", arrivalTerminal: "",
+  airline: "", aircraft: "", lookupMsg: "",
+  ...overrides,
+});
+
+// Outbound + return. The return leg mirrors the outbound's airports reversed
+// and carries the same airline, the way a booking site prefills it.
+const roundTripLegs = (first) => {
+  const out = first || blankFlightLeg(1);
+  return [out, blankFlightLeg(2, {
+    departureAirport: out.arrivalAirport || "",
+    arrivalAirport: out.departureAirport || "",
+    airline: out.airline || "",
+  })];
+};
+
 // MAIN APP
 // ============================================================
 export default function EliteStatusTracker() {
@@ -1564,7 +1591,10 @@ export default function EliteStatusTracker() {
   const [showMoveSegment, setShowMoveSegment] = useState(null); // { tripId, segIdx } to move a segment to another trip
   const [addSegmentType, setAddSegmentType] = useState(null); // which segment type form is open
   const [segmentForm, setSegmentForm] = useState({});
-  const [flightLegs, setFlightLegs] = useState([{ id: 1, flightNumber: "", date: "", arrivalDate: "", departureTime: "", arrivalTime: "", departureAirport: "", arrivalAirport: "", departureTerminal: "", arrivalTerminal: "", airline: "", aircraft: "", lookupMsg: "" }]);
+  // Round Trip is the default trip type, so the form must open with BOTH legs —
+  // otherwise the picker says round trip while only an outbound leg is on screen
+  // and there is nowhere to enter the return date.
+  const [flightLegs, setFlightLegs] = useState(() => roundTripLegs());
   const [flightRouteOptions, setFlightRouteOptions] = useState({}); // { legIdx: [{ dep, arr, depTime, arrTime, aircraft, raw }] }
   const [flightType, setFlightType] = useState("roundtrip"); // "oneway", "roundtrip", "multicity"
   const [editingSegIdx, setEditingSegIdx] = useState(null); // index of segment being edited within a trip
@@ -4224,7 +4254,8 @@ Start by introducing yourself briefly in-character with personality, and give an
     setShowAddSegment(null);
     setAddSegmentType(null);
     setSegmentForm({});
-    setFlightLegs([{ id: 1, flightNumber: "", date: "", arrivalDate: "", departureTime: "", arrivalTime: "", departureAirport: "", arrivalAirport: "", departureTerminal: "", arrivalTerminal: "", airline: "", aircraft: "", lookupMsg: "" }]);
+    setFlightType("roundtrip");
+    setFlightLegs(roundTripLegs());
     setEditingSegIdx(null);
     if (isNewFlightAdd) maybePromptFlightAlerts();
   };
@@ -4250,13 +4281,13 @@ Start by introducing yourself briefly in-character with personality, and give an
       // Pre-fill flight leg
       const airports = (seg.route || "").split("→").map(s => s.trim());
       setFlightType("oneway");
-      setFlightLegs([{
-        id: 1, flightNumber: seg.flightNumber || "", date: seg.date || "",
+      setFlightLegs([blankFlightLeg(1, {
+        flightNumber: seg.flightNumber || "", date: seg.date || "", arrivalDate: seg.arrivalDate || "",
         departureTime: seg.departureTime || "", arrivalTime: seg.arrivalTime || "",
         departureAirport: airports[0] || "", arrivalAirport: airports[1] || "",
         departureTerminal: seg.departureTerminal || "", arrivalTerminal: seg.arrivalTerminal || "",
-        airline: seg.airline || "", aircraft: seg.aircraft || "", lookupMsg: "",
-      }]);
+        airline: seg.airline || "", aircraft: seg.aircraft || "",
+      })]);
       setSegmentForm({
         fareClass: seg.fareClass || "", bookingClass: seg.bookingClass || "",
         seat: seg.seat || "", confirmationCode: seg.confirmationCode || "",
@@ -7597,10 +7628,16 @@ Start by introducing yourself briefly in-character with personality, and give an
                   {[["oneway", "One Way"], ["roundtrip", "Round Trip"], ["multicity", "Multi-City"]].map(([val, label]) => (
                     <button key={val} onClick={() => {
                       setFlightType(val);
-                      if (val === "oneway") setFlightLegs(l => [l[0] || { id: 1, flightNumber: "", date: "", arrivalDate: "", departureTime: "", arrivalTime: "", departureAirport: "", arrivalAirport: "", departureTerminal: "", arrivalTerminal: "", airline: "", aircraft: "", lookupMsg: "" }]);
+                      if (val === "oneway") setFlightLegs(l => [l[0] || blankFlightLeg(1)]);
                       else if (val === "roundtrip") {
-                        const first = flightLegs[0] || { id: 1, flightNumber: "", date: "", arrivalDate: "", departureTime: "", arrivalTime: "", departureAirport: "", arrivalAirport: "", departureTerminal: "", arrivalTerminal: "", airline: "", aircraft: "", lookupMsg: "" };
-                        setFlightLegs([first, { id: 2, flightNumber: "", date: "", departureTime: "", arrivalTime: "", departureAirport: first.arrivalAirport, arrivalAirport: first.departureAirport, departureTerminal: "", arrivalTerminal: "", airline: first.airline, aircraft: "", lookupMsg: "" }]);
+                        // Keep whatever the outbound leg already holds; rebuild
+                        // the return leg from it unless one is already filled in.
+                        setFlightLegs(l => {
+                          const out = l[0] || blankFlightLeg(1);
+                          const back = l[1];
+                          const backTouched = back && (back.flightNumber || back.date || back.departureTime);
+                          return backTouched ? [out, back] : roundTripLegs(out);
+                        });
                       }
                     }} style={{
                       flex: 1, padding: "10px 0", border: "none", cursor: "pointer",
@@ -7613,7 +7650,19 @@ Start by introducing yourself briefly in-character with personality, and give an
 
                 {/* Flight legs */}
                 {flightLegs.map((leg, legIdx) => {
-                  const updateLeg = (updates) => setFlightLegs(l => l.map((g, i) => i === legIdx ? { ...g, ...updates } : g));
+                  const updateLeg = (updates) => setFlightLegs(l => l.map((g, i) => {
+                    if (i === legIdx) return { ...g, ...updates };
+                    // On a round trip, mirror the outbound's airports onto the
+                    // return leg for as long as the user hasn't set them itself.
+                    if (flightType === "roundtrip" && legIdx === 0 && i === 1) {
+                      const mirrored = { ...g };
+                      if (updates.arrivalAirport !== undefined && !g.departureAirport) mirrored.departureAirport = updates.arrivalAirport;
+                      if (updates.departureAirport !== undefined && !g.arrivalAirport) mirrored.arrivalAirport = updates.departureAirport;
+                      if (updates.airline !== undefined && !g.airline) mirrored.airline = updates.airline;
+                      return mirrored;
+                    }
+                    return g;
+                  }));
                   const prevLeg = legIdx > 0 ? flightLegs[legIdx - 1] : null;
                   // Auto-calculate layover using resolved arrival date + time → next departure date + time
                   let layoverText = "";
@@ -7664,8 +7713,11 @@ Start by introducing yourself briefly in-character with personality, and give an
                           <input value={leg.arrivalAirport} onChange={e => updateLeg({ arrivalAirport: e.target.value.toUpperCase().slice(0, 3) })} placeholder="HKG" maxLength={3} style={{ display: "block", width: "100%", padding: "10px 12px", background: css.surface2, border: `1px solid ${css.border}`, color: css.text, fontSize: 15, fontWeight: 700, fontFamily: "'Geist Mono', monospace", outline: "none", boxSizing: "border-box", textAlign: "center" }} />
                         </div>
                         <div>
-                          <label style={{ fontSize: 10, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 4 }}>Date</label>
-                          <input type="date" value={leg.date} onChange={e => { if (e.target.value) lastDateRef.current = e.target.value; updateLeg({ date: e.target.value }); }} onFocus={e => { if (!e.target.value && lastDateRef.current) updateLeg({ date: lastDateRef.current }); }} style={{ display: "block", width: "100%", padding: "10px 8px", background: css.surface2, border: `1px solid ${css.border}`, color: css.text, fontSize: 12, fontFamily: "'Geist Mono', monospace", outline: "none", boxSizing: "border-box" }} />
+                          <label style={{ fontSize: 10, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 4 }}>
+                            {flightType === "roundtrip" ? (legIdx === 0 ? "Depart" : "Return") : "Date"}
+                          </label>
+                          <input type="date" value={leg.date}
+                            min={flightType === "roundtrip" && legIdx === 1 ? (flightLegs[0]?.date || undefined) : undefined} onChange={e => { if (e.target.value) lastDateRef.current = e.target.value; updateLeg({ date: e.target.value }); }} onFocus={e => { if (!e.target.value && lastDateRef.current) updateLeg({ date: lastDateRef.current }); }} style={{ display: "block", width: "100%", padding: "10px 8px", background: css.surface2, border: `1px solid ${css.border}`, color: css.text, fontSize: 12, fontFamily: "'Geist Mono', monospace", outline: "none", boxSizing: "border-box" }} />
                         </div>
                       </div>
                       {/* Flight number + Lookup */}
@@ -7746,7 +7798,11 @@ Start by introducing yourself briefly in-character with personality, and give an
                 {flightType === "multicity" && (
                   <button onClick={() => {
                     const lastLeg = flightLegs[flightLegs.length - 1];
-                    setFlightLegs(l => [...l, { id: l.length + 1, flightNumber: "", date: lastLeg?.date || "", arrivalDate: "", departureTime: "", arrivalTime: "", departureAirport: lastLeg?.arrivalAirport || "", arrivalAirport: "", departureTerminal: "", arrivalTerminal: "", airline: lastLeg?.airline || "", aircraft: "", lookupMsg: "" }]);
+                    setFlightLegs(l => [...l, blankFlightLeg(l.length + 1, {
+                      date: lastLeg?.date || "",
+                      departureAirport: lastLeg?.arrivalAirport || "",
+                      airline: lastLeg?.airline || "",
+                    })]);
                   }} style={{ width: "100%", padding: "10px 0", border: `1px dashed ${css.border}`, background: "transparent", color: css.text3, fontSize: 11, fontWeight: 700, cursor: "pointer", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 16, transition: "all 0.12s" }}
                     onMouseEnter={e => { e.currentTarget.style.borderColor = css.accent; e.currentTarget.style.color = css.accent; }}
                     onMouseLeave={e => { e.currentTarget.style.borderColor = css.border; e.currentTarget.style.color = css.text3; }}>
@@ -7888,7 +7944,7 @@ Start by introducing yourself briefly in-character with personality, and give an
         >
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr", gap: 8, padding: "8px 0 16px" }}>
             {SEGMENT_TYPES.map(type => (
-              <button key={type.id} onClick={() => { setAddSegmentType(type.id); setSegmentForm({}); setFlightType("roundtrip"); setFlightLegs([{ id: 1, flightNumber: "", date: "", arrivalDate: "", departureTime: "", arrivalTime: "", departureAirport: "", arrivalAirport: "", departureTerminal: "", arrivalTerminal: "", airline: "", aircraft: "", lookupMsg: "" }]); }} style={{
+              <button key={type.id} onClick={() => { setAddSegmentType(type.id); setSegmentForm({}); setFlightType("roundtrip"); setFlightLegs(roundTripLegs()); }} style={{
                 padding: "16px 14px",
                 border: `1px solid var(--fm-border)`,
                 background: "var(--fm-bg-raised)",
