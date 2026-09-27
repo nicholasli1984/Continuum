@@ -388,10 +388,13 @@ ${bodyText.slice(0, 8000)}` }],
           }
         }
 
-        // Save to itineraries inbox (for both new bookings and changes)
+        // Save to itineraries inbox (for both new bookings and changes).
+        // `source` must carry the Gmail message id: the already-processed check
+        // above looks for source = "gmail:<msgId>", so writing a bare "email"
+        // here meant every poll re-imported the same message as a new inbox item.
         await supabase.from("itineraries").insert({
           user_id: conn.user_id,
-          source: "email",
+          source: `gmail:${msgId}`,
           sender_email: from,
           subject: subject,
           raw_text: bodyText.slice(0, 10000),

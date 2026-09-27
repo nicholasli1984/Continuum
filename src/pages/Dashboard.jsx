@@ -953,6 +953,36 @@ export function renderDashboard(s) {
   // shows. Normal dashboard rendering leaves embeddedTab undefined.
   const dashSubTab = embeddedTab || _dashSubTab;
   const handleAddTrip = () => setShowCreateTrip(true);
+
+  /*
+   * Retire an inbox itinerary once its segments have landed in a trip.
+   *
+   * This has to succeed in the database, not just in local state: the inbox is
+   * re-read from `itineraries` on every load, so a silently-failed update means
+   * the booking reappears the next time the tab is opened. It writes `trip_id`
+   * to record which trip absorbed the booking, and falls back to a status-only
+   * update on installs that predate supabase-itineraries-tripid-migration.sql
+   * (PostgREST answers an unknown column with PGRST204 / 42703).
+   */
+  const retireItinerary = async (itinId, tripId) => {
+    if (!user) return false;
+    let { error } = await supabase.from("itineraries")
+      .update({ status: "added", trip_id: tripId })
+      .eq("id", itinId).eq("user_id", user.id);
+    const unknownColumn = error && (error.code === "PGRST204" || error.code === "42703" || /trip_id/i.test(error.message || ""));
+    if (unknownColumn) {
+      ({ error } = await supabase.from("itineraries")
+        .update({ status: "added" })
+        .eq("id", itinId).eq("user_id", user.id));
+    }
+    if (error) {
+      console.error("[inbox] failed to retire itinerary", itinId, error);
+      showConfirm("Couldn't file that booking away — it stayed in your inbox. Please try again.", () => {});
+      return false;
+    }
+    setSavedItineraries(prev => prev.filter(i => i.id !== itinId));
+    return true;
+  };
   const dv = { bone: D ? "#1a1a1a" : "#fff", paper: D ? "#222" : "#fff", cream: D ? "rgba(255,255,255,0.06)" : "#E2DCCE", stone: D ? "#8a8a8a" : "#857A66", taupe: D ? "#999" : "#6B6458", graphite: D ? "#111" : "#2C2A26", ink: D ? "#f0ece6" : "#15130F", moss: "#6B7A5A", gold: "#B8924A" };
 
   // Quick action chip used on the Featured Trip card. Mono uppercase, subtle
@@ -1845,9 +1875,8 @@ export function renderDashboard(s) {
                                 const allCancelled = realSegs.length > 0 && realSegs.every(s => s.cancelled);
                                 const tripUpdate = allCancelled ? { segments: segs, status: "cancelled" } : { segments: segs };
                                 await supabase.from("trips").update(tripUpdate).eq("id", targetTrip.id).eq("user_id", user.id);
-                                await supabase.from("itineraries").update({ status: "added", trip_id: targetTrip.id }).eq("id", itin.id);
                                 loadTrips(user.id);
-                                setSavedItineraries(prev => prev.filter(i => i.id !== itin.id));
+                                await retireItinerary(itin.id, targetTrip.id);
                               }} style={{
                                 padding: "8px 16px", border: `1px solid #C8553D`, background: "#C8553D", color: "#fff",
                                 fontFamily: dv.mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer",
@@ -1885,9 +1914,8 @@ export function renderDashboard(s) {
                               const meta = (matchedTrip.segments || []).find(s => s._isMeta);
                               const finalSegs = meta ? [meta, ...merged] : merged;
                               await supabase.from("trips").update({ segments: finalSegs }).eq("id", matchedTrip.id).eq("user_id", user.id);
-                              await supabase.from("itineraries").update({ status: "added", trip_id: matchedTrip.id }).eq("id", itin.id);
                               loadTrips(user.id);
-                              setSavedItineraries(prev => prev.filter(i => i.id !== itin.id));
+                              await retireItinerary(itin.id, matchedTrip.id);
                             }} style={{
                               padding: "8px 16px", border: `1px solid ${css.accent}`, background: css.accent, color: "#fff",
                               fontFamily: dv.mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer",
@@ -1925,11 +1953,16 @@ export function renderDashboard(s) {
                               const existingSegs = trip.segments && trip.segments.length > 0 ? trip.segments : [];
                               const mergedSegs = [...existingSegs, ...newSegs].sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999"));
                               if (user) {
-                                await supabase.from("trips").update({ segments: mergedSegs }).eq("id", tripId).eq("user_id", user.id);
-                                await supabase.from("itineraries").update({ status: "added", trip_id: tripId }).eq("id", itin.id);
+                                const { error: tripErr } = await supabase.from("trips")
+                                  .update({ segments: mergedSegs }).eq("id", tripId).eq("user_id", user.id);
+                                if (tripErr) {
+                                  console.error("[inbox] failed to add segments to trip", tripId, tripErr);
+                                  showConfirm("Couldn't add that booking to the trip. Please try again.", () => {});
+                                  e.target.value = "";
+                                  return;
+                                }
                                 loadTrips(user.id);
-                                setSavedItineraries(prev => prev.filter(i => i.id !== itin.id));
-                                setExpandedItinId(null);
+                                if (await retireItinerary(itin.id, tripId)) setExpandedItinId(null);
                               }
                               e.target.value = "";
                             }} style={{ padding: "8px 12px", border: `1px solid ${dv.cream}`, background: "transparent", color: dv.taupe, fontFamily: dv.sans, fontSize: 11, cursor: "pointer" }}>

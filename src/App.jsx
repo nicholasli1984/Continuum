@@ -4969,10 +4969,14 @@ Start by introducing yourself briefly in-character with personality, and give an
       status: "confirmed",
     });
     setShowCreateTrip(true);
-    // Mark itinerary as added
+    // Mark itinerary as added. Only drop it from the inbox list once the write
+    // lands — the inbox is re-read from the table on every load, so clearing it
+    // locally after a failed update just makes the booking reappear later.
     if (user) {
-      await supabase.from("itineraries").update({ status: "added" }).eq("id", itinerary.id);
-      setSavedItineraries(prev => prev.filter(i => i.id !== itinerary.id));
+      const { error } = await supabase.from("itineraries")
+        .update({ status: "added" }).eq("id", itinerary.id).eq("user_id", user.id);
+      if (error) console.error("[inbox] failed to mark itinerary added", itinerary.id, error);
+      else setSavedItineraries(prev => prev.filter(i => i.id !== itinerary.id));
     }
   };
 
@@ -4980,8 +4984,10 @@ Start by introducing yourself briefly in-character with personality, and give an
   const dismissItinerary = (id) => {
     showConfirm("Dismiss this booking from your inbox?", async () => {
       if (user) {
-        await supabase.from("itineraries").update({ status: "dismissed" }).eq("id", id);
-        setSavedItineraries(prev => prev.filter(i => i.id !== id));
+        const { error } = await supabase.from("itineraries")
+          .update({ status: "dismissed" }).eq("id", id).eq("user_id", user.id);
+        if (error) console.error("[inbox] failed to dismiss itinerary", id, error);
+        else setSavedItineraries(prev => prev.filter(i => i.id !== id));
       }
     });
   };
