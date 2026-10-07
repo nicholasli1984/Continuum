@@ -821,27 +821,59 @@ export function renderTrips(s) {
         const today = new Date();
         const todayStrLocal = toStr(today);
 
-        // The full span a trip occupies: earliest start to latest end across its
-        // segments, including hotel checkouts and car drop-offs.
+        /*
+         * The span of days a trip blocks out.
+         *
+         * A trip carries its own start (`date`) and end (`_endDate` in the meta
+         * segment) which the user sets when creating or editing it, plus the
+         * dates on its individual segments. Those can disagree — a segment can
+         * pick up a stale date from the last one entered, and a trip created
+         * without a start date used to fall back to the day it was created — so
+         * precedence matters. An earlier draft unioned everything, which let one
+         * stray date drag a March trip back across five months of calendar.
+         *
+         *   1. A declared start AND end wins outright. Segments inside that
+         *      window may push the tail later (a hotel checking out the morning
+         *      after the trip "ends"); anything outside it is treated as a stray
+         *      and ignored.
+         *   2. With no declared end, the segments describe the trip.
+         *   3. With neither, it's a single day on its start date.
+         */
+        const segmentEnd = (seg) => {
+          let e = seg.date || "";
+          if (seg.arrivalDate && seg.arrivalDate > e) e = seg.arrivalDate;
+          if (seg.type === "hotel") {
+            const checkout = seg.checkoutDate || (seg.date && seg.nights ? addDays(seg.date, parseInt(seg.nights) || 1) : "");
+            if (checkout && checkout > e) e = checkout;
+          }
+          if (seg.type === "car" && seg.dropoffDate && seg.dropoffDate > e) e = seg.dropoffDate;
+          return e;
+        };
+
         const tripSpan = (t) => {
-          const segs = (t.segments || []).filter(s => !s._isMeta);
+          const segs = (t.segments || []).filter(s => !s._isMeta && s.date);
           const meta = (t.segments || []).find(s => s._isMeta);
-          let start = t.date || "";
-          let end = t.date || "";
-          const seeStart = (d) => { if (d && (!start || d < start)) start = d; };
-          const seeEnd = (d) => { if (d && (!end || d > end)) end = d; };
-          seeEnd(t._endDate); seeEnd(meta?._endDate);
-          segs.forEach(seg => {
-            seeStart(seg.date); seeEnd(seg.date); seeEnd(seg.arrivalDate);
-            if (seg.type === "hotel") {
-              const checkout = seg.checkoutDate || (seg.date && seg.nights ? addDays(seg.date, parseInt(seg.nights) || 1) : null);
-              seeEnd(checkout);
-            }
-            if (seg.type === "car") seeEnd(seg.dropoffDate);
-          });
-          if (!start) return null;
-          if (!end || end < start) end = start;
-          return { start, end };
+          const declaredStart = t.date || "";
+          const declaredEnd = meta?._endDate || t._endDate || "";
+
+          if (declaredStart && declaredEnd && declaredEnd >= declaredStart) {
+            let end = declaredEnd;
+            segs.forEach(seg => {
+              if (seg.date < declaredStart || seg.date > declaredEnd) return;   // stray — not part of this window
+              const e = segmentEnd(seg);
+              if (e && e > end) end = e;
+            });
+            return { start: declaredStart, end };
+          }
+
+          if (segs.length) {
+            const start = segs.map(s => s.date).sort()[0];
+            const end = segs.map(segmentEnd).filter(Boolean).sort().pop() || start;
+            return { start, end: end < start ? start : end };
+          }
+
+          if (!declaredStart) return null;
+          return { start: declaredStart, end: declaredStart };
         };
 
         const spans = trips.map(t => ({ trip: t, span: tripSpan(t) })).filter(x => x.span);

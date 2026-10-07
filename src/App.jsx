@@ -4001,10 +4001,18 @@ Start by introducing yourself briefly in-character with personality, and give an
     if (createTripSaving) return;
     setCreateTripError("");
     setCreateTripSaving(true);
+    // A trip's `date` is its start, and the calendar blocks days out from it.
+    // Falling straight back to today put trips months away from where they
+    // belong, so an unset start takes the earliest date among the segments
+    // being carried in (the inbox import case) before today is considered.
+    const earliestSegDate = (newTrip.segments || [])
+      .filter(s => !s._isMeta && s.date)
+      .map(s => s.date)
+      .sort()[0] || "";
     const payload = {
       trip_name: createTripForm.name.trim(),
       status: createTripForm.status || "planned",
-      date: createTripForm.startDate || new Date().toISOString().slice(0, 10),
+      date: createTripForm.startDate || earliestSegDate || new Date().toISOString().slice(0, 10),
       location: createTripForm.destination || "",
     };
 
