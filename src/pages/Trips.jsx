@@ -805,39 +805,66 @@ export function renderTrips(s) {
 
       {/* Flighty instructions banner */}
 
-      {/* Calendar view */}
+      {/* Calendar view — one bar per TRIP, spanning the days it covers.
+          Deliberately NOT one row per itinerary item: a week with four flights
+          and two hotels became unreadable, and at month scale what matters is
+          which days are spoken for and by which trip. Open the trip for the
+          flight-by-flight detail. */}
       {tripsView === "calendar" && (() => {
         const pad = (n) => String(n).padStart(2, "0");
+        const toStr = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+        const addDays = (dateStr, n) => { const d = new Date(dateStr + "T12:00:00"); d.setDate(d.getDate() + n); return toStr(d); };
         const { year, month } = calViewMonth;
         const monthLabel = new Date(year, month, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
         const firstDay = new Date(year, month, 1).getDay();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
-        const cells = [];
-        for (let i = 0; i < firstDay; i++) cells.push(null);
-        for (let d = 1; d <= daysInMonth; d++) cells.push(d);
-        while (cells.length % 7 !== 0) cells.push(null);
         const today = new Date();
-        const isToday = (d) => d && year === today.getFullYear() && month === today.getMonth() && d === today.getDate();
-        const getTripsForDay = (d) => {
-          if (!d) return [];
-          const dateStr = `${year}-${pad(month + 1)}-${pad(d)}`;
-          return trips.filter(t => {
-            const segs = (t.segments && t.segments.length > 0) ? t.segments : (t.date ? [{ type: t.type, date: t.date, checkoutDate: t.checkoutDate, dropoffDate: t.dropoffDate, nights: t.nights }] : []);
-            return segs.some(seg => {
-              if (!seg.date) return false;
-              if (seg.date === dateStr) return true;
-              // Hotels span check-in through checkout
-              if (seg.type === "hotel") {
-                const checkout = seg.checkoutDate || (seg.nights > 1 ? (() => { const e = new Date(seg.date + "T12:00:00"); e.setDate(e.getDate() + seg.nights); return e.toISOString().slice(0,10); })() : null);
-                if (checkout && dateStr > seg.date && dateStr < checkout) return true;
-              }
-              // Car rentals span pickup through dropoff
-              if (seg.type === "car" && seg.dropoffDate && dateStr > seg.date && dateStr <= seg.dropoffDate) return true;
-              return false;
-            });
+        const todayStrLocal = toStr(today);
+
+        // The full span a trip occupies: earliest start to latest end across its
+        // segments, including hotel checkouts and car drop-offs.
+        const tripSpan = (t) => {
+          const segs = (t.segments || []).filter(s => !s._isMeta);
+          const meta = (t.segments || []).find(s => s._isMeta);
+          let start = t.date || "";
+          let end = t.date || "";
+          const seeStart = (d) => { if (d && (!start || d < start)) start = d; };
+          const seeEnd = (d) => { if (d && (!end || d > end)) end = d; };
+          seeEnd(t._endDate); seeEnd(meta?._endDate);
+          segs.forEach(seg => {
+            seeStart(seg.date); seeEnd(seg.date); seeEnd(seg.arrivalDate);
+            if (seg.type === "hotel") {
+              const checkout = seg.checkoutDate || (seg.date && seg.nights ? addDays(seg.date, parseInt(seg.nights) || 1) : null);
+              seeEnd(checkout);
+            }
+            if (seg.type === "car") seeEnd(seg.dropoffDate);
           });
+          if (!start) return null;
+          if (!end || end < start) end = start;
+          return { start, end };
         };
+
+        const spans = trips.map(t => ({ trip: t, span: tripSpan(t) })).filter(x => x.span);
+
+        // Calendar grid runs whole weeks, including the tail of the previous
+        // month and the head of the next, so a trip crossing a month boundary
+        // still draws a continuous bar.
+        const gridStart = new Date(year, month, 1);
+        gridStart.setDate(1 - firstDay);
+        const weekCount = Math.ceil((firstDay + daysInMonth) / 7);
+        const weeks = Array.from({ length: weekCount }, (_, w) =>
+          Array.from({ length: 7 }, (_, i) => {
+            const d = new Date(gridStart);
+            d.setDate(gridStart.getDate() + w * 7 + i);
+            return d;
+          })
+        );
+
         const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        const laneH = isMobile ? 17 : 21;
+        const headH = isMobile ? 22 : 26;
+        const maxLanes = isMobile ? 3 : 4;
+
         return (
           <div>
             {/* Month navigator */}
@@ -849,83 +876,104 @@ export function renderTrips(s) {
             {/* Day headers */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", marginBottom: 2 }}>
               {DAY_LABELS.map(d => (
-                <div key={d} style={{ textAlign: "center", padding: "6px 0", fontSize: 10, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.1em" }}>{d}</div>
+                <div key={d} style={{ textAlign: "center", padding: "6px 0", fontSize: 10, fontWeight: 700, color: css.text3, textTransform: "uppercase", letterSpacing: "0.1em" }}>{isMobile ? d[0] : d}</div>
               ))}
             </div>
-            {/* Day grid */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: isMobile ? 1 : 2 }}>
-              {cells.map((d, i) => {
-                const dayTrips = getTripsForDay(d);
-                const dateStr = d ? `${year}-${pad(month + 1)}-${pad(d)}` : "";
-                if (isMobile) {
-                  // Compact single-page mobile view: date number + colored dots only
-                  return (
-                    <div key={i} onClick={() => {
-                      if (d && dayTrips.length > 0) { setTripDetailId(dayTrips[0].id); setTripDetailSegIdx(0); }
-                    }} style={{
-                      background: d ? css.surface : "transparent",
-                      border: `1px solid ${d ? (dayTrips.length > 0 ? css.accentBorder : css.border) : "transparent"}`,
-                      borderRadius: 6, padding: "5px 2px 6px", textAlign: "center",
-                      cursor: d && dayTrips.length > 0 ? "pointer" : "default",
-                      minHeight: 44,
-                    }}>
-                      {d && <>
-                        <div style={{ width: 20, height: 20, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: isToday(d) ? 700 : 400, background: isToday(d) ? css.accent : "transparent", color: isToday(d) ? "#fff" : css.text2, margin: "0 auto 4px" }}>{d}</div>
-                        <div style={{ display: "flex", gap: 2, flexWrap: "wrap", justifyContent: "center" }}>
-                          {dayTrips.slice(0, 3).map((trip, ti) => {
-                            const prog = allPrograms.find(p => p.id === trip.program);
-                            const color = prog?.color || css.accent;
-                            const allSegs = (trip.segments && trip.segments.length > 0) ? trip.segments : [{ type: trip.type, date: trip.date }];
-                            const seg = allSegs.find(s => s.date === dateStr) || allSegs[0];
-                            const segType = seg?.type || trip.type;
-                            const dotIcon = "●";
-                            return <div key={ti} style={{ width: 14, height: 14, borderRadius: "50%", background: color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 7, color: "#fff" }}>{dotIcon}</div>;
-                          })}
-                          {dayTrips.length > 3 && <div style={{ fontSize: 7, color: css.text3, lineHeight: "14px" }}>+{dayTrips.length - 3}</div>}
-                        </div>
-                      </>}
-                    </div>
-                  );
-                }
+            {/* Week rows. Cells sit flush (no gap) so a bar can be positioned by
+                percentage across the row and still line up with the columns. */}
+            <div style={{ border: `1px solid ${css.border}`, borderRadius: 10, overflow: "hidden" }}>
+              {weeks.map((days, wi) => {
+                const weekStart = toStr(days[0]);
+                const weekEnd = toStr(days[6]);
+                const dayIdx = (dateStr) => Math.round((new Date(dateStr + "T12:00:00") - new Date(weekStart + "T12:00:00")) / 86400000);
+
+                // Trips touching this week, longest first so the big ones take
+                // the top lanes, then packed greedily into lanes that are free.
+                const inWeek = spans
+                  .filter(({ span }) => span.start <= weekEnd && span.end >= weekStart)
+                  .map(({ trip, span }) => {
+                    const from = Math.max(0, dayIdx(span.start));
+                    const to = Math.min(6, dayIdx(span.end));
+                    return { trip, span, from, to, cols: to - from + 1, startsHere: span.start >= weekStart, endsHere: span.end <= weekEnd };
+                  })
+                  .sort((a, b) => (b.cols - a.cols) || a.from - b.from);
+
+                const lanes = [];
+                inWeek.forEach(bar => {
+                  let lane = lanes.findIndex(l => l.every(b => bar.from > b.to || bar.to < b.from));
+                  if (lane === -1) { lanes.push([]); lane = lanes.length - 1; }
+                  lanes[lane].push(bar);
+                  bar.lane = lane;
+                });
+                const visible = inWeek.filter(b => b.lane < maxLanes);
+                const hiddenCount = inWeek.length - visible.length;
+                const usedLanes = Math.min(lanes.length, maxLanes);
+                const rowH = headH + usedLanes * laneH + (hiddenCount ? 14 : 6);
+
                 return (
-                  <div key={i} style={{ background: d ? css.surface : "transparent", border: `1px solid ${d ? css.border : "transparent"}`, borderRadius: 8, minHeight: 120, padding: "6px 6px 5px" }}>
-                    {d && (
-                      <>
-                        <div style={{ width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: isToday(d) ? 700 : 400, background: isToday(d) ? css.accent : "transparent", color: isToday(d) ? "#fff" : css.text2, marginBottom: 4 }}>{d}</div>
-                        {dayTrips.slice(0, 3).map((trip, ti) => {
-                          const prog = allPrograms.find(p => p.id === trip.program);
-                          const color = prog?.color || css.accent;
-                          const allSegs = (trip.segments && trip.segments.length > 0) ? trip.segments : [{ type: trip.type, date: trip.date, route: trip.route, flightNumber: trip.flightNumber, departureTime: trip.departureTime, arrivalTime: trip.arrivalTime, property: trip.property, location: trip.location, nights: trip.nights, checkoutDate: trip.checkoutDate, dropoffDate: trip.dropoffDate }];
-                          const daySegs = allSegs.filter(seg => {
-                            if (!seg.date) return false;
-                            if (seg.date === dateStr) return true;
-                            if (seg.type === "hotel") { const co = seg.checkoutDate || null; if (co && dateStr > seg.date && dateStr < co) return true; }
-                            if (seg.type === "car" && seg.dropoffDate && dateStr > seg.date && dateStr <= seg.dropoffDate) return true;
-                            return false;
-                          });
-                          const seg = daySegs[0] || allSegs[0];
-                          const segType = seg?.type || trip.type;
-                          const icon = "";
-                          const routeDisplay = segType === "flight"
-                            ? (seg?.route ? seg.route.replace(/\s*[→>]\s*/g, " - ").replace(/\s*[–—]+\s*/g, " - ") : seg?.flightNumber || trip.route || "Flight")
-                            : segType === "hotel" ? (seg?.property || seg?.location || trip.property || "Hotel")
-                            : (seg?.pickupLocation || trip.location || "Car");
-                          const flightNum = (() => { const fn = seg?.flightNumber || ""; const m = fn.match(/^([A-Z]{1,3})\s*(\d+)$/); return m ? `${m[1]} ${m[2]}` : fn; })();
-                          const timeRange = [seg?.departureTime, seg?.arrivalTime].filter(Boolean).join(" - ");
-                          const hotelNights = (() => { const co = seg?.checkoutDate; return (co && seg?.date) ? Math.round((new Date(co) - new Date(seg.date)) / 86400000) : (seg?.nights || 0); })();
-                          const subtext = segType === "flight" ? [flightNum, timeRange].filter(Boolean).join(" · ") : segType === "hotel" && hotelNights ? `${hotelNights} nights` : "";
-                          const segIdx = daySegs[0] ? allSegs.indexOf(daySegs[0]) : 0;
-                          return (
-                            <div key={ti} onClick={() => { setTripDetailId(trip.id); setTripDetailSegIdx(Math.max(0, segIdx)); }}
-                              title={[seg?.route || seg?.property, seg?.flightNumber, seg?.departureTime, seg?.arrivalTime].filter(Boolean).join(" · ")}
-                              style={{ background: `${color}18`, borderLeft: `2px solid ${color}`, borderRadius: 3, padding: "3px 6px", marginBottom: 3, cursor: "pointer" }}>
-                              <div style={{ fontSize: 11, fontWeight: 600, color: css.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{icon} {routeDisplay}</div>
-                              {subtext && <div style={{ fontSize: 10, color: css.text2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 1 }}>{subtext}</div>}
-                            </div>
-                          );
-                        })}
-                        {dayTrips.length > 3 && <div style={{ fontSize: 11, color: css.text3, paddingLeft: 3 }}>+{dayTrips.length - 3} more</div>}
-                      </>
+                  <div key={wi} style={{ position: "relative", height: Math.max(rowH, isMobile ? 56 : 70), borderTop: wi === 0 ? "none" : `1px solid ${css.border}` }}>
+                    {/* Day cells */}
+                    <div style={{ position: "absolute", inset: 0, display: "grid", gridTemplateColumns: "repeat(7, 1fr)" }}>
+                      {days.map((d, di) => {
+                        const dateStr = toStr(d);
+                        const inMonth = d.getMonth() === month;
+                        const isToday = dateStr === todayStrLocal;
+                        return (
+                          <div key={di} style={{
+                            borderLeft: di === 0 ? "none" : `1px solid ${css.border}`,
+                            background: inMonth ? css.surface : (D ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.015)"),
+                            padding: "4px 0 0",
+                          }}>
+                            <div style={{
+                              width: isMobile ? 18 : 22, height: isMobile ? 18 : 22, borderRadius: "50%",
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              fontSize: isMobile ? 10 : 11, fontWeight: isToday ? 700 : 400,
+                              background: isToday ? css.accent : "transparent",
+                              color: isToday ? "#fff" : (inMonth ? css.text2 : css.text3),
+                              opacity: inMonth ? 1 : 0.55,
+                              margin: isMobile ? "0 auto" : "0 0 0 5px",
+                            }}>{d.getDate()}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {/* Trip bars */}
+                    {visible.map(bar => {
+                      const prog = allPrograms.find(p => p.id === bar.trip.program);
+                      const color = prog?.color || css.accent;
+                      const name = bar.trip.tripName || bar.trip.trip_name || bar.trip.location || getTripName?.(bar.trip) || "Trip";
+                      return (
+                        <div key={bar.trip.id}
+                          onClick={() => { setTripDetailId(bar.trip.id); setTripDetailSegIdx(0); }}
+                          title={`${name} · ${bar.span.start} → ${bar.span.end}`}
+                          style={{
+                            position: "absolute",
+                            top: headH + bar.lane * laneH,
+                            left: `calc(${(bar.from / 7) * 100}% + 3px)`,
+                            width: `calc(${(bar.cols / 7) * 100}% - 6px)`,
+                            height: laneH - 3,
+                            display: "flex", alignItems: "center", gap: 5,
+                            padding: `0 6px 0 ${bar.startsHere ? 6 : 4}px`,
+                            background: `${color}26`,
+                            borderLeft: bar.startsHere ? `3px solid ${color}` : `1px dashed ${color}`,
+                            borderRight: bar.endsHere ? `1px solid ${color}55` : "none",
+                            borderTopLeftRadius: bar.startsHere ? 4 : 0,
+                            borderBottomLeftRadius: bar.startsHere ? 4 : 0,
+                            borderTopRightRadius: bar.endsHere ? 4 : 0,
+                            borderBottomRightRadius: bar.endsHere ? 4 : 0,
+                            cursor: "pointer", overflow: "hidden", boxSizing: "border-box",
+                          }}>
+                          <span style={{
+                            fontSize: isMobile ? 9 : 11, fontWeight: 600, color: css.text,
+                            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                          }}>{name}</span>
+                        </div>
+                      );
+                    })}
+                    {hiddenCount > 0 && (
+                      <div style={{ position: "absolute", left: 6, bottom: 2, fontSize: isMobile ? 8.5 : 10, color: css.text3 }}>
+                        +{hiddenCount} more
+                      </div>
                     )}
                   </div>
                 );
