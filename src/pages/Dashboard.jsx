@@ -955,6 +955,29 @@ export function renderDashboard(s) {
   const handleAddTrip = () => setShowCreateTrip(true);
 
   /*
+   * Trips an inbox booking can be filed into: ones that haven't finished yet.
+   * Forwarded confirmations are for travel still ahead, and offering the whole
+   * history made the menu long enough to be unusable. A past trip can still
+   * take a segment — from its own detail view, via Add Segment.
+   *
+   * A trip with no resolvable end date stays in the list rather than being
+   * hidden, since there's nothing to judge it stale by.
+   */
+  const assignableTrips = (trips || [])
+    .filter(t => {
+      const end = (typeof getTripEndDate === "function" ? getTripEndDate(t) : null) || t.date || "";
+      return !end || end >= todayStr;
+    })
+    .sort((a, b) => (a.date || "").localeCompare(b.date || ""));   // soonest first
+
+  const assignLabel = (t) => {
+    const name = t.tripName || t.trip_name || t.route || t.property || "Trip";
+    if (!t.date) return name;
+    const when = new Date(t.date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    return `${name} · ${when}`;
+  };
+
+  /*
    * Retire an inbox itinerary once its segments have landed in a trip.
    *
    * This has to succeed in the database, not just in local state: the inbox is
@@ -1926,7 +1949,7 @@ export function renderDashboard(s) {
                               fontFamily: dv.mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer",
                             }}>Create New Trip</button>
                           )}
-                          {bookingType !== "reminder" && bookingType !== "cancellation" && trips.length > 0 && (
+                          {bookingType !== "reminder" && bookingType !== "cancellation" && assignableTrips.length > 0 && (
                             <select onChange={async e => {
                               const tripId = e.target.value;
                               if (!tripId) return;
@@ -1966,8 +1989,8 @@ export function renderDashboard(s) {
                               }
                               e.target.value = "";
                             }} style={{ padding: "8px 12px", border: `1px solid ${dv.cream}`, background: "transparent", color: dv.taupe, fontFamily: dv.sans, fontSize: 11, cursor: "pointer" }}>
-                              <option value="">Add to existing trip...</option>
-                              {trips.slice(0, 20).map(t => <option key={t.id} value={t.id}>{t.tripName || t.trip_name || t.route || t.property || "Trip"}</option>)}
+                              <option value="">Add to upcoming trip...</option>
+                              {assignableTrips.map(t => <option key={t.id} value={t.id}>{assignLabel(t)}</option>)}
                             </select>
                           )}
                           <button onClick={() => dismissItinerary(itin.id)} style={{
