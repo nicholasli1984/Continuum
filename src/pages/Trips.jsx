@@ -314,10 +314,17 @@ export function renderTrips(s) {
 
               let main = "";
               let sub = "";
+              // Every row carries its own clock time where the segment has one —
+              // these entries are already sorted by it, so showing only the
+              // address left the running order unexplained. Flights keep their
+              // departure–arrival pair; everything else leads with its start.
+              const startTime = cleanTime(segTime(seg));
+              const endTime = cleanTime(seg.endTime || seg.dropoffTime || "");
+              const clock = startTime && endTime ? `${startTime} - ${endTime}` : startTime;
               if (isHotel) {
                 const nights = parseInt(seg.nights) || 0;
                 main = seg.property || seg.name || "Hotel";
-                sub = nights ? `${nights} nt${nights === 1 ? "" : "s"}` : "";
+                sub = [startTime ? `from ${startTime}` : "", nights ? `${nights} nt${nights === 1 ? "" : "s"}` : ""].filter(Boolean).join(" · ");
               } else if (isFlight) {
                 const route = seg.route || `${seg.departureAirport || ""} → ${seg.arrivalAirport || ""}`.trim().replace(/^→\s*$/, "");
                 const dep = cleanTime(seg.departureTime);
@@ -328,7 +335,7 @@ export function renderTrips(s) {
                 sub = [seg.airline, timeRange].filter(Boolean).join(" · ");
               } else {
                 main = segTitle ? segTitle(seg) : (seg.title || seg.name || seg.activityName || seg.restaurantName || info.label);
-                sub = segSubtitle ? (segSubtitle(seg) || "") : "";
+                sub = [clock, segSubtitle ? (segSubtitle(seg) || "") : ""].filter(Boolean).join(" · ");
               }
 
               const segKey = `${trip.id}|${i}`;
