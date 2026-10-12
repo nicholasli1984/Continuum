@@ -1725,6 +1725,16 @@ export function renderDashboard(s) {
                 const hotels = segs.filter(s => s.type === "hotel");
                 const isHotel = hotels.length > 0 && flights.length === 0;
                 const firstDate = segs.map(s => s.date).filter(Boolean).sort()[0];
+                // Chronological order — the parse returns segments in whatever
+                // order the email listed them, which isn't always departure order.
+                const orderedFlights = [...flights].sort((a, b) =>
+                  `${a.date || ""} ${a.departureTime || ""}`.localeCompare(`${b.date || ""} ${b.departureTime || ""}`));
+                const firstFlight = orderedFlights[0];
+                // Departure/arrival clock times for the first leg, so the summary
+                // says when the flight actually goes, not just which day.
+                const flightTimes = firstFlight
+                  ? [firstFlight.departureTime, firstFlight.arrivalTime].filter(Boolean).join(" → ")
+                  : "";
                 const isExpanded = expandedItinId === itin.id;
                 // Booking type is stored as parse_method = "ai|<type>"
                 const bookingType = (itin.parse_method || "").split("|")[1] || "new_booking";
@@ -1774,7 +1784,12 @@ export function renderDashboard(s) {
                           {isHotel && hotels[0]?.nights && <span>{hotels[0].nights} night{hotels[0].nights > 1 ? "s" : ""}</span>}
                           {flights.length > 0 && <span>{flights.length} segment{flights.length > 1 ? "s" : ""}</span>}
                           {flights.length > 0 && flights[0]?.departureAirport && <span>{flights.map(f => f.departureAirport).filter(Boolean)[0]} → {flights.map(f => f.arrivalAirport).filter(Boolean).pop()}</span>}
-                          {firstDate && !isHotel && <span>{new Date(firstDate + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>}
+                          {firstDate && !isHotel && (
+                            <span>
+                              {new Date(firstDate + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                              {flightTimes && <span style={{ color: dv.ink, marginLeft: 6 }}>{flightTimes}</span>}
+                            </span>
+                          )}
                           {flights[0]?.airline && <span>{flights[0].airline}</span>}
                           {flights[0]?.fareClass && <span style={{ textTransform: "capitalize" }}>{flights[0].fareClass}</span>}
                         </div>
