@@ -123,6 +123,8 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
   const editReceiptInputRef = useRef(null);
   // Set when a receipt couldn't be stored because the column isn't there yet.
   const [receiptNotice, setReceiptNotice] = useState(false);
+  // { id, state: "saving" | "saved" | "removed" | "error" } for the row being edited.
+  const [receiptStatus, setReceiptStatus] = useState(null);
   const [editSplitWith, setEditSplitWith] = useState(new Set());
   const [expandedExpenseId, setExpandedExpenseId] = useState(null);
   const totalRef = useRef(null);
@@ -394,6 +396,10 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
       });
     }
     setGroupMembers(members); setGroupExpenses(e.data || []); setSettlements(s.data || []);
+    // Probe for the receipt column so the forms can say up front that receipts
+    // can't be stored yet, rather than letting an upload fail silently.
+    const probe = await supabase.from("split_expenses").select("id,receipt_image").limit(1);
+    if (missingReceiptColumn(probe.error)) setReceiptNotice(true);
   };
 
   const selectGroup = async (group) => {
@@ -562,13 +568,45 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
     if (data) setExpenseForm(p => ({ ...p, receiptImage: data }));
   };
 
+  /*
+   * On an expense that already exists, a receipt is written the moment it's
+   * picked rather than waiting for Save. Choosing a file for a specific expense
+   * carries no ambiguity about intent, and the previous behaviour — holding it
+   * in form state until Save — read as "it didn't take", since nothing on the
+   * row changed in the meantime.
+   */
+  const persistReceipt = async (expenseId, dataUrl) => {
+    if (!expenseId) return false;
+    setReceiptStatus({ id: expenseId, state: "saving" });
+    const { error } = await supabase.from("split_expenses")
+      .update({ receipt_image: dataUrl }).eq("id", expenseId);
+    if (error) {
+      setReceiptStatus({ id: expenseId, state: "error" });
+      if (missingReceiptColumn(error)) setReceiptNotice(true);
+      else console.error("Receipt save error:", error);
+      return false;
+    }
+    // Reflect it on the row behind the form so the thumbnail is there as soon
+    // as the editor closes.
+    setGroupExpenses(prev => prev.map(e => e.id === expenseId ? { ...e, receipt_image: dataUrl } : e));
+    setReceiptStatus({ id: expenseId, state: dataUrl ? "saved" : "removed" });
+    return true;
+  };
+
   // Same, for the form that edits an expense already saved.
   const handleEditReceiptCapture = async (e) => {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
     const data = await fileToReceipt(file);
-    if (data) setEditExpenseForm(p => ({ ...p, receiptImage: data }));
+    if (!data) return;
+    setEditExpenseForm(p => ({ ...p, receiptImage: data }));
+    await persistReceipt(editingExpenseId, data);
+  };
+
+  const removeEditReceipt = async () => {
+    setEditExpenseForm(p => ({ ...p, receiptImage: null }));
+    await persistReceipt(editingExpenseId, null);
   };
 
   const settleUp = async () => {
@@ -1356,23 +1394,42 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
                               </div>
                             )}
                           </div>
-                          {/* Receipt — add one after the fact, replace it, or drop it */}
+                          {/* Receipt — add one after the fact, replace it, or drop it.
+                              Saved on pick, not on Save, so the row updates immediately. */}
                           <div style={{ marginBottom: 12 }}>
-                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
-                              <span style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: dv.taupe }}>Receipt</span>
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
+                              <span style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: dv.taupe }}>
+                                Receipt
+                                {receiptStatus?.id === exp.id && (
+                                  <span style={{ marginLeft: 8, color: receiptStatus.state === "error" ? dv.accent : dv.moss, textTransform: "none", letterSpacing: "0.04em" }}>
+                                    {receiptStatus.state === "saving" ? "saving…"
+                                      : receiptStatus.state === "saved" ? "saved"
+                                      : receiptStatus.state === "removed" ? "removed"
+                                      : "not saved"}
+                                  </span>
+                                )}
+                              </span>
                               <div style={{ display: "flex", gap: 8 }}>
                                 <button onClick={() => editReceiptInputRef.current?.click()}
                                   style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: dv.ink, background: "none", border: `1px solid ${dv.cream}`, padding: "5px 12px", cursor: "pointer" }}>
                                   {editExpenseForm.receiptImage ? "Replace" : "+ Add receipt"}
                                 </button>
                                 {editExpenseForm.receiptImage && (
-                                  <button onClick={() => setEditExpenseForm(p => ({ ...p, receiptImage: null }))}
+                                  <button onClick={removeEditReceipt}
                                     style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: dv.accent, background: "none", border: `1px solid ${dv.accent}30`, padding: "5px 12px", cursor: "pointer" }}>
                                     Remove
                                   </button>
                                 )}
                               </div>
                             </div>
+                            {receiptNotice && (
+                              <div style={{ marginBottom: 8, padding: "10px 12px", border: `1px solid ${dv.gold}40`, background: `${dv.gold}10`, borderRadius: 10 }}>
+                                <div style={{ fontFamily: dv.sans, fontSize: 12, lineHeight: 1.5, color: dv.ink }}>
+                                  Receipts can't be stored yet — run{" "}
+                                  <span style={{ fontFamily: dv.mono, fontSize: 11 }}>supabase-splits-receipt-migration.sql</span> in your Supabase SQL editor, then add it again.
+                                </div>
+                              </div>
+                            )}
                             <input ref={editReceiptInputRef} type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={handleEditReceiptCapture} />
                             {editExpenseForm.receiptImage ? (
                               <a href={editExpenseForm.receiptImage} target="_blank" rel="noopener noreferrer" style={{ display: "block", border: `1px solid ${dv.cream}`, borderRadius: 10, overflow: "hidden" }}>
