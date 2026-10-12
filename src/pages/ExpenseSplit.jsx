@@ -17,6 +17,29 @@ const SPLIT_CATS = [
 const CHIP_COLORS = ["#C8553D", "#6B7A5A", "#B8924A", "#6B6458", "#2C2A26"];
 const initials = (name) => name ? name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() : "?";
 
+/*
+ * Local handles — people in a split who don't have an email on file.
+ *
+ * Every split table keys a person by their address: group membership, each
+ * expense share, every settlement. Making the email column nullable would mean
+ * reworking all of that, so someone added by name alone gets a stable handle in
+ * a reserved domain instead. It satisfies the schema and keeps the balance
+ * maths untouched, and because it is recognisable the UI can hide it and no
+ * code path will try to invite or match a real account with it.
+ */
+const LOCAL_DOMAIN = "local.continuum";
+const isLocalHandle = (email) => (email || "").toLowerCase().endsWith(`@${LOCAL_DOMAIN}`);
+const makeLocalHandle = (name) => {
+  const slug = (name || "")
+    .toLowerCase().normalize("NFKD")
+    .replace(/[^a-z0-9]+/g, ".").replace(/^\.+|\.+$/g, "").slice(0, 24) || "person";
+  return `${slug}.${Math.random().toString(36).slice(2, 8)}@${LOCAL_DOMAIN}`;
+};
+// What to show where an address would go — nothing, for a name-only person.
+const shownEmail = (email) => (isLocalHandle(email) ? "" : email);
+// Fallback label when there's no display name: never expose the handle.
+const handleLabel = (email) => (isLocalHandle(email) ? "Unnamed" : (email || "").split("@")[0]);
+
 // Common travel currencies for the split form
 const SPLIT_CURRENCIES = ["USD","EUR","GBP","JPY","CAD","AUD","CHF","CNY","HKD","SGD","MXN","BRL","INR","KRW","AED","THB","NZD","NOK","SEK","DKK"];
 const CURRENCY_SYMBOLS = { USD:"$", EUR:"€", GBP:"£", JPY:"¥", CAD:"CA$", AUD:"A$", CHF:"Fr", CNY:"¥", HKD:"HK$", SGD:"S$", MXN:"MX$", BRL:"R$", INR:"₹", KRW:"₩", AED:"د.إ", THB:"฿", NZD:"NZ$", NOK:"kr", SEK:"kr", DKK:"kr" };
@@ -163,14 +186,25 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
     if (inserted) setContacts(prev => [...prev, ...inserted].sort((a, b) => (a.display_name || "").localeCompare(b.display_name || "")));
   };
 
+  // A contact needs either an address or a name. With only a name, the person
+  // is matched by that name so adding them again reuses the same handle rather
+  // than creating a second entry for the same person.
   const addContact = async (email, displayName) => {
     if (!user) return null;
-    const norm = (email || "").toLowerCase().trim();
-    if (!norm.includes("@")) return null;
-    if (norm === userEmail) return null;
-    const existing = contacts.find(c => (c.email || "").toLowerCase() === norm);
-    if (existing) return existing;
-    const row = { owner_id: user.id, email: norm, display_name: (displayName || norm.split("@")[0]).trim() };
+    const name = (displayName || "").trim();
+    const given = (email || "").toLowerCase().trim();
+    if (!given && !name) return null;
+    if (given && !given.includes("@")) return null;
+    if (given && given === userEmail) return null;
+    if (given) {
+      const existing = contacts.find(c => (c.email || "").toLowerCase() === given);
+      if (existing) return existing;
+    } else {
+      const existing = contacts.find(c => isLocalHandle(c.email) && (c.display_name || "").toLowerCase() === name.toLowerCase());
+      if (existing) return existing;
+    }
+    const norm = given || makeLocalHandle(name);
+    const row = { owner_id: user.id, email: norm, display_name: (name || norm.split("@")[0]).trim() };
     const { data, error } = await supabase.from("split_contacts").insert(row).select().single();
     if (error) {
       if (error.code === "23505") {
@@ -367,13 +401,17 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
   const createGroup = async () => {
     if (!newGroupName.trim()) return;
     setLoading(true);
-    // If there's a half-typed email still in the input box, treat it as if the
+    // If there's a half-typed entry still in the input box, treat it as if the
     // user pressed Enter on it — push to pendingMembers and the address book.
     let allPending = pendingMembers;
-    if (newMemberEmail.includes("@")) {
-      const norm = newMemberEmail.toLowerCase().trim();
-      if (!allPending.some(pm => pm.email.toLowerCase() === norm)) {
-        allPending = [...allPending, { email: norm, name: "" }];
+    const typed = newMemberEmail.trim();
+    if (typed) {
+      const created = await addContact(typed.includes("@") ? typed : "", typed.includes("@") ? "" : typed);
+      if (created) {
+        const norm = (created.email || "").toLowerCase();
+        if (!allPending.some(pm => pm.email.toLowerCase() === norm)) {
+          allPending = [...allPending, { email: norm, name: created.display_name || "" }];
+        }
       }
       setNewMemberEmail("");
     }
@@ -384,10 +422,13 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
     await Promise.all(allPending.map(pm => addContact(pm.email, pm.name)));
     for (const pm of allPending) {
       const normalizedEmail = pm.email.toLowerCase().trim();
-      const md = { group_id: group.id, email: normalizedEmail, display_name: pm.name || normalizedEmail.split("@")[0] };
+      const md = { group_id: group.id, email: normalizedEmail, display_name: pm.name || handleLabel(normalizedEmail) };
       // Authoritative check: does this email map to a Continuum auth.users row?
-      const linkedId = await lookupContinuumUser(normalizedEmail);
-      if (linkedId) md.user_id = linkedId;
+      // Skipped for a local handle, which can never belong to an account.
+      if (!isLocalHandle(normalizedEmail)) {
+        const linkedId = await lookupContinuumUser(normalizedEmail);
+        if (linkedId) md.user_id = linkedId;
+      }
       await supabase.from("split_group_members").insert(md);
     }
     setNewGroupName(""); setPendingMembers([]); setShowNewGroup(false); setLoading(false);
@@ -546,20 +587,51 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
     setSplitWith(prev => { const next = new Set(prev); next.delete(email); return next; });
   };
 
+  // The inline box when creating a group accepts either an address or a plain
+  // name; whichever it is, the person lands in the address book and the pending
+  // list under one identity.
+  const addPendingMember = async (raw) => {
+    const value = (raw || "").trim();
+    if (!value) return;
+    const asEmail = value.includes("@");
+    const created = await addContact(asEmail ? value : "", asEmail ? "" : value);
+    if (!created) return;
+    const norm = (created.email || "").toLowerCase();
+    setPendingMembers(p => p.find(pm => pm.email.toLowerCase() === norm) ? p : [...p, { email: norm, name: created.display_name || "" }]);
+    setNewMemberEmail("");
+  };
+
   const addMemberToGroup = async () => {
-    if (!addMemberForm.email.includes("@") || !selectedGroup) return;
-    const normalizedEmail = addMemberForm.email.toLowerCase().trim();
-    // Check not already a member
-    if (groupMembers.some(m => m.email.toLowerCase() === normalizedEmail)) { setAddMemberForm({ show: false, email: "", name: "" }); return; }
+    if (!selectedGroup) return;
+    const typedEmail = addMemberForm.email.trim();
+    const name = addMemberForm.name.trim();
+    // Either identifies the person; an address that isn't one is still rejected.
+    if (!typedEmail && !name) return;
+    if (typedEmail && !typedEmail.includes("@")) return;
+    const normalizedEmail = typedEmail.toLowerCase();
+    // Check not already a member — by address when there is one, by name otherwise.
+    const dupe = normalizedEmail
+      ? groupMembers.some(m => m.email.toLowerCase() === normalizedEmail)
+      : groupMembers.some(m => isLocalHandle(m.email) && (m.display_name || "").toLowerCase() === name.toLowerCase());
+    if (dupe) { setAddMemberForm({ show: false, email: "", name: "" }); return; }
     setLoading(true);
+    // Reuse the handle this person already has in the address book, so the same
+    // name-only person stays one identity across groups.
+    const knownLocal = !normalizedEmail
+      ? contacts.find(c => isLocalHandle(c.email) && (c.display_name || "").toLowerCase() === name.toLowerCase())
+      : null;
+    const identity = normalizedEmail || knownLocal?.email || makeLocalHandle(name);
     // Mirror to the global address book so this person becomes pickable in future trips.
     if (selectedGroup._isOwner) {
-      addContact(normalizedEmail, addMemberForm.name);
+      addContact(identity, name);
     }
-    const md = { group_id: selectedGroup.id, email: normalizedEmail, display_name: addMemberForm.name || normalizedEmail.split("@")[0] };
-    // Authoritative check via service-role lookup
-    const linkedId = await lookupContinuumUser(normalizedEmail);
-    if (linkedId) md.user_id = linkedId;
+    const md = { group_id: selectedGroup.id, email: identity, display_name: name || handleLabel(identity) };
+    // Authoritative check via service-role lookup — pointless for a local handle,
+    // which can never belong to an account.
+    if (normalizedEmail && !isLocalHandle(normalizedEmail)) {
+      const linkedId = await lookupContinuumUser(normalizedEmail);
+      if (linkedId) md.user_id = linkedId;
+    }
     await supabase.from("split_group_members").insert(md);
     setAddMemberForm({ show: false, email: "", name: "" });
     setLoading(false);
@@ -600,7 +672,7 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
   const memberName = (email) => {
     if (email === userEmail) return "You";
     const m = groupMembers.find(m => m.email === email);
-    return m?.display_name || email.split("@")[0];
+    return m?.display_name || handleLabel(email);
   };
 
   const fmtAmt = (n) => Math.abs(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -800,7 +872,7 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
                       }}>
                         {initials(m.display_name || m.email)}
                       </div>
-                      <span style={{ fontWeight: isIncluded ? 500 : 400 }}>{m.display_name || m.email.split("@")[0]}{isPayer && isIncluded ? " · paid" : ""}</span>
+                      <span style={{ fontWeight: isIncluded ? 500 : 400 }}>{m.display_name || handleLabel(m.email)}{isPayer && isIncluded ? " · paid" : ""}</span>
                       {isRegistered && <span style={{ fontSize: 10, fontWeight: 700, color: isIncluded ? "rgba(255,255,255,0.6)" : dv.accent, letterSpacing: "0.06em" }}>C</span>}
                     </motion.div>
                   );
@@ -1191,7 +1263,7 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
                                     <div style={{ width: 18, height: 18, borderRadius: "50%", background: included ? "rgba(255,255,255,0.2)" : `${dv.stone}30`, color: included ? "#F4F1EC" : dv.stone, display: "grid", placeItems: "center", fontSize: 10, fontWeight: 600 }}>
                                       {initials(gm.display_name || gm.email)}
                                     </div>
-                                    <span style={{ fontWeight: included ? 500 : 400 }}>{gm.display_name || gm.email.split("@")[0]}</span>
+                                    <span style={{ fontWeight: included ? 500 : 400 }}>{gm.display_name || handleLabel(gm.email)}</span>
                                   </div>
                                 );
                               })}
@@ -1263,7 +1335,7 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
                               <span style={{ width: 20, height: 20, borderRadius: "50%", background: CHIP_COLORS[ci % 5], color: "#F4F1EC", display: "grid", placeItems: "center", fontSize: 11, fontWeight: 600 }}>
                                 {initials(c.display_name || c.email)}
                               </span>
-                              {c.display_name || c.email.split("@")[0]}
+                              {c.display_name || handleLabel(c.email)}
                             </button>
                           ))}
                         </div>
@@ -1272,20 +1344,20 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
                   })()}
                   <div style={{ display: "flex", gap: 12, marginBottom: 10 }}>
                     <div style={{ flex: 1 }}>
-                      <label style={{ display: "block", fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: dv.taupe, marginBottom: 6 }}>Email</label>
-                      <input value={addMemberForm.email} onChange={e => setAddMemberForm(f => ({ ...f, email: e.target.value }))} placeholder="friend@email.com"
+                      <label style={{ display: "block", fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: dv.taupe, marginBottom: 6 }}>Email · optional</label>
+                      <input value={addMemberForm.email} onChange={e => setAddMemberForm(f => ({ ...f, email: e.target.value }))} placeholder="Leave blank if they don't use it"
                         onKeyDown={e => { if (e.key === "Enter") addMemberToGroup(); }}
                         style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid ${dv.stone}`, padding: "8px 0", fontFamily: dv.sans, fontSize: 14, color: dv.ink, outline: "none" }} />
                     </div>
                     <div style={{ flex: 1 }}>
                       <label style={{ display: "block", fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: dv.taupe, marginBottom: 6 }}>Display name</label>
-                      <input value={addMemberForm.name} onChange={e => setAddMemberForm(f => ({ ...f, name: e.target.value }))} placeholder="Optional"
+                      <input value={addMemberForm.name} onChange={e => setAddMemberForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Christine"
                         onKeyDown={e => { if (e.key === "Enter") addMemberToGroup(); }}
                         style={{ width: "100%", background: "transparent", border: "none", borderBottom: `1px solid ${dv.stone}`, padding: "8px 0", fontFamily: dv.sans, fontSize: 14, color: dv.ink, outline: "none" }} />
                     </div>
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
-                    <button onClick={addMemberToGroup} disabled={loading || !addMemberForm.email.includes("@")}
+                    <button onClick={addMemberToGroup} disabled={loading || (!addMemberForm.email.includes("@") && !addMemberForm.name.trim())}
                       style={{ padding: "10px 20px", background: dv.graphite, color: "#F4F1EC", border: "none", fontFamily: dv.mono, fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase", cursor: "pointer", opacity: loading ? 0.5 : 1 }}>
                       {loading ? "Adding..." : "Add to group"}
                     </button>
@@ -1320,10 +1392,10 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
                           style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: dv.accent, background: "none", border: "none", cursor: "pointer", padding: "4px 8px" }}>Save</button>
                       </div>
                     ) : (
-                      <div style={{ fontFamily: dv.serif, fontSize: 16, fontWeight: 400, color: dv.ink }}>{m.display_name || m.email.split("@")[0]}</div>
+                      <div style={{ fontFamily: dv.serif, fontSize: 16, fontWeight: 400, color: dv.ink }}>{m.display_name || handleLabel(m.email)}</div>
                     )}
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}>
-                      <span style={{ fontFamily: dv.mono, fontSize: 10, color: dv.taupe, letterSpacing: "0.06em" }}>{m.email}</span>
+                      <span style={{ fontFamily: dv.mono, fontSize: 10, color: dv.taupe, letterSpacing: "0.06em" }}>{shownEmail(m.email) || "No email"}</span>
                       {isRegistered && <span style={{ fontSize: 10, fontWeight: 700, color: dv.accent, letterSpacing: "0.08em", textTransform: "uppercase" }}>Continuum</span>}
                       {isMe && <span style={{ fontSize: 10, color: dv.taupe, letterSpacing: "0.08em", textTransform: "uppercase" }}>You</span>}
                     </div>
@@ -1471,7 +1543,7 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
                     <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "6px 28px" }}>
                       {counterparties.map(([email, net]) => {
                         const m = groupMembers.find(mb => mb.email === email);
-                        const display = m?.display_name || email.split("@")[0];
+                        const display = m?.display_name || handleLabel(email);
                         return (
                           <div key={email} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${dv.cream}` }}>
                             <span style={{ fontFamily: dv.serif, fontSize: 14, color: dv.ink }}>
@@ -1516,17 +1588,20 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
           {showAddContact && (
             <div style={{ background: dv.paper, borderRadius: 12, border: `1px solid ${dv.cream}`, padding: "16px 18px", marginBottom: 12, display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr auto auto", gap: 10, alignItems: "end" }}>
               <div>
-                <label style={{ display: "block", fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: dv.taupe, marginBottom: 6 }}>Email</label>
-                <input autoFocus type="email" value={contactForm.email} onChange={e => setContactForm(f => ({ ...f, email: e.target.value }))} placeholder="friend@email.com"
+                <label style={{ display: "block", fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: dv.taupe, marginBottom: 6 }}>Email · optional</label>
+                <input autoFocus type="email" value={contactForm.email} onChange={e => setContactForm(f => ({ ...f, email: e.target.value }))} placeholder="Leave blank if they don't use it"
                   style={{ width: "100%", background: dv.bone, borderRadius: 12, border: `1px solid ${dv.cream}`, padding: "8px 10px", fontFamily: dv.sans, fontSize: 13, color: dv.ink, outline: "none" }} />
               </div>
               <div>
                 <label style={{ display: "block", fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: dv.taupe, marginBottom: 6 }}>Name</label>
-                <input value={contactForm.name} onChange={e => setContactForm(f => ({ ...f, name: e.target.value }))} placeholder="Optional"
+                <input value={contactForm.name} onChange={e => setContactForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Christine"
                   style={{ width: "100%", background: dv.bone, borderRadius: 12, border: `1px solid ${dv.cream}`, padding: "8px 10px", fontFamily: dv.sans, fontSize: 13, color: dv.ink, outline: "none" }} />
               </div>
               <button onClick={async () => {
-                if (!contactForm.email.includes("@")) return;
+                // One of the two identifies them; an address that isn't one is rejected.
+                const hasEmail = contactForm.email.includes("@");
+                if (!hasEmail && !contactForm.name.trim()) return;
+                if (contactForm.email.trim() && !hasEmail) return;
                 await addContact(contactForm.email, contactForm.name);
                 setContactForm({ email: "", name: "" });
                 setShowAddContact(false);
@@ -1575,11 +1650,11 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
                       <div onClick={() => { setEditingContactId(c.id); setEditingContactName(c.display_name || ""); }}
                         title="Click to rename"
                         style={{ fontFamily: dv.serif, fontSize: 15, color: dv.ink, cursor: "text" }}>
-                        {c.display_name || c.email.split("@")[0]}
+                        {c.display_name || handleLabel(c.email)}
                       </div>
                     )}
                     {!isMobile && (
-                      <div style={{ fontFamily: dv.mono, fontSize: 11, color: dv.taupe }}>{c.email}</div>
+                      <div style={{ fontFamily: dv.mono, fontSize: 11, color: dv.taupe }}>{shownEmail(c.email) || "No email"}</div>
                     )}
                     <button onClick={() => removeContact(c.id)} title="Remove from address book" style={{
                       width: 28, height: 28, border: `1px solid ${dv.cream}`, background: "transparent",
@@ -1678,7 +1753,7 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
                           <div style={{ width: 22, height: 22, borderRadius: "50%", background: selected ? "rgba(255,255,255,0.2)" : `${dv.stone}30`, color: selected ? "#F4F1EC" : dv.stone, display: "grid", placeItems: "center", fontSize: 11, fontWeight: 600 }}>
                             {initials(c.display_name || c.email)}
                           </div>
-                          <span style={{ fontWeight: selected ? 500 : 400 }}>{c.display_name || c.email.split("@")[0]}</span>
+                          <span style={{ fontWeight: selected ? 500 : 400 }}>{c.display_name || handleLabel(c.email)}</span>
                         </div>
                       );
                     })}
@@ -1689,24 +1764,15 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
                   </p>
                 )}
 
-                {/* Inline new-email entry */}
+                {/* Inline entry — a name or an email */}
                 <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-                  <input placeholder="or add a new email…" type="email" value={newMemberEmail} onChange={e => setNewMemberEmail(e.target.value)}
+                  <input placeholder="or add a name or email…" value={newMemberEmail} onChange={e => setNewMemberEmail(e.target.value)}
                     onKeyDown={async e => {
-                      if (e.key !== "Enter" || !newMemberEmail.includes("@")) return;
-                      const created = await addContact(newMemberEmail, "");
-                      const norm = newMemberEmail.toLowerCase().trim();
-                      setPendingMembers(p => p.find(pm => pm.email.toLowerCase() === norm) ? p : [...p, { email: norm, name: created?.display_name || "" }]);
-                      setNewMemberEmail("");
+                      if (e.key !== "Enter") return;
+                      await addPendingMember(newMemberEmail);
                     }}
                     style={{ flex: 1, background: "transparent", border: "none", borderBottom: `1px solid ${dv.stone}`, padding: "10px 0", fontFamily: dv.sans, fontSize: 14, color: dv.ink, outline: "none" }} />
-                  <button onClick={async () => {
-                    if (!newMemberEmail.includes("@")) return;
-                    const created = await addContact(newMemberEmail, "");
-                    const norm = newMemberEmail.toLowerCase().trim();
-                    setPendingMembers(p => p.find(pm => pm.email.toLowerCase() === norm) ? p : [...p, { email: norm, name: created?.display_name || "" }]);
-                    setNewMemberEmail("");
-                  }}
+                  <button onClick={() => addPendingMember(newMemberEmail)}
                     style={{ fontFamily: dv.mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: dv.ink, background: "none", border: "none", cursor: "pointer" }}>
                     + Add
                   </button>
