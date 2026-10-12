@@ -35,10 +35,17 @@ const makeLocalHandle = (name) => {
     .replace(/[^a-z0-9]+/g, ".").replace(/^\.+|\.+$/g, "").slice(0, 24) || "person";
   return `${slug}.${Math.random().toString(36).slice(2, 8)}@${LOCAL_DOMAIN}`;
 };
-// split_expenses.receipt_image arrived in a later patch; PostgREST answers an
-// unknown column with PGRST204 (or 42703 straight from Postgres).
+// The receipt columns arrived in a later patch; PostgREST answers an unknown
+// column with PGRST204 (or 42703 straight from Postgres).
 const missingReceiptColumn = (error) =>
   !!error && (error.code === "PGRST204" || error.code === "42703" || /receipt_image/i.test(error.message || ""));
+
+// An expense's receipts, newest storage shape first. Rows written before
+// multi-receipt support carry a single `receipt_image` instead of a list.
+const receiptsOf = (exp) => {
+  if (Array.isArray(exp?.receipt_images) && exp.receipt_images.length) return exp.receipt_images.filter(Boolean);
+  return exp?.receipt_image ? [exp.receipt_image] : [];
+};
 
 // What to show where an address would go — nothing, for a name-only person.
 const shownEmail = (email) => (isLocalHandle(email) ? "" : email);
@@ -99,7 +106,7 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
     description: "", amount: "", currency: "USD", fxRate: 1,
     category: "food", paidBy: user?.email || "",
     splitType: "equal", splitInputs: {}, // { [email]: stringValue } when not equal
-    date: new Date().toISOString().slice(0, 10), receiptImage: null,
+    date: new Date().toISOString().slice(0, 10), receiptImages: [],
   });
   const [splitWith, setSplitWith] = useState(new Set()); // emails included in split
   const [allBalances, setAllBalances] = useState(null); // { byCurrency: { USD: { totalOwed, totalOwing, perPerson: { email: net } } }, loaded }
@@ -119,7 +126,7 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
   const [editingContactId, setEditingContactId] = useState(null);
   const [editingContactName, setEditingContactName] = useState("");
   const [editingExpenseId, setEditingExpenseId] = useState(null);
-  const [editExpenseForm, setEditExpenseForm] = useState({ description: "", amount: "", currency: "USD", fxRate: 1, category: "food", date: "", splitType: "equal", splitInputs: {}, receiptImage: null });
+  const [editExpenseForm, setEditExpenseForm] = useState({ description: "", amount: "", currency: "USD", fxRate: 1, category: "food", date: "", splitType: "equal", splitInputs: {}, receiptImages: [] });
   const editReceiptInputRef = useRef(null);
   // Set when a receipt couldn't be stored because the column isn't there yet.
   const [receiptNotice, setReceiptNotice] = useState(false);
@@ -504,15 +511,16 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
       group_id: selectedGroup.id, paid_by_email: expenseForm.paidBy, description: expenseForm.description,
       amount, currency: expenseForm.currency || selectedGroup.currency, fx_rate: fxRate,
       category: expenseForm.category, date: expenseForm.date, split_type: expenseForm.splitType, created_by: user.id,
-      receipt_image: expenseForm.receiptImage || null,
+      receipt_images: expenseForm.receiptImages || [],
+      receipt_image: (expenseForm.receiptImages || [])[0] || null,
     };
     let { data: expense, error: expError } = await supabase.from("split_expenses").insert(row).select().single();
     // Installs that predate supabase-splits-receipt-migration.sql have no
-    // receipt column; save the expense anyway rather than losing it.
+    // receipt columns; save the expense anyway rather than losing it.
     if (expError && missingReceiptColumn(expError)) {
-      const { receipt_image, ...withoutReceipt } = row;
+      const { receipt_image, receipt_images, ...withoutReceipt } = row;
       ({ data: expense, error: expError } = await supabase.from("split_expenses").insert(withoutReceipt).select().single());
-      if (!expError && receipt_image) setReceiptNotice(true);
+      if (!expError && (receipt_images || []).length) setReceiptNotice(true);
     }
     if (expError) console.error("Split expense insert error:", expError);
     if (expense) {
@@ -524,7 +532,7 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
       description: "", amount: "", currency: selectedGroup.currency || "USD", fxRate: 1,
       category: "food", paidBy: userEmail,
       splitType: "equal", splitInputs: {},
-      date: new Date().toISOString().slice(0, 10), receiptImage: null,
+      date: new Date().toISOString().slice(0, 10), receiptImages: [],
     });
     setSplitWith(new Set(groupMembers.map(m => m.email)));
     setLoading(false);
@@ -562,12 +570,21 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
     reader.readAsDataURL(file);
   });
 
+  // Several files can be picked at once; each is downscaled and appended.
+  const filesToReceipts = async (fileList) => {
+    const out = [];
+    for (const file of Array.from(fileList || [])) {
+      const data = await fileToReceipt(file);
+      if (data) out.push(data);
+    }
+    return out;
+  };
+
   const handleReceiptCapture = async (e) => {
-    const file = e.target.files?.[0];
+    const files = e.target.files;
+    const added = await filesToReceipts(files);
     e.target.value = "";                       // let the same file be picked again
-    if (!file) return;
-    const data = await fileToReceipt(file);
-    if (data) setExpenseForm(p => ({ ...p, receiptImage: data }));
+    if (added.length) setExpenseForm(p => ({ ...p, receiptImages: [...(p.receiptImages || []), ...added] }));
   };
 
   /*
@@ -577,38 +594,44 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
    * in form state until Save — read as "it didn't take", since nothing on the
    * row changed in the meantime.
    */
-  const persistReceipt = async (expenseId, dataUrl) => {
+  // `receipt_image` is written alongside the list so a client that only knows
+  // about the single column still shows the first one.
+  const persistReceipts = async (expenseId, list) => {
     if (!expenseId) return false;
+    const images = (list || []).filter(Boolean);
     setReceiptStatus({ id: expenseId, state: "saving" });
     const { error } = await supabase.from("split_expenses")
-      .update({ receipt_image: dataUrl }).eq("id", expenseId);
+      .update({ receipt_images: images, receipt_image: images[0] || null }).eq("id", expenseId);
     if (error) {
       setReceiptStatus({ id: expenseId, state: "error" });
       if (missingReceiptColumn(error)) setReceiptNotice(true);
       else console.error("Receipt save error:", error);
       return false;
     }
-    // Reflect it on the row behind the form so the thumbnail is there as soon
+    // Reflect it on the row behind the form so the thumbnails are there as soon
     // as the editor closes.
-    setGroupExpenses(prev => prev.map(e => e.id === expenseId ? { ...e, receipt_image: dataUrl } : e));
-    setReceiptStatus({ id: expenseId, state: dataUrl ? "saved" : "removed" });
+    setGroupExpenses(prev => prev.map(e => e.id === expenseId
+      ? { ...e, receipt_images: images, receipt_image: images[0] || null }
+      : e));
+    setReceiptStatus({ id: expenseId, state: images.length ? "saved" : "removed" });
     return true;
   };
 
   // Same, for the form that edits an expense already saved.
   const handleEditReceiptCapture = async (e) => {
-    const file = e.target.files?.[0];
+    const files = e.target.files;
+    const added = await filesToReceipts(files);
     e.target.value = "";
-    if (!file) return;
-    const data = await fileToReceipt(file);
-    if (!data) return;
-    setEditExpenseForm(p => ({ ...p, receiptImage: data }));
-    await persistReceipt(editingExpenseId, data);
+    if (!added.length) return;
+    const next = [...(editExpenseForm.receiptImages || []), ...added];
+    setEditExpenseForm(p => ({ ...p, receiptImages: next }));
+    await persistReceipts(editingExpenseId, next);
   };
 
-  const removeEditReceipt = async () => {
-    setEditExpenseForm(p => ({ ...p, receiptImage: null }));
-    await persistReceipt(editingExpenseId, null);
+  const removeEditReceipt = async (index) => {
+    const next = (editExpenseForm.receiptImages || []).filter((_, i) => i !== index);
+    setEditExpenseForm(p => ({ ...p, receiptImages: next }));
+    await persistReceipts(editingExpenseId, next);
   };
 
   const settleUp = async () => {
@@ -637,13 +660,14 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
       currency: editExpenseForm.currency || selectedGroup.currency, fx_rate: fxRate,
       category: editExpenseForm.category, date: editExpenseForm.date,
       split_type: splitType,
-      receipt_image: editExpenseForm.receiptImage || null,
+      receipt_images: editExpenseForm.receiptImages || [],
+      receipt_image: (editExpenseForm.receiptImages || [])[0] || null,
     };
     let { error: updErr } = await supabase.from("split_expenses").update(patch).eq("id", expenseId);
     if (updErr && missingReceiptColumn(updErr)) {
-      const { receipt_image, ...withoutReceipt } = patch;
+      const { receipt_image, receipt_images, ...withoutReceipt } = patch;
       ({ error: updErr } = await supabase.from("split_expenses").update(withoutReceipt).eq("id", expenseId));
-      if (!updErr && receipt_image) setReceiptNotice(true);
+      if (!updErr && (receipt_images || []).length) setReceiptNotice(true);
     }
     if (updErr) console.error("Split expense update error:", updErr);
     await supabase.from("split_expense_shares").delete().eq("expense_id", expenseId);
@@ -1084,24 +1108,37 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
               {receiptNotice && (
                 <div style={{ marginBottom: 10, padding: "10px 12px", border: `1px solid ${dv.gold}40`, background: `${dv.gold}10`, borderRadius: 10 }}>
                   <div style={{ fontFamily: dv.sans, fontSize: 12, lineHeight: 1.5, color: dv.ink }}>
-                    The expense saved, but the receipt couldn't be stored yet — run{" "}
-                    <span style={{ fontFamily: dv.mono, fontSize: 11 }}>supabase-splits-receipt-migration.sql</span> in your Supabase SQL editor, then add it again.
+                    The expense saved, but the receipts couldn't be stored yet — run{" "}
+                    <span style={{ fontFamily: dv.mono, fontSize: 11 }}>supabase-splits-receipt-migration.sql</span> in your Supabase SQL editor, then add them again.
                   </div>
                 </div>
               )}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                <label style={{ fontFamily: dv.mono, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: dv.taupe }}>Receipt</label>
+                <label style={{ fontFamily: dv.mono, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: dv.taupe }}>
+                  Receipts
+                  {(expenseForm.receiptImages || []).length > 0 && (
+                    <span style={{ marginLeft: 8, color: dv.stone }}>{expenseForm.receiptImages.length}</span>
+                  )}
+                </label>
                 <button onClick={() => receiptInputRef.current?.click()}
                   style={{ fontFamily: dv.mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: dv.ink, background: "none", border: "none", cursor: "pointer" }}>
-                  {expenseForm.receiptImage ? "Replace" : "+ Snap receipt"}
+                  + Add receipt
                 </button>
               </div>
-              <input ref={receiptInputRef} type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={handleReceiptCapture} />
-              {expenseForm.receiptImage ? (
-                <div style={{ position: "relative", borderRadius: 4, overflow: "hidden", border: `1px solid ${dv.cream}` }}>
-                  <img src={expenseForm.receiptImage} alt="Receipt" style={{ width: "100%", maxHeight: 200, objectFit: "cover", display: "block" }} />
-                  <button onClick={() => setExpenseForm(p => ({ ...p, receiptImage: null }))}
-                    style={{ position: "absolute", top: 8, right: 8, width: 24, height: 24, borderRadius: "50%", background: "rgba(0,0,0,0.5)", border: "none", color: "#fff", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>x</button>
+              <input ref={receiptInputRef} type="file" accept="image/*" capture="environment" multiple style={{ display: "none" }} onChange={handleReceiptCapture} />
+              {(expenseForm.receiptImages || []).length > 0 ? (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {expenseForm.receiptImages.map((src, ri) => (
+                    <div key={ri} style={{ position: "relative", borderRadius: 8, overflow: "hidden", border: `1px solid ${dv.cream}` }}>
+                      <img src={src} alt={`Receipt ${ri + 1}`} onClick={() => setReceiptViewer({ list: expenseForm.receiptImages, index: ri })}
+                        style={{ width: 92, height: 92, objectFit: "cover", display: "block", cursor: "zoom-in" }} />
+                      <button onClick={() => setExpenseForm(p => ({ ...p, receiptImages: p.receiptImages.filter((_, i) => i !== ri) }))}
+                        title="Remove"
+                        style={{ position: "absolute", top: 4, right: 4, width: 22, height: 22, borderRadius: "50%", background: "rgba(0,0,0,0.55)", border: "none", color: "#fff", fontSize: 11, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+                    </div>
+                  ))}
+                  <div onClick={() => receiptInputRef.current?.click()} title="Add another"
+                    style={{ width: 92, height: 92, border: `1px dashed ${dv.stone}50`, borderRadius: 8, display: "grid", placeItems: "center", cursor: "pointer", color: dv.stone, fontFamily: dv.mono, fontSize: 20 }}>+</div>
                 </div>
               ) : (
                 <div onClick={() => receiptInputRef.current?.click()}
@@ -1272,12 +1309,16 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
                   {isExpanded && (
                     <div style={{ padding: "0 0 16px 20px" }}>
                       {/* Receipt — viewable without entering edit */}
-                      {exp.receipt_image && !isEditing && (
-                        <button onClick={e => { e.stopPropagation(); setReceiptViewer(exp.receipt_image); }}
-                          title="View receipt"
-                          style={{ display: "inline-block", marginBottom: 12, padding: 0, border: `1px solid ${dv.cream}`, borderRadius: 10, overflow: "hidden", background: "none", cursor: "zoom-in" }}>
-                          <img src={exp.receipt_image} alt="Receipt" style={{ width: 86, height: 86, objectFit: "cover", display: "block" }} />
-                        </button>
+                      {!isEditing && receiptsOf(exp).length > 0 && (
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+                          {receiptsOf(exp).map((src, ri) => (
+                            <button key={ri} onClick={e => { e.stopPropagation(); setReceiptViewer({ list: receiptsOf(exp), index: ri }); }}
+                              title={`View receipt ${ri + 1}`}
+                              style={{ display: "inline-block", padding: 0, border: `1px solid ${dv.cream}`, borderRadius: 10, overflow: "hidden", background: "none", cursor: "zoom-in" }}>
+                              <img src={src} alt={`Receipt ${ri + 1}`} style={{ width: 86, height: 86, objectFit: "cover", display: "block" }} />
+                            </button>
+                          ))}
+                        </div>
                       )}
                       {/* People included */}
                       <div style={{ marginBottom: 12 }}>
@@ -1320,7 +1361,7 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
                               fxRate: exp.fx_rate || 1,
                               category: exp.category || "food", date: exp.date || "",
                               splitType, splitInputs,
-                              receiptImage: exp.receipt_image || null,
+                              receiptImages: receiptsOf(exp),
                             });
                             setEditSplitWith(new Set(shares.map(sh => sh.email)));
                           }}
@@ -1414,14 +1455,8 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
                               <div style={{ display: "flex", gap: 8 }}>
                                 <button onClick={() => editReceiptInputRef.current?.click()}
                                   style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: dv.ink, background: "none", border: `1px solid ${dv.cream}`, padding: "5px 12px", cursor: "pointer" }}>
-                                  {editExpenseForm.receiptImage ? "Replace" : "+ Add receipt"}
+                                  + Add receipt
                                 </button>
-                                {editExpenseForm.receiptImage && (
-                                  <button onClick={removeEditReceipt}
-                                    style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: dv.accent, background: "none", border: `1px solid ${dv.accent}30`, padding: "5px 12px", cursor: "pointer" }}>
-                                    Remove
-                                  </button>
-                                )}
                               </div>
                             </div>
                             {receiptNotice && (
@@ -1432,12 +1467,20 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
                                 </div>
                               </div>
                             )}
-                            <input ref={editReceiptInputRef} type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={handleEditReceiptCapture} />
-                            {editExpenseForm.receiptImage ? (
-                              <button onClick={() => setReceiptViewer(editExpenseForm.receiptImage)} title="View receipt"
-                                style={{ display: "block", width: "100%", padding: 0, border: `1px solid ${dv.cream}`, borderRadius: 10, overflow: "hidden", background: "none", cursor: "zoom-in" }}>
-                                <img src={editExpenseForm.receiptImage} alt="Receipt" style={{ width: "100%", maxHeight: 200, objectFit: "cover", display: "block" }} />
-                              </button>
+                            <input ref={editReceiptInputRef} type="file" accept="image/*" capture="environment" multiple style={{ display: "none" }} onChange={handleEditReceiptCapture} />
+                            {(editExpenseForm.receiptImages || []).length > 0 ? (
+                              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                                {editExpenseForm.receiptImages.map((src, ri) => (
+                                  <div key={ri} style={{ position: "relative", borderRadius: 8, overflow: "hidden", border: `1px solid ${dv.cream}` }}>
+                                    <img src={src} alt={`Receipt ${ri + 1}`} onClick={() => setReceiptViewer({ list: editExpenseForm.receiptImages, index: ri })}
+                                      style={{ width: 84, height: 84, objectFit: "cover", display: "block", cursor: "zoom-in" }} />
+                                    <button onClick={() => removeEditReceipt(ri)} title="Remove"
+                                      style={{ position: "absolute", top: 4, right: 4, width: 20, height: 20, borderRadius: "50%", background: "rgba(0,0,0,0.55)", border: "none", color: "#fff", fontSize: 11, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+                                  </div>
+                                ))}
+                                <div onClick={() => editReceiptInputRef.current?.click()} title="Add another"
+                                  style={{ width: 84, height: 84, border: `1px dashed ${dv.cream}`, borderRadius: 8, display: "grid", placeItems: "center", cursor: "pointer", color: dv.stone, fontFamily: dv.mono, fontSize: 18 }}>+</div>
+                              </div>
                             ) : (
                               <div onClick={() => editReceiptInputRef.current?.click()}
                                 style={{ border: `1px dashed ${dv.cream}`, borderRadius: 10, padding: "14px 12px", textAlign: "center", cursor: "pointer" }}>
@@ -1603,7 +1646,13 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
           * through a blob URL for the same reason.
           */}
         <AnimatePresence>
-          {receiptViewer && (
+          {receiptViewer && (() => {
+            const list = (receiptViewer.list || []).filter(Boolean);
+            const index = Math.min(Math.max(receiptViewer.index || 0, 0), Math.max(list.length - 1, 0));
+            const current = list[index];
+            if (!current) return null;
+            const step = (delta) => setReceiptViewer(v => ({ ...v, index: (index + delta + list.length) % list.length }));
+            return (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setReceiptViewer(null)}
               style={{
@@ -1616,11 +1665,21 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
                 onClick={e => e.stopPropagation()}
                 style={{ maxWidth: 900, width: "100%", maxHeight: "100%", display: "flex", flexDirection: "column", gap: 10 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-                  <span style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.75)" }}>Receipt</span>
+                  <span style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.75)" }}>
+                    Receipt{list.length > 1 ? ` ${index + 1} / ${list.length}` : ""}
+                  </span>
                   <div style={{ display: "flex", gap: 8 }}>
+                    {list.length > 1 && (
+                      <>
+                        <button onClick={() => step(-1)} title="Previous"
+                          style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", color: "#F4F1EC", background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.25)", padding: "7px 12px", cursor: "pointer" }}>‹</button>
+                        <button onClick={() => step(1)} title="Next"
+                          style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", color: "#F4F1EC", background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.25)", padding: "7px 12px", cursor: "pointer" }}>›</button>
+                      </>
+                    )}
                     <button onClick={() => {
                       try {
-                        const [meta, b64] = receiptViewer.split(",");
+                        const [meta, b64] = current.split(",");
                         const mime = (meta.match(/:(.*?);/) || [])[1] || "image/jpeg";
                         const bytes = atob(b64);
                         const buf = new Uint8Array(bytes.length);
@@ -1628,7 +1687,7 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
                         const url = URL.createObjectURL(new Blob([buf], { type: mime }));
                         const a = document.createElement("a");
                         a.href = url;
-                        a.download = `receipt.${mime.includes("png") ? "png" : "jpg"}`;
+                        a.download = `receipt${list.length > 1 ? `-${index + 1}` : ""}.${mime.includes("png") ? "png" : "jpg"}`;
                         document.body.appendChild(a); a.click(); a.remove();
                         setTimeout(() => URL.revokeObjectURL(url), 10000);
                       } catch (err) { console.error("Receipt download failed:", err); }
@@ -1642,11 +1701,22 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
                     </button>
                   </div>
                 </div>
-                <img src={receiptViewer} alt="Receipt"
+                <img src={current} alt={`Receipt ${index + 1}`}
                   style={{ width: "100%", maxHeight: isMobile ? "70vh" : "80vh", objectFit: "contain", borderRadius: 12, background: "#15130F" }} />
+                {list.length > 1 && (
+                  <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap" }}>
+                    {list.map((src, ti) => (
+                      <button key={ti} onClick={() => setReceiptViewer(v => ({ ...v, index: ti }))}
+                        style={{ padding: 0, border: `2px solid ${ti === index ? "#F4F1EC" : "transparent"}`, borderRadius: 6, overflow: "hidden", background: "none", cursor: "pointer", opacity: ti === index ? 1 : 0.6 }}>
+                        <img src={src} alt={`Receipt ${ti + 1}`} style={{ width: 46, height: 46, objectFit: "cover", display: "block" }} />
+                      </button>
+                    ))}
+                  </div>
+                )}
               </motion.div>
             </motion.div>
-          )}
+            );
+          })()}
         </AnimatePresence>
 
         {/* Settle modal */}
