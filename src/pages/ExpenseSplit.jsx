@@ -125,6 +125,8 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
   const [receiptNotice, setReceiptNotice] = useState(false);
   // { id, state: "saving" | "saved" | "removed" | "error" } for the row being edited.
   const [receiptStatus, setReceiptStatus] = useState(null);
+  // Receipt currently open full size, as a data URL.
+  const [receiptViewer, setReceiptViewer] = useState(null);
   const [editSplitWith, setEditSplitWith] = useState(new Set());
   const [expandedExpenseId, setExpandedExpenseId] = useState(null);
   const totalRef = useRef(null);
@@ -1271,11 +1273,11 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
                     <div style={{ padding: "0 0 16px 20px" }}>
                       {/* Receipt — viewable without entering edit */}
                       {exp.receipt_image && !isEditing && (
-                        <a href={exp.receipt_image} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-                          title="Open receipt"
-                          style={{ display: "inline-block", marginBottom: 12, border: `1px solid ${dv.cream}`, borderRadius: 10, overflow: "hidden" }}>
+                        <button onClick={e => { e.stopPropagation(); setReceiptViewer(exp.receipt_image); }}
+                          title="View receipt"
+                          style={{ display: "inline-block", marginBottom: 12, padding: 0, border: `1px solid ${dv.cream}`, borderRadius: 10, overflow: "hidden", background: "none", cursor: "zoom-in" }}>
                           <img src={exp.receipt_image} alt="Receipt" style={{ width: 86, height: 86, objectFit: "cover", display: "block" }} />
-                        </a>
+                        </button>
                       )}
                       {/* People included */}
                       <div style={{ marginBottom: 12 }}>
@@ -1432,9 +1434,10 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
                             )}
                             <input ref={editReceiptInputRef} type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={handleEditReceiptCapture} />
                             {editExpenseForm.receiptImage ? (
-                              <a href={editExpenseForm.receiptImage} target="_blank" rel="noopener noreferrer" style={{ display: "block", border: `1px solid ${dv.cream}`, borderRadius: 10, overflow: "hidden" }}>
+                              <button onClick={() => setReceiptViewer(editExpenseForm.receiptImage)} title="View receipt"
+                                style={{ display: "block", width: "100%", padding: 0, border: `1px solid ${dv.cream}`, borderRadius: 10, overflow: "hidden", background: "none", cursor: "zoom-in" }}>
                                 <img src={editExpenseForm.receiptImage} alt="Receipt" style={{ width: "100%", maxHeight: 200, objectFit: "cover", display: "block" }} />
-                              </a>
+                              </button>
                             ) : (
                               <div onClick={() => editReceiptInputRef.current?.click()}
                                 style={{ border: `1px dashed ${dv.cream}`, borderRadius: 10, padding: "14px 12px", textAlign: "center", cursor: "pointer" }}>
@@ -1589,6 +1592,62 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
             })}
           </div>
         </div>
+
+        {/*
+          * Receipt viewer.
+          *
+          * The thumbnails used to be links straight to the stored data: URL.
+          * Chrome and Firefox block top-level navigation to data: URLs, so that
+          * opened a blank tab — the image was there, the browser just refused to
+          * render it as a document. Shown in-app instead. The download goes
+          * through a blob URL for the same reason.
+          */}
+        <AnimatePresence>
+          {receiptViewer && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setReceiptViewer(null)}
+              style={{
+                position: "fixed", inset: 0, zIndex: 9999, background: "rgba(10,9,7,0.88)",
+                backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                padding: isMobile ? "16px 12px calc(140px + env(safe-area-inset-bottom))" : 32,
+              }}>
+              <motion.div initial={{ scale: 0.96, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.96, opacity: 0 }}
+                onClick={e => e.stopPropagation()}
+                style={{ maxWidth: 900, width: "100%", maxHeight: "100%", display: "flex", flexDirection: "column", gap: 10 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+                  <span style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.75)" }}>Receipt</span>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button onClick={() => {
+                      try {
+                        const [meta, b64] = receiptViewer.split(",");
+                        const mime = (meta.match(/:(.*?);/) || [])[1] || "image/jpeg";
+                        const bytes = atob(b64);
+                        const buf = new Uint8Array(bytes.length);
+                        for (let i = 0; i < bytes.length; i++) buf[i] = bytes.charCodeAt(i);
+                        const url = URL.createObjectURL(new Blob([buf], { type: mime }));
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = `receipt.${mime.includes("png") ? "png" : "jpg"}`;
+                        document.body.appendChild(a); a.click(); a.remove();
+                        setTimeout(() => URL.revokeObjectURL(url), 10000);
+                      } catch (err) { console.error("Receipt download failed:", err); }
+                    }}
+                      style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", color: "#F4F1EC", background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.25)", padding: "7px 14px", cursor: "pointer" }}>
+                      Download
+                    </button>
+                    <button onClick={() => setReceiptViewer(null)}
+                      style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", color: "#F4F1EC", background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.25)", padding: "7px 14px", cursor: "pointer" }}>
+                      Close
+                    </button>
+                  </div>
+                </div>
+                <img src={receiptViewer} alt="Receipt"
+                  style={{ width: "100%", maxHeight: isMobile ? "70vh" : "80vh", objectFit: "contain", borderRadius: 12, background: "#15130F" }} />
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Settle modal */}
         <AnimatePresence>
