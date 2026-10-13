@@ -1264,6 +1264,11 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
               const shares = exp.split_expense_shares || [];
               const isExpanded = expandedExpenseId === exp.id;
               const isEditing = editingExpenseId === exp.id;
+              // Who added this. Expenses predating authorship are treated as the
+              // group creator's, which is what the RLS migration backfills them to.
+              const isMine = exp.created_by ? exp.created_by === user?.id : !!selectedGroup?._isOwner;
+              const author = groupMembers.find(m => m.user_id && m.user_id === exp.created_by);
+              const addedByName = author?.display_name || handleLabel(author?.email) || "another member";
 
               return (
                 <div key={exp.id} style={{ borderBottom: `1px solid ${dv.cream}` }}>
@@ -1339,8 +1344,15 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
                         </div>
                       </div>
 
-                      {/* Edit / Delete actions */}
-                      {!isEditing ? (
+                      {/* Edit / Delete actions — only for whoever added the expense.
+                          Everyone in a group can add to it, but someone else's entry
+                          is theirs to correct. The database enforces this too; this
+                          just avoids offering an action that would be refused. */}
+                      {!isEditing && !isMine ? (
+                        <div style={{ fontFamily: dv.serif, fontStyle: "italic", fontSize: 12, color: dv.stone }}>
+                          Added by {addedByName} — only they can edit this
+                        </div>
+                      ) : !isEditing ? (
                         <div style={{ display: "flex", gap: 8 }}>
                           <button onClick={(e) => {
                             e.stopPropagation();
