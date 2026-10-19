@@ -134,6 +134,8 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
   const [receiptStatus, setReceiptStatus] = useState(null);
   // Receipt currently open full size, as a data URL.
   const [receiptViewer, setReceiptViewer] = useState(null);
+  const [showStatement, setShowStatement] = useState(false);
+  const [statementCopied, setStatementCopied] = useState(false);
   const [editSplitWith, setEditSplitWith] = useState(new Set());
   const [expandedExpenseId, setExpandedExpenseId] = useState(null);
   const totalRef = useRef(null);
@@ -784,6 +786,194 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
     return bal;
   };
 
+  /*
+   * Group statement — the numbers behind "who owes what", worked out the long
+   * way so each figure can be checked by hand.
+   *
+   * Deliberately recomputed from the raw rows rather than reusing
+   * calcBalances(), with the same conventions (fx applied to expenses, which
+   * are entered in any currency; settlements already in group currency), so the
+   * reconciliation is an independent arithmetic check and not a restatement of
+   * the same sum. Per person:
+   *
+   *     paid − share + settlements made − settlements received = net
+   *
+   * A positive net means the group owes them.
+   */
+  const buildStatement = () => {
+    const rows = {};
+    const seed = (email) => (rows[email] ||= { email, paid: 0, share: 0, settledOut: 0, settledIn: 0 });
+    groupMembers.forEach(m => seed(m.email));
+
+    let totalPaid = 0, totalShares = 0;
+    const lineIssues = [];
+
+    const lines = [...groupExpenses]
+      .sort((a, b) => (a.date || "").localeCompare(b.date || ""))
+      .map(exp => {
+        const fx = parseFloat(exp.fx_rate) > 0 ? parseFloat(exp.fx_rate) : 1;
+        const paid = (parseFloat(exp.amount) || 0) * fx;
+        seed(exp.paid_by_email).paid += paid;
+        totalPaid += paid;
+
+        const shares = (exp.split_expense_shares || []).map(sh => {
+          const amt = (parseFloat(sh.amount) || 0) * fx;
+          seed(sh.email).share += amt;
+          totalShares += amt;
+          return { email: sh.email, amount: amt };
+        });
+
+        // Shares should add back to the expense. A cent or two is rounding on an
+        // uneven split; more than that means the expense was edited in a way
+        // that left its shares behind, and the statement must say so.
+        const shareSum = shares.reduce((s, x) => s + x.amount, 0);
+        const drift = paid - shareSum;
+        if (Math.abs(drift) > 0.011) lineIssues.push({ id: exp.id, description: exp.description, drift });
+
+        return {
+          id: exp.id, date: exp.date, description: exp.description,
+          currency: exp.currency, rawAmount: parseFloat(exp.amount) || 0, fx,
+          amount: paid, paidBy: exp.paid_by_email, splitType: exp.split_type || "equal",
+          shares, drift,
+        };
+      });
+
+    settlements.forEach(s => {
+      const amt = parseFloat(s.amount) || 0;
+      seed(s.from_email).settledOut += amt;
+      seed(s.to_email).settledIn += amt;
+    });
+
+    const people = Object.values(rows).map(r => ({
+      ...r,
+      net: r.paid - r.share + r.settledOut - r.settledIn,
+    })).sort((a, b) => b.net - a.net);
+
+    const netSum = people.reduce((s, p) => s + p.net, 0);
+    const settledTotal = settlements.reduce((s, x) => s + (parseFloat(x.amount) || 0), 0);
+
+    return {
+      lines, people, lineIssues,
+      totals: { paid: totalPaid, shares: totalShares, settled: settledTotal, netSum },
+      checks: {
+        // Everything paid out was allocated to someone.
+        paidEqualsShares: Math.abs(totalPaid - totalShares) <= 0.011 + 0.01 * lines.length,
+        // Every debt is someone else's credit, so the nets cancel.
+        netsCancel: Math.abs(netSum) <= 0.011 + 0.01 * people.length,
+        // No expense lost its shares.
+        linesTie: lineIssues.length === 0,
+      },
+      period: {
+        from: lines[0]?.date || "",
+        to: lines[lines.length - 1]?.date || "",
+      },
+    };
+  };
+
+  /*
+   * The statement as a self-contained HTML page: opened in a new window for
+   * printing or saving to PDF, and the same markup that can be pasted into a
+   * message to the group. Built as a document rather than a screenshot so the
+   * figures stay selectable and checkable.
+   */
+  const statementHtml = (st, debts, groupCcy, sym) => {
+    const esc = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    const m = (n) => `${sym}${Math.abs(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const signed = (n) => `${n < -0.005 ? "−" : ""}${m(n)}`;
+    const name = (email) => memberName(email) === "You" ? (memberName(email) + ` (${shownEmail(email) || "no email"})`) : memberName(email);
+
+    const peopleRows = st.people.map(p => `
+      <tr>
+        <td>${esc(memberName(p.email))}</td>
+        <td class="n">${m(p.paid)}</td>
+        <td class="n">${m(p.share)}</td>
+        <td class="n">${p.settledOut ? m(p.settledOut) : "—"}</td>
+        <td class="n">${p.settledIn ? m(p.settledIn) : "—"}</td>
+        <td class="n ${p.net > 0.005 ? "pos" : p.net < -0.005 ? "neg" : ""}">${
+          p.net > 0.005 ? `is owed ${m(p.net)}` : p.net < -0.005 ? `owes ${m(p.net)}` : "settled"}</td>
+      </tr>`).join("");
+
+    const debtRows = debts.length
+      ? debts.map(d => `<li><strong>${esc(memberName(d.from))}</strong> pays <strong>${esc(memberName(d.to))}</strong> ${m(d.amount)}</li>`).join("")
+      : "<li>Everyone is square — no payments needed.</li>";
+
+    const lineRows = st.lines.map(l => `
+      <tr>
+        <td>${esc(l.date || "")}</td>
+        <td>${esc(l.description || "")}</td>
+        <td>${esc(memberName(l.paidBy))}</td>
+        <td class="n">${l.currency && l.currency !== groupCcy ? `${esc(l.currency)} ${l.rawAmount.toFixed(2)} → ` : ""}${m(l.amount)}</td>
+        <td>${esc(l.splitType)}</td>
+        <td>${l.shares.map(s => `${esc(memberName(s.email))} ${m(s.amount)}`).join("; ")}</td>
+      </tr>`).join("");
+
+    const check = (ok, text) => `<li class="${ok ? "ok" : "bad"}">${ok ? "✓" : "✗"} ${text}</li>`;
+    const issues = st.lineIssues.length
+      ? `<p class="bad">Lines whose shares no longer add up to the amount:</p><ul>${
+          st.lineIssues.map(i => `<li class="bad">${esc(i.description || "(untitled)")} — out by ${m(i.drift)}</li>`).join("")}</ul>`
+      : "";
+
+    return `<!doctype html><html><head><meta charset="utf-8"><title>${esc(selectedGroup.name)} — statement</title>
+<style>
+  body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color: #15130F; margin: 32px; line-height: 1.5; }
+  h1 { font-size: 24px; margin: 0 0 4px; font-weight: 600; letter-spacing: -0.02em; }
+  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.12em; color: #857A66; margin: 32px 0 10px; font-weight: 600; }
+  .sub { color: #6B6458; font-size: 13px; margin: 0 0 4px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid #E2DCCE; vertical-align: top; }
+  th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #857A66; }
+  td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .pos { color: #4F6D4F; } .neg { color: #C03E34; }
+  ul { margin: 0; padding-left: 18px; font-size: 13px; }
+  li { margin-bottom: 4px; }
+  li.ok { color: #4F6D4F; list-style: none; margin-left: -18px; }
+  li.bad { color: #C03E34; list-style: none; margin-left: -18px; }
+  p.bad { color: #C03E34; font-size: 13px; margin: 10px 0 4px; }
+  .foot { margin-top: 28px; padding-top: 12px; border-top: 1px solid #E2DCCE; font-size: 11px; color: #857A66; }
+  @media print { body { margin: 0; } h2 { break-after: avoid; } tr { break-inside: avoid; } }
+</style></head><body>
+  <h1>${esc(selectedGroup.name)}</h1>
+  <p class="sub">Statement as of ${new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}${
+    st.period.from ? ` · expenses from ${esc(st.period.from)} to ${esc(st.period.to)}` : ""}</p>
+  <p class="sub">${st.lines.length} expense${st.lines.length === 1 ? "" : "s"} · ${st.people.length} people · ${m(st.totals.paid)} total in ${esc(groupCcy)}${
+    st.totals.settled ? ` · ${m(st.totals.settled)} already settled` : ""}</p>
+
+  <h2>Where everyone stands</h2>
+  <table>
+    <thead><tr><th>Person</th><th class="n">Paid out</th><th class="n">Their share</th><th class="n">Paid back</th><th class="n">Received</th><th class="n">Position</th></tr></thead>
+    <tbody>${peopleRows}</tbody>
+  </table>
+
+  <h2>Settling up${debts.length ? ` — ${debts.length} payment${debts.length === 1 ? "" : "s"}` : ""}</h2>
+  <ul>${debtRows}</ul>
+
+  <h2>Reconciliation</h2>
+  <ul>
+    ${check(st.checks.paidEqualsShares, `Everything paid out is allocated: ${m(st.totals.paid)} paid, ${m(st.totals.shares)} in shares.`)}
+    ${check(st.checks.netsCancel, `Positions cancel out: they sum to ${st.totals.netSum.toFixed(2)}, as they must — every debt is someone's credit.`)}
+    ${check(st.checks.linesTie, `Every expense's shares add back to its amount${st.lineIssues.length ? "" : " (to the cent)"}.`)}
+  </ul>
+  ${issues}
+  <p class="sub" style="margin-top:10px">Each row above is <em>paid out − their share + paid back − received = position</em>. Amounts entered in another currency are converted at the rate stored with that expense and shown in the ledger below.</p>
+
+  <h2>Ledger — every expense</h2>
+  <table>
+    <thead><tr><th>Date</th><th>Expense</th><th>Paid by</th><th class="n">Amount</th><th>Split</th><th>Shares</th></tr></thead>
+    <tbody>${lineRows}</tbody>
+  </table>
+
+  <div class="foot">Generated by Continuum · figures in ${esc(groupCcy)}</div>
+</body></html>`;
+  };
+
+  const openStatementPrint = (html) => {
+    const w = window.open("", "_blank");
+    if (!w) return false;                       // popup blocked — caller falls back to copy
+    w.document.write(html);
+    w.document.close();
+    return true;
+  };
+
   const simplifyDebts = () => {
     const bal = calcBalances();
     const debtors = Object.entries(bal).filter(([, v]) => v < -0.01).map(([e, v]) => ({ email: e, amount: -v })).sort((a, b) => b.amount - a.amount);
@@ -1247,8 +1437,13 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
               )}
             </div>
 
+            {/* Statement — the shareable "where everyone stands" summary */}
+            <button onClick={() => setShowStatement(true)} style={{ width: "100%", marginTop: 24, padding: 14, background: "transparent", border: "1px solid rgba(244,241,236,0.18)", color: "#F4F1EC", fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer", position: "relative", zIndex: 2 }}>
+              Statement &amp; reconciliation
+            </button>
+
             {/* Settle button */}
-            <button onClick={() => setShowSettle(true)} style={{ width: "100%", marginTop: 24, padding: 16, background: "rgba(244,241,236,0.06)", border: "1px solid rgba(244,241,236,0.1)", color: "#F4F1EC", fontFamily: dv.serif, fontSize: 15, cursor: "pointer", position: "relative", zIndex: 2 }}>
+            <button onClick={() => setShowSettle(true)} style={{ width: "100%", marginTop: 10, padding: 16, background: "rgba(244,241,236,0.06)", border: "1px solid rgba(244,241,236,0.1)", color: "#F4F1EC", fontFamily: dv.serif, fontSize: 15, cursor: "pointer", position: "relative", zIndex: 2 }}>
               Record a payment &#8594;
             </button>
           </div>
@@ -1727,6 +1922,130 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
                 )}
               </motion.div>
             </motion.div>
+            );
+          })()}
+        </AnimatePresence>
+
+        {/* Statement & reconciliation */}
+        <AnimatePresence>
+          {showStatement && (() => {
+            const st = buildStatement();
+            const debts = simplifyDebts();
+            const groupCcy = selectedGroup.currency || "USD";
+            const sym = symFor(groupCcy);
+            const m = (n) => `${sym}${Math.abs(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            const html = () => statementHtml(st, debts, groupCcy, sym);
+            const allOk = st.checks.paidEqualsShares && st.checks.netsCancel && st.checks.linesTie;
+            const row = { display: "grid", gridTemplateColumns: isMobile ? "1.2fr 1fr 1fr" : "1.4fr repeat(5, 1fr)", gap: 8, padding: "8px 0", borderBottom: `1px solid ${dv.cream}`, fontSize: 12.5, alignItems: "baseline" };
+            const num = { textAlign: "right", fontFamily: dv.mono, fontSize: 11.5, fontVariantNumeric: "tabular-nums" };
+            return (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                onClick={() => setShowStatement(false)}
+                style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(21,19,15,0.6)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", display: "flex", alignItems: isMobile ? "flex-end" : "center", justifyContent: "center", padding: isMobile ? "0 0 calc(132px + env(safe-area-inset-bottom))" : 24 }}>
+                <motion.div initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 12, opacity: 0 }}
+                  onClick={e => e.stopPropagation()}
+                  style={{ width: "100%", maxWidth: 820, maxHeight: isMobile ? "calc(var(--app-height, 100dvh) * 0.8)" : "88vh", overflowY: "auto", background: dv.bone, border: `1px solid ${dv.cream}`, borderRadius: isMobile ? 18 : 16, boxShadow: "0 24px 70px rgba(0,0,0,0.4)" }}>
+                  {/* Sticky header */}
+                  <div style={{ position: "sticky", top: 0, zIndex: 2, background: dv.bone, borderBottom: `1px solid ${dv.cream}`, padding: isMobile ? "16px 18px" : "18px 22px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+                    <div>
+                      <div style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.13em", textTransform: "uppercase", color: dv.accent, marginBottom: 4 }}>Statement</div>
+                      <div style={{ fontFamily: dv.serif, fontSize: isMobile ? 20 : 23, fontWeight: 400, letterSpacing: "-0.02em" }}>{selectedGroup.name}</div>
+                      <div style={{ fontFamily: dv.sans, fontSize: 12, color: dv.taupe, marginTop: 3 }}>
+                        {st.lines.length} expense{st.lines.length === 1 ? "" : "s"} · {m(st.totals.paid)} total{st.totals.settled ? ` · ${m(st.totals.settled)} settled` : ""}
+                      </div>
+                    </div>
+                    <button onClick={() => setShowStatement(false)} title="Close"
+                      style={{ width: 32, height: 32, borderRadius: "50%", border: `1px solid ${dv.cream}`, background: "transparent", color: dv.taupe, cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                    </button>
+                  </div>
+
+                  <div style={{ padding: isMobile ? "16px 18px 20px" : "20px 22px 24px" }}>
+                    {/* Where everyone stands */}
+                    <div style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: dv.taupe, marginBottom: 10 }}>Where everyone stands</div>
+                    {!isMobile && (
+                      <div style={{ ...row, color: dv.taupe, fontFamily: dv.mono, fontSize: 9.5, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                        <span>Person</span><span style={num}>Paid out</span><span style={num}>Their share</span><span style={num}>Paid back</span><span style={num}>Received</span><span style={num}>Position</span>
+                      </div>
+                    )}
+                    {st.people.map(p => (
+                      <div key={p.email} style={row}>
+                        <span style={{ fontFamily: dv.serif, fontSize: 14 }}>{memberName(p.email)}</span>
+                        {!isMobile && <span style={num}>{m(p.paid)}</span>}
+                        {!isMobile && <span style={num}>{m(p.share)}</span>}
+                        {!isMobile && <span style={num}>{p.settledOut ? m(p.settledOut) : "—"}</span>}
+                        {!isMobile && <span style={num}>{p.settledIn ? m(p.settledIn) : "—"}</span>}
+                        {isMobile && <span style={{ ...num, color: dv.taupe }}>{m(p.paid)} paid</span>}
+                        <span style={{ ...num, color: p.net > 0.005 ? dv.moss : p.net < -0.005 ? dv.accent : dv.taupe, fontWeight: 600 }}>
+                          {p.net > 0.005 ? `+${m(p.net)}` : p.net < -0.005 ? `−${m(p.net)}` : "settled"}
+                        </span>
+                      </div>
+                    ))}
+
+                    {/* Settle up */}
+                    <div style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: dv.taupe, margin: "24px 0 10px" }}>
+                      Settling up{debts.length ? ` — ${debts.length} payment${debts.length === 1 ? "" : "s"}` : ""}
+                    </div>
+                    {debts.length ? debts.map((d, i) => (
+                      <div key={i} style={{ fontFamily: dv.sans, fontSize: 13, padding: "6px 0", borderBottom: `1px solid ${dv.cream}` }}>
+                        <strong style={{ fontWeight: 600 }}>{memberName(d.from)}</strong> pays <strong style={{ fontWeight: 600 }}>{memberName(d.to)}</strong>
+                        <span style={{ fontFamily: dv.mono, fontSize: 12, marginLeft: 8 }}>{m(d.amount)}</span>
+                      </div>
+                    )) : (
+                      <div style={{ fontFamily: dv.serif, fontStyle: "italic", fontSize: 14, color: dv.taupe }}>Everyone is square.</div>
+                    )}
+
+                    {/* Reconciliation */}
+                    <div style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: dv.taupe, margin: "24px 0 10px" }}>Reconciliation</div>
+                    <div style={{ border: `1px solid ${allOk ? `${dv.moss}40` : `${dv.accent}40`}`, background: allOk ? (D ? "rgba(107,122,90,0.08)" : "rgba(107,122,90,0.05)") : (D ? "rgba(200,85,61,0.08)" : "rgba(200,85,61,0.05)"), borderRadius: 10, padding: "12px 14px" }}>
+                      {[
+                        [st.checks.paidEqualsShares, `Everything paid out is allocated — ${m(st.totals.paid)} paid, ${m(st.totals.shares)} in shares.`],
+                        [st.checks.netsCancel, `Positions cancel out — they sum to ${st.totals.netSum.toFixed(2)}, as they must.`],
+                        [st.checks.linesTie, `Every expense's shares add back to its amount.`],
+                      ].map(([ok, text], i) => (
+                        <div key={i} style={{ display: "flex", gap: 8, fontSize: 12.5, color: ok ? dv.ink : dv.accent, marginBottom: 4, lineHeight: 1.5 }}>
+                          <span style={{ color: ok ? dv.moss : dv.accent, flex: "none" }}>{ok ? "✓" : "✗"}</span>
+                          <span>{text}</span>
+                        </div>
+                      ))}
+                      {st.lineIssues.length > 0 && (
+                        <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${dv.cream}` }}>
+                          {st.lineIssues.map(i => (
+                            <div key={i.id} style={{ fontSize: 12, color: dv.accent }}>{i.description || "(untitled)"} — out by {m(i.drift)}</div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <p style={{ fontFamily: dv.serif, fontStyle: "italic", fontSize: 12.5, color: dv.taupe, margin: "10px 0 0", lineHeight: 1.5 }}>
+                      Each line reads: paid out − their share + paid back − received = position. A few cents of rounding on an uneven split is expected and tolerated.
+                    </p>
+
+                    {/* Actions */}
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 22 }}>
+                      <button onClick={() => { if (!openStatementPrint(html())) alert("Allow pop-ups for this site to open the printable statement."); }}
+                        style={{ padding: "10px 16px", background: dv.ink, color: dv.bone, border: "none", fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer" }}>
+                        Open printable / PDF
+                      </button>
+                      <button onClick={async () => {
+                        const text = [
+                          `${selectedGroup.name} — statement`,
+                          `${st.lines.length} expenses · ${m(st.totals.paid)} total`,
+                          "",
+                          ...st.people.map(p => `${memberName(p.email)}: paid ${m(p.paid)}, share ${m(p.share)} → ${p.net > 0.005 ? `is owed ${m(p.net)}` : p.net < -0.005 ? `owes ${m(p.net)}` : "settled"}`),
+                          "",
+                          "Settle up:",
+                          ...(debts.length ? debts.map(d => `  ${memberName(d.from)} pays ${memberName(d.to)} ${m(d.amount)}`) : ["  everyone is square"]),
+                        ].join("\n");
+                        try { await navigator.clipboard.writeText(text); setStatementCopied(true); setTimeout(() => setStatementCopied(false), 2000); }
+                        catch { alert(text); }
+                      }}
+                        style={{ padding: "10px 16px", background: "transparent", color: dv.ink, border: `1px solid ${dv.cream}`, fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer" }}>
+                        {statementCopied ? "Copied" : "Copy summary"}
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              </motion.div>
             );
           })()}
         </AnimatePresence>
