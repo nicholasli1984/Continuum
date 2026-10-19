@@ -1357,7 +1357,7 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
                   + Add receipt
                 </button>
               </div>
-              <input ref={receiptInputRef} type="file" accept="image/*" capture="environment" multiple style={{ display: "none" }} onChange={handleReceiptCapture} />
+              <input ref={receiptInputRef} type="file" accept="image/*" multiple style={{ display: "none" }} onChange={handleReceiptCapture} />
               {(expenseForm.receiptImages || []).length > 0 ? (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                   {expenseForm.receiptImages.map((src, ri) => (
@@ -1380,7 +1380,7 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={dv.stone} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 8 }}>
                     <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/>
                   </svg>
-                  <div style={{ fontFamily: dv.serif, fontStyle: "italic", fontSize: 14, color: dv.stone }}>Tap to snap or upload a receipt</div>
+                  <div style={{ fontFamily: dv.serif, fontStyle: "italic", fontSize: 14, color: dv.stone }}>Choose a photo or take one</div>
                 </div>
               )}
             </div>
@@ -1716,7 +1716,7 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
                                 </div>
                               </div>
                             )}
-                            <input ref={editReceiptInputRef} type="file" accept="image/*" capture="environment" multiple style={{ display: "none" }} onChange={handleEditReceiptCapture} />
+                            <input ref={editReceiptInputRef} type="file" accept="image/*" multiple style={{ display: "none" }} onChange={handleEditReceiptCapture} />
                             {(editExpenseForm.receiptImages || []).length > 0 ? (
                               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                                 {editExpenseForm.receiptImages.map((src, ri) => (
@@ -1733,7 +1733,7 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
                             ) : (
                               <div onClick={() => editReceiptInputRef.current?.click()}
                                 style={{ border: `1px dashed ${dv.cream}`, borderRadius: 10, padding: "14px 12px", textAlign: "center", cursor: "pointer" }}>
-                                <span style={{ fontFamily: dv.serif, fontStyle: "italic", fontSize: 13, color: dv.stone }}>Tap to snap or upload a receipt</span>
+                                <span style={{ fontFamily: dv.serif, fontStyle: "italic", fontSize: 13, color: dv.stone }}>Choose a photo or take one</span>
                               </div>
                             )}
                           </div>
