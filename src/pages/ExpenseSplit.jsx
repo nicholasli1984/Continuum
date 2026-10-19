@@ -915,17 +915,32 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
             ${l.receipts.map(src => `<img src="${src}" alt="Receipt for ${esc(l.description || "expense")}" />`).join("")}
           </div>`);
       }
+      // One column per person; a blank cell means they were not in this split.
+      const byEmail = Object.fromEntries(l.shares.map(s => [s.email, s.amount]));
+      const cells = st.people.map(p => {
+        const v = byEmail[p.email];
+        const isPayer = p.email === l.paidBy;
+        return `<td class="n share${v == null ? " out" : ""}${isPayer ? " payer" : ""}">${v == null ? "·" : v.toFixed(2)}</td>`;
+      }).join("");
+
       return `
       <tr>
-        <td>${esc(l.date || "")}</td>
+        <td class="d">${esc(l.date || "")}</td>
         <td>${esc(l.description || "")}</td>
         <td>${esc(memberName(l.paidBy))}</td>
-        <td class="n">${l.currency && l.currency !== groupCcy ? `${esc(l.currency)} ${l.rawAmount.toFixed(2)} → ` : ""}${m(l.amount)}</td>
-        <td>${esc(l.splitType)}</td>
-        <td>${l.shares.map(s => `${esc(memberName(s.email))} ${m(s.amount)}`).join("; ")}</td>
+        <td class="n">${l.currency && l.currency !== groupCcy ? `<span class="fx">${esc(l.currency)} ${l.rawAmount.toFixed(2)}</span> ` : ""}${l.amount.toFixed(2)}</td>
+        ${cells}
         <td>${tag}</td>
       </tr>`;
     }).join("");
+
+    // Column totals — each person's total share, which is the figure the
+    // summary at the top reports. Reading down a column proves that row.
+    const shareTotals = st.people.map(p => `<td class="n share tot">${p.share.toFixed(2)}</td>`).join("");
+    const paidTotals = st.people.map(p => `<td class="n share">${p.paid ? p.paid.toFixed(2) : "·"}</td>`).join("");
+    const netTotals = st.people.map(p => `<td class="n share ${p.net > 0.005 ? "pos" : p.net < -0.005 ? "neg" : ""}">${
+      Math.abs(p.net) < 0.005 ? "—" : (p.net > 0 ? "+" : "−") + Math.abs(p.net).toFixed(2)}</td>`).join("");
+    const peopleHead = st.people.map(p => `<th class="n share">${esc(memberName(p.email))}</th>`).join("");
 
     const receiptCount = st.lines.reduce((s, l) => s + l.receipts.length, 0);
     const receiptSection = receiptCount
@@ -958,14 +973,34 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
   p.bad { color: #C03E34; font-size: 13px; margin: 10px 0 4px; }
   .foot { margin-top: 28px; padding-top: 12px; border-top: 1px solid #E2DCCE; font-size: 11px; color: #857A66; }
   a { color: #3A6491; }
+  /* Share matrix — one column per person. Tight and numeric so nine people
+     still fit across the page; the row/column totals are what make it
+     checkable by eye. */
+  .matrix { font-size: 11px; }
+  .matrix th, .matrix td { padding: 5px 6px; }
+  .matrix td.d { white-space: nowrap; color: #857A66; }
+  .matrix th.share, .matrix td.share { width: 1%; }
+  .matrix td.share { font-variant-numeric: tabular-nums; }
+  .matrix td.out { color: #C9C2B4; }
+  .matrix td.payer { box-shadow: inset 0 0 0 1px #E2DCCE; border-radius: 3px; }
+  .matrix .fx { color: #857A66; font-size: 9.5px; }
+  .matrix tfoot td { border-top: 1px solid #15130F; border-bottom: none; font-size: 11px; padding-top: 7px; }
+  .matrix tfoot tr.sum td { font-weight: 600; }
+  .matrix tfoot td.tot { font-weight: 600; }
   .receipt { margin: 18px 0 24px; }
   .rcap { font-size: 11px; color: #857A66; margin-bottom: 6px; padding-bottom: 5px; border-bottom: 1px solid #E2DCCE; }
   .rcap strong { color: #15130F; }
   .receipt img { max-width: 100%; max-height: 760px; border: 1px solid #E2DCCE; border-radius: 4px; display: block; margin-bottom: 8px; }
+  /* The matrix is wide once a group has more than a handful of people, so the
+     statement prints landscape rather than shrinking the figures to fit. */
+  @page { size: ${st.people.length > 5 ? "landscape" : "portrait"}; margin: 12mm; }
   @media print {
     body { margin: 0; }
     h2 { break-after: avoid; }
     tr { break-inside: avoid; }
+    thead { display: table-header-group; }
+    .matrix { font-size: 9.5px; }
+    .matrix th, .matrix td { padding: 4px 5px; }
     /* Keep a receipt with its caption, and never slice an image across pages. */
     .receipt { break-inside: avoid; page-break-inside: avoid; }
     .receipt img { max-height: 620px; }
@@ -996,10 +1031,28 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
   ${issues}
   <p class="sub" style="margin-top:10px">Each row above is <em>paid out − their share + paid back − received = position</em>. Amounts entered in another currency are converted at the rate stored with that expense and shown in the ledger below.</p>
 
-  <h2>Ledger — every expense</h2>
-  <table>
-    <thead><tr><th>Date</th><th>Expense</th><th>Paid by</th><th class="n">Amount</th><th>Split</th><th>Shares</th><th>Receipt</th></tr></thead>
+  <h2>Ledger — every expense, and each person's share</h2>
+  <p class="sub">Amounts in ${esc(groupCcy)}. A dot means that person wasn't in the split. The payer's own share is boxed. Read down a column to see how someone's total share is made up.</p>
+  <table class="matrix">
+    <thead>
+      <tr>
+        <th>Date</th><th>Expense</th><th>Paid by</th><th class="n">Amount</th>
+        ${peopleHead}
+        <th>Receipt</th>
+      </tr>
+    </thead>
     <tbody>${lineRows}</tbody>
+    <tfoot>
+      <tr class="sum">
+        <td colspan="3">Total share</td><td class="n">${st.totals.shares.toFixed(2)}</td>${shareTotals}<td></td>
+      </tr>
+      <tr>
+        <td colspan="3">Paid out</td><td class="n">${st.totals.paid.toFixed(2)}</td>${paidTotals}<td></td>
+      </tr>
+      <tr>
+        <td colspan="3">Position${st.totals.settled ? " (after settlements)" : ""}</td><td class="n">${st.totals.netSum.toFixed(2)}</td>${netTotals}<td></td>
+      </tr>
+    </tfoot>
   </table>
 
   ${receiptSection}
