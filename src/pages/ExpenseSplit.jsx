@@ -893,6 +893,7 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
           currency: exp.currency, rawAmount: parseFloat(exp.amount) || 0, fx,
           amount: paid, paidBy: exp.paid_by_email, splitType: exp.split_type || "equal",
           shares, drift,
+          category: exp.category || "other",
           receipts: receiptsOf(exp),
         };
       });
@@ -911,8 +912,18 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
     const netSum = people.reduce((s, p) => s + p.net, 0);
     const settledTotal = settlements.reduce((s, x) => s + (parseFloat(x.amount) || 0), 0);
 
+    // What the money went on, biggest first. Totals are the converted amounts,
+    // so they add back to the same figure the rest of the statement quotes.
+    const byCategory = Object.values(lines.reduce((acc, l) => {
+      const cat = SPLIT_CATS.find(c => c.id === l.category) || SPLIT_CATS[SPLIT_CATS.length - 1];
+      (acc[cat.id] ||= { id: cat.id, label: cat.label, color: cat.color, total: 0, count: 0 });
+      acc[cat.id].total += l.amount;
+      acc[cat.id].count += 1;
+      return acc;
+    }, {})).sort((a, b) => b.total - a.total);
+
     return {
-      lines, people, lineIssues,
+      lines, people, lineIssues, byCategory,
       totals: { paid: totalPaid, shares: totalShares, settled: settledTotal, netSum },
       checks: {
         // Everything paid out was allocated to someone.
@@ -1031,6 +1042,14 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
   p.bad { color: #C03E34; font-size: 13px; margin: 10px 0 4px; }
   .foot { margin-top: 28px; padding-top: 12px; border-top: 1px solid #E2DCCE; font-size: 11px; color: #857A66; }
   a { color: #3A6491; }
+  /* Category summary — proportional bars so the split of spend reads at a
+     glance; they print as flat colour rather than relying on background
+     graphics being enabled. */
+  .cats { max-width: 620px; }
+  .cats td.bar, .cats th.bar { width: 30%; padding-right: 0; }
+  .cats td.bar span { display: block; height: 8px; border-radius: 2px; min-width: 2px; }
+  .cats .swatch { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 7px; vertical-align: baseline; }
+  .cats tfoot td { border-top: 1px solid #15130F; border-bottom: none; font-weight: 600; }
   /* Share matrix — one column per person. Tight and numeric so nine people
      still fit across the page; the row/column totals are what make it
      checkable by eye. */
@@ -1075,6 +1094,22 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
   <table>
     <thead><tr><th>Person</th><th class="n">Paid out</th><th class="n">Their share</th><th class="n">Paid back</th><th class="n">Received</th><th class="n">Position</th></tr></thead>
     <tbody>${peopleRows}</tbody>
+  </table>
+
+  <h2>What it went on</h2>
+  <table class="cats">
+    <thead><tr><th>Category</th><th class="n">Expenses</th><th class="n">Total</th><th class="n">Share</th><th class="bar"></th></tr></thead>
+    <tbody>${st.byCategory.map(c => {
+      const pct = st.totals.paid > 0 ? (c.total / st.totals.paid) * 100 : 0;
+      return `<tr>
+        <td><span class="swatch" style="background:${c.color}"></span>${esc(c.label)}</td>
+        <td class="n">${c.count}</td>
+        <td class="n">${m(c.total)}</td>
+        <td class="n">${pct.toFixed(1)}%</td>
+        <td class="bar"><span style="width:${Math.max(pct, 0.6).toFixed(2)}%;background:${c.color}"></span></td>
+      </tr>`;
+    }).join("")}</tbody>
+    <tfoot><tr class="sum"><td>Total</td><td class="n">${st.lines.length}</td><td class="n">${m(st.totals.paid)}</td><td class="n">100%</td><td></td></tr></tfoot>
   </table>
 
   <h2>Settling up${debts.length ? ` — ${debts.length} payment${debts.length === 1 ? "" : "s"}` : ""}</h2>
@@ -2166,6 +2201,27 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
                         </span>
                       </div>
                     ))}
+
+                    {/* What it went on */}
+                    {st.byCategory.length > 0 && (
+                      <>
+                        <div style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: dv.taupe, margin: "24px 0 10px" }}>What it went on</div>
+                        {st.byCategory.map(c => {
+                          const pct = st.totals.paid > 0 ? (c.total / st.totals.paid) * 100 : 0;
+                          return (
+                            <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0", borderBottom: `1px solid ${dv.cream}` }}>
+                              <span style={{ width: 8, height: 8, borderRadius: 2, background: c.color, flex: "none" }} />
+                              <span style={{ fontFamily: dv.sans, fontSize: 13, flex: "none", minWidth: isMobile ? 92 : 130 }}>{c.label}</span>
+                              <span style={{ flex: 1, height: 7, background: dv.cream, borderRadius: 2, overflow: "hidden" }}>
+                                <span style={{ display: "block", height: "100%", width: `${Math.max(pct, 1).toFixed(2)}%`, background: c.color }} />
+                              </span>
+                              <span style={{ fontFamily: dv.mono, fontSize: 11, color: dv.taupe, flex: "none", width: 44, textAlign: "right" }}>{pct.toFixed(0)}%</span>
+                              <span style={{ fontFamily: dv.mono, fontSize: 11.5, flex: "none", width: 84, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{m(c.total)}</span>
+                            </div>
+                          );
+                        })}
+                      </>
+                    )}
 
                     {/* Settle up */}
                     <div style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: dv.taupe, margin: "24px 0 10px" }}>
