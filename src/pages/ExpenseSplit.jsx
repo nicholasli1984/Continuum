@@ -49,6 +49,14 @@ const receiptsOf = (exp) => {
 
 // What to show where an address would go — nothing, for a name-only person.
 const shownEmail = (email) => (isLocalHandle(email) ? "" : email);
+// "Anthony Young" → "Anthony Y." — the statement's share matrix puts one column
+// per person, so headings have to be narrow. A single-word name is left alone.
+const shortName = (full) => {
+  const parts = String(full || "").trim().split(/\s+/).filter(Boolean);
+  if (parts.length < 2) return parts[0] || "";
+  return `${parts[0]} ${parts[parts.length - 1][0].toUpperCase()}.`;
+};
+
 // Fallback label when there's no display name: never expose the handle.
 const handleLabel = (email) => (isLocalHandle(email) ? "Unnamed" : (email || "").split("@")[0]);
 
@@ -116,6 +124,9 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [addMemberForm, setAddMemberForm] = useState({ show: false, email: "", name: "" });
   const [editingMemberId, setEditingMemberId] = useState(null);
+  const [editingMemberEmail, setEditingMemberEmail] = useState("");
+  const [relinkBusy, setRelinkBusy] = useState(false);
+  const [memberError, setMemberError] = useState("");
   const [editingName, setEditingName] = useState("");
   const [editingGroupName, setEditingGroupName] = useState(false);
   const [groupNameDraft, setGroupNameDraft] = useState("");
@@ -697,6 +708,53 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
     setGroupMembers(prev => prev.map(m => m.id === memberId ? { ...m, display_name: newName } : m));
   };
 
+  /*
+   * Put a real email on someone who was added by name alone — typically because
+   * they have since created a Continuum account.
+   *
+   * Their identity is the email column, repeated across membership, every
+   * expense share, both sides of every settlement and the address book, so this
+   * goes through /api/split-member: the client can only rewrite shares on
+   * expenses it created, and a half-rewritten identity would split that
+   * person's balance in two. The endpoint checks the caller belongs to the
+   * group, rewrites all of it, and links the account if one exists.
+   */
+  const relinkMemberEmail = async (member, rawEmail) => {
+    const next = (rawEmail || "").trim().toLowerCase();
+    const current = (member.email || "").toLowerCase();
+    if (!next || next === current) return true;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(next)) {
+      setMemberError("That doesn't look like an email address.");
+      return false;
+    }
+    setRelinkBusy(true);
+    setMemberError("");
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      const token = sess?.session?.access_token;
+      if (!token) { setMemberError("Please sign in again."); return false; }
+      const resp = await apiFetch("/api/split-member", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ groupId: selectedGroup.id, memberId: member.id, newEmail: next }),
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) {
+        setMemberError(data?.error || "Couldn't save that email.");
+        return false;
+      }
+      await loadGroupData(selectedGroup.id);
+      await loadContacts();
+      return true;
+    } catch (err) {
+      console.error("relink member email failed:", err);
+      setMemberError("Couldn't reach the server. Try again.");
+      return false;
+    } finally {
+      setRelinkBusy(false);
+    }
+  };
+
   const saveGroupName = async () => {
     const newName = (groupNameDraft || "").trim();
     if (!selectedGroup || !newName || newName === selectedGroup.name) {
@@ -940,7 +998,7 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
     const paidTotals = st.people.map(p => `<td class="n share">${p.paid ? p.paid.toFixed(2) : "·"}</td>`).join("");
     const netTotals = st.people.map(p => `<td class="n share ${p.net > 0.005 ? "pos" : p.net < -0.005 ? "neg" : ""}">${
       Math.abs(p.net) < 0.005 ? "—" : (p.net > 0 ? "+" : "−") + Math.abs(p.net).toFixed(2)}</td>`).join("");
-    const peopleHead = st.people.map(p => `<th class="n share">${esc(memberName(p.email))}</th>`).join("");
+    const peopleHead = st.people.map(p => `<th class="n share">${esc(shortName(memberName(p.email)))}</th>`).join("");
 
     const receiptCount = st.lines.reduce((s, l) => s + l.receipts.length, 0);
     const receiptSection = receiptCount
@@ -1899,15 +1957,47 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
                     {initials(m.display_name || m.email)}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    {isEditing ? (
-                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <input autoFocus value={editingName} onChange={e => setEditingName(e.target.value)}
-                          onKeyDown={e => { if (e.key === "Enter") { renameMember(m.id, editingName); setEditingMemberId(null); } if (e.key === "Escape") setEditingMemberId(null); }}
-                          style={{ flex: 1, border: "none", borderBottom: `1px solid ${dv.accent}`, background: "transparent", fontFamily: dv.serif, fontSize: 16, fontWeight: 400, color: dv.ink, outline: "none", padding: "2px 0" }} />
-                        <button onClick={() => { renameMember(m.id, editingName); setEditingMemberId(null); }}
-                          style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: dv.accent, background: "none", border: "none", cursor: "pointer", padding: "4px 8px" }}>Save</button>
+                    {isEditing ? (() => {
+                      // Name and email together: someone added by name alone gets
+                      // an address here once they have a Continuum account, which
+                      // moves their whole history onto it rather than starting over.
+                      const saveMember = async () => {
+                        if (relinkBusy) return;
+                        const trimmed = (editingName || "").trim();
+                        if (trimmed && trimmed !== (m.display_name || "")) await renameMember(m.id, trimmed);
+                        const ok = await relinkMemberEmail(m, editingMemberEmail);
+                        if (ok) { setEditingMemberId(null); setMemberError(""); }
+                      };
+                      return (
+                      <div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <input autoFocus value={editingName} onChange={e => setEditingName(e.target.value)}
+                            onKeyDown={e => { if (e.key === "Enter") saveMember(); if (e.key === "Escape") { setEditingMemberId(null); setMemberError(""); } }}
+                            placeholder="Name"
+                            style={{ flex: 1, border: "none", borderBottom: `1px solid ${dv.accent}`, background: "transparent", fontFamily: dv.serif, fontSize: 16, fontWeight: 400, color: dv.ink, outline: "none", padding: "2px 0" }} />
+                          <button onClick={saveMember} disabled={relinkBusy}
+                            style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: dv.accent, background: "none", border: "none", cursor: relinkBusy ? "default" : "pointer", padding: "4px 8px", opacity: relinkBusy ? 0.5 : 1 }}>
+                            {relinkBusy ? "Saving…" : "Save"}
+                          </button>
+                          <button onClick={() => { setEditingMemberId(null); setMemberError(""); }}
+                            style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: dv.taupe, background: "none", border: "none", cursor: "pointer", padding: "4px 4px" }}>Cancel</button>
+                        </div>
+                        <input value={editingMemberEmail} onChange={e => setEditingMemberEmail(e.target.value)}
+                          onKeyDown={e => { if (e.key === "Enter") saveMember(); if (e.key === "Escape") { setEditingMemberId(null); setMemberError(""); } }}
+                          placeholder={isLocalHandle(m.email) ? "Add their email to link their account" : "Email"}
+                          type="email" autoCapitalize="none" autoCorrect="off" spellCheck="false"
+                          style={{ width: "100%", marginTop: 6, border: "none", borderBottom: `1px solid ${dv.cream}`, background: "transparent", fontFamily: dv.mono, fontSize: 12, color: dv.ink, outline: "none", padding: "3px 0" }} />
+                        {memberError && (
+                          <div style={{ fontFamily: dv.sans, fontSize: 11, color: dv.accent, marginTop: 4 }}>{memberError}</div>
+                        )}
+                        {isLocalHandle(m.email) && !memberError && (
+                          <div style={{ fontFamily: dv.serif, fontStyle: "italic", fontSize: 11, color: dv.stone, marginTop: 4 }}>
+                            Their expenses, shares and settlements move with them.
+                          </div>
+                        )}
                       </div>
-                    ) : (
+                      );
+                    })() : (
                       <div style={{ fontFamily: dv.serif, fontSize: 16, fontWeight: 400, color: dv.ink }}>{m.display_name || handleLabel(m.email)}</div>
                     )}
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}>
@@ -1920,7 +2010,7 @@ function ExpenseSplitPage({ css, isMobile, darkMode, user, supabase, navResetTim
                     {bal > 0.01 ? <><span style={{ fontSize: 11, fontStyle: "italic" }}>$</span>+{fmtAmt(bal)}</> : bal < -0.01 ? <><span style={{ fontSize: 11, fontStyle: "italic" }}>$</span>-{fmtAmt(bal)}</> : <span style={{ fontSize: 12 }}>settled</span>}
                   </span>
                   {!isEditing && (
-                    <button onClick={() => { setEditingMemberId(m.id); setEditingName(m.display_name || ""); }}
+                    <button onClick={() => { setEditingMemberId(m.id); setEditingName(m.display_name || ""); setEditingMemberEmail(shownEmail(m.email)); setMemberError(""); }}
                       style={{ fontFamily: dv.mono, fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: dv.taupe, background: "none", border: "none", cursor: "pointer", padding: "4px 6px", flexShrink: 0 }}>
                       Edit
                     </button>
